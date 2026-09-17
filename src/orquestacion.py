@@ -53,6 +53,7 @@ from pathlib import Path
 
 from src import biblia as modulo_biblia
 from src import contexto
+from src import delegaciones
 from src import ensamblador
 from src import estado as modulo_estado
 from src import puntuacion
@@ -387,6 +388,11 @@ CAMPOS_EXTRA = {
 def _completar(estado):
     for clave, valor in CAMPOS_EXTRA.items():
         estado.setdefault(clave, valor)
+    # La lista de delegaciones se crea aparte y no desde CAMPOS_EXTRA: si
+    # estuviera ahi, `setdefault` metaria en todos los estados LA MISMA lista
+    # (el valor por defecto de un diccionario de modulo es un unico objeto
+    # compartido), y dos generaciones distintas acabarian escribiendose encima.
+    estado.setdefault(delegaciones.CLAVE, [])
     return estado
 
 
@@ -400,11 +406,46 @@ def cargar_estado(config, salida):
     return _completar(modulo_estado.cargar(salida))
 
 
-def contar_delegacion(estado, salida, cuantas=1):
-    """Suma delegaciones al contador y avisa si se pasa del limite."""
-    estado["delegaciones"] = estado.get("delegaciones", 0) + cuantas
+def modelo_del_rol(config, rol):
+    """Que modelo llevaba la delegacion de un rol, deducido de la configuracion.
+
+    Asi la sesion no tiene que pasar el modelo a mano en cada registro: el
+    orquestador ya sabe con que alias delego, porque es el mismo que le dijo la
+    ventana. El unico caso que depende del momento es el escritor, cuyo modelo
+    sale del escalon de la escalera en el que va ese intento.
+    """
+    modelos = config.get("modelos", {})
+    if rol == "escritor":
+        # El escritor es el unico que no se puede deducir solo de config.json:
+        # su modelo depende del escalon de la escalera en que va el intento, y
+        # eso vive en el estado. Quien registra el intento ya lo ha calculado y
+        # lo pasa explicitamente.
+        return None
+    if rol == "arquitecto":
+        return modelos.get("arquitecto")
+    if rol == "resumidor":
+        return modelos.get("resumidor")
+    if rol in puntuacion.VALIDADORES:
+        return modelos.get("validadores")
+    return None
+
+
+def anotar_delegacion(estado, salida, rol, modelo=None, capitulo=None,
+                      intento=None, tokens_in=None, tokens_out=None, nota=None):
+    """Anota una delegacion emitida, con sus tokens, y guarda el estado.
+
+    Es el unico sitio por el que sube el contador de la regla 6. Se llama en
+    cuanto se tiene la respuesta del subagente en un archivo, ANTES de intentar
+    interpretarla: una respuesta ilegible ya se pago, y el reintento que venga
+    detras se paga otra vez. Contar solo los registros que salen bien es lo que
+    hacia que el contador se quedara corto.
+    """
+    entrada = delegaciones.anotar(
+        estado, rol, modelo=modelo, capitulo=capitulo, intento=intento,
+        tokens_in=tokens_in, tokens_out=tokens_out, nota=nota,
+    )
     modulo_estado.guardar(estado, salida)
-    return estado
+    return entrada
 
 
 def limite_delegaciones(config):
@@ -637,6 +678,16 @@ def informe_de_estado(config, salida, escribir=print):
                 estado.get("delegaciones", 0), limite_delegaciones(config)
             )
         )
+        suma = delegaciones.totales(estado)
+        if suma["delegaciones"]:
+            linea = "Tokens anotados: {0} de entrada, {1} de salida".format(
+                suma["tokens_in"], suma["tokens_out"]
+            )
+            if suma["sin_tokens"]:
+                # Sin este aviso, un total bajo se confundiria con una novela
+                # barata cuando en realidad es una novela mal instrumentada.
+                linea += " ({0} delegacion(es) sin cifras)".format(suma["sin_tokens"])
+            escribir(linea)
         escribir("Biblia: {0}".format(
             "si" if modulo_biblia.existe(salida) else "todavia no"
         ))
@@ -909,13 +960,48 @@ def cmd_ventana(config, salida, rol, capitulo=None, escribir=print):
     return 0
 
 
-def cmd_registrar_biblia(config, salida, archivo, escribir=print):
+def cmd_registrar_delegacion(config, salida, rol, modelo=None, capitulo=None,
+                             intento=None, tokens_in=None, tokens_out=None,
+                             nota=None, escribir=print):
+    """Anota una delegacion que no llega a registrar ningun resultado.
+
+    Es la valvula de escape del contador. Los comandos `registrar-*` ya anotan
+    su propia delegacion, asi que este solo hace falta cuando se delego y no
+    hubo nada que registrar: el subagente devolvio la respuesta vacia, se quedo
+    sin contexto, o la sesion aborto la delegacion a medias. Sin este comando,
+    esas delegaciones serian invisibles y el freno de mano de la regla 6
+    contaria de menos.
+    """
+    estado = cargar_estado(config, salida)
+    if modelo is None:
+        modelo = modelo_del_rol(config, rol)
+    entrada = anotar_delegacion(
+        estado, salida, rol, modelo=modelo, capitulo=capitulo, intento=intento,
+        tokens_in=tokens_in, tokens_out=tokens_out, nota=nota,
+    )
+    escribir(
+        "Delegacion #{0} anotada: rol {1}, modelo {2}, tokens {3}/{4}.".format(
+            entrada["n"], entrada["rol"], entrada["modelo"],
+            entrada["tokens_in"], entrada["tokens_out"],
+        )
+    )
+    escribir("")
+    informe_de_estado(config, salida, escribir=escribir)
+    return 0
+
+
+def cmd_registrar_biblia(config, salida, archivo, tokens_in=None, tokens_out=None,
+                         escribir=print):
     """Valida la respuesta del arquitecto y la guarda como biblia.json."""
     estado = cargar_estado(config, salida)
-    contar_delegacion(estado, salida)
 
     crudo = _leer_archivo(archivo, "la respuesta del arquitecto")
     _escribir(_tmp(salida) / "biblia-intento.raw", crudo)
+    anotar_delegacion(
+        estado, salida, "arquitecto",
+        modelo=modelo_del_rol(config, "arquitecto"),
+        tokens_in=tokens_in, tokens_out=tokens_out,
+    )
 
     try:
         datos = puntuacion.extraer_json(crudo)
@@ -946,7 +1032,8 @@ def cmd_registrar_biblia(config, salida, archivo, escribir=print):
     return 0
 
 
-def cmd_registrar_intento(config, salida, capitulo, archivo, escribir=print):
+def cmd_registrar_intento(config, salida, capitulo, archivo, tokens_in=None,
+                          tokens_out=None, escribir=print):
     """Guarda el texto que devolvio el escritor como un intento nuevo."""
     estado = cargar_estado(config, salida)
     texto = _leer_archivo(archivo, "el texto del capitulo")
@@ -993,7 +1080,10 @@ def cmd_registrar_intento(config, salida, capitulo, archivo, escribir=print):
     estado["capitulo_actual"] = capitulo
     estado["intento_actual"] = numero
     estado["modelo_actual"] = modelo
-    contar_delegacion(estado, salida)
+    anotar_delegacion(
+        estado, salida, "escritor", modelo=modelo, capitulo=capitulo,
+        intento=numero, tokens_in=tokens_in, tokens_out=tokens_out,
+    )
 
     escribir(
         "Intento {0} del capitulo {1} guardado ({2} palabras, modelo {3}).".format(
@@ -1017,7 +1107,8 @@ def cmd_registrar_intento(config, salida, capitulo, archivo, escribir=print):
     return 0
 
 
-def cmd_registrar_veredicto(config, salida, capitulo, validador, archivo, escribir=print):
+def cmd_registrar_veredicto(config, salida, capitulo, validador, archivo,
+                            tokens_in=None, tokens_out=None, escribir=print):
     """Parsea y guarda el veredicto de un validador sobre el ultimo intento."""
     estado = cargar_estado(config, salida)
     intentos = intentos_de_capitulo(salida, capitulo)
@@ -1041,13 +1132,17 @@ def cmd_registrar_veredicto(config, salida, capitulo, validador, archivo, escrib
         ),
         crudo,
     )
+    anotar_delegacion(
+        estado, salida, validador,
+        modelo=modelo_del_rol(config, validador), capitulo=capitulo,
+        intento=intento["intento"], tokens_in=tokens_in, tokens_out=tokens_out,
+    )
 
     veredicto = puntuacion.leer(crudo, validador, capitulo)
     intento["veredictos"] = [
         v for v in intento.get("veredictos", []) if v.get("validador") != validador
     ] + [veredicto]
     guardar_intento(salida, capitulo, intento)
-    contar_delegacion(estado, salida)
 
     etiqueta = veredicto["veredicto"]
     escribir(
@@ -1077,7 +1172,7 @@ def _sinopsis_del_outline(config, salida, capitulo):
 
 
 def cmd_registrar_resumen(config, salida, capitulo, archivo=None, usar_sinopsis=False,
-                          escribir=print):
+                          tokens_in=None, tokens_out=None, escribir=print):
     """Guarda el resumen de un capitulo cerrado.
 
     Con `usar_sinopsis` no delega en nadie: cae a la sinopsis del outline. Es la
@@ -1108,6 +1203,11 @@ def cmd_registrar_resumen(config, salida, capitulo, archivo=None, usar_sinopsis=
 
     crudo = _leer_archivo(archivo, "la respuesta del resumidor")
     _escribir(_tmp(salida) / "cap-{0:02d}-resumen.raw".format(capitulo), crudo)
+    anotar_delegacion(
+        estado, salida, "resumidor",
+        modelo=modelo_del_rol(config, "resumidor"), capitulo=capitulo,
+        tokens_in=tokens_in, tokens_out=tokens_out,
+    )
 
     try:
         datos = puntuacion.extraer_json(crudo)
@@ -1128,7 +1228,6 @@ def cmd_registrar_resumen(config, salida, capitulo, archivo=None, usar_sinopsis=
         )
 
     _escribir(ruta_resumen(salida, capitulo), texto + "\n")
-    contar_delegacion(estado, salida)
 
     escribir("Resumen del capitulo {0} guardado ({1} palabras):".format(
         capitulo, len(texto.split())
@@ -1139,13 +1238,16 @@ def cmd_registrar_resumen(config, salida, capitulo, archivo=None, usar_sinopsis=
     return 0
 
 
-def cmd_ensamblar(config, salida, escribir=print):
-    """Escribe manuscrito.md e informe-validacion.md, y limpia .tmp/.
+def _reunir_para_informe(config, salida):
+    """Junta de disco todo lo que el ensamblador necesita para el informe.
 
-    El orden importa: el informe se construye ANTES de borrar `.tmp/`, porque
-    todos los intentos, veredictos y puntuaciones viven ahi. Borrar primero y
-    escribir despues produciria un informe vacio y ya no habria forma de
-    recuperar el dato.
+    Devuelve `(estado, biblia, fecha, capitulos_informe, capitulos_texto)`. Lo
+    lee TODO del disco y nada de la conversacion: por eso el informe se puede
+    regenerar desde una sesion que no vio generar la novela.
+
+    Si `.tmp/` ya se borro, los intentos vienen vacios y el informe sale mas
+    pobre en detalle por capitulo, pero el recuento de delegaciones y tokens
+    sigue completo, porque ese vive en estado.json y no en los temporales.
     """
     estado = cargar_estado(config, salida)
     total = config["estructura"]["num_capitulos"]
@@ -1178,6 +1280,47 @@ def cmd_ensamblar(config, salida, escribir=print):
             "intentos": intentos_de_capitulo(salida, numero),
             "ventana": ventana,
         })
+
+    return estado, biblia, fecha, capitulos_informe, capitulos_texto
+
+
+def cmd_informe(config, salida, escribir=print):
+    """Reescribe solo informe-validacion.md, sin tocar el manuscrito ni .tmp/.
+
+    Sirve para sacar el informe de una novela ya terminada, desde una sesion
+    distinta de la que la genero, sin volver a ensamblar nada ni borrar los
+    temporales. Es lo que hace util al registro de delegaciones: los tokens de
+    aquella generacion siguen en estado.json.
+    """
+    estado, biblia, fecha, capitulos_informe, _ = _reunir_para_informe(config, salida)
+    _escribir(
+        ruta_informe(salida),
+        ensamblador.informe(biblia, config, fecha, capitulos_informe, estado),
+    )
+    escribir("Informe reescrito en {0}".format(ruta_informe(salida)))
+    if not delegaciones.coherente(estado):
+        escribir(
+            "  Aviso: el detalle de delegaciones ({0}) no cuadra con el "
+            "contador ({1}). Suele ser una generacion empezada antes de que "
+            "existiera el registro de tokens.".format(
+                len(delegaciones.listar(estado)), estado.get("delegaciones", 0)
+            )
+        )
+    return 0
+
+
+def cmd_ensamblar(config, salida, escribir=print):
+    """Escribe manuscrito.md e informe-validacion.md, y limpia .tmp/.
+
+    El orden importa: el informe se construye ANTES de borrar `.tmp/`, porque
+    todos los intentos, veredictos y puntuaciones viven ahi. Borrar primero y
+    escribir despues produciria un informe vacio y ya no habria forma de
+    recuperar el dato.
+    """
+    estado, biblia, fecha, capitulos_informe, capitulos_texto = _reunir_para_informe(
+        config, salida
+    )
+    total = config["estructura"]["num_capitulos"]
 
     _escribir(
         ruta_manuscrito(salida),
@@ -1224,6 +1367,12 @@ def _aprobar(config, salida, estado, capitulo, intento, motivo, escribir):
     # que no es lo mismo que "estos problemas se detectaron alguna vez".
     intento["elegido"] = True
     guardar_intento(salida, capitulo, intento)
+
+    # Lo mismo, pero en el registro de delegaciones: las del intento ganador
+    # quedan marcadas como trabajo que acabo en el manuscrito y las de los
+    # intentos descartados, como trabajo pagado y tirado. Es la unica forma de
+    # saber despues cuantos tokens costo de verdad la pagina que se lee.
+    delegaciones.marcar_en_manuscrito(estado, capitulo, intento["intento"])
 
     for veredicto in intento.get("veredictos", []):
         if veredicto.get("validador") == "estilo":
@@ -1373,16 +1522,35 @@ def construir_parser():
     ventana.add_argument("rol", choices=ROLES_VENTANA)
     ventana.add_argument("--capitulo", type=int, default=None)
 
+    def con_tokens(comando):
+        """Anade a un subcomando las dos opciones de tokens.
+
+        Son opcionales: si la sesion no los pasa, la delegacion se anota igual y
+        el informe avisa de que ese total se queda corto. Vale mas un recuento
+        de delegaciones exacto que un recuento de tokens exigente.
+        """
+        comando.add_argument(
+            "--tokens-in", type=int, default=None,
+            help="tokens de entrada que gasto la delegacion (subagent_tokens)",
+        )
+        comando.add_argument(
+            "--tokens-out", type=int, default=None,
+            help="tokens de salida que devolvio la delegacion",
+        )
+        return comando
+
     biblia_cmd = sub.add_parser(
         "registrar-biblia", help="valida y guarda la respuesta del arquitecto"
     )
     biblia_cmd.add_argument("--archivo", required=True)
+    con_tokens(biblia_cmd)
 
     intento = sub.add_parser(
         "registrar-intento", help="guarda el texto que devolvio el escritor"
     )
     intento.add_argument("--capitulo", type=int, required=True)
     intento.add_argument("--archivo", required=True)
+    con_tokens(intento)
 
     veredicto = sub.add_parser(
         "registrar-veredicto", help="parsea y guarda el veredicto de un validador"
@@ -1390,6 +1558,18 @@ def construir_parser():
     veredicto.add_argument("--capitulo", type=int, required=True)
     veredicto.add_argument("--validador", choices=puntuacion.VALIDADORES, required=True)
     veredicto.add_argument("--archivo", required=True)
+    con_tokens(veredicto)
+
+    suelta = sub.add_parser(
+        "registrar-delegacion",
+        help="anota una delegacion que no dejo resultado registrable",
+    )
+    suelta.add_argument("--rol", choices=SUBAGENTES, required=True)
+    suelta.add_argument("--modelo", default=None)
+    suelta.add_argument("--capitulo", type=int, default=None)
+    suelta.add_argument("--intento", type=int, default=None)
+    suelta.add_argument("--nota", default=None, help="por que no hubo resultado")
+    con_tokens(suelta)
 
     resolver = sub.add_parser(
         "resolver", help="aprobar, reintentar o aceptar por puntuacion"
@@ -1405,8 +1585,12 @@ def construir_parser():
         "--usar-sinopsis", action="store_true",
         help="no delega: usa la sinopsis del outline (valvula de escape)",
     )
+    con_tokens(resumen)
 
     sub.add_parser("ensamblar", help="escribe el manuscrito y el informe")
+    sub.add_parser(
+        "informe", help="reescribe solo el informe, sin tocar .tmp/ ni el manuscrito"
+    )
 
     return parser
 
@@ -1429,21 +1613,35 @@ def main(argv=None):
         if args.comando == "ventana":
             return cmd_ventana(config, salida, args.rol, args.capitulo)
         if args.comando == "registrar-biblia":
-            return cmd_registrar_biblia(config, salida, args.archivo)
+            return cmd_registrar_biblia(
+                config, salida, args.archivo, args.tokens_in, args.tokens_out
+            )
         if args.comando == "registrar-intento":
-            return cmd_registrar_intento(config, salida, args.capitulo, args.archivo)
+            return cmd_registrar_intento(
+                config, salida, args.capitulo, args.archivo,
+                args.tokens_in, args.tokens_out,
+            )
         if args.comando == "registrar-veredicto":
             return cmd_registrar_veredicto(
-                config, salida, args.capitulo, args.validador, args.archivo
+                config, salida, args.capitulo, args.validador, args.archivo,
+                args.tokens_in, args.tokens_out,
+            )
+        if args.comando == "registrar-delegacion":
+            return cmd_registrar_delegacion(
+                config, salida, args.rol, args.modelo, args.capitulo,
+                args.intento, args.tokens_in, args.tokens_out, args.nota,
             )
         if args.comando == "resolver":
             return cmd_resolver(config, salida, args.capitulo)
         if args.comando == "registrar-resumen":
             return cmd_registrar_resumen(
-                config, salida, args.capitulo, args.archivo, args.usar_sinopsis
+                config, salida, args.capitulo, args.archivo, args.usar_sinopsis,
+                args.tokens_in, args.tokens_out,
             )
         if args.comando == "ensamblar":
             return cmd_ensamblar(config, salida)
+        if args.comando == "informe":
+            return cmd_informe(config, salida)
     except (ErrorDeOrquestacion, ErrorDeConfiguracion,
             modulo_estado.ErrorDeEstado, modulo_biblia.ErrorDeBiblia) as error:
         print("ERROR: {0}".format(error), file=sys.stderr)

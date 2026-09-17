@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
+    "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "https://us.cloud.langfuse.com/api/public/otel/v1/traces",
+    "OTEL_TRACES_EXPORT_INTERVAL": "5000",
+    "OTEL_RESOURCE_ATTRIBUTES": "service.name=my-novel-story"
+  }
+}

@@ -69,13 +69,19 @@ exactos.
 ```
 .claude/agents/    los seis subagentes (no tocar sin pedírmelo)
 .claude/skills/    skills puente que inyectan cada prompt de sistema
+.claude/settings.json  telemetría OTEL del CLI (sin secretos)
 prompts/           prompts de sistema (no tocar sin pedírmelo)
   referencias/     convenciones por género
 src/               código de apoyo del harness
+herramientas/      scripts de PowerShell de diagnóstico, fuera del harness
 archivo/           código de la arquitectura anterior, fuera de uso
 salida/            resultados (ignorado por git)
 config.json        configuración
 ```
+
+`herramientas/` es el único sitio donde puede haber una llamada de red, y solo
+para diagnosticar la telemetría. No lo importa nadie de `src/` y no participa en
+generar ninguna novela. El montaje está en `EJECUCION.md` sección 9.
 
 ## Orden de implementación
 

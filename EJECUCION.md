@@ -34,6 +34,8 @@ dice qué puedes ejecutar hoy:
 | Comprobación de longitud del capítulo | `src/puntuacion.py` (`veredicto_longitud`) | ✅ implementado |
 | Resúmenes redactados por un modelo | subagente `resumidor` | ✅ implementado |
 | Ensamblador e informe | `src/ensamblador.py` | ✅ implementado |
+| Registro de delegaciones y tokens | `src/delegaciones.py` | ✅ implementado |
+| Telemetría OTEL hacia Langfuse | `.claude/settings.json`, `herramientas/` | ✅ implementado (requiere una variable de entorno con la credencial; ver la sección 9) |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
 | Hechos y timeline extraídos de cada capítulo | biblia | ⬜ pendiente (`hechos_establecidos` no se rellena) |
 
@@ -200,7 +202,38 @@ python -m src.orquestacion ventana resumidor --capitulo 3
 python -m src.orquestacion registrar-resumen --capitulo 3 --archivo salida/.tmp/r.raw
 python -m src.orquestacion registrar-resumen --capitulo 3 --usar-sinopsis
 python -m src.orquestacion ensamblar            # manuscrito.md e informe-validacion.md
+python -m src.orquestacion informe              # solo el informe, sin tocar nada más
 ```
+
+**Los cuatro comandos `registrar-*` aceptan además `--tokens-in` y
+`--tokens-out`.** La sesión los saca del `subagent_tokens` que le devuelve cada
+delegación y los pasa tal cual:
+
+```powershell
+python -m src.orquestacion registrar-intento --capitulo 3 `
+    --archivo salida/.tmp/cap-03.raw --tokens-in 41230 --tokens-out 2180
+```
+
+Son opcionales: sin ellos la delegación se anota igual y solo se pierde el
+desglose de tokens. El detalle de por qué se guardan y qué se puede preguntar
+después está en la sección 5.3.
+
+Y hay un comando más, que se usa poco pero cierra el recuento:
+
+```powershell
+python -m src.orquestacion registrar-delegacion --rol escritor --capitulo 3 `
+    --intento 2 --tokens-in 41230 --tokens-out 0 --nota "devolvio vacio"
+```
+
+Es para las delegaciones que **no dejaron nada que registrar**: el subagente
+devolvió la respuesta vacía, se quedó sin contexto, o la sesión la abortó a
+medias. Sin él, esas delegaciones serían invisibles y el freno de mano de la
+regla 6 contaría de menos. No se usa cuando la respuesta llegó pero no parseaba:
+en ese caso el `registrar-*` correspondiente ya la contó antes de fallar.
+
+`informe` reescribe `informe-validacion.md` a partir de lo que hay en disco, sin
+tocar el manuscrito ni borrar `.tmp/`. Sirve para sacar el informe de una novela
+terminada hace semanas desde una sesión que no la generó.
 
 `--usar-sinopsis` es la válvula de escape del resumen: no delega en nadie y cae
 a la sinopsis del outline. Se usa si el resumidor devuelve algo ilegible dos
@@ -305,6 +338,12 @@ importante del proyecto (spec §12.9).
 **b. Guardar el intento y contar las palabras.** El texto va a
 `salida/.tmp/cap-NN-intento-M.md` antes de validarlo. Sin esto no se podría
 elegir la mejor versión al agotar la escalera.
+
+En esta misma llamada, y en la de cada validador y cada resumen, la sesión pasa
+los tokens que consumió la delegación con `--tokens-in` y `--tokens-out`. Los
+saca del `subagent_tokens` que le devuelve la herramienta de delegación. Es un
+hábito, no un paso aparte: si se olvida, la delegación se cuenta igual y solo se
+pierde el desglose (sección 5.3).
 
 En el mismo momento, `registrar-intento` cuenta las palabras y las compara con
 `estructura.palabras_min` y `estructura.palabras_max`. Si el capítulo está fuera
@@ -493,7 +532,7 @@ y el contrato permite hasta seis intentos por capítulo.
 | Archivo | Contenido | Se actualiza |
 |---|---|---|
 | `capitulos/cap-NN.md` | Texto de cada capítulo generado | Al terminar cada capítulo |
-| `estado.json` | Progreso: capítulo actual, intento, modelo activo, capítulos aprobados, delegaciones gastadas | Tras cada intento |
+| `estado.json` | Progreso: capítulo actual, intento, modelo activo, capítulos aprobados, delegaciones gastadas y el detalle de cada una (ver 5.3) | Tras cada intento y tras cada delegación |
 | `resumenes/cap-NN.md` | 2–3 frases escritas por el subagente `resumidor` | Tras cerrar cada capítulo, salvo el último |
 | `memoria-estilo.json` | Muletillas y frases recurrentes detectadas | Tras cada validación de estilo |
 | `.tmp/cap-NN-intento-M.md` | Texto de cada intento | Cada intento |
@@ -506,6 +545,51 @@ Los `.tmp` son obligatorios durante la ejecución: sin ellos no se puede elegir 
 mejor versión al agotar la escalera. Se borran al ensamblar salvo que
 `conservar_intentos` sea `true`, y conservarlos es lo primero que hay que hacer
 cuando quieras entender por qué un capítulo salió como salió.
+
+### 5.3 El registro de delegaciones dentro de `estado.json`
+
+Cada delegación deja una entrada en la lista `delegaciones_detalle`:
+
+```json
+{
+  "n": 17,
+  "momento": "2026-09-17T18:22:04Z",
+  "rol": "escritor",
+  "modelo": "sonnet",
+  "capitulo": 3,
+  "intento": 2,
+  "tokens_in": 41230,
+  "tokens_out": 2180,
+  "en_manuscrito": true
+}
+```
+
+Tres cosas que conviene entender de este archivo:
+
+**Se anota toda delegación emitida, no toda delegación aprovechada.** La entrada
+se escribe en cuanto la respuesta del subagente está en un archivo, y **antes**
+de intentar interpretarla. Si el resumidor devuelve algo que no es JSON, esa
+delegación ya se pagó y queda contada; el reintento que venga detrás se cuenta
+otra vez. Hasta ahora el contador solo subía cuando el registro salía bien, así
+que los reintentos por formato desaparecían: en la generación de tres capítulos
+del 17 de septiembre el contador decía 59 cuando habían sido 61.
+
+**`en_manuscrito` se decide más tarde, al resolver el capítulo.** Mientras el
+capítulo está abierto vale `null`, porque todavía no se sabe qué intento gana.
+Cuando `resolver` elige uno, las delegaciones de ese intento —el escritor que lo
+escribió y los tres validadores que lo auditaron— pasan a `true`, y las de los
+intentos descartados, a `false`. Las que no tienen número de intento (arquitecto
+y resumidor) se quedan en `null`: no es que su trabajo se tirara, es que la
+pregunta no les aplica.
+
+**El registro sobrevive a `ensamblar`.** Los intentos viven en `.tmp/`, que se
+borra; esto vive en `estado.json`, que no. Por eso `python -m src.orquestacion
+informe` puede reconstruir el coste de una novela terminada hace semanas, desde
+una sesión que no la generó. Es el mismo principio que el resto del proyecto: el
+estado está en los archivos, no en la memoria de la conversación.
+
+Los tokens son opcionales. Si la sesión no los pasó, la delegación cuenta igual
+y el informe avisa de que ese total es un suelo, no una medida.
 
 ---
 
@@ -592,6 +676,18 @@ recortes que no aparecían en los primeros, la ventana está creciendo con N y l
 compactación no está haciendo su trabajo. Es la señal de alarma más importante
 del informe: significa que el proyecto no escalaría a una novela más larga.
 
+**El coste en delegaciones y tokens.** La sección "Coste: delegaciones y tokens"
+tiene dos tablas. La primera reparte el gasto por rol: si los validadores gastan
+más tokens que el escritor, estás pagando la auditoría más cara que la novela, y
+lo que hay que mirar es `modelos.validadores`. La segunda separa lo que acabó en
+el manuscrito de lo que se gastó en intentos descartados. Un porcentaje alto de
+descarte no es malo por sí solo —es lo que cuesta validar y reescribir— pero si
+crece de una generación a la siguiente, la escalera está subiendo demasiado y
+toca revisar `modelos.escalera_escritor` y `modelos.intentos_por_modelo`.
+
+Si el informe dice que hay delegaciones sin cifras de tokens, los totales son un
+suelo: la sesión no pasó `--tokens-in`/`--tokens-out` en alguna delegación.
+
 **Validadores `INDETERMINADO`.** Ese validador no devolvió JSON parseable y
 contó como `FALLO`. Uno suelto es ruido; varios seguidos significan que el
 modelo validador no respeta el formato y hay que cambiar
@@ -647,7 +743,115 @@ manuscrito: la regla 1 manda, y es preferible a un hueco, pero conviene saberlo.
 
 ---
 
-## 9. Documentos relacionados
+## 9. Telemetría: ver la generación en Langfuse
+
+### 9.1 Quién habla con Langfuse, y por qué esto no rompe ninguna regla
+
+La regla del proyecto es que **ningún módulo de Python del harness sale a la
+red**. Esta sección no la toca: quien exporta las trazas es **Claude Code**, el
+CLI, usando su propia telemetría OpenTelemetry. El harness no se entera de que
+existe Langfuse, y `src/` sigue sin importar un solo cliente HTTP.
+
+Dicho de otro modo, hay dos registros y no se pisan:
+
+| | Quién lo escribe | Dónde vive | Qué contesta |
+|---|---|---|---|
+| Registro local (sección 5.3) | El harness | `salida/estado.json` | Cuánto costó *esta novela*, por rol y por capítulo |
+| Trazas OTEL | El CLI de Claude Code | Langfuse | Qué pasó en *cada delegación*, con su duración y su árbol de llamadas |
+
+El primero sobrevive sin red y va en el informe. El segundo es para mirar la
+ejecución por dentro cuando algo va lento o raro. Tener los dos no es
+redundante: el registro local es la contabilidad, las trazas son la radiografía.
+
+### 9.2 Montaje
+
+**Lo que ya está hecho** vive en `.claude/settings.json`, que va a git porque no
+contiene ningún secreto:
+
+| Variable | Valor | Para qué |
+|---|---|---|
+| `CLAUDE_CODE_ENABLE_TELEMETRY` | `1` | Enciende la telemetría. Sin esto no se exporta nada |
+| `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA` | `1` | Enciende las **trazas** (spans). Sin esto solo habría métricas y eventos |
+| `OTEL_TRACES_EXPORTER` | `otlp` | Exportar por OTLP, no por consola |
+| `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` | `http/protobuf` | Langfuse acepta HTTP/JSON y HTTP/protobuf, pero **no gRPC** |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | `https://us.cloud.langfuse.com/api/public/otel/v1/traces` | A dónde van. Cambia `us.` por nada si tu proyecto está en la nube europea |
+| `OTEL_TRACES_EXPORT_INTERVAL` | `5000` | Cada cuántos milisegundos se vacía el buffer |
+| `OTEL_RESOURCE_ATTRIBUTES` | `service.name=my-novel-story` | El nombre con el que aparecen las trazas |
+
+**Lo que tienes que poner tú** es la credencial, y no se escribe en ningún
+archivo del proyecto. Una sola vez, en tu usuario de Windows:
+
+```powershell
+$par = "pk-lf-TU_CLAVE_PUBLICA:sk-lf-TU_CLAVE_SECRETA"
+$base64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($par))
+[Environment]::SetEnvironmentVariable("LANGFUSE_AUTH_BASIC", $base64, "User")
+```
+
+Abre una terminal nueva (las variables de usuario solo se leen al arrancar la
+terminal) y, **desde la raíz del proyecto**, arma la cabecera antes de lanzar
+Claude Code:
+
+```powershell
+. .\herramientas\telemetria-langfuse.ps1
+claude
+```
+
+El punto delante no es decorativo: sin él, el script se ejecuta en su propio
+ámbito, las variables mueren con él y tu terminal se queda igual que estaba.
+
+Ese script hace dos cosas y ninguna más: lee `LANGFUSE_AUTH_BASIC` y compone
+
+```
+OTEL_EXPORTER_OTLP_TRACES_HEADERS = Authorization=Basic <credencial>,x-langfuse-ingestion-version=4
+```
+
+**La segunda cabecera importa más de lo que parece.** Sin
+`x-langfuse-ingestion-version: 4`, la traza se guarda igualmente, pero tarda
+hasta quince minutos en aparecer en los endpoints v2 que usa la interfaz. Durante
+esos quince minutos parece que el montaje no funciona, y lo normal es tocar la
+configuración que ya estaba bien. Con la cabecera, aparece en segundos.
+
+### 9.3 Cómo comprobar que una traza llega
+
+Son dos comprobaciones, y conviene hacerlas en este orden porque fallan por
+motivos distintos.
+
+**Primera: ¿funciona el camino de red?** Manda una traza de prueba sin gastar
+una sola delegación:
+
+```powershell
+. .\herramientas\telemetria-langfuse.ps1
+.\herramientas\comprobar-langfuse.ps1
+```
+
+Si Langfuse responde `200`/`204`, la URL y la credencial son correctas. Abre
+Langfuse, ve a **Tracing → Traces** y busca el span
+`novela.comprobacion-telemetria`. Debería estar ahí en segundos.
+
+Si falla, el propio script dice qué significa cada código: `401` es credencial
+mal formada o de otro proyecto, `403` es credencial válida sin permisos, `404` es
+URL o región equivocadas.
+
+**Segunda: ¿Claude Code produce trazas y las manda por ahí?** En la misma
+terminal, ya con el script cargado:
+
+```powershell
+claude -p "responde solo con la palabra hola"
+```
+
+Espera unos diez segundos (el exportador vacía el buffer cada cinco) y vuelve a
+mirar **Tracing → Traces** en Langfuse: debería aparecer una traza nueva con
+`service.name = my-novel-story`. A partir de ahí, la siguiente generación de
+novela deja una traza por delegación, con el subagente y el modelo de cada una.
+
+Si la primera comprobación pasa y la segunda no, el problema no está en Langfuse
+sino en el arranque del CLI. Lo más frecuente: lanzaste `claude` desde otra
+carpeta y no se leyó `.claude/settings.json`, o no hiciste el *dot-sourcing* del
+script y la cabecera de autenticación no llegó al proceso.
+
+---
+
+## 10. Documentos relacionados
 
 | Documento | Para qué |
 |---|---|
@@ -655,6 +859,9 @@ manuscrito: la regla 1 manda, y es preferible a un hueco, pero conviene saberlo.
 | `DECISIONES.md` | Lo que se comprobó ejecutándolo, y por qué la arquitectura es como es |
 | `CLAUDE.md` | Reglas del proyecto para trabajar en el código |
 | `config.json` | Toda la configuración ajustable |
+| `.claude/settings.json` | Telemetría OTEL de Claude Code. Sin secretos: la credencial va en una variable de entorno |
+| `herramientas/telemetria-langfuse.ps1` | Arma la cabecera de autenticación de Langfuse a partir de esa variable |
+| `herramientas/comprobar-langfuse.ps1` | Manda una traza de prueba y dice si Langfuse la acepta |
 | `Harness_novela.drawio.png` | Diagrama del flujo |
 | `ADENDA-openrouter-vscode.md` | **Deprecada.** Arquitectura anterior sobre OpenRouter. Historia, no contrato |
 | `archivo/NOTA.md` | Qué código de la arquitectura anterior se conserva y por qué |

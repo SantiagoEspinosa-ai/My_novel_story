@@ -25,11 +25,18 @@ alguien se hara al leer una novela generada:
     3. Que problemas quedaron sin resolver en el texto que se entrega.
     4. Si las ventanas de contexto crecian con el numero de capitulo, que es la
        senal de que el proyecto no escalaria a una novela larga.
-    5. Cuanto costo todo, en delegaciones.
+    5. Cuanto costo todo, en delegaciones y en tokens, y que parte de ese gasto
+       acabo en el manuscrito y que parte se fue en intentos descartados.
+
+La pregunta 5 se contesta con `estado.json` y con nada mas. Los intentos viven
+en `salida/.tmp/`, que se borra al ensamblar; el registro de delegaciones, no.
+Por eso el informe se puede regenerar meses despues y seguir diciendo lo que
+costo la novela.
 """
 
 from __future__ import annotations
 
+from src import delegaciones
 from src import puntuacion
 
 # Estados posibles de un capitulo en el informe.
@@ -291,6 +298,102 @@ def _bloque_de_capitulo(capitulo):
     return lineas
 
 
+def _miles(numero):
+    """Formatea un entero con separador de miles, a la espanola.
+
+    Un total de tokens se lee muchas veces y casi siempre de un vistazo:
+    `112.480` se entiende y `112480` hay que contarlo con el dedo.
+    """
+    return "{0:,}".format(int(numero)).replace(",", ".")
+
+
+def _fila_coste(etiqueta, datos):
+    return "| {0} | {1} | {2} | {3} |".format(
+        etiqueta,
+        datos["delegaciones"],
+        _miles(datos["tokens_in"]),
+        _miles(datos["tokens_out"]),
+    )
+
+
+def _bloque_coste(estado):
+    """La seccion de coste: delegaciones y tokens, por rol y por destino.
+
+    Se construye solo a partir de `estado.json`. Si esa generacion es anterior
+    al registro de detalle, la lista viene vacia y la seccion lo dice en vez de
+    imprimir una tabla de ceros, que se leeria como "no costo nada".
+    """
+    entradas = delegaciones.listar(estado)
+    contador = estado.get("delegaciones", 0)
+
+    lineas = ["## Coste: delegaciones y tokens", ""]
+
+    if not entradas:
+        lineas += [
+            "Esta generacion gasto **{0}** delegacion(es), pero no tiene "
+            "desglose de tokens: el registro por delegacion no existia cuando "
+            "se genero, o las delegaciones no se anotaron.".format(contador),
+            "",
+        ]
+        return lineas
+
+    suma = delegaciones.totales(estado)
+    lineas += [
+        "| Rol | Delegaciones | Tokens entrada | Tokens salida |",
+        "|---|---:|---:|---:|",
+    ]
+    for rol, datos in delegaciones.por_rol(estado):
+        lineas.append(_fila_coste("`{0}`".format(rol), datos))
+    lineas.append(_fila_coste("**Total**", suma))
+    lineas.append("")
+
+    if suma["sin_tokens"]:
+        lineas += [
+            "**{0}** de las {1} delegaciones se anotaron sin cifras de tokens, "
+            "asi que los totales de arriba son un suelo: el gasto real fue "
+            "mayor.".format(suma["sin_tokens"], suma["delegaciones"]),
+            "",
+        ]
+
+    if not delegaciones.coherente(estado):
+        lineas += [
+            "El contador agregado dice **{0}** delegaciones y el detalle tiene "
+            "**{1}** entradas. La diferencia son delegaciones emitidas antes de "
+            "que existiera el registro, o anotadas sin detalle.".format(
+                contador, len(entradas)
+            ),
+            "",
+        ]
+
+    reparto = delegaciones.reparto_manuscrito(estado)
+    dentro = reparto["en_manuscrito"]
+    fuera = reparto["descartado"]
+    gastado = dentro["tokens_in"] + dentro["tokens_out"]
+    tirado = fuera["tokens_in"] + fuera["tokens_out"]
+    lineas += [
+        "### Que parte del gasto acabo en el manuscrito",
+        "",
+        "| Destino | Delegaciones | Tokens entrada | Tokens salida |",
+        "|---|---:|---:|---:|",
+        _fila_coste("Intentos que se publican", dentro),
+        _fila_coste("Intentos descartados", fuera),
+        _fila_coste("Sin intento (arquitecto, resumidor)", reparto["no_aplica"]),
+        "",
+    ]
+    if gastado + tirado:
+        proporcion = 100.0 * tirado / (gastado + tirado)
+        lineas += [
+            "El **{0:.0f}%** de los tokens atados a un intento se gastaron en "
+            "versiones que no se leen. Eso no es desperdicio por si solo: es lo "
+            "que cuesta validar y reescribir. Se vuelve caro cuando la escalera "
+            "sube mucho; si este porcentaje crece generacion tras generacion, "
+            "toca revisar `modelos.escalera_escritor` y "
+            "`modelos.intentos_por_modelo`.".format(proporcion),
+            "",
+        ]
+    return lineas
+
+
 def informe(biblia, config, fecha, capitulos, estado):
     """El informe de validacion completo (spec 5.2).
 
@@ -336,7 +439,9 @@ def informe(biblia, config, fecha, capitulos, estado):
     ]
     lineas += _tabla_ventanas(capitulos)
     lineas += _alarma_de_ventanas(capitulos)
-    lineas += ["", "## Detalle por capitulo", ""]
+    lineas += [""]
+    lineas += _bloque_coste(estado)
+    lineas += ["## Detalle por capitulo", ""]
 
     for capitulo in capitulos:
         lineas += _bloque_de_capitulo(capitulo)
