@@ -10,11 +10,11 @@ Precedencia de fusion (spec v3, seccion 4.1), de MENOR a MAYOR prioridad:
     3. El resto del contenido de config.json.
     4. Variables de entorno con prefijo NOVELA_ (ej. NOVELA_NUM_CAPITULOS=5).
 
-Lo posterior pisa a lo anterior. La capa 5 del spec (argumentos de linea de
-comandos) todavia no se implementa: llegara con el orquestador.
+Lo posterior pisa a lo anterior.
 
-Este modulo NO hace llamadas de red y NO lee nunca el valor de la clave de
-API: solo comprueba que la variable de entorno existe.
+Este modulo NO hace llamadas de red. Desde el cambio de arquitectura tampoco
+sabe nada de proveedores ni de claves de API: quien habla con el modelo es
+Claude Code, y las credenciales son suyas, no del proyecto.
 """
 
 from __future__ import annotations
@@ -33,6 +33,12 @@ PREFIJO_ENTORNO = "NOVELA_"
 SEPARADOR_RUTA = "__"
 
 GENEROS_PERMITIDOS = ("romance", "drama", "terror")
+
+# Alias de modelo que acepta la herramienta de subagentes de Claude Code. No se
+# usan identificadores completos (claude-opus-5 y compania) porque el alias es
+# lo que admite el parametro `model` de la delegacion, y ademas sigue siendo
+# valido cuando sale una version nueva del modelo.
+MODELOS_PERMITIDOS = ("haiku", "sonnet", "opus", "fable")
 
 # Claves de config.json que NO forman parte de la configuracion efectiva:
 # "perfiles" es la fuente de la capa 2, y volcarla entera solo anadiria ruido.
@@ -64,20 +70,12 @@ VALORES_POR_DEFECTO = {
         "palabras_min": 1200,
         "palabras_max": 2200,
     },
-    "proveedor": {
-        "nombre": "openrouter",
-        "base_url": "https://openrouter.ai/api/v1",
-        "variable_entorno_clave": "OPENROUTER_API_KEY",
-        "timeout_segundos": 120,
-        "reintentos_red": 3,
-        "backoff_segundos": 2,
-    },
     "modelos": {
-        "escalera_escritor": [],
+        "escalera_escritor": ["haiku", "sonnet", "opus"],
         "intentos_por_modelo": 2,
         "mantener_voz_ganadora": True,
-        "arquitecto": {},
-        "validadores": {},
+        "arquitecto": "sonnet",
+        "validadores": "haiku",
     },
     "validacion": {
         "validadores_activos": ["continuidad", "genero", "estilo"],
@@ -102,9 +100,8 @@ VALORES_POR_DEFECTO = {
         "registrar_tamano_contexto": True,
     },
     "limites": {
-        "coste_max_usd": 5.0,
-        "abortar_si_supera_coste": True,
-        "llamadas_max_totales": 300,
+        "delegaciones_max_totales": 300,
+        "abortar_si_supera_delegaciones": True,
     },
 }
 
@@ -281,7 +278,40 @@ def _es_entero(valor):
     return isinstance(valor, int) and not isinstance(valor, bool)
 
 
-def validar(config, entorno):
+def _validar_modelos(modelos, problemas):
+    """Comprueba que los modelos son alias validos de la herramienta de subagentes.
+
+    Un alias mal escrito (por ejemplo 'opus-5' o 'claude-haiku') no falla al
+    arrancar: falla en mitad de la generacion, cuando el orquestador intenta
+    delegar. Por eso se comprueba aqui, que es gratis.
+    """
+    admitidos = ", ".join(MODELOS_PERMITIDOS)
+
+    escalera = modelos.get("escalera_escritor")
+    if not isinstance(escalera, list) or not escalera:
+        problemas.append(
+            "modelos.escalera_escritor tiene que ser una lista con al menos un "
+            "modelo. Arreglo: por ejemplo [\"haiku\", \"sonnet\", \"opus\"]."
+        )
+    else:
+        for indice, alias in enumerate(escalera):
+            if alias not in MODELOS_PERMITIDOS:
+                problemas.append(
+                    "modelos.escalera_escritor[{0}] vale {1} y solo se admiten "
+                    "estos alias: {2}.".format(indice, repr(alias), admitidos)
+                )
+
+    for clave in ("arquitecto", "validadores"):
+        alias = modelos.get(clave)
+        if alias not in MODELOS_PERMITIDOS:
+            problemas.append(
+                "modelos.{0} vale {1} y solo se admiten estos alias: {2}.".format(
+                    clave, repr(alias), admitidos
+                )
+            )
+
+
+def validar(config):
     """Comprueba la configuracion efectiva y acumula todos los errores.
 
     Se revisan todas las reglas antes de fallar, para que un solo intento te
@@ -291,7 +321,6 @@ def validar(config, entorno):
 
     novela = config.get("novela", {})
     estructura = config.get("estructura", {})
-    proveedor = config.get("proveedor", {})
 
     genero = novela.get("genero")
     if genero not in GENEROS_PERMITIDOS:
@@ -337,17 +366,7 @@ def validar(config, entorno):
             "perfil del genero.".format(palabras_min, palabras_max)
         )
 
-    nombre_variable = proveedor.get("variable_entorno_clave") or "OPENROUTER_API_KEY"
-    # Solo se comprueba que exista y no este vacia. El valor no se lee, ni se
-    # guarda, ni se imprime en ningun sitio.
-    if not str(entorno.get(nombre_variable, "")).strip():
-        problemas.append(
-            "Falta la variable de entorno {0}, que es donde vive la clave de "
-            "OpenRouter. "
-            "Arreglo: definela en tu terminal antes de ejecutar. En PowerShell: "
-            "$env:{0} = la clave entre comillas. Nunca la escribas en config.json "
-            "ni en el codigo.".format(nombre_variable)
-        )
+    _validar_modelos(config.get("modelos", {}), problemas)
 
     if problemas:
         lineas = ["La configuracion no es valida. Problemas encontrados:"]
@@ -436,7 +455,7 @@ def cargar_config(ruta_config=None, entorno=None, volcar=True):
     config = _fusionar(config, capa_archivo)                       # capa 3
     config = _fusionar(config, _capa_de_entorno(config, entorno))  # capa 4
 
-    validar(config, entorno)
+    validar(config)
 
     if volcar:
         volcar_config_efectiva(config)

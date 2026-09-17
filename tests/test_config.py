@@ -13,8 +13,11 @@ import pytest
 
 from src.config import ErrorDeConfiguracion, cargar_config
 
-# Clave falsa: nunca se lee su valor, solo se comprueba que la variable existe.
-ENTORNO_MINIMO = {"OPENROUTER_API_KEY": "clave-de-prueba"}
+# Entorno vacio. Desde el cambio de arquitectura no hace falta ninguna variable
+# para cargar la configuracion: las credenciales son de Claude Code, no del
+# proyecto. Se sigue pasando explicitamente para que los tests no dependan del
+# entorno real de la maquina.
+ENTORNO_MINIMO = {}
 
 
 def escribir_config(carpeta, contenido):
@@ -242,14 +245,67 @@ def test_genero_invalido_falla(tmp_path):
     assert "romance" in mensaje and "drama" in mensaje and "terror" in mensaje
 
 
-def test_falta_la_clave_de_api_falla(tmp_path):
-    """Sin OPENROUTER_API_KEY no se arranca. El valor nunca se lee."""
-    ruta = escribir_config(tmp_path, config_base())
+def test_un_alias_de_modelo_invalido_falla(tmp_path):
+    """Un alias mal escrito se caza al cargar, no en mitad de la generacion."""
+    contenido = config_base()
+    contenido["modelos"] = {
+        "escalera_escritor": ["haiku", "opus-5"],
+        "arquitecto": "sonnet",
+        "validadores": "haiku",
+    }
+    ruta = escribir_config(tmp_path, contenido)
 
     with pytest.raises(ErrorDeConfiguracion) as error:
-        cargar_config(ruta_config=ruta, entorno={}, volcar=False)
+        cargar_config(ruta_config=ruta, entorno=ENTORNO_MINIMO, volcar=False)
 
-    assert "OPENROUTER_API_KEY" in str(error.value)
+    mensaje = str(error.value)
+    assert "escalera_escritor[1]" in mensaje
+    assert "haiku, sonnet, opus, fable" in mensaje
+
+
+def test_una_escalera_vacia_falla(tmp_path):
+    contenido = config_base()
+    contenido["modelos"] = {
+        "escalera_escritor": [],
+        "arquitecto": "sonnet",
+        "validadores": "haiku",
+    }
+    ruta = escribir_config(tmp_path, contenido)
+
+    with pytest.raises(ErrorDeConfiguracion) as error:
+        cargar_config(ruta_config=ruta, entorno=ENTORNO_MINIMO, volcar=False)
+
+    assert "al menos un modelo" in str(error.value)
+
+
+def test_el_modelo_de_los_validadores_tambien_se_valida(tmp_path):
+    contenido = config_base()
+    contenido["modelos"] = {
+        "escalera_escritor": ["haiku"],
+        "arquitecto": "sonnet",
+        "validadores": "gemini",
+    }
+    ruta = escribir_config(tmp_path, contenido)
+
+    with pytest.raises(ErrorDeConfiguracion) as error:
+        cargar_config(ruta_config=ruta, entorno=ENTORNO_MINIMO, volcar=False)
+
+    assert "modelos.validadores" in str(error.value)
+
+
+def test_fable_es_un_alias_admitido(tmp_path):
+    """Esta disponible en esta suscripcion; se admite aunque no este en uso."""
+    contenido = config_base()
+    contenido["modelos"] = {
+        "escalera_escritor": ["haiku", "sonnet", "opus", "fable"],
+        "arquitecto": "sonnet",
+        "validadores": "haiku",
+    }
+    ruta = escribir_config(tmp_path, contenido)
+
+    config = cargar_config(ruta_config=ruta, entorno=ENTORNO_MINIMO, volcar=False)
+
+    assert config["modelos"]["escalera_escritor"][-1] == "fable"
 
 
 def test_los_errores_se_acumulan_en_un_solo_mensaje(tmp_path):
@@ -260,6 +316,11 @@ def test_los_errores_se_acumulan_en_un_solo_mensaje(tmp_path):
         "num_capitulos": -1,
         "palabras_min": 2000,
         "palabras_max": 100,
+    }
+    contenido["modelos"] = {
+        "escalera_escritor": ["haiku"],
+        "arquitecto": "sonnet",
+        "validadores": "inventado",
     }
     ruta = escribir_config(tmp_path, contenido)
 
@@ -303,13 +364,17 @@ def test_vuelca_la_config_efectiva(tmp_path):
     assert "perfiles" not in volcado  # la fuente de la capa 2 no se vuelca
 
 
-def test_el_volcado_no_contiene_la_clave_de_api(tmp_path):
-    """Comprobacion de seguridad: el secreto no puede acabar en disco."""
+def test_el_volcado_solo_recoge_variables_con_prefijo_novela(tmp_path):
+    """Nada del entorno acaba en disco salvo lo que lleve el prefijo NOVELA_.
+
+    El proyecto ya no maneja credenciales propias, pero el entorno de cualquier
+    maquina esta lleno de secretos ajenos y el volcado se comparte en informes.
+    """
     ruta = escribir_config(tmp_path, config_base())
     salida = tmp_path / "salida"
     entorno = dict(
         ENTORNO_MINIMO,
-        OPENROUTER_API_KEY="sk-secreto-que-no-debe-salir",
+        UNA_CLAVE_CUALQUIERA="sk-secreto-que-no-debe-salir",
         NOVELA_DIRECTORIO_SALIDA=str(salida),
     )
 
@@ -330,4 +395,7 @@ def test_el_config_json_del_proyecto_es_valido():
 
     assert config["novela"]["genero"] in ("romance", "drama", "terror")
     assert config["estructura"]["num_capitulos"] > 0
-    assert config["proveedor"]["nombre"] == "openrouter"
+    assert config["modelos"]["escalera_escritor"] == ["haiku", "sonnet", "opus"]
+    assert config["modelos"]["arquitecto"] == "sonnet"
+    assert config["modelos"]["validadores"] == "haiku"
+    assert "proveedor" not in config      # la capa de OpenRouter ya no existe

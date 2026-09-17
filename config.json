@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "version": "3.0",
+    "version": "4.0",
     "spec": "SPEC-generador-novelas-v3.md",
-    "descripcion": "Configuracion unica del harness generador de novelas. Todos los valores ajustables viven aqui. Ningun secreto: la clave de API se lee de la variable de entorno OPENROUTER_API_KEY."
+    "descripcion": "Configuracion unica del harness generador de novelas. Todos los valores ajustables viven aqui. El orquestador es Claude Code y los agentes son subagentes de proyecto (.claude/agents/), asi que aqui no hay proveedores, ni claves, ni parametros de red: esas cosas las gestiona Claude Code."
   },
 
   "novela": {
@@ -20,25 +20,13 @@
     "palabras_max": 2200
   },
 
-  "proveedor": {
-    "nombre": "openrouter",
-    "base_url": "https://openrouter.ai/api/v1",
-    "variable_entorno_clave": "OPENROUTER_API_KEY",
-    "timeout_segundos": 120,
-    "reintentos_red": 3,
-    "backoff_segundos": 2
-  },
-
   "modelos": {
-    "escalera_escritor": [
-      { "modelo": "mistralai/mistral-small-2603", "temperatura": 0.8, "max_tokens": 4000 },
-      { "modelo": "deepseek/deepseek-v3.2", "temperatura": 0.8, "max_tokens": 4000 },
-      { "modelo": "anthropic/claude-sonnet-4.6", "temperatura": 0.8, "max_tokens": 4000 }
-    ],
+    "_comentario": "Alias validos de la herramienta de subagentes: haiku, sonnet, opus, fable. El orquestador los pasa en cada delegacion y pisan al campo model del frontmatter del subagente.",
+    "escalera_escritor": ["haiku", "sonnet", "opus"],
     "intentos_por_modelo": 2,
     "mantener_voz_ganadora": true,
-    "arquitecto": { "modelo": "anthropic/claude-sonnet-4.6", "temperatura": 0.9, "max_tokens": 6000 },
-    "validadores": { "modelo": "google/gemini-2.5-flash", "temperatura": 0.1, "max_tokens": 2000 }
+    "arquitecto": "sonnet",
+    "validadores": "haiku"
   },
 
   "validacion": {
@@ -67,9 +55,9 @@
   },
 
   "limites": {
-    "coste_max_usd": 5.0,
-    "abortar_si_supera_coste": true,
-    "llamadas_max_totales": 300
+    "_comentario": "Freno de mano. El coste en dolares ya no es medible desde aqui: las llamadas van con la suscripcion y el orquestador no recibe datos de uso. Lo que si se puede contar son las delegaciones a subagentes.",
+    "delegaciones_max_totales": 300,
+    "abortar_si_supera_delegaciones": true
   },
 
   "perfiles": {
