@@ -94,3 +94,18 @@ proyecto entero de una vez.
 
 - Tests: `python -m pytest`
 - El resto de comandos de ejecución están en `EJECUCION.md` sección 2.
+
+## Para generar o continuar una novela
+
+Si te pido que genere una novela, o que continúe una a medias, empieza siempre
+por aquí:
+
+```powershell
+python -m src.orquestacion estado
+```
+
+Ese comando dice en qué punto está la generación y cuál es el siguiente paso,
+con el subagente y el modelo exactos. Sigue lo que diga, delega, registra el
+resultado y vuelve a preguntar. No lleves la cuenta de cabeza: el estado vive en
+`salida/`, no en la conversación, y por eso una sesión nueva puede continuar una
+novela que empezó otra.
