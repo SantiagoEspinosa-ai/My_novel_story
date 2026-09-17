@@ -29,14 +29,16 @@ dice qué puedes ejecutar hoy:
 | Estado y reanudación | `src/estado.py` | ✅ implementado |
 | Ventanas de contexto y presupuesto | `src/contexto.py` | ✅ implementado |
 | Los cinco subagentes y sus skills puente | `.claude/agents/`, `.claude/skills/` | ✅ implementado |
-| Máquina de estados de la orquestación | `src/orquestacion.py` | ⬜ pendiente |
-| Veredictos y puntuación | `src/puntuacion.py` | ⬜ pendiente |
+| Máquina de estados de la orquestación | `src/orquestacion.py` | ✅ implementado |
+| Veredictos y puntuación | `src/puntuacion.py` | ✅ implementado |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
 | Resúmenes redactados por un modelo | orquestación | ⬜ pendiente |
 | Ensamblador e informe | `src/ensamblador.py` | ⬜ pendiente |
 
 Los cinco subagentes están probados uno a uno con datos de juguete (ver la
-tabla final de `DECISIONES.md`). Lo que falta es la máquina que los encadena.
+tabla final de `DECISIONES.md`), y la máquina que los encadena ya existe. Lo
+que falta para tener una novela de principio a fin es el ensamblador, los
+resúmenes redactados por un modelo y la compactación de hechos.
 
 Los comandos marcados con ⬜ en la sección 2 fallarán hasta que llegue su etapa.
 Eso es lo esperado, no un error de instalación.
@@ -154,7 +156,7 @@ python -c "from src.config import cargar_config; c = cargar_config(); print(c['n
 
 Si algo está mal configurado, aquí te enteras gratis.
 
-### 2.3 Comprobar el entorno y el inventario ⬜
+### 2.3 Comprobar el entorno y el inventario ✅
 
 ```powershell
 python -m src.orquestacion comprobar
@@ -164,7 +166,7 @@ Verifica lo que tiene que estar en su sitio antes de empezar: la versión de
 Claude Code, la configuración válida, los cinco subagentes con su
 `omitClaudeMd`, las cinco skills puente y los prompts de `prompts/`.
 
-### 2.4 Arrancar y conducir una generación ⬜
+### 2.4 Arrancar y conducir una generación ✅
 
 La generación no se lanza con un comando: se la pides a la sesión de Claude
 Code, que va invocando estos comandos entre delegación y delegación.
@@ -419,6 +421,7 @@ y el contrato permite hasta seis intentos por capítulo.
 | `memoria-estilo.json` | Muletillas y frases recurrentes detectadas | Tras cada validación de estilo |
 | `.tmp/cap-NN-intento-M.md` | Texto de cada intento | Cada intento |
 | `.tmp/cap-NN-intento-M.json` | Veredictos y puntuación de ese intento | Cada intento |
+| `.tmp/cap-NN-intento-M-<validador>.raw` | Respuesta cruda de cada validador, antes de parsearla | Cada veredicto |
 
 Los `.tmp` son obligatorios durante la ejecución: sin ellos no se puede elegir la
 mejor versión al agotar la escalera. Se borran al ensamblar salvo que

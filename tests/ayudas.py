@@ -60,7 +60,15 @@ def biblia_valida(num_capitulos=3):
 
 
 def config_minima(num_capitulos=3, **extra):
-    """Una configuracion efectiva de juguete, ya fusionada."""
+    """Una configuracion efectiva de juguete, ya fusionada.
+
+    Tiene la forma que produce `src/config.py` DESPUES del cambio a subagentes:
+    sin seccion `proveedor`, sin claves de API, y con los modelos como alias
+    (`haiku`, `sonnet`, `opus`) en vez de diccionarios con temperatura y
+    max_tokens. La temperatura ya no se puede fijar desde el harness, asi que
+    tampoco aparece aqui: un fixture que la incluyera estaria describiendo un
+    proyecto que no existe.
+    """
     config = {
         "novela": {
             "genero": "terror",
@@ -75,42 +83,69 @@ def config_minima(num_capitulos=3, **extra):
             "palabras_min": 900,
             "palabras_max": 1600,
         },
-        "proveedor": {
-            "base_url": "https://openrouter.ai/api/v1",
-            "variable_entorno_clave": "OPENROUTER_API_KEY",
-            "timeout_segundos": 120,
-            "reintentos_red": 3,
-            "backoff_segundos": 0,
-        },
         "modelos": {
-            "escalera_escritor": [
-                {"modelo": "proveedor/barato", "temperatura": 0.8, "max_tokens": 4000},
-                {"modelo": "proveedor/medio", "temperatura": 0.8, "max_tokens": 4000},
-            ],
+            "escalera_escritor": ["haiku", "sonnet", "opus"],
             "intentos_por_modelo": 2,
-            "arquitecto": {"modelo": "proveedor/medio", "temperatura": 0.9, "max_tokens": 6000},
-            "validadores": {"modelo": "proveedor/validador", "temperatura": 0.1, "max_tokens": 2000},
+            "mantener_voz_ganadora": True,
+            "arquitecto": "sonnet",
+            "validadores": "haiku",
         },
-        "validacion": {"reintentos_parseo_json": 1},
+        "validacion": {
+            "validadores_activos": ["continuidad", "genero", "estilo"],
+            "paralelo": True,
+            "pesos_gravedad": {"alta": 5, "media": 2, "baja": 1},
+            "reintentos_parseo_json": 1,
+            "json_no_parseable_es": "FALLO",
+        },
         "contexto": {
             "max_tokens_contexto": 100000,
             "ventana_hechos": 3,
             "umbral_compactacion": 60,
+            "capitulos_completos_en_ventana": 1,
             "orden_recorte": ["hechos_efimeros", "resumenes", "capitulo_anterior"],
         },
         "runtime": {
             "directorio_salida": "./salida",
             "directorio_prompts": "./prompts",
             "reanudar_si_existe_estado": True,
+            "conservar_intentos": False,
             "nivel_log": "info",
-            "registrar_tamano_contexto": True,
+            "registrar_tamano_contexto": False,
         },
         "limites": {
-            "coste_max_usd": 5.0,
-            "abortar_si_supera_coste": True,
-            "llamadas_max_totales": 300,
+            "delegaciones_max_totales": 300,
+            "abortar_si_supera_delegaciones": True,
         },
     }
     for seccion, valores in extra.items():
         config.setdefault(seccion, {}).update(valores)
     return config
+
+
+def veredicto(validador, capitulo=1, veredicto_texto="PASA", problemas=None, **extra):
+    """Un veredicto de validador con la forma del spec 7.2, como texto JSON.
+
+    Devuelve TEXTO y no un diccionario a proposito: lo que recibe el harness de
+    un validador es siempre texto crudo, y los tests deben recorrer el mismo
+    camino de parseo que la ejecucion real.
+    """
+    import json
+
+    datos = {
+        "validador": validador,
+        "capitulo": capitulo,
+        "veredicto": veredicto_texto,
+        "problemas": problemas or [],
+    }
+    datos.update(extra)
+    return json.dumps(datos, ensure_ascii=False)
+
+
+def problema(gravedad="media", descripcion="Algo no encaja."):
+    """Un problema con la forma del spec 7.2."""
+    return {
+        "gravedad": gravedad,
+        "descripcion": descripcion,
+        "evidencia": "un fragmento del capitulo",
+        "correccion_sugerida": "arreglarlo",
+    }
