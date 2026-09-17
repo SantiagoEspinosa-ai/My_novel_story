@@ -1,7 +1,7 @@
 {
   "_meta": {
     "version": "3.0",
-    "spec": "docs/SPEC-generador-novelas-v3.md",
+    "spec": "SPEC-generador-novelas-v3.md",
     "descripcion": "Configuracion unica del harness generador de novelas. Todos los valores ajustables viven aqui. Ningun secreto: la clave de API se lee de la variable de entorno OPENROUTER_API_KEY."
   },
 
@@ -31,14 +31,14 @@
 
   "modelos": {
     "escalera_escritor": [
-      { "modelo": "RELLENAR/MODELO-BARATO", "temperatura": 0.8, "max_tokens": 4000 },
-      { "modelo": "RELLENAR/MODELO-MEDIO", "temperatura": 0.8, "max_tokens": 4000 },
-      { "modelo": "RELLENAR/MODELO-POTENTE", "temperatura": 0.8, "max_tokens": 4000 }
+      { "modelo": "mistralai/mistral-small-2603", "temperatura": 0.8, "max_tokens": 4000 },
+      { "modelo": "deepseek/deepseek-v3.2", "temperatura": 0.8, "max_tokens": 4000 },
+      { "modelo": "anthropic/claude-sonnet-4.6", "temperatura": 0.8, "max_tokens": 4000 }
     ],
     "intentos_por_modelo": 2,
     "mantener_voz_ganadora": true,
-    "arquitecto": { "modelo": "RELLENAR/MODELO-MEDIO", "temperatura": 0.9, "max_tokens": 6000 },
-    "validadores": { "modelo": "RELLENAR/MODELO-MEDIO", "temperatura": 0.1, "max_tokens": 2000 }
+    "arquitecto": { "modelo": "anthropic/claude-sonnet-4.6", "temperatura": 0.9, "max_tokens": 6000 },
+    "validadores": { "modelo": "google/gemini-2.5-flash", "temperatura": 0.1, "max_tokens": 2000 }
   },
 
   "validacion": {
