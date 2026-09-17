@@ -15,10 +15,12 @@ principal. `ADENDA-openrouter-vscode.md` queda deprecada. El orquestador ya no e
 un programa Python que llama a OpenRouter: es Claude Code, y los cinco agentes
 del spec pasan a ser subagentes de proyecto.
 
-**Entorno verificado:** Claude Code **2.1.263** (confirmado en el `package.json`
-del paquete instalado, no solo con `claude --version`). Documentación consultada:
-`code.claude.com/docs/en/sub-agents` y `/skills`, contrastada con las
-definiciones de tipos `sdk-tools.d.ts` de esa misma versión instalada.
+**Entorno verificado:** los hallazgos 1 a 8 se comprobaron con Claude Code
+**2.1.263**. El 2026-09-17, más tarde, se actualizó a la **2.1.274** y se repitió
+la sonda del hallazgo 3, que es el único que dependía de la versión.
+Documentación consultada: `code.claude.com/docs/en/sub-agents` y `/skills`,
+contrastada con las definiciones de tipos `sdk-tools.d.ts` de la versión
+instalada.
 
 Todo lo que sigue se comprobó ejecutándolo, no leyéndolo.
 
@@ -67,36 +69,48 @@ prompt, ninguna de las cuales aparecía en el mensaje de delegación.
 
 ---
 
-### Hallazgo 3 — `omitClaudeMd` NO funciona en la 2.1.263. Pendiente de actualizar
+### Hallazgo 3 — `omitClaudeMd` necesita la 2.1.271. Resuelto al actualizar
 
 **Qué se comprobó:** por defecto, el contexto inicial de un subagente incluye
 toda la jerarquía de CLAUDE.md (el de usuario, el del proyecto, el local y las
 políticas gestionadas), salvo en los agentes integrados Explore y Plan. La
 opción documentada para evitarlo es `omitClaudeMd: true` en el frontmatter.
 
-**Qué pasó al probarlo:** se lanzó el subagente `estilo`, que lleva esa línea,
-con una sonda que le preguntaba qué reglas de proyecto había recibido. Respondió
-con el nombre del proyecto, su estructura de carpetas, sus comandos de ejecución
-y el contenido de CLAUDE.md. **La opción se está ignorando.**
+**Primera prueba, con la 2.1.263:** se lanzó el subagente `estilo`, que lleva esa
+línea, con una sonda que le preguntaba qué reglas de proyecto había recibido.
+Respondió con el nombre del proyecto, su estructura de carpetas, sus comandos de
+ejecución y el contenido de CLAUDE.md. La opción se estaba ignorando.
 
-**Causa:** `omitClaudeMd` se añadió en la versión **2.1.271** del CLI. La versión
-instalada es la **2.1.263**. Un campo de frontmatter desconocido se ignora en
-silencio, sin aviso ni error, así que el archivo parece correcto y no lo es.
+**Causa:** `omitClaudeMd` se añadió en la versión **2.1.271** del CLI. Un campo
+de frontmatter desconocido se ignora en silencio, sin aviso ni error, así que el
+archivo parece correcto y no lo es. Esto es lo que hace que la versión del CLI
+sea un requisito de ejecución y no un detalle: el fallo no se manifiesta como un
+error, sino como un aislamiento que silenciosamente no existe.
 
-**Decisión:** la línea `omitClaudeMd: true` se queda en los cinco subagentes.
-Hoy no hace nada, y el día que se actualice el CLI empieza a funcionar sin tocar
-ningún archivo. Mientras tanto, el aislamiento de la sección 2.2 del spec está
-**incompleto**: los validadores ven CLAUDE.md.
+**Segunda prueba, con la 2.1.274 (misma sonda, mismo subagente):**
 
-**Qué falta:** actualizar Claude Code a 2.1.271 o posterior y repetir la sonda.
-Es una decisión del usuario porque afecta a una herramienta global de su máquina,
-no solo a este proyecto.
+| Pregunta de la sonda | Respuesta con 2.1.263 | Respuesta con 2.1.274 |
+|---|---|---|
+| ¿Has recibido un CLAUDE.md? | Sí, y lo citó | **NO** |
+| Estructura de carpetas del proyecto | La enumeró | «No tengo información clara» |
+| Comando de los tests | `pytest` | **NO LO SE** |
+
+**Decisión:** la línea `omitClaudeMd: true` se queda en los cinco subagentes y
+la versión mínima de Claude Code pasa a ser un requisito documentado en
+`EJECUCION.md` §1.1. El aislamiento de la sección 2.2 del spec se cumple.
+
+**Residuo conocido, y es inevitable:** el subagente sigue sabiendo el nombre del
+proyecto, porque deduce `My_novel_story` de la ruta del directorio de trabajo,
+que va en su bloque de entorno y no en CLAUDE.md. Es un dato inerte: no le
+cuenta qué arquitectura tiene el proyecto ni qué reglas sigue. Si algún día
+importara de verdad, la única salida sería un nombre de carpeta neutro.
 
 **Por qué importa:** la tabla de la sección 2.2 dice exactamente qué ve cada
 validador, y ese aislamiento es lo que da sentido a tener validadores separados.
-Un CLAUDE.md que describe la arquitectura antigua metido en la ventana del
-validador de estilo no es solo ruido: es ruido que contradice lo que está
-haciendo.
+Un CLAUDE.md que describe la arquitectura del proyecto metido en la ventana del
+validador de estilo no es solo ruido: es ruido con autoridad, porque llega con
+formato de instrucciones y el validador no tiene forma de saber que no van con
+él.
 
 ---
 
@@ -199,6 +213,73 @@ barata dentro del contexto aislado del validador, que muere al terminar.
 `CONVENCIONES: prompts/referencias/terror.md` y un capítulo con tres
 infracciones plantadas. Las encontró las tres y citó los clichés prohibidos
 palabra por palabra tal como están escritos en ese archivo, así que lo leyó.
+
+---
+
+### Decisión 9 — La temperatura ya no se puede fijar, y eso cambia qué significa la puntuación
+
+**Qué se comprobó:** la herramienta de delegación de la versión instalada acepta
+`subagent_type`, `prompt`, `description`, `model` y poco más. **No acepta
+ningún parámetro de muestreo**: ni `temperature`, ni `top_p`, ni una semilla. El
+frontmatter del subagente tampoco admite esos campos, y lo que no reconoce lo
+ignora en silencio (misma trampa del hallazgo 3). En la práctica: cada delegación
+usa el muestreo por defecto del modelo y el harness no tiene voz en ello.
+
+**Qué se pierde.** La configuración anterior fijaba una temperatura por rol, y
+cada una tenía su motivo:
+
+| Rol | Temperatura anterior | Para qué |
+|---|---|---|
+| Arquitecto | 0.9 | Que dos ejecuciones no produzcan la misma novela |
+| Escritor | 0.8 | Prosa con variedad |
+| Validadores | **0.1** | Que juzgar el mismo texto dos veces dé el mismo resultado |
+
+Las dos primeras eran comodidades: un modelo por defecto ya escribe con
+variedad suficiente, y si una premisa sale sosa se relanza al arquitecto. La
+tercera no era una comodidad, era un cimiento.
+
+**Qué implica para la regla de mejor versión (spec §6.4, `EJECUCION.md` §3.5f).**
+La regla dice que, agotada la escalera sin aprobación, se acepta el intento de
+menor puntuación, siendo:
+
+```
+puntuacion = Σ (problemas de los tres validadores × peso de su gravedad)
+```
+
+Con los validadores a 0.1, esa puntuación era casi una **medida**: el mismo
+texto juzgado dos veces daba la misma lista de problemas, así que una diferencia
+de dos puntos entre el intento 3 y el intento 5 significaba algo sobre los
+textos. Sin temperatura fija, parte de esa diferencia es ruido de muestreo del
+propio validador, no una propiedad del capítulo.
+
+La regla **se mantiene**, porque sigue siendo la mejor respuesta disponible a
+"elige uno de seis textos malos", pero baja de categoría: deja de ser una medida
+y pasa a ser una **ordenación aproximada entre intentos de un mismo capítulo
+dentro de una misma generación**. De ahí tres consecuencias concretas:
+
+1. **Nunca compares puntuaciones entre capítulos ni entre generaciones.** Antes
+   ya era discutible; ahora carece de sentido.
+2. **Nada debe depender de un umbral absoluto de puntuación.** No se puede
+   escribir "si la puntuación baja de 5, apruébalo": el mismo capítulo puede
+   puntuar 4 o 6 según el día. El único criterio de aprobación sigue siendo el
+   de la regla 1: los tres validadores dicen `PASA`.
+3. **El desempate gana peso.** Ante puntuaciones parecidas —y ahora lo van a ser
+   más a menudo— manda la regla de "gana el intento más tardío". No es un
+   capricho: el intento tardío ha incorporado más feedback acumulado, y eso sí es
+   una propiedad real del texto, no una casualidad del muestreo.
+
+**Qué hacer en su lugar.** Fijar `modelos.validadores` y no tocarlo durante una
+generación pasa de ser una regla prudente a ser **la única palanca que queda**
+para que dos intentos sean comparables. Por eso la regla 3 de `EJECUCION.md` §4
+se mantiene y se refuerza. Y al leer el informe, fíate de los problemas
+concretos y de su evidencia —que son verificables abriendo el manuscrito— antes
+que de la diferencia de uno o dos puntos entre dos intentos.
+
+**Alternativa descartada:** pedir el mismo veredicto tres veces y quedarse con la
+mediana. Reduciría el ruido de verdad, pero triplica las delegaciones de
+validación, que ya son tres por intento y hasta dieciocho por capítulo. No
+compensa para una regla que solo se aplica cuando ya han fallado los seis
+intentos.
 
 ---
 

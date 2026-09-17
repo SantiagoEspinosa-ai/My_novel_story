@@ -4,9 +4,15 @@
 hace el harness cuando se lanza, en qué orden, con qué reglas y qué deja en
 disco. Es la referencia que manda sobre el comportamiento en tiempo de
 ejecución; el `SPEC-generador-novelas-v3.md` explica el *porqué* de cada
-decisión y la `ADENDA-openrouter-vscode.md` la capa de modelos.
+decisión y `DECISIONES.md` recoge lo que se comprobó ejecutándolo.
 
 **A quién va dirigido:** a quien ejecuta el harness, no a quien lo programa.
+
+**Quién ejecuta el harness:** una sesión de Claude Code. No hay un programa que
+se lance y funcione solo. El orquestador es la sesión: lee el estado, delega en
+subagentes, recoge lo que devuelven y vuelve a escribir el estado. Los comandos
+de este documento son las piezas de apoyo que esa sesión invoca entre
+delegación y delegación.
 
 ---
 
@@ -21,19 +27,16 @@ dice qué puedes ejecutar hoy:
 | Cargador de configuración | `src/config.py` | ✅ implementado |
 | Biblia: contrato, hechos, timeline | `src/biblia.py` | ✅ implementado |
 | Estado y reanudación | `src/estado.py` | ✅ implementado |
-| Cliente de modelos, prompts, parseo, límites | `src/agentes.py` | ✅ implementado |
 | Ventanas de contexto y presupuesto | `src/contexto.py` | ✅ implementado |
-| Pipeline mínimo arquitecto → escritor | `src/orquestador.py` | ✅ implementado |
-| Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (etapa 5) |
-| Validadores y bucle de reescritura | `src/orquestador.py` | ⬜ pendiente (etapas 6 y 8) |
-| Escalera de modelos y puntuación | `src/puntuacion.py` | ⬜ pendiente (etapa 7) |
-| Resúmenes redactados por un modelo | `src/orquestador.py` | ⬜ pendiente (etapa 6) |
-| Ensamblador e informe | `src/ensamblador.py` | ⬜ pendiente (etapa 10) |
+| Los cinco subagentes y sus skills puente | `.claude/agents/`, `.claude/skills/` | ✅ implementado |
+| Máquina de estados de la orquestación | `src/orquestacion.py` | ⬜ pendiente |
+| Veredictos y puntuación | `src/puntuacion.py` | ⬜ pendiente |
+| Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
+| Resúmenes redactados por un modelo | orquestación | ⬜ pendiente |
+| Ensamblador e informe | `src/ensamblador.py` | ⬜ pendiente |
 
-Mientras falten los validadores, el paso 5 del flujo se queda en su versión
-corta: el escritor genera cada capítulo con el **primer** modelo de la escalera
-y lo que salga se guarda en `salida/capitulos/`. No hay validación, ni
-reescritura, ni escalado, ni puntuación.
+Los cinco subagentes están probados uno a uno con datos de juguete (ver la
+tabla final de `DECISIONES.md`). Lo que falta es la máquina que los encadena.
 
 Los comandos marcados con ⬜ en la sección 2 fallarán hasta que llegue su etapa.
 Eso es lo esperado, no un error de instalación.
@@ -46,18 +49,28 @@ Eso es lo esperado, no un error de instalación.
 
 | Requisito | Comprobación | Notas |
 |---|---|---|
+| Claude Code 2.1.271 o superior | `claude --version` | Por debajo de 2.1.271, `omitClaudeMd` se ignora en silencio y los validadores dejan de estar aislados (`DECISIONES.md`, hallazgo 3) |
 | Python 3.10 o superior | `python --version` | Probado con 3.12 |
 | pytest | `python -m pytest --version` | Solo para los tests |
-| SDK de OpenAI | `python -c "import openai"` | Cliente de OpenRouter (adenda §3.2). Hace falta para ejecutar, no para los tests |
-| Cuenta de OpenRouter con crédito | panel de openrouter.ai | Con un límite de gasto puesto |
-| Clave `OPENROUTER_API_KEY` | ver §1.3 | Nunca en el código ni en `config.json` |
+
+Y nada más. En concreto, **no** hacen falta:
+
+- una clave de API de ningún tipo;
+- una cuenta en OpenRouter ni crédito en ningún proveedor;
+- el SDK de OpenAI ni ningún cliente HTTP.
+
+Las llamadas a modelo las hace Claude Code con tu suscripción. El harness no
+tiene credenciales propias y ningún módulo de Python sale a la red.
+
+> Si vienes de la arquitectura anterior, el archivo `.env` de la raíz ya no se
+> lee. Puedes borrarlo sin consecuencias.
 
 ### 1.2 Instalación
 
 Desde la raíz del proyecto, en PowerShell:
 
 ```powershell
-python -m pip install pytest openai
+python -m pip install pytest
 ```
 
 Si prefieres aislar el proyecto (recomendado, pero opcional):
@@ -65,53 +78,33 @@ Si prefieres aislar el proyecto (recomendado, pero opcional):
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install pytest openai
+python -m pip install pytest
 ```
 
 `.venv/` ya está en `.gitignore`.
 
-### 1.3 La clave de API
+### 1.3 Los subagentes
 
-La clave de OpenRouter se lee **exclusivamente** de la variable de entorno
-`OPENROUTER_API_KEY`. No va en `config.json`, no va en el código, no se
-imprime en ningún log.
+Los cinco agentes viven en `.claude/agents/` y sus skills puente en
+`.claude/skills/`. No hay que instalarlos: Claude Code los descubre al abrir el
+proyecto.
 
-Para una sola sesión de terminal:
+Dos cosas que ahorran una tarde de depuración, ambas comprobadas y anotadas en
+`DECISIONES.md`:
 
-```powershell
-$env:OPENROUTER_API_KEY = "tu_clave_de_openrouter"
-```
-
-Para dejarla puesta de forma permanente en tu usuario de Windows:
-
-```powershell
-[Environment]::SetEnvironmentVariable("OPENROUTER_API_KEY", "tu_clave", "User")
-```
-
-Después de esto hay que **abrir una terminal nueva**: las ya abiertas conservan
-el entorno antiguo.
-
-También puedes ponerla en el archivo `.env` de la raíz, que está en
-`.gitignore` y nunca se versiona:
-
-```
-OPENROUTER_API_KEY=tu_clave_de_openrouter
-```
-
-El harness lo lee al arrancar. Una variable que **ya exista** en la terminal no
-se pisa: lo que escribes a mano manda sobre el archivo, que es lo que uno
-espera al hacer una prueba rápida.
-
-Comprobar que la variable existe, sin imprimir su valor:
-
-```powershell
-if ($env:OPENROUTER_API_KEY) { "definida" } else { "NO definida" }
-```
+- **Un subagente nuevo no aparece en caliente.** Si creas o renombras un archivo
+  en `.claude/agents/`, hay que reiniciar Claude Code o recargar la ventana de
+  VS Code. Editar el *cuerpo* de uno que ya existía sí se recoge al vuelo. Las
+  skills sí se recargan solas.
+- **`claude --agent <nombre>` no precarga las skills.** Un subagente lanzado así
+  responde `SIN INSTRUCCIONES`. Solo la ruta de delegación —que es la que usa el
+  orquestador— le entrega su prompt de sistema. No se puede probar un subagente
+  con `--agent` y concluir nada.
 
 ### 1.4 Ajustar la configuración
 
-Todo lo ajustable vive en `config.json`. Para depurar, baja el coste antes de la
-primera ejecución larga (adenda §9):
+Todo lo ajustable vive en `config.json`. Para depurar, baja el tamaño del
+trabajo antes de la primera ejecución larga:
 
 ```json
 "estructura": { "num_capitulos": 2 },
@@ -148,14 +141,12 @@ python -m pytest tests/test_config.py -v     # solo los de configuración
 python -m pytest -k perfil -v                # solo los que mencionan "perfil"
 ```
 
-Los tests **no tocan la red ni tu clave de API**: usan configuraciones de
-juguete en carpetas temporales y una clave falsa. Deben pasar siempre, tengas o
-no crédito en OpenRouter.
+Los tests **no tocan la red y no delegan en ningún subagente**: usan
+configuraciones de juguete en carpetas temporales. Deben pasar siempre.
 
 ### 2.2 Comprobar la configuración efectiva ✅
 
-Carga, fusiona, valida y vuelca `salida/config-efectiva.json` sin gastar una
-sola llamada a modelo:
+Carga, fusiona y valida sin gastar una sola delegación:
 
 ```powershell
 python -c "from src.config import cargar_config; c = cargar_config(); print(c['novela']['genero'], c['estructura']['num_capitulos'])"
@@ -163,38 +154,38 @@ python -c "from src.config import cargar_config; c = cargar_config(); print(c['n
 
 Si algo está mal configurado, aquí te enteras gratis.
 
-### 2.3 Prueba de conexión ✅
+### 2.3 Comprobar el entorno y el inventario ⬜
 
 ```powershell
-python -m src.agentes --probar-conexion
+python -m src.orquestacion comprobar
 ```
 
-Hace lo mínimo para confirmar que la capa de modelos funciona:
+Verifica lo que tiene que estar en su sitio antes de empezar: la versión de
+Claude Code, la configuración válida, los cinco subagentes con su
+`omitClaudeMd`, las cinco skills puente y los prompts de `prompts/`.
 
-1. Comprueba que `OPENROUTER_API_KEY` existe.
-2. Pide a OpenRouter el catálogo de modelos y verifica que **todos** los slugs
-   de `config.json` (escalera del escritor, arquitecto y validadores) están en
-   él.
-3. Lanza una llamada mínima al modelo más barato de la escalera y enseña la
-   respuesta.
+### 2.4 Arrancar y conducir una generación ⬜
 
-Coste: céntimos. Merece la pena antes de cada ejecución larga.
-
-### 2.4 Ejecución completa ✅ (pipeline mínimo, sin validadores)
+La generación no se lanza con un comando: se la pides a la sesión de Claude
+Code, que va invocando estos comandos entre delegación y delegación.
 
 ```powershell
-python -m src.orquestador
+python -m src.orquestacion iniciar              # prepara salida/ y el estado
+python -m src.orquestacion iniciar --desde-cero # ignora el estado anterior
+python -m src.orquestacion estado               # qué toca hacer ahora
+python -m src.orquestacion ventana arquitecto
+python -m src.orquestacion ventana escritor --capitulo 3
+python -m src.orquestacion ventana estilo --capitulo 3
+python -m src.orquestacion registrar-biblia    --archivo salida/.tmp/biblia.raw
+python -m src.orquestacion registrar-intento   --capitulo 3 --archivo salida/.tmp/cap-03.raw
+python -m src.orquestacion registrar-veredicto --capitulo 3 --validador estilo --archivo salida/.tmp/v.raw
+python -m src.orquestacion resolver            --capitulo 3
 ```
 
-Genera la novela entera según `config.json`. Es el comando principal.
-
-Opciones previstas (capa 5 de la precedencia, pendiente):
-
-```powershell
-python -m src.orquestador --config otra-config.json
-python -m src.orquestador --desde-cero          # ignora estado.json
-python -m src.orquestador --solo-capitulo 7     # regenera un capítulo suelto
-```
+`estado` es el comando que hace que la sesión no tenga que recordar nada: dice
+en qué capítulo y en qué intento va, con qué modelo, y cuál es el siguiente
+paso. Se puede cerrar la ventana en mitad de una novela y retomarla desde una
+sesión nueva.
 
 ---
 
@@ -226,22 +217,24 @@ Dos detalles que conviene tener presentes:
   el perfil de romance, no el que hubiera en `config.json`.
 
 El resultado se vuelca en `salida/config-efectiva.json` antes de la primera
-llamada a un modelo, para que el informe sea reproducible.
+delegación, para que el informe sea reproducible.
 
 ### 3.2 Paso 2 — Verificar el entorno
 
-Antes de gastar una sola llamada:
+Antes de gastar una sola delegación:
 
-- `OPENROUTER_API_KEY` existe y no está vacía. Solo se comprueba su existencia:
-  el valor no se lee, ni se guarda, ni se imprime.
-- Los slugs de modelo de `config.json` existen en el catálogo de OpenRouter. Un
-  slug inválido falla en tiempo de ejecución, no al arrancar, así que se
-  comprueba a propósito por adelantado (adenda §3.1).
+- La versión de Claude Code es 2.1.271 o superior. Por debajo, los validadores
+  reciben CLAUDE.md y el aislamiento del spec §2.2 no se cumple.
+- Los cinco subagentes existen, llevan `omitClaudeMd: true` y declaran su skill
+  puente. Los prompts de `prompts/` existen y no están vacíos.
+- Los alias de modelo de `config.json` están entre `haiku`, `sonnet`, `opus` y
+  `fable`. Un alias inválido falla en el momento de delegar, no al arrancar, así
+  que se comprueba a propósito por adelantado.
 - La configuración es válida: `num_capitulos` entero positivo, `palabras_min <
   palabras_max`, género entre `romance`, `drama` y `terror`.
 
-Si algo falla, el harness aborta **antes** de gastar dinero, con un mensaje en
-español que dice qué arreglar. Este es el único punto del flujo donde abortar es
+Si algo falla, el harness aborta **antes** de empezar, con un mensaje en español
+que dice qué arreglar. Este es el único punto del flujo donde abortar es
 correcto.
 
 ### 3.3 Paso 3 — Reanudar si procede
@@ -252,10 +245,10 @@ capítulos ya aprobados no se regeneran. Ver la sección 6.
 
 ### 3.4 Paso 4 — El arquitecto
 
-Una única llamada al modelo del arquitecto (temperatura 0.9: aquí quieres
-variedad). Devuelve la biblia de la novela: premisa, conflicto central,
-ambientación, 3–6 personajes con rasgos verificables, outline de exactamente
-`num_capitulos` entradas y timeline.
+Una única delegación al subagente `arquitecto`, con el modelo de
+`modelos.arquitecto`. Devuelve la biblia de la novela: premisa, conflicto
+central, ambientación, 3–6 personajes con rasgos verificables, outline de
+exactamente `num_capitulos` entradas y timeline.
 
 Su salida **tiene que parsear** como el `biblia.json` del spec §7.1. Si no
 parsea, se reintenta **una vez** pasándole el error de parseo. Si vuelve a
@@ -268,7 +261,7 @@ hay novela que escribir, así que seguir no tendría sentido.
 
 Para cada capítulo del outline, en orden:
 
-**a. Llamar al escritor.** Su ventana de contexto la monta `src/contexto.py`
+**a. Delegar en el escritor.** Su ventana de contexto la monta `src/contexto.py`
 según el spec §2.2, y contiene exactamente esto:
 
 | Entra | No entra |
@@ -288,17 +281,21 @@ importante del proyecto (spec §12.9).
 de validarlo. Sin esto no se podría elegir la mejor versión al agotar la
 escalera.
 
-**c. Los tres validadores, en paralelo.** `asyncio.gather(...,
-return_exceptions=True)` sobre continuidad, género y estilo (adenda §5). Cada
-uno recibe solo lo suyo y devuelve un JSON de veredicto (spec §7.2). Una
-excepción en uno no tumba a los otros dos: se convierte en un veredicto
-`INDETERMINADO`, que cuenta como `FALLO`.
+**c. Los tres validadores, en paralelo.** Las tres delegaciones se lanzan **en un
+solo mensaje**: eso, y solo eso, es lo que las hace correr a la vez. Cada
+validador recibe solo lo suyo y devuelve un JSON de veredicto (spec §7.2). Uno
+que falle no tumba a los otros dos: se registra como `INDETERMINADO`, que cuenta
+como `FALLO`.
 
 | Validador | Qué audita | Qué ve |
 |---|---|---|
 | Continuidad | Rasgos, nombres, cronología, hechos, objetos, lugares, punto de vista | Biblia completa + texto del capítulo |
-| Género | Registro emocional, ritmo, elementos de la fase del arco, clichés prohibidos | `prompts/referencias/<genero>.md` + texto + posición en el arco |
+| Género | Registro emocional, ritmo, elementos de la fase del arco, clichés prohibidos | Ruta de `prompts/referencias/<genero>.md`, que lee él mismo, + texto + posición en el arco |
 | Estilo | Repetición léxica y sintáctica, muletillas, clichés de prosa, diálogo sin subtexto | Texto + `memoria-estilo.json` |
+
+El validador de género es el único que lee un archivo: se le pasa la ruta de su
+referencia, no su contenido, para no arrastrar 2,5 KB de convenciones por el
+contexto del orquestador una vez por capítulo.
 
 **d. Aprobar solo si los tres devuelven `PASA`.** Los tres bloquean por igual.
 Un único `FALLO`, de cualquier validador y con cualquier gravedad, dispara la
@@ -314,16 +311,18 @@ por capítulo:
 
 | Intentos | Modelo del escritor |
 |---|---|
-| 1, 2 | `mistralai/mistral-small-2603` |
-| 3, 4 | `deepseek/deepseek-v3.2` |
-| 5, 6 | `anthropic/claude-sonnet-4.6` |
+| 1, 2 | `haiku` |
+| 3, 4 | `sonnet` |
+| 5, 6 | `opus` |
 
-La escalera cruza proveedores a propósito: cuando un modelo se atasca en un
-error, otro de la misma familia tiende a repetirlo (adenda §3.3). La
-contrapartida es que cada proveedor escribe con otra voz, y por eso
+El alias se pasa en cada delegación y **pisa al `model` del frontmatter** del
+subagente. Por eso el escritor es un solo subagente y no tres: tres archivos en
+paralelo se desincronizan y los intentos dejarían de ser comparables.
+
 `mantener_voz_ganadora: true` hace que, una vez que un modelo resuelve un
 capítulo, el siguiente empiece por ese mismo modelo en lugar de volver al
-primero de la escalera.
+primero de la escalera. Cada escalón escribe con otra voz, y saltar de vuelta
+al primero en cada capítulo se nota al leer.
 
 **f. Agotada la escalera sin aprobación: aceptar la mejor versión.** Se calcula:
 
@@ -345,10 +344,9 @@ funde los hechos efímeros antiguos en un resumen por capítulo. Los hechos
 
 ### 3.6 Paso 6 — Ensamblar
 
-Concatena por streaming los capítulos aprobados con su portada en
-`salida/manuscrito.md` y genera `salida/informe-validacion.md`. El ensamblador
-no reescribe nada. Después borra `salida/.tmp/`, salvo que
-`runtime.conservar_intentos` sea `true`.
+Concatena los capítulos aprobados con su portada en `salida/manuscrito.md` y
+genera `salida/informe-validacion.md`. El ensamblador no reescribe nada. Después
+borra `salida/.tmp/`, salvo que `runtime.conservar_intentos` sea `true`.
 
 ---
 
@@ -363,30 +361,38 @@ un fallo de capítulo. Las dos únicas excepciones son previas al bucle: entorno
 inválido (§3.2) y biblia que no parsea (§3.4).
 
 **2. Un validador cuyo JSON no parsea cuenta como `FALLO`, jamás como `PASA`.**
-El procedimiento defensivo (adenda §3.5) es: `json.loads` directo → extraer el
-primer bloque `{...}` equilibrado → repetir la llamada **una vez** incluyendo el
-error de parseo → registrar `INDETERMINADO` y tratarlo como `FALLO`. Si un
-validador roto aprobara por defecto, la validación sería decorativa.
+El procedimiento defensivo es: `json.loads` directo → extraer el primer bloque
+`{...}` equilibrado → repetir la delegación **una vez** incluyendo el error de
+parseo → registrar `INDETERMINADO` y tratarlo como `FALLO`. Si un validador roto
+aprobara por defecto, la validación sería decorativa.
 
 **3. Los validadores no cambian de modelo durante una generación.**
-`modelos.validadores` es fijo de principio a fin, y su temperatura es 0.1. Si el
-modelo o la temperatura cambiaran, las puntuaciones de dos intentos dejarían de
-ser comparables y la regla de mejor versión (§3.5f) no significaría nada.
+`modelos.validadores` es fijo de principio a fin. Es la única palanca que queda
+para que dos intentos del mismo capítulo sean comparables: la temperatura ya no
+se puede fijar desde el harness (`DECISIONES.md`, decisión 9), así que la
+puntuación de §3.5f ya no es una medida estable, sino una comparación entre
+intentos de una misma generación. Cambiar además el modelo la dejaría sin
+ningún significado.
 
-**4. Ningún módulo salvo `src/agentes.py` toca la red.** Un único punto de
-salida. Cuando algo falle, hay un solo sitio donde poner un `print`.
+**4. Ningún código del harness toca la red.** El único que habla con un modelo
+es Claude Code, delegando en subagentes. Un módulo de Python que importe un
+cliente HTTP es un error de diseño, no una optimización.
 
-**5. La clave de API nunca se imprime ni se registra.** Solo se comprueba que la
-variable de entorno existe. No aparece en logs, ni en `config-efectiva.json`, ni
-en el informe, ni en mensajes de error. Hay un test que lo verifica.
+**5. El aislamiento de los validadores no se toca.** Los cinco subagentes llevan
+`omitClaudeMd: true` y `tools: Read` (o ninguna herramienta), y cada validador
+recibe solo su ventana. Ese aislamiento es lo que hace que tres veredictos
+independientes signifiquen algo: si los tres vieran el mismo material y las
+reglas del proyecto, serían tres copias del mismo juicio.
 
-**6. Comprobar los límites antes de cada llamada.** Antes de llamar a un modelo
-se verifica el coste acumulado contra `limites.coste_max_usd` y el número de
-llamadas contra `limites.llamadas_max_totales`. Si se supera y
-`abortar_si_supera_coste` es `true`, se para de forma ordenada: se escribe
-`estado.json`, se ensambla lo que haya y se deja constancia en el informe. Un
-bucle de reintentos mal cerrado quema crédito muy rápido, y el contrato permite
-hasta seis intentos por capítulo.
+**6. Contar las delegaciones y frenar antes del límite.** Antes de cada
+delegación se comprueba el contador acumulado contra
+`limites.delegaciones_max_totales`. Si se supera y
+`abortar_si_supera_delegaciones` es `true`, se para de forma ordenada: se
+escribe `estado.json`, se ensambla lo que haya y se deja constancia en el
+informe. El coste en dinero ya no es medible desde aquí —las llamadas van con la
+suscripción y el orquestador no recibe datos de uso—, pero un bucle de
+reintentos mal cerrado sigue siendo capaz de encadenar cientos de delegaciones,
+y el contrato permite hasta seis intentos por capítulo.
 
 ---
 
@@ -408,7 +414,7 @@ hasta seis intentos por capítulo.
 | Archivo | Contenido | Se actualiza |
 |---|---|---|
 | `capitulos/cap-NN.md` | Texto de cada capítulo generado | Al terminar cada capítulo |
-| `estado.json` | Progreso: capítulo actual, intento, modelo activo, capítulos aprobados | Tras cada intento |
+| `estado.json` | Progreso: capítulo actual, intento, modelo activo, capítulos aprobados, delegaciones gastadas | Tras cada intento |
 | `resumenes/cap-NN.md` | 2–3 frases por capítulo aprobado | Tras cada aprobación |
 | `memoria-estilo.json` | Muletillas y frases recurrentes detectadas | Tras cada validación de estilo |
 | `.tmp/cap-NN-intento-M.md` | Texto de cada intento | Cada intento |
@@ -423,19 +429,25 @@ cuando quieras entender por qué un capítulo salió como salió.
 
 ## 6. Reanudar una ejecución interrumpida
 
-Si la ejecución se corta (cierras la terminal, se cae la red, se agota el
-crédito), el progreso está en `salida/estado.json`, que se escribe tras cada
+Si la sesión se corta (cierras VS Code, se acaba el contexto, se interrumpe la
+generación), el progreso está en `salida/estado.json`, que se escribe tras cada
 intento.
 
 **Para reanudar**, con `runtime.reanudar_si_existe_estado` en `true` (el valor
-por defecto), basta con relanzar el mismo comando:
+por defecto), abre una sesión nueva y pídele que continúe. Lo primero que hará
+es:
 
 ```powershell
-python -m src.orquestador
+python -m src.orquestacion estado
 ```
 
-Los capítulos ya aprobados no se regeneran ni se vuelven a pagar. La ejecución
-retoma el primer capítulo no aprobado.
+que dice en qué capítulo y en qué intento se quedó. Los capítulos ya aprobados
+no se regeneran.
+
+Que el estado viva en archivos y no en la conversación es justo lo que permite
+esto. Una sesión de Claude Code tiene contexto finito y una novela de doce
+capítulos no cabe en ella; el orquestador no recuerda nada entre pasos porque no
+le hace falta.
 
 **Para empezar de cero**, borra el estado:
 
@@ -451,11 +463,11 @@ Remove-Item -Recurse -Force salida
 
 Cuidado: eso se lleva por delante el manuscrito y la biblia.
 
-**Un capítulo que no llegó a generarse** (por ejemplo, porque se cayó la red)
-no cuenta como hecho: se queda pendiente y se reintenta en la siguiente
-ejecución. Un fallo pasajero no puede dejar un agujero permanente en el
-manuscrito. Lo que sí se conserva es un capítulo con texto aceptado por
-puntuación: ese ya está pagado y no se regenera.
+**Un capítulo que no llegó a generarse** (por ejemplo, porque se interrumpió la
+delegación) no cuenta como hecho: se queda pendiente y se reintenta en la
+siguiente ejecución. Un fallo pasajero no puede dejar un agujero permanente en
+el manuscrito. Lo que sí se conserva es un capítulo con texto aceptado por
+puntuación.
 
 **Advertencia:** `estado.json` y `biblia.json` van juntos. Si cambias el género,
 el número de capítulos o la semilla temática en `config.json` y reanudas, estás
@@ -477,7 +489,7 @@ de importancia:
 | `ACEPTADO_POR_PUNTUACION` | Se agotaron los 6 intentos; se quedó el menos malo | Leer los problemas sin resolver y decidir si lo retocas a mano |
 
 **El modelo que lo resolvió.** Si todos los capítulos los resuelve el tercer
-modelo de la escalera, la escalera está mal ordenada o el primero es demasiado
+escalón de la escalera, la escalera está mal ordenada o el primero es demasiado
 flojo para este género: te está costando cinco intentos de más por capítulo.
 
 **El número de intentos.** Un capítulo que necesita cuatro intentos suele
@@ -488,8 +500,10 @@ personaje con rasgos contradictorios.
 (el fragmento concreto del texto) y corrección sugerida. La evidencia es lo que
 te permite ir al manuscrito y juzgar por ti mismo si el validador tenía razón.
 
-**La puntuación.** Menor es mejor. Solo tiene sentido comparar puntuaciones
-dentro de una misma generación, porque dependen del modelo validador.
+**La puntuación.** Menor es mejor, y solo tiene sentido comparar puntuaciones
+**dentro de un mismo capítulo de una misma generación**. Dos intentos del mismo
+capítulo son comparables porque los juzga el mismo modelo con la misma ventana;
+dos capítulos distintos, o dos generaciones distintas, no lo son.
 
 **Los recortes de contexto aplicados.** Si en los últimos capítulos aparecen
 recortes que no aparecían en los primeros, la ventana está creciendo con N y la
@@ -497,8 +511,9 @@ compactación no está haciendo su trabajo. Es la señal de alarma más importan
 del informe: significa que el proyecto no escalaría a una novela más larga.
 
 **Validadores `INDETERMINADO`.** Ese validador no devolvió JSON parseable y
-contó como `FALLO`. Uno suelto es ruido; varios seguidos significan que el modelo
-validador no respeta el formato y hay que cambiarlo.
+contó como `FALLO`. Uno suelto es ruido; varios seguidos significan que el
+modelo validador no respeta el formato y hay que cambiar
+`modelos.validadores`.
 
 ---
 
@@ -508,34 +523,34 @@ validador no respeta el formato y hay que cambiarlo.
 
 | Mensaje | Qué pasa | Arreglo |
 |---|---|---|
-| `Falta la variable de entorno OPENROUTER_API_KEY` | No está definida en **esta** terminal | `$env:OPENROUTER_API_KEY = "tu_clave"`. Si la pusiste como permanente, abre una terminal nueva |
 | `novela.genero vale ... y solo se admiten estos tres` | Género fuera de `romance`, `drama`, `terror` | Corrige `genero` en `config.json` o `NOVELA_GENERO` |
 | `estructura.num_capitulos ... tiene que ser un numero entero mayor que cero` | Valor cero, negativo o no entero | Corrige `num_capitulos` |
 | `estructura.palabras_min (X) tiene que ser menor que estructura.palabras_max (Y)` | Rango invertido | Revisa `estructura` **y** el perfil del género: el rango puede venir de cualquiera de los dos |
+| `modelos.X vale ... y solo se admiten estos alias` | Alias de modelo inválido | Usa `haiku`, `sonnet`, `opus` o `fable`. No se admiten identificadores completos |
 | `La variable de entorno NOVELA_X no corresponde a ningun ajuste` | Nombre mal escrito | Usa el nombre exacto de una clave de `config.json`, o borra la variable |
-| `La variable de entorno NOVELA_X es ambigua` | Ese nombre existe en varias secciones | Usa la ruta completa, p. ej. `NOVELA_MODELOS__ARQUITECTO__MODELO` |
+| `La variable de entorno NOVELA_X es ambigua` | Ese nombre existe en varias secciones | Usa la ruta completa, p. ej. `NOVELA_MODELOS__ARQUITECTO` |
 | `El archivo config.json no es JSON valido` | Coma de más o comillas sin cerrar | Ve a la línea que indica el mensaje |
 
-### 8.2 OpenRouter
+### 8.2 Subagentes
 
 | Síntoma | Qué pasa | Arreglo |
 |---|---|---|
-| `404` o "model not found" | Slug de modelo inexistente o retirado | Los slugs cambian a menudo: verifícalos en openrouter.ai/models y actualiza `config.json` |
-| `401 Unauthorized` | Clave inválida, revocada o mal copiada | Genera una nueva en el panel de OpenRouter |
-| `402` o "insufficient credits" | Sin crédito | Recarga. El progreso está en `estado.json`: al reanudar no pagas lo ya generado |
-| `429 Too Many Requests` | Límite de velocidad del proveedor | El cliente reintenta con espera creciente (`reintentos_red`, `backoff_segundos`). Si persiste, baja el paralelismo o cambia de modelo validador |
-| Timeout | Respuesta más lenta que `proveedor.timeout_segundos` | Sube el timeout o baja `max_tokens` |
-| Se detiene diciendo que se superó el coste | Se alcanzó `limites.coste_max_usd` | Sube el límite a conciencia, o reduce `num_capitulos` e `intentos_por_modelo` |
+| `Agent type not found` | El subagente existe en disco pero la sesión no lo ha visto | Reinicia Claude Code o recarga la ventana de VS Code. Los archivos nuevos de `.claude/agents/` no se recogen en caliente |
+| El subagente responde `SIN INSTRUCCIONES` | No ha recibido su prompt de sistema | Comprueba que el frontmatter declara su skill puente en `skills:` y que la skill existe. Si lo lanzaste con `claude --agent`, ese es el motivo: por esa ruta las skills no se precargan |
+| El validador conoce las reglas del proyecto | `omitClaudeMd` no está haciendo efecto | Comprueba `claude --version`: por debajo de 2.1.271 ese campo se ignora sin avisar. Un campo de frontmatter desconocido no da error |
+| La respuesta del validador viene envuelta en ```json | Lo habitual es que lo añada una sesión intermedia al imprimir, no el validador | No toques el prompt. El parseo defensivo ya quita las vallas |
+| Un validador tarda muchísimo | Se lanzó con un modelo más caro del previsto | `modelos.validadores` debe ser fijo. Comprueba que la delegación pasa ese alias y no otro |
 
 ### 8.3 Generación
 
 | Síntoma | Qué pasa | Arreglo |
 |---|---|---|
-| Un validador sale `INDETERMINADO` | Su JSON no parseó ni tras el reintento. Cuenta como `FALLO` | Si se repite, cambia `modelos.validadores` por un modelo que respete mejor el formato JSON |
+| Un validador sale `INDETERMINADO` | Su JSON no parseó ni tras el reintento. Cuenta como `FALLO` | Si se repite, sube `modelos.validadores` a un modelo que respete mejor el formato |
 | Todos los capítulos salen `ACEPTADO_POR_PUNTUACION` | Los validadores son demasiado estrictos, o el rango de palabras es incompatible con el género | Mira los problemas repetidos en el informe: suelen apuntar a una sola causa |
 | Los capítulos son mucho más cortos o largos de lo pedido | El rango efectivo no es el que crees | Mira `salida/config-efectiva.json`: el perfil del género o una variable `NOVELA_` pueden estar cambiándolo |
 | Reanuda y mezcla dos historias distintas | `estado.json` es de otra configuración | Borra `salida/` y relanza |
-| La prosa cambia de voz entre capítulos | Distintos modelos resolvieron distintos capítulos | Es el efecto conocido de la escalera multiproveedor. `mantener_voz_ganadora: true` lo mitiga |
+| La prosa cambia de voz entre capítulos | Distintos escalones resolvieron distintos capítulos | Es el efecto conocido de la escalera. `mantener_voz_ganadora: true` lo mitiga |
+| Dos intentos del mismo capítulo puntúan raro | Sin temperatura fija, el validador no es del todo reproducible | Es esperado y está documentado en `DECISIONES.md`, decisión 9. Fíate de los problemas concretos y de su evidencia, no de diferencias de uno o dos puntos |
 | `ModuleNotFoundError: No module named 'src'` | Lo lanzaste desde otra carpeta | Ejecuta siempre desde la raíz del proyecto |
 
 ---
@@ -545,7 +560,9 @@ validador no respeta el formato y hay que cambiarlo.
 | Documento | Para qué |
 |---|---|
 | `SPEC-generador-novelas-v3.md` | Especificación completa y el porqué de cada decisión |
-| `ADENDA-openrouter-vscode.md` | Capa de modelos sobre OpenRouter y montaje. Manda sobre el spec donde se contradigan |
+| `DECISIONES.md` | Lo que se comprobó ejecutándolo, y por qué la arquitectura es como es |
 | `CLAUDE.md` | Reglas del proyecto para trabajar en el código |
 | `config.json` | Toda la configuración ajustable |
 | `Harness_novela.drawio.png` | Diagrama del flujo |
+| `ADENDA-openrouter-vscode.md` | **Deprecada.** Arquitectura anterior sobre OpenRouter. Historia, no contrato |
+| `archivo/NOTA.md` | Qué código de la arquitectura anterior se conserva y por qué |

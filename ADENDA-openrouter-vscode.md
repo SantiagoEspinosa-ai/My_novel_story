@@ -1,5 +1,16 @@
 # ADENDA — Runtime sobre OpenRouter y montaje en VS Code
 
+> ## ⚠️ DOCUMENTO DEPRECADO (2026-09-17)
+>
+> Esta adenda describe la arquitectura **anterior**: un programa Python que
+> llamaba a OpenRouter, sin subagentes. El proyecto ya no funciona así. El
+> orquestador es Claude Code y los cinco agentes son subagentes de proyecto.
+>
+> Se conserva como historia y porque explica decisiones que siguen vigentes
+> (parseo defensivo de JSON, escalera multiproveedor). **No la sigas.** El
+> contrato vivo es `EJECUCION.md`, y el porqué del cambio está en
+> `DECISIONES.md`.
+
 **Complementa:** `SPEC-generador-novelas-v3.md`
 **Reemplaza de la v3:** secciones 1.1 (componentes de Claude Code), 9 (subagentes), 10 (hooks), 11.1 (plugin.json) y los nombres de modelo de 4.4.
 **Se mantiene intacto de la v3:** secciones 2 (gestión de contexto), 4 (carpeta config/), 6 (escalado y puntuación), 7 (contratos de datos), 12 (criterios de aceptación).
