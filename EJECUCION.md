@@ -19,14 +19,21 @@ dice qué puedes ejecutar hoy:
 | Pieza | Archivo | Estado |
 |---|---|---|
 | Cargador de configuración | `src/config.py` | ✅ implementado |
-| Tests de configuración | `tests/test_config.py` | ✅ implementado |
-| Contratos de datos, biblia, estado | `src/biblia.py`, `src/estado.py` | ⬜ pendiente (etapa 2) |
-| Cliente de modelos y arquitecto | `src/agentes.py` | ⬜ pendiente (etapa 3) |
-| Escritor y pipeline mínimo | `src/orquestador.py` | ⬜ pendiente (etapa 4) |
-| Presupuesto de contexto | `src/contexto.py` | ⬜ pendiente (etapa 5) |
-| Validadores y bucle de reintentos | `src/orquestador.py` | ⬜ pendiente (etapas 6–8) |
-| Puntuación y escalera | `src/puntuacion.py` | ⬜ pendiente (etapa 7) |
+| Biblia: contrato, hechos, timeline | `src/biblia.py` | ✅ implementado |
+| Estado y reanudación | `src/estado.py` | ✅ implementado |
+| Cliente de modelos, prompts, parseo, límites | `src/agentes.py` | ✅ implementado |
+| Ventanas de contexto y presupuesto | `src/contexto.py` | ✅ implementado |
+| Pipeline mínimo arquitecto → escritor | `src/orquestador.py` | ✅ implementado |
+| Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (etapa 5) |
+| Validadores y bucle de reescritura | `src/orquestador.py` | ⬜ pendiente (etapas 6 y 8) |
+| Escalera de modelos y puntuación | `src/puntuacion.py` | ⬜ pendiente (etapa 7) |
+| Resúmenes redactados por un modelo | `src/orquestador.py` | ⬜ pendiente (etapa 6) |
 | Ensamblador e informe | `src/ensamblador.py` | ⬜ pendiente (etapa 10) |
+
+Mientras falten los validadores, el paso 5 del flujo se queda en su versión
+corta: el escritor genera cada capítulo con el **primer** modelo de la escalera
+y lo que salga se guarda en `salida/capitulos/`. No hay validación, ni
+reescritura, ni escalado, ni puntuación.
 
 Los comandos marcados con ⬜ en la sección 2 fallarán hasta que llegue su etapa.
 Eso es lo esperado, no un error de instalación.
@@ -41,7 +48,7 @@ Eso es lo esperado, no un error de instalación.
 |---|---|---|
 | Python 3.10 o superior | `python --version` | Probado con 3.12 |
 | pytest | `python -m pytest --version` | Solo para los tests |
-| SDK de OpenAI | `python -c "import openai"` | Cliente de OpenRouter (adenda §3.2). Hace falta a partir de la etapa 3 |
+| SDK de OpenAI | `python -c "import openai"` | Cliente de OpenRouter (adenda §3.2). Hace falta para ejecutar, no para los tests |
 | Cuenta de OpenRouter con crédito | panel de openrouter.ai | Con un límite de gasto puesto |
 | Clave `OPENROUTER_API_KEY` | ver §1.3 | Nunca en el código ni en `config.json` |
 
@@ -84,9 +91,16 @@ Para dejarla puesta de forma permanente en tu usuario de Windows:
 Después de esto hay que **abrir una terminal nueva**: las ya abiertas conservan
 el entorno antiguo.
 
-El archivo `.env` de la raíz está en `.gitignore` y hoy **no lo lee nadie**: es
-una nota para ti, no una fuente de configuración. Si en alguna etapa se añade un
-lector de `.env`, se documentará aquí.
+También puedes ponerla en el archivo `.env` de la raíz, que está en
+`.gitignore` y nunca se versiona:
+
+```
+OPENROUTER_API_KEY=tu_clave_de_openrouter
+```
+
+El harness lo lee al arrancar. Una variable que **ya exista** en la terminal no
+se pisa: lo que escribes a mano manda sobre el archivo, que es lo que uno
+espera al hacer una prueba rápida.
 
 Comprobar que la variable existe, sin imprimir su valor:
 
@@ -149,7 +163,7 @@ python -c "from src.config import cargar_config; c = cargar_config(); print(c['n
 
 Si algo está mal configurado, aquí te enteras gratis.
 
-### 2.3 Prueba de conexión ⬜ (etapa 3)
+### 2.3 Prueba de conexión ✅
 
 ```powershell
 python -m src.agentes --probar-conexion
@@ -166,7 +180,7 @@ Hace lo mínimo para confirmar que la capa de modelos funciona:
 
 Coste: céntimos. Merece la pena antes de cada ejecución larga.
 
-### 2.4 Ejecución completa ⬜ (etapa 4 en adelante)
+### 2.4 Ejecución completa ✅ (pipeline mínimo, sin validadores)
 
 ```powershell
 python -m src.orquestador
@@ -393,6 +407,7 @@ hasta seis intentos por capítulo.
 
 | Archivo | Contenido | Se actualiza |
 |---|---|---|
+| `capitulos/cap-NN.md` | Texto de cada capítulo generado | Al terminar cada capítulo |
 | `estado.json` | Progreso: capítulo actual, intento, modelo activo, capítulos aprobados | Tras cada intento |
 | `resumenes/cap-NN.md` | 2–3 frases por capítulo aprobado | Tras cada aprobación |
 | `memoria-estilo.json` | Muletillas y frases recurrentes detectadas | Tras cada validación de estilo |
@@ -435,6 +450,12 @@ Remove-Item -Recurse -Force salida
 ```
 
 Cuidado: eso se lleva por delante el manuscrito y la biblia.
+
+**Un capítulo que no llegó a generarse** (por ejemplo, porque se cayó la red)
+no cuenta como hecho: se queda pendiente y se reintenta en la siguiente
+ejecución. Un fallo pasajero no puede dejar un agujero permanente en el
+manuscrito. Lo que sí se conserva es un capítulo con texto aceptado por
+puntuación: ese ya está pagado y no se regenera.
 
 **Advertencia:** `estado.json` y `biblia.json` van juntos. Si cambias el género,
 el número de capítulos o la semilla temática en `config.json` y reanudas, estás
