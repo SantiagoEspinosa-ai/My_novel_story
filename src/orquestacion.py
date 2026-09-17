@@ -964,14 +964,27 @@ def cmd_registrar_intento(config, salida, capitulo, archivo, escribir=print):
     escalon = escalon_de_intento(config, estado.get("escalon_inicial", 0), numero)
     modelo = modelo_de_escalon(config, escalon)
 
+    palabras = len(texto.split())
+    minimo = config["estructura"]["palabras_min"]
+    maximo = config["estructura"]["palabras_max"]
+
+    # El primer veredicto del intento no lo emite ningun modelo: lo emite el
+    # contador de palabras, aqui mismo y gratis. Si el capitulo esta dentro del
+    # rango, `veredicto_longitud` devuelve None y la lista arranca vacia como
+    # siempre; si no, arranca con un FALLO que bloqueara la aprobacion, sumara a
+    # la puntuacion y viajara con la reescritura igual que los demas problemas.
+    veredicto_longitud = puntuacion.veredicto_longitud(
+        capitulo, palabras, minimo, maximo
+    )
+
     _escribir(ruta_intento_texto(salida, capitulo, numero), texto)
     guardar_intento(salida, capitulo, {
         "capitulo": capitulo,
         "intento": numero,
         "escalon": escalon,
         "modelo": modelo,
-        "palabras": len(texto.split()),
-        "veredictos": [],
+        "palabras": palabras,
+        "veredictos": [veredicto_longitud] if veredicto_longitud else [],
         "resuelto": False,
     })
 
@@ -982,20 +995,21 @@ def cmd_registrar_intento(config, salida, capitulo, archivo, escribir=print):
     estado["modelo_actual"] = modelo
     contar_delegacion(estado, salida)
 
-    palabras = len(texto.split())
-    minimo = config["estructura"]["palabras_min"]
-    maximo = config["estructura"]["palabras_max"]
     escribir(
         "Intento {0} del capitulo {1} guardado ({2} palabras, modelo {3}).".format(
             numero, capitulo, palabras, modelo
         )
     )
-    if not minimo <= palabras <= maximo:
-        # No es un fallo: el rango es cosa de los validadores, no de un contador
-        # de palabras. Pero conviene verlo, porque suele explicar un FALLO.
+    if veredicto_longitud:
         escribir(
-            "  AVISO: fuera del rango configurado ({0}-{1} palabras).".format(
-                minimo, maximo
+            "  FALLO de longitud: fuera del rango configurado ({0}-{1} "
+            "palabras).".format(minimo, maximo)
+        )
+        escribir(
+            "  Cuenta como un problema de gravedad {0} y bloquea la aprobacion "
+            "igual que un validador. Los tres validadores se lanzan de todas "
+            "formas: sus problemas se acumulan con este.".format(
+                puntuacion.GRAVEDAD_LONGITUD
             )
         )
     escribir("")

@@ -31,6 +31,7 @@ dice qué puedes ejecutar hoy:
 | Los seis subagentes y sus skills puente | `.claude/agents/`, `.claude/skills/` | ✅ implementado |
 | Máquina de estados de la orquestación | `src/orquestacion.py` | ✅ implementado |
 | Veredictos y puntuación | `src/puntuacion.py` | ✅ implementado |
+| Comprobación de longitud del capítulo | `src/puntuacion.py` (`veredicto_longitud`) | ✅ implementado |
 | Resúmenes redactados por un modelo | subagente `resumidor` | ✅ implementado |
 | Ensamblador e informe | `src/ensamblador.py` | ✅ implementado |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
@@ -301,9 +302,31 @@ inmediata; los anteriores entran comprimidos. Así la ventana se mantiene
 aproximadamente constante sea cual sea N, que es el criterio de aceptación más
 importante del proyecto (spec §12.9).
 
-**b. Guardar el intento.** El texto va a `salida/.tmp/cap-NN-intento-M.md` antes
-de validarlo. Sin esto no se podría elegir la mejor versión al agotar la
-escalera.
+**b. Guardar el intento y contar las palabras.** El texto va a
+`salida/.tmp/cap-NN-intento-M.md` antes de validarlo. Sin esto no se podría
+elegir la mejor versión al agotar la escalera.
+
+En el mismo momento, `registrar-intento` cuenta las palabras y las compara con
+`estructura.palabras_min` y `estructura.palabras_max`. Si el capítulo está fuera
+de rango, el intento **nace ya con un veredicto de `FALLO`** emitido por un
+cuarto auditor llamado `longitud`, que no es un subagente sino el propio
+contador: no cuesta una delegación, no puede equivocarse y no hace falta
+esperarlo.
+
+Ese veredicto tiene exactamente la misma forma que los de los tres validadores y
+lleva un único problema de gravedad **media**, así que:
+
+- suma a la puntuación del intento como cualquier otro problema medio;
+- **bloquea la aprobación igual que un `FALLO`**, aunque los tres validadores
+  digan `PASA`;
+- viaja con la reescritura por el camino normal, de modo que el escritor lee
+  "el capítulo se queda corto: 944 palabras, y el mínimo configurado son 1200"
+  en su lista de problemas, sin que nadie tenga que añadir texto suelto a su
+  ventana.
+
+Dentro de rango no se emite nada: el contador solo habla cuando tiene una pega.
+La longitud es determinista, así que no se delega en un modelo; ver
+`DECISIONES.md`, hallazgo 11.
 
 **c. Los tres validadores, en paralelo.** Las tres delegaciones se lanzan **en un
 solo mensaje**: eso, y solo eso, es lo que las hace correr a la vez. Cada
@@ -324,6 +347,10 @@ contexto del orquestador una vez por capítulo.
 **d. Aprobar solo si los tres devuelven `PASA`.** Los tres bloquean por igual.
 Un único `FALLO`, de cualquier validador y con cualquier gravedad, dispara la
 reescritura. Un veredicto `PASA` obliga a `problemas: []`.
+
+Y solo si además el capítulo está dentro del rango de palabras: el veredicto de
+`longitud` del paso b, cuando existe, bloquea como un cuarto validador. Tres
+`PASA` sobre un capítulo corto no aprueban nada.
 
 **e. Si falla: acumular problemas y reintentar.** La lista de problemas se
 acumula entre intentos y viaja con cada reescritura. Al agotar
@@ -570,6 +597,15 @@ contó como `FALLO`. Uno suelto es ruido; varios seguidos significan que el
 modelo validador no respeta el formato y hay que cambiar
 `modelos.validadores`.
 
+**El validador `longitud`.** No es un modelo: es el contador de palabras del
+paso 3.5b. Si aparece en la lista de veredictos de un intento, ese intento
+estaba fuera del rango configurado. Que aparezca en un capítulo suelto no dice
+nada; que aparezca en la mayoría significa que el rango de `estructura` no
+encaja con lo que el género y el outline dan de sí, y lo que hay que tocar es la
+configuración, no el escritor. Un capítulo `ACEPTADO_POR_PUNTUACION` con un
+problema de `longitud` sin resolver es un capítulo que entró corto o largo en el
+manuscrito: la regla 1 manda, y es preferible a un hueco, pero conviene saberlo.
+
 ---
 
 ## 8. Errores frecuentes
@@ -603,6 +639,7 @@ modelo validador no respeta el formato y hay que cambiar
 | Un validador sale `INDETERMINADO` | Su JSON no parseó ni tras el reintento. Cuenta como `FALLO` | Si se repite, sube `modelos.validadores` a un modelo que respete mejor el formato |
 | Todos los capítulos salen `ACEPTADO_POR_PUNTUACION` | Los validadores son demasiado estrictos, o el rango de palabras es incompatible con el género | Mira los problemas repetidos en el informe: suelen apuntar a una sola causa |
 | Los capítulos son mucho más cortos o largos de lo pedido | El rango efectivo no es el que crees | Mira `salida/config-efectiva.json`: el perfil del género o una variable `NOVELA_` pueden estar cambiándolo |
+| Todos los intentos fallan por `longitud` y ninguno se acerca al rango | El rango configurado no encaja con el género ni con el outline | Ajusta `estructura.palabras_min` y `palabras_max`, o el perfil del género. Reescribir seis veces no arregla un rango imposible |
 | Reanuda y mezcla dos historias distintas | `estado.json` es de otra configuración | Borra `salida/` y relanza |
 | La prosa cambia de voz entre capítulos | Distintos escalones resolvieron distintos capítulos | Es el efecto conocido de la escalera. `mantener_voz_ganadora: true` lo mitiga |
 | Dos intentos del mismo capítulo puntúan raro | Sin temperatura fija, el validador no es del todo reproducible | Es esperado y está documentado en `DECISIONES.md`, decisión 9. Fíate de los problemas concretos y de su evidencia, no de diferencias de uno o dos puntos |

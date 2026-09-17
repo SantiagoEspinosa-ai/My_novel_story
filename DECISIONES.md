@@ -340,6 +340,76 @@ parada esperando tres frases.
 
 ---
 
+### Hallazgo 11 — La longitud del capítulo era un hueco del spec
+
+**Dónde se vio.** Generando la primera novela de verdad (terror, tres capítulos,
+rango 1200–2200 palabras). El capítulo 1 dio esta secuencia:
+
+| Intento | Palabras | Continuidad | Género | Estilo |
+|---|---|---|---|---|
+| 1 | 1574 | PASA | FALLO: *"el capítulo es largo para el género, condensa"* | FALLO |
+| 2 | **944** | PASA | **PASA** | FALLO |
+
+El escritor obedeció la pega de longitud del validador de género y sobrecorrigió
+hasta 944 palabras, **256 por debajo del mínimo configurado**. El validador de
+género, que en el intento anterior había pedido acortar, aprobó la nueva
+longitud sin decir nada. Los otros dos tampoco la mencionaron: no es su trabajo.
+
+Lo único que detectó el problema fue el propio harness, que imprimió
+`AVISO: fuera del rango configurado (1200-2200 palabras)` al registrar el
+intento. Pero ese aviso no bloqueaba, no puntuaba y, sobre todo, **lo leía la
+sesión orquestadora y no el escritor**: en la reescritura siguiente el escritor
+no habría sabido nada de él.
+
+Si el capítulo hubiera acabado aceptado por puntuación, habría entrado corto en
+el manuscrito con los tres validadores conformes.
+
+**Por qué el spec lo dejó pasar.** El spec repartió toda la auditoría entre tres
+validadores y dio por hecho que un capítulo fuera de rango lo cazaría el de
+género. Es una suposición razonable y resultó ser falsa: el validador de género
+juzga *ritmo*, y un capítulo corto puede tener buen ritmo. Nadie estaba mirando
+el número.
+
+**La decisión.** La longitud es **determinista**: se cuenta con código, no cuesta
+una delegación, no depende de la temperatura y no puede equivocarse. Delegar en
+un modelo algo que se puede contar era el error de diseño.
+
+Desde ahora, `registrar-intento` compara el recuento con el rango y, si se sale,
+emite él mismo un veredicto de un cuarto auditor llamado `longitud`
+(`puntuacion.veredicto_longitud`). No es un subagente: es el contador. Su
+veredicto tiene **exactamente la misma forma** que el de los tres validadores,
+con un problema de gravedad media.
+
+Esa igualdad de forma es lo importante, porque hace que el resto del harness no
+tenga que enterarse de nada:
+
+- `puntuar` lo suma como cualquier problema medio;
+- `aprueba` lo trata como un `FALLO` y bloquea, aunque los tres validadores
+  digan `PASA`;
+- `problemas_acumulados` lo recoge y lo mete en la ventana del escritor, que en
+  la reescritura lee *"el capítulo se queda corto: 944 palabras, y el mínimo
+  configurado son 1200"*;
+- el informe de validación lo lista como un validador más.
+
+**Por qué gravedad media y no alta.** Un capítulo fuera de rango sigue siendo un
+capítulo utilizable. Si la escalera se agota, la regla 1 manda y el capítulo
+entra en el manuscrito marcado como `ACEPTADO_POR_PUNTUACION`: preferible a un
+hueco. Pero pesa más que una muletilla, porque el rango es un requisito explícito
+de la configuración y no una opinión sobre la prosa.
+
+**Por qué no se emite un `PASA` cuando está en rango.** Obligaría a esperarlo en
+`aprueba` y a listarlo en el informe de todos los capítulos bien escritos. El
+contador solo habla cuando tiene una pega.
+
+**Efecto secundario en los tests.** Los capítulos de juguete de la suite son
+frases sueltas ("Texto del capitulo 1."), así que con un rango realista
+suspenderían todos por longitud sin que eso sea lo que miden. La fixture
+`entorno` abre el rango de par en par a propósito, y los tests que sí prueban la
+regla montan su propia configuración con un rango estrecho, para que cada uno
+diga en su cuerpo qué longitud espera.
+
+---
+
 ### Estado de las pruebas de los subagentes (2026-09-17)
 
 Todos probados con datos de juguete, con infracciones plantadas a propósito para

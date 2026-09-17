@@ -43,6 +43,14 @@ import json
 
 VALIDADORES = ("continuidad", "genero", "estilo")
 
+# El cuarto auditor del capitulo, y el unico que no es un modelo. Se llama como
+# los otros tres y devuelve un veredicto con la misma forma para que el resto
+# del harness no tenga que distinguirlo: puntua igual, bloquea igual y sus
+# problemas viajan igual con la reescritura. No esta en VALIDADORES porque
+# VALIDADORES es la lista de los que hay que esperar antes de resolver, y a este
+# no se le espera: ya ha contestado cuando se registra el intento.
+VALIDADOR_LONGITUD = "longitud"
+
 GRAVEDADES = ("alta", "media", "baja")
 
 PESOS_POR_DEFECTO = {"alta": 5, "media": 2, "baja": 1}
@@ -56,6 +64,13 @@ INDETERMINADO = "INDETERMINADO"
 # validacion, no una pega menor, y asi el intento nunca gana por defecto a otro
 # que si se dejo auditar.
 GRAVEDAD_INDETERMINADO = "alta"
+
+# Gravedad de un capitulo fuera del rango de palabras. Es "media" y no "alta"
+# porque un capitulo corto o largo sigue siendo un capitulo utilizable: si la
+# escalera se agota, puede acabar en el manuscrito y eso es preferible a un
+# hueco. Pero pesa mas que una muletilla, porque el rango es un requisito
+# explicito de la configuracion y no una opinion sobre la prosa.
+GRAVEDAD_LONGITUD = "media"
 
 
 class ErrorDeVeredicto(Exception):
@@ -196,6 +211,67 @@ def veredicto_indeterminado(validador, capitulo, motivo):
     }
 
 
+def veredicto_longitud(capitulo, palabras, minimo, maximo):
+    """El veredicto del unico auditor determinista: el contador de palabras.
+
+    Devuelve `None` cuando el capitulo esta dentro de [minimo, maximo]. Fuera de
+    rango devuelve un veredicto FALLO con un unico problema de gravedad media,
+    con exactamente la misma forma que los de los tres validadores.
+
+    POR QUE ESTO NO LO MIRA UN MODELO
+    ---------------------------------
+    Contar palabras es determinista: no hace falta delegar en nadie, no cuesta
+    una llamada y no puede equivocarse. Dejarselo a los validadores era un hueco
+    real del diseno, comprobado en ejecucion (DECISIONES.md, hallazgo 11): el
+    validador de genero pidio acortar un capitulo de 1574 palabras, el escritor
+    sobrecorrigio hasta 944 (por debajo del minimo de 1200) y ese mismo validador
+    lo aprobo. Un aviso por pantalla no arregla eso, porque el aviso lo lee la
+    sesion y no el escritor.
+
+    Al entrar en la lista de problemas del intento, en cambio, el escritor recibe
+    "te has quedado en 944 palabras y el minimo son 1200" en la reescritura, sin
+    que nadie tenga que anadir texto suelto a su ventana: el mismo camino que ya
+    recorren los problemas de continuidad, genero y estilo.
+    """
+    if minimo <= palabras <= maximo:
+        return None
+
+    if palabras < minimo:
+        descripcion = (
+            "El capitulo se queda corto: {0} palabras, y el minimo configurado "
+            "son {1}.".format(palabras, minimo)
+        )
+        correccion = (
+            "Desarrollar mas el capitulo hasta entrar en el rango "
+            "{0}-{1} palabras. Ampliar escena y subtexto, no anadir relleno "
+            "descriptivo.".format(minimo, maximo)
+        )
+    else:
+        descripcion = (
+            "El capitulo se pasa de largo: {0} palabras, y el maximo configurado "
+            "son {1}.".format(palabras, maximo)
+        )
+        correccion = (
+            "Recortar hasta entrar en el rango {0}-{1} palabras, quitando lo que "
+            "no haga avanzar la escena.".format(minimo, maximo)
+        )
+
+    return {
+        "validador": VALIDADOR_LONGITUD,
+        "capitulo": capitulo,
+        "veredicto": FALLO,
+        "problemas": [{
+            "gravedad": GRAVEDAD_LONGITUD,
+            "descripcion": descripcion,
+            # La evidencia es el propio recuento: no hay un fragmento del texto
+            # que ensenar, porque el problema es del capitulo entero.
+            "evidencia": "Recuento del intento: {0} palabras (rango configurado: "
+                         "{1}-{2}).".format(palabras, minimo, maximo),
+            "correccion_sugerida": correccion,
+        }],
+    }
+
+
 def _normalizar_problemas(problemas):
     """Deja la lista de problemas con la forma del spec 7.2.
 
@@ -329,6 +405,11 @@ def aprueba(veredictos):
 
     Exige que esten los tres: si falta uno, no hay aprobacion. Un validador que
     no llego a ejecutarse no es un validador que aprueba.
+
+    La lista puede traer un cuarto veredicto, el de `longitud`, que no es un
+    modelo sino el contador de palabras (`veredicto_longitud`). No se exige su
+    presencia —solo aparece cuando el capitulo esta fuera de rango— pero si
+    aparece bloquea como cualquier otro FALLO.
     """
     presentes = {v.get("validador") for v in veredictos}
     if not set(VALIDADORES).issubset(presentes):

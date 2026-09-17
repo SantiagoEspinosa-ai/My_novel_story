@@ -21,7 +21,19 @@ def entorno(tmp_path):
     `directorio_salida` no lo resuelva contra la raiz del proyecto real: los
     tests no pueden escribir en la salida de verdad, que es donde vive el
     trabajo del usuario.
+
+    El rango de palabras se abre de par en par a proposito. Los capitulos de
+    juguete de estos tests son frases sueltas ("Texto del capitulo 1."), y desde
+    que el contador de palabras emite su propio veredicto (`EJECUCION.md` 3.5b)
+    un rango realista los suspenderia todos por longitud, que no es lo que
+    ninguno de ellos quiere medir. Los tests que SI prueban el rango montan su
+    propia configuracion con un rango estrecho; asi cada test dice en su cuerpo
+    que longitud espera, en vez de heredarla de aqui.
     """
-    config = config_minima(3, runtime={"directorio_salida": str(tmp_path / "salida")})
+    config = config_minima(
+        3,
+        runtime={"directorio_salida": str(tmp_path / "salida")},
+        estructura={"palabras_min": 1, "palabras_max": 100000},
+    )
     salida = orquestacion.directorio_salida(config)
     return config, salida

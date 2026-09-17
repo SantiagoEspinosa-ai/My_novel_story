@@ -206,3 +206,85 @@ def test_los_problemas_se_acumulan_sin_repetirse():
     acumulados = puntuacion.problemas_acumulados(intentos)
     assert len(acumulados) == 2
     assert all(p["validador"] == "estilo" for p in acumulados)
+
+
+# ---------------------------------------------------------------------------
+# El cuarto auditor: el contador de palabras
+# ---------------------------------------------------------------------------
+
+
+def test_un_capitulo_dentro_del_rango_no_genera_veredicto_de_longitud():
+    """Dentro de rango no hay nada que decir, y no se inventa un PASA.
+
+    Devolver un PASA obligaria a esperarlo en `aprueba` y a listarlo en el
+    informe de todos los capitulos bien escritos, que es ruido. El contador solo
+    habla cuando tiene una pega.
+    """
+    assert puntuacion.veredicto_longitud(1, 1200, 1200, 2200) is None
+    assert puntuacion.veredicto_longitud(1, 2200, 1200, 2200) is None
+    assert puntuacion.veredicto_longitud(1, 1700, 1200, 2200) is None
+
+
+def test_un_capitulo_corto_falla_con_gravedad_media():
+    resultado = puntuacion.veredicto_longitud(3, 944, 1200, 2200)
+
+    assert resultado["validador"] == puntuacion.VALIDADOR_LONGITUD
+    assert resultado["capitulo"] == 3
+    assert resultado["veredicto"] == puntuacion.FALLO
+    assert len(resultado["problemas"]) == 1
+    assert resultado["problemas"][0]["gravedad"] == "media"
+    # El numero concreto tiene que llegar al escritor: "te has quedado corto" no
+    # le dice cuanto le falta.
+    assert "944" in resultado["problemas"][0]["descripcion"]
+    assert "1200" in resultado["problemas"][0]["descripcion"]
+
+
+def test_un_capitulo_largo_tambien_falla_y_pide_recortar():
+    resultado = puntuacion.veredicto_longitud(3, 2600, 1200, 2200)
+
+    assert resultado["veredicto"] == puntuacion.FALLO
+    assert "2600" in resultado["problemas"][0]["descripcion"]
+    assert "Recortar" in resultado["problemas"][0]["correccion_sugerida"]
+
+
+def test_el_veredicto_de_longitud_tiene_la_forma_de_los_demas():
+    """Si no la tuviera, el resto del harness tendria que distinguirlo."""
+    resultado = puntuacion.veredicto_longitud(1, 100, 1200, 2200)
+
+    assert set(resultado) == {"validador", "capitulo", "veredicto", "problemas"}
+    problema_longitud = resultado["problemas"][0]
+    assert set(problema_longitud) == {
+        "gravedad", "descripcion", "evidencia", "correccion_sugerida",
+    }
+
+
+def test_la_longitud_bloquea_la_aprobacion_como_un_validador_mas():
+    """Los tres validadores dicen PASA y aun asi el capitulo no se aprueba."""
+    veredictos = [
+        puntuacion.leer(veredicto(nombre, 1, "PASA"), nombre, 1)
+        for nombre in puntuacion.VALIDADORES
+    ]
+    assert puntuacion.aprueba(veredictos) is True
+
+    veredictos.append(puntuacion.veredicto_longitud(1, 944, 1200, 2200))
+    assert puntuacion.aprueba(veredictos) is False
+
+
+def test_la_longitud_suma_a_la_puntuacion_con_el_peso_de_media():
+    veredictos = [puntuacion.veredicto_longitud(1, 944, 1200, 2200)]
+    assert puntuacion.puntuar(veredictos) == puntuacion.PESOS_POR_DEFECTO["media"]
+
+
+def test_el_problema_de_longitud_viaja_con_la_reescritura():
+    """Es el objetivo de todo esto: que el escritor lo lea en el intento siguiente."""
+    intentos = [{"veredictos": [puntuacion.veredicto_longitud(1, 944, 1200, 2200)]}]
+    acumulados = puntuacion.problemas_acumulados(intentos)
+
+    assert len(acumulados) == 1
+    assert acumulados[0]["validador"] == puntuacion.VALIDADOR_LONGITUD
+    assert "944" in acumulados[0]["descripcion"]
+
+
+def test_la_longitud_no_esta_entre_los_validadores_que_hay_que_esperar():
+    """`resolver` espera a tres veredictos; el cuarto ya esta desde el registro."""
+    assert puntuacion.VALIDADOR_LONGITUD not in puntuacion.VALIDADORES

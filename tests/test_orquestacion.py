@@ -365,6 +365,9 @@ def test_sin_mantener_voz_ganadora_se_vuelve_al_primer_escalon(tmp_path):
         3,
         runtime={"directorio_salida": str(tmp_path / "salida")},
         modelos={"mantener_voz_ganadora": False},
+        # Mismo motivo que en la fixture `entorno`: aqui se mide la escalera, no
+        # la longitud, y los capitulos de juguete son frases sueltas.
+        estructura={"palabras_min": 1, "palabras_max": 100000},
     )
     salida = orquestacion.directorio_salida(config)
     _preparar((config, salida), tmp_path)
@@ -616,3 +619,127 @@ def test_una_version_ilegible_no_se_inventa():
 def test_la_version_minima_es_la_que_activa_omitclaudemd():
     assert orquestacion.VERSION_MINIMA_CLAUDE == (2, 1, 271)
     assert orquestacion.parsear_version("2.1.263") < orquestacion.VERSION_MINIMA_CLAUDE
+
+
+# ---------------------------------------------------------------------------
+# La longitud, que no la juzga ningun modelo
+# ---------------------------------------------------------------------------
+
+
+def _entorno_con_rango(tmp_path, minimo, maximo):
+    """Un entorno de juguete con un rango de palabras estrecho y explicito."""
+    config = config_minima(
+        3,
+        runtime={"directorio_salida": str(tmp_path / "salida")},
+        estructura={"palabras_min": minimo, "palabras_max": maximo},
+    )
+    return config, orquestacion.directorio_salida(config)
+
+
+def test_un_intento_corto_nace_ya_con_un_veredicto_de_longitud(tmp_path):
+    """El contador contesta al registrar el intento, sin delegar en nadie."""
+    config, salida = _preparar(_entorno_con_rango(tmp_path, 5, 50), tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Dos palabras."),
+        escribir=_silencio,
+    )
+
+    intento = orquestacion.intentos_de_capitulo(salida, 1)[-1]
+    assert [v["validador"] for v in intento["veredictos"]] == ["longitud"]
+    assert intento["veredictos"][0]["veredicto"] == "FALLO"
+
+
+def test_un_intento_en_rango_nace_sin_veredictos(tmp_path):
+    config, salida = _preparar(_entorno_con_rango(tmp_path, 1, 50), tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Dos palabras."),
+        escribir=_silencio,
+    )
+
+    assert orquestacion.intentos_de_capitulo(salida, 1)[-1]["veredictos"] == []
+
+
+def test_la_longitud_tumba_un_capitulo_que_los_tres_validadores_aprueban(tmp_path):
+    """El agujero que se encontro en ejecucion: tres PASA sobre un texto corto.
+
+    Antes de esta comprobacion el capitulo se aprobaba y entraba corto en el
+    manuscrito, con un aviso por pantalla que solo leia la sesion.
+    """
+    config, salida = _preparar(_entorno_con_rango(tmp_path, 5, 50), tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Dos palabras."),
+        escribir=_silencio,
+    )
+    _validar_intento(config, salida, tmp_path, 1, {})
+    orquestacion.cmd_resolver(config, salida, 1, escribir=_silencio)
+
+    intento = orquestacion.intentos_de_capitulo(salida, 1)[-1]
+    assert intento["resultado"] == "REINTENTAR"
+    assert intento["puntuacion"] == 2          # una pega de gravedad media
+    assert not orquestacion.ruta_capitulo(salida, 1).exists()
+
+
+def test_registrar_los_veredictos_no_borra_el_de_longitud(tmp_path):
+    """`registrar-veredicto` reemplaza por nombre; `longitud` no es ninguno."""
+    config, salida = _preparar(_entorno_con_rango(tmp_path, 5, 50), tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Dos palabras."),
+        escribir=_silencio,
+    )
+    _validar_intento(config, salida, tmp_path, 1, {})
+
+    nombres = [
+        v["validador"]
+        for v in orquestacion.intentos_de_capitulo(salida, 1)[-1]["veredictos"]
+    ]
+    assert sorted(nombres) == ["continuidad", "estilo", "genero", "longitud"]
+
+
+def test_el_escritor_recibe_la_longitud_entre_los_problemas(tmp_path):
+    """El objetivo del cambio: que la pega llegue sola a la ventana del escritor."""
+    config, salida = _preparar(_entorno_con_rango(tmp_path, 5, 50), tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Dos palabras."),
+        escribir=_silencio,
+    )
+    _validar_intento(config, salida, tmp_path, 1, {})
+    orquestacion.cmd_resolver(config, salida, 1, escribir=_silencio)
+
+    lineas = []
+    orquestacion.cmd_ventana(config, salida, "escritor", 1, escribir=lineas.append)
+    texto = "\n".join(lineas)
+    assert "(longitud)" in texto
+    assert "el minimo configurado son 5" in texto
+
+
+def test_un_capitulo_largo_tambien_se_reescribe(tmp_path):
+    config, salida = _preparar(_entorno_con_rango(tmp_path, 1, 2), tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Una frase de cinco palabras."),
+        escribir=_silencio,
+    )
+    _validar_intento(config, salida, tmp_path, 1, {})
+    orquestacion.cmd_resolver(config, salida, 1, escribir=_silencio)
+
+    assert orquestacion.intentos_de_capitulo(salida, 1)[-1]["resultado"] == "REINTENTAR"
+
+
+def test_la_longitud_no_impide_aceptar_por_puntuacion(tmp_path):
+    """Regla 1: ningun capitulo detiene la generacion, tampoco por corto.
+
+    Agotada la escalera, un capitulo fuera de rango sigue entrando en el
+    manuscrito y queda marcado en el informe. Es preferible a un hueco.
+    """
+    config, salida = _preparar(_entorno_con_rango(tmp_path, 5, 50), tmp_path)
+    for numero in range(6):
+        orquestacion.cmd_registrar_intento(
+            config, salida, 1,
+            _archivo(tmp_path, "cap.md", "Corto {0}.".format(numero)),
+            escribir=_silencio,
+        )
+        _validar_intento(config, salida, tmp_path, 1, {})
+        orquestacion.cmd_resolver(config, salida, 1, escribir=_silencio)
+
+    assert orquestacion.ruta_capitulo(salida, 1).exists()
+    estado_final = modulo_estado.cargar(salida)
+    assert 1 in estado_final["capitulos_marcados"]
