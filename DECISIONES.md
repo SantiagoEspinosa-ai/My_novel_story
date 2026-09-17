@@ -297,6 +297,7 @@ que un acierto no pueda ser casualidad.
 | `escritor` | Biblia y outline del arquitecto, capítulo 1 | Capítulo con la línea de título exigida, en tercera persona limitada y respetando los rasgos fijos |
 
 La validación de la biblia se hizo con el código Python que se conserva
-(`src/biblia.py` más `extraer_json` de `src/agentes.py`). De paso quedó
+(`src/biblia.py` más `extraer_json`, que entonces vivía en `src/agentes.py`
+y hoy está en `archivo/agentes.py`). De paso quedó
 demostrado por qué el parseo defensivo sigue haciendo falta: la salida del
 subproceso traía una línea de aviso delante del JSON, y el extractor la sorteó.
