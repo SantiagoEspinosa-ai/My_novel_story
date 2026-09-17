@@ -14,8 +14,24 @@ validadores en paralelo lo auditan antes de aprobarlo.
 - `ADENDA-openrouter-vscode.md` — capa de modelos y setup. **Pisa a la v3 donde se
   contradigan.** En concreto: no hay subagentes ni plugins de Claude Code en el
   runtime, y los modelos van por OpenRouter.
+- `EJECUCION.md` — contrato de ejecución. Ver la sección siguiente.
 - `config.json` — toda la configuración ajustable.
 - `Harness_novela.drawio.png` — diagrama del flujo.
+
+## Contrato de ejecución
+
+`EJECUCION.md` es el manual de ejecución del harness y manda sobre el
+comportamiento en tiempo de ejecución: el flujo principal paso a paso, las seis
+reglas inviolables, los archivos de `salida/`, la reanudación y los comandos
+exactos.
+
+- Léelo antes de implementar cualquier etapa. No hace falta que yo te lo repita
+  en cada sesión.
+- Si el código que vas a escribir contradice `EJECUCION.md`, el código está mal.
+  Si crees que el documento es el equivocado, dímelo antes de tocar nada.
+- Cuando una etapa cambie el comportamiento en ejecución o añada un comando,
+  actualiza `EJECUCION.md` en el mismo commit, incluida su tabla de estado de
+  implementación.
 
 ## Reglas del proyecto
 
