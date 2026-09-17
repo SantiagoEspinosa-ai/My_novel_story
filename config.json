@@ -26,7 +26,8 @@
     "intentos_por_modelo": 2,
     "mantener_voz_ganadora": true,
     "arquitecto": "sonnet",
-    "validadores": "haiku"
+    "validadores": "haiku",
+    "resumidor": "haiku"
   },
 
   "validacion": {

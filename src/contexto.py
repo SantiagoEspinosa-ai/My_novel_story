@@ -329,3 +329,25 @@ def ventana_estilo(config, capitulo, texto_capitulo, memoria_estilo=None):
         _bloque("MEMORIA_ESTILO", _json(memoria)),
     ]
     return _finalizar("estilo cap {0}".format(capitulo), _montar(bloques), config)
+
+
+# ---------------------------------------------------------------------------
+# Resumidor
+# ---------------------------------------------------------------------------
+
+
+def ventana_resumidor(config, capitulo, texto_capitulo):
+    """Texto del capitulo y su numero. Nada mas: ni biblia, ni outline.
+
+    Que NO entre el outline es lo importante de esta ventana. El resumidor
+    levanta acta de lo que el capitulo dice, no de lo que estaba previsto que
+    dijera, y darle el plan le invitaria a resumir el plan. Despues de dos o
+    tres reescrituras, un capitulo puede haberse apartado bastante de su
+    sinopsis, y el escritor del capitulo siguiente necesita saber lo que pasa
+    en la novela, no lo que se penso hace seis delegaciones.
+    """
+    bloques = [
+        _bloque("CAPITULO_NUMERO", str(capitulo)),
+        _bloque("CAPÍTULO", texto_capitulo),
+    ]
+    return _finalizar("resumidor cap {0}".format(capitulo), _montar(bloques), config)

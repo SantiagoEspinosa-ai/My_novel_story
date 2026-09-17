@@ -76,6 +76,7 @@ VALORES_POR_DEFECTO = {
         "mantener_voz_ganadora": True,
         "arquitecto": "sonnet",
         "validadores": "haiku",
+        "resumidor": "haiku",
     },
     "validacion": {
         "validadores_activos": ["continuidad", "genero", "estilo"],
@@ -301,7 +302,7 @@ def _validar_modelos(modelos, problemas):
                     "estos alias: {2}.".format(indice, repr(alias), admitidos)
                 )
 
-    for clave in ("arquitecto", "validadores"):
+    for clave in ("arquitecto", "validadores", "resumidor"):
         alias = modelos.get(clave)
         if alias not in MODELOS_PERMITIDOS:
             problemas.append(

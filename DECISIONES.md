@@ -283,7 +283,64 @@ intentos.
 
 ---
 
-### Estado de las pruebas de los cinco subagentes (2026-09-17)
+### Decisión 10 — Los resúmenes los escribe un subagente, no el outline
+
+**El problema.** El escritor del capítulo N recibe el texto completo del
+capítulo N−1 y, de los capítulos 1…N−2, solo un resumen. Ese resumen es lo
+**único** que sabrá de ellos. Alguien tiene que escribirlo, y había dos
+candidatos.
+
+**Opción A, la sinopsis del outline.** Es la que se usó mientras no existía el
+resumidor. Sale gratis: el arquitecto ya la escribió, es determinista y no
+cuesta ninguna delegación.
+
+**Opción B, un subagente que lea el capítulo.** Cuesta una delegación de `haiku`
+por capítulo.
+
+**Decisión: la opción B.** El motivo es que las dos cosas no son la misma:
+
+| | Qué contiene |
+|---|---|
+| Sinopsis del outline | Lo que el arquitecto **planeó** que pasara |
+| Resumen del resumidor | Lo que el capítulo **dice** que pasó |
+
+Mientras un capítulo se aprueba al primer intento, las dos casi coinciden. Pero
+el contrato permite hasta seis intentos, y cada reescritura responde a problemas
+concretos de continuidad, género y estilo: un capítulo que costó cuatro intentos
+ha sido empujado cuatro veces en direcciones que el outline no previó. A partir
+de ahí, la sinopsis describe una novela que no se escribió.
+
+Y el error se acumula hacia adelante. El escritor del capítulo 8 lee los
+resúmenes del 1 al 6. Si tres de ellos describen el plan y no el texto, está
+escribiendo la continuación de una novela que no existe, y quien paga la factura
+es el validador de continuidad, que empezará a sacar `FALLO` sin que el problema
+esté en el capítulo 8.
+
+**Qué se le pasa al resumidor, y qué no.** Recibe el número del capítulo y su
+texto. **No recibe el outline**, y eso es lo importante del diseño: teniendo el
+plan delante resumiría el plan, que es más fácil de resumir y suena mejor
+escrito. La única forma de garantizar que levanta acta del texto es que el texto
+sea lo único que tenga.
+
+Tampoco recibe la biblia ni los capítulos anteriores: no le hacen falta para
+resumir uno solo, y cada cosa que entre en su ventana es una cosa más que puede
+colarse en el resumen.
+
+**Lo que cuesta.** Una delegación de `haiku` por capítulo cerrado, menos el
+último, cuyo resumen no leería nadie. En una novela de doce capítulos son once
+delegaciones sobre las cuarenta y tantas que ya cuesta. Es el añadido más barato
+del harness.
+
+**La válvula de escape.** Si el resumidor devuelve algo que no parsea, el comando
+falla y sugiere reintentar. Si insiste,
+`registrar-resumen --capitulo N --usar-sinopsis` cae a la sinopsis del outline
+sin delegar en nadie. Es peor que el acta, pero la regla 1 dice que ningún
+capítulo detiene la generación, y sería absurdo que una novela entera se quedara
+parada esperando tres frases.
+
+---
+
+### Estado de las pruebas de los subagentes (2026-09-17)
 
 Todos probados con datos de juguete, con infracciones plantadas a propósito para
 que un acierto no pueda ser casualidad.

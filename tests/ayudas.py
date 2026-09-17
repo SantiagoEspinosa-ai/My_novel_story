@@ -89,6 +89,7 @@ def config_minima(num_capitulos=3, **extra):
             "mantener_voz_ganadora": True,
             "arquitecto": "sonnet",
             "validadores": "haiku",
+            "resumidor": "haiku",
         },
         "validacion": {
             "validadores_activos": ["continuidad", "genero", "estilo"],

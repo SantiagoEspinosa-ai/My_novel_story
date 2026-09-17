@@ -5,9 +5,10 @@ Harness generador de novelas de romance, drama y terror, con validación automá
 ## Qué es
 
 Un harness que genera novelas completas usando **Claude Code como orquestador**.
-Un arquitecto diseña la estructura, un escritor redacta cada capítulo, y tres
-validadores en paralelo lo auditan antes de aprobarlo. Los cinco son
-**subagentes de proyecto** definidos en `.claude/agents/`.
+Un arquitecto diseña la estructura, un escritor redacta cada capítulo, tres
+validadores en paralelo lo auditan antes de aprobarlo y un resumidor comprime
+cada capítulo aprobado para los siguientes. Los seis son **subagentes de
+proyecto** definidos en `.claude/agents/`.
 
 No hay ningún programa Python que llame a una API de modelos. El Python que
 queda es infraestructura de apoyo: carga la configuración, valida contratos de
@@ -66,7 +67,7 @@ exactos.
 ## Estructura
 
 ```
-.claude/agents/    los cinco subagentes (no tocar sin pedírmelo)
+.claude/agents/    los seis subagentes (no tocar sin pedírmelo)
 .claude/skills/    skills puente que inyectan cada prompt de sistema
 prompts/           prompts de sistema (no tocar sin pedírmelo)
   referencias/     convenciones por género

@@ -53,6 +53,7 @@ from pathlib import Path
 
 from src import biblia as modulo_biblia
 from src import contexto
+from src import ensamblador
 from src import estado as modulo_estado
 from src import puntuacion
 from src.config import RAIZ_PROYECTO, ErrorDeConfiguracion, cargar_config
@@ -63,10 +64,12 @@ from src.config import RAIZ_PROYECTO, ErrorDeConfiguracion, cargar_config
 # El porque esta en DECISIONES.md, hallazgo 3.
 VERSION_MINIMA_CLAUDE = (2, 1, 271)
 
-SUBAGENTES = ("arquitecto", "escritor", "continuidad", "genero", "estilo")
+SUBAGENTES = (
+    "arquitecto", "escritor", "continuidad", "genero", "estilo", "resumidor",
+)
 
 # Roles que admite el comando `ventana`.
-ROLES_VENTANA = ("arquitecto", "escritor") + puntuacion.VALIDADORES
+ROLES_VENTANA = ("arquitecto", "escritor") + puntuacion.VALIDADORES + ("resumidor",)
 
 
 class ErrorDeOrquestacion(Exception):
@@ -113,6 +116,25 @@ def ruta_intento_texto(salida, capitulo, intento):
 
 def ruta_intento_datos(salida, capitulo, intento):
     return _tmp(salida) / "cap-{0:02d}-intento-{1}.json".format(capitulo, intento)
+
+
+def ruta_ventana(salida, capitulo):
+    """Donde se apunta el tamano de la ventana del escritor de un capitulo.
+
+    Sin este apunte el informe no podria contestar a la pregunta del
+    criterio de aceptacion 9 del spec: si la ventana del capitulo 12 es
+    mayor que la del 3, la arquitectura no escala. Se escribe al pedir la
+    ventana, que es el unico momento en que ese dato existe.
+    """
+    return _tmp(salida) / "cap-{0:02d}-ventana.json".format(capitulo)
+
+
+def ruta_manuscrito(salida):
+    return Path(salida) / "manuscrito.md"
+
+
+def ruta_informe(salida):
+    return Path(salida) / "informe-validacion.md"
 
 
 def preparar_directorios(salida):
@@ -223,6 +245,31 @@ def cargar_resumenes(salida):
             encoding="utf-8"
         ).strip()
     return resumenes
+
+
+def capitulos_sin_resumen(config, salida, estado):
+    """Capitulos ya cerrados a los que todavia les falta su resumen.
+
+    Se saltan dos casos, y los dos a proposito:
+
+    - El ULTIMO capitulo de la novela. Su resumen no lo leeria nadie: los
+      resumenes alimentan la ventana de capitulos posteriores, y despues del
+      ultimo no hay ninguno. Resumirlo seria pagar una delegacion por un
+      archivo que nadie abre.
+    - Los capitulos que aun no estan cerrados. Resumir un texto que todavia
+      puede reescribirse produciria un resumen que describe una version
+      muerta.
+    """
+    total = config.get("estructura", {}).get("num_capitulos", 1)
+    cerrados = sorted(
+        set(estado.get("capitulos_aprobados", []))
+        | set(estado.get("capitulos_marcados", []))
+    )
+    return [
+        numero
+        for numero in cerrados
+        if numero < total and not ruta_resumen(salida, numero).is_file()
+    ]
 
 
 def texto_capitulo_anterior(salida, capitulo):
@@ -400,6 +447,16 @@ def siguiente_paso(config, salida):
     if not modulo_biblia.existe(salida):
         return {"paso": "arquitecto", "modelo": config["modelos"]["arquitecto"]}
 
+    # El resumen va antes que el capitulo siguiente: el texto completo del
+    # capitulo recien cerrado vive en .tmp/, y .tmp/ se borra al ensamblar.
+    faltan = capitulos_sin_resumen(config, salida, estado)
+    if faltan:
+        return {
+            "paso": "resumir",
+            "capitulo": faltan[0],
+            "modelo": config["modelos"]["resumidor"],
+        }
+
     pendientes = modulo_estado.capitulos_pendientes(estado, num_capitulos)
     if not pendientes:
         return {"paso": "ensamblar", "capitulos": num_capitulos}
@@ -454,7 +511,7 @@ _INSTRUCCIONES = {
     ],
     "ensamblar": [
         "Todos los capitulos estan hechos. Toca ensamblar el manuscrito.",
-        "  (etapa pendiente: src/ensamblador.py)",
+        "  python -m src.orquestacion ensamblar",
     ],
 }
 
@@ -523,6 +580,22 @@ def _lineas_del_paso(paso, salida):
             "--validador <nombre> --archivo <ruta>".format(paso["capitulo"]),
         ]
         return lineas
+
+    if nombre == "resumir":
+        return [
+            "Toca resumir el capitulo {0}, que ya esta cerrado.".format(
+                paso["capitulo"]
+            ),
+            "  1. python -m src.orquestacion ventana resumidor --capitulo {0}".format(
+                paso["capitulo"]
+            ),
+            "  2. Delegar en el subagente `resumidor` con model={0}".format(
+                paso["modelo"]
+            ),
+            "  3. Guardar la respuesta cruda y registrarla:",
+            "     python -m src.orquestacion registrar-resumen --capitulo {0} "
+            "--archivo <ruta>".format(paso["capitulo"]),
+        ]
 
     if nombre == "resolver":
         return [
@@ -693,7 +766,7 @@ def cmd_comprobar(config, salida, escribir=print):
             escribir("  - {0}".format(problema))
         return 1
 
-    escribir("OK Los cinco subagentes, sus skills y sus prompts estan en su sitio.")
+    escribir("OK Los seis subagentes, sus skills y sus prompts estan en su sitio.")
     escribir("OK Todo listo. Siguiente: python -m src.orquestacion iniciar")
     return 0
 
@@ -768,6 +841,18 @@ def cmd_ventana(config, salida, rol, capitulo=None, escribir=print):
             texto_anterior=texto_capitulo_anterior(salida, capitulo),
             problemas=_problemas_legibles(salida, capitulo),
         )
+        _escribir(
+            ruta_ventana(salida, capitulo),
+            json.dumps(
+                {
+                    "capitulo": capitulo,
+                    "tokens": ventana.tokens,
+                    "recortes": ventana.recortes,
+                },
+                indent=2,
+                ensure_ascii=False,
+            ) + "\n",
+        )
         escribir(ventana.texto)
         if ventana.recortes:
             # Los avisos van por stderr para que la ventana que sale por stdout
@@ -777,6 +862,16 @@ def cmd_ventana(config, salida, rol, capitulo=None, escribir=print):
                 "AVISO recortes de contexto aplicados: " + "; ".join(ventana.recortes),
                 file=sys.stderr,
             )
+        return 0
+
+    if rol == "resumidor":
+        # El resumidor es el unico que trabaja sobre el capitulo YA CERRADO, no
+        # sobre un intento: resumir un texto que todavia puede reescribirse
+        # produciria un resumen de una version muerta.
+        texto = _leer_archivo(
+            ruta_capitulo(salida, capitulo), "el texto del capitulo cerrado"
+        )
+        escribir(contexto.ventana_resumidor(config, capitulo, texto).texto)
         return 0
 
     # Los validadores auditan el ULTIMO intento registrado, no el capitulo
@@ -960,6 +1055,142 @@ def cmd_registrar_veredicto(config, salida, capitulo, validador, archivo, escrib
     return 0
 
 
+def _sinopsis_del_outline(config, salida, capitulo):
+    """La sinopsis que el arquitecto escribio para ese capitulo, o un relleno."""
+    biblia = modulo_biblia.cargar(salida, config["estructura"]["num_capitulos"])
+    entrada = modulo_biblia.entrada_outline(biblia, capitulo) or {}
+    return (entrada.get("sinopsis") or "Capitulo {0}.".format(capitulo)).strip()
+
+
+def cmd_registrar_resumen(config, salida, capitulo, archivo=None, usar_sinopsis=False,
+                          escribir=print):
+    """Guarda el resumen de un capitulo cerrado.
+
+    Con `usar_sinopsis` no delega en nadie: cae a la sinopsis del outline. Es la
+    valvula de escape de la regla 1. Si el resumidor devuelve algo ilegible dos
+    veces seguidas, la novela no se puede quedar parada esperando un resumen de
+    tres frases: se usa el plan, que es peor que el acta pero infinitamente
+    mejor que abortar. El informe no lo refleja porque el resumen no forma parte
+    del manuscrito; si pasa, se ve en `salida/.tmp/`.
+    """
+    estado = cargar_estado(config, salida)
+
+    if usar_sinopsis:
+        texto = _sinopsis_del_outline(config, salida, capitulo)
+        _escribir(ruta_resumen(salida, capitulo), texto + "\n")
+        escribir(
+            "Resumen del capitulo {0} tomado de la sinopsis del outline (sin "
+            "delegar).".format(capitulo)
+        )
+        escribir("")
+        informe_de_estado(config, salida, escribir=escribir)
+        return 0
+
+    if archivo is None:
+        raise ErrorDeOrquestacion(
+            "Hace falta --archivo con la respuesta del resumidor, o bien "
+            "--usar-sinopsis para caer a la sinopsis del outline."
+        )
+
+    crudo = _leer_archivo(archivo, "la respuesta del resumidor")
+    _escribir(_tmp(salida) / "cap-{0:02d}-resumen.raw".format(capitulo), crudo)
+
+    try:
+        datos = puntuacion.extraer_json(crudo)
+    except puntuacion.ErrorDeVeredicto as error:
+        raise ErrorDeOrquestacion(
+            "La respuesta del resumidor no es JSON: {0}\n"
+            "Arreglo: vuelve a delegar en el resumidor una vez. Si insiste, "
+            "lanza `python -m src.orquestacion registrar-resumen --capitulo {1} "
+            "--usar-sinopsis` para seguir adelante con la sinopsis del "
+            "outline.".format(error, capitulo)
+        ) from error
+
+    texto = str(datos.get("resumen", "")).strip()
+    if not texto:
+        raise ErrorDeOrquestacion(
+            "El resumidor devolvio JSON pero sin campo `resumen` con contenido. "
+            "Arreglo: vuelve a delegar, o usa --usar-sinopsis."
+        )
+
+    _escribir(ruta_resumen(salida, capitulo), texto + "\n")
+    contar_delegacion(estado, salida)
+
+    escribir("Resumen del capitulo {0} guardado ({1} palabras):".format(
+        capitulo, len(texto.split())
+    ))
+    escribir("  {0}".format(texto))
+    escribir("")
+    informe_de_estado(config, salida, escribir=escribir)
+    return 0
+
+
+def cmd_ensamblar(config, salida, escribir=print):
+    """Escribe manuscrito.md e informe-validacion.md, y limpia .tmp/.
+
+    El orden importa: el informe se construye ANTES de borrar `.tmp/`, porque
+    todos los intentos, veredictos y puntuaciones viven ahi. Borrar primero y
+    escribir despues produciria un informe vacio y ya no habria forma de
+    recuperar el dato.
+    """
+    estado = cargar_estado(config, salida)
+    total = config["estructura"]["num_capitulos"]
+    biblia = modulo_biblia.cargar(salida, total)
+    fecha = estado.get("iniciado", "?")[:10]
+
+    aprobados = set(estado.get("capitulos_aprobados", []))
+    marcados = set(estado.get("capitulos_marcados", []))
+
+    capitulos_informe = []
+    capitulos_texto = []
+    for numero in range(1, total + 1):
+        ruta = ruta_capitulo(salida, numero)
+        if ruta.is_file():
+            capitulos_texto.append((numero, ruta.read_text(encoding="utf-8")))
+
+        ventana = None
+        ruta_v = ruta_ventana(salida, numero)
+        if ruta_v.is_file():
+            try:
+                ventana = json.loads(ruta_v.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                ventana = None
+
+        capitulos_informe.append({
+            "numero": numero,
+            "estado": ensamblador.estado_de_capitulo(
+                numero, intentos_de_capitulo(salida, numero), aprobados, marcados
+            ),
+            "intentos": intentos_de_capitulo(salida, numero),
+            "ventana": ventana,
+        })
+
+    _escribir(
+        ruta_manuscrito(salida),
+        ensamblador.manuscrito(biblia, config, fecha, capitulos_texto),
+    )
+    _escribir(
+        ruta_informe(salida),
+        ensamblador.informe(biblia, config, fecha, capitulos_informe, estado),
+    )
+
+    escribir("Manuscrito en {0} ({1} de {2} capitulos).".format(
+        ruta_manuscrito(salida), len(capitulos_texto), total
+    ))
+    escribir("Informe en   {0}".format(ruta_informe(salida)))
+
+    if config.get("runtime", {}).get("conservar_intentos", False):
+        escribir(
+            "Los intentos se conservan en {0} porque conservar_intentos es "
+            "true.".format(_tmp(salida))
+        )
+    else:
+        shutil.rmtree(_tmp(salida), ignore_errors=True)
+        escribir("Temporales de .tmp/ borrados.")
+
+    return 0
+
+
 def _aprobar(config, salida, estado, capitulo, intento, motivo, escribir):
     """Cierra un capitulo: escribe el texto, el resumen y la memoria larga."""
     texto = _leer_archivo(
@@ -968,17 +1199,17 @@ def _aprobar(config, salida, estado, capitulo, intento, motivo, escribir):
     )
     _escribir(ruta_capitulo(salida, capitulo), texto)
 
-    # Resumen provisional: la sinopsis del outline. Es determinista y no cuesta
-    # una delegacion. El resumen redactado por un modelo es una etapa posterior;
-    # hasta entonces esto mantiene la ventana del escritor funcionando, que es
-    # para lo que sirve el resumen.
-    entrada = modulo_biblia.entrada_outline(
-        modulo_biblia.cargar(salida, config["estructura"]["num_capitulos"]), capitulo
-    ) or {}
-    _escribir(
-        ruta_resumen(salida, capitulo),
-        (entrada.get("sinopsis") or "Capitulo {0}.".format(capitulo)).strip() + "\n",
-    )
+    # El resumen NO se escribe aqui. Lo redacta el subagente `resumidor` en el
+    # paso siguiente, sobre este texto ya definitivo. Antes se usaba la sinopsis
+    # del outline, que era gratis pero describia lo PLANEADO: despues de dos o
+    # tres reescrituras eso puede no ser lo que el capitulo cuenta, y el
+    # escritor del capitulo siguiente necesita el acta, no el plan.
+
+    # Queda marcado cual de los intentos es el que acabo en el manuscrito, para
+    # que el informe pueda decir "estos problemas siguen en el texto que lees",
+    # que no es lo mismo que "estos problemas se detectaron alguna vez".
+    intento["elegido"] = True
+    guardar_intento(salida, capitulo, intento)
 
     for veredicto in intento.get("veredictos", []):
         if veredicto.get("validador") == "estilo":
@@ -1151,6 +1382,18 @@ def construir_parser():
     )
     resolver.add_argument("--capitulo", type=int, required=True)
 
+    resumen = sub.add_parser(
+        "registrar-resumen", help="guarda el resumen de un capitulo cerrado"
+    )
+    resumen.add_argument("--capitulo", type=int, required=True)
+    resumen.add_argument("--archivo")
+    resumen.add_argument(
+        "--usar-sinopsis", action="store_true",
+        help="no delega: usa la sinopsis del outline (valvula de escape)",
+    )
+
+    sub.add_parser("ensamblar", help="escribe el manuscrito y el informe")
+
     return parser
 
 
@@ -1181,6 +1424,12 @@ def main(argv=None):
             )
         if args.comando == "resolver":
             return cmd_resolver(config, salida, args.capitulo)
+        if args.comando == "registrar-resumen":
+            return cmd_registrar_resumen(
+                config, salida, args.capitulo, args.archivo, args.usar_sinopsis
+            )
+        if args.comando == "ensamblar":
+            return cmd_ensamblar(config, salida)
     except (ErrorDeOrquestacion, ErrorDeConfiguracion,
             modulo_estado.ErrorDeEstado, modulo_biblia.ErrorDeBiblia) as error:
         print("ERROR: {0}".format(error), file=sys.stderr)

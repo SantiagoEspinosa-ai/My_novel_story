@@ -28,17 +28,23 @@ dice qué puedes ejecutar hoy:
 | Biblia: contrato, hechos, timeline | `src/biblia.py` | ✅ implementado |
 | Estado y reanudación | `src/estado.py` | ✅ implementado |
 | Ventanas de contexto y presupuesto | `src/contexto.py` | ✅ implementado |
-| Los cinco subagentes y sus skills puente | `.claude/agents/`, `.claude/skills/` | ✅ implementado |
+| Los seis subagentes y sus skills puente | `.claude/agents/`, `.claude/skills/` | ✅ implementado |
 | Máquina de estados de la orquestación | `src/orquestacion.py` | ✅ implementado |
 | Veredictos y puntuación | `src/puntuacion.py` | ✅ implementado |
+| Resúmenes redactados por un modelo | subagente `resumidor` | ✅ implementado |
+| Ensamblador e informe | `src/ensamblador.py` | ✅ implementado |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
-| Resúmenes redactados por un modelo | orquestación | ⬜ pendiente |
-| Ensamblador e informe | `src/ensamblador.py` | ⬜ pendiente |
+| Hechos y timeline extraídos de cada capítulo | biblia | ⬜ pendiente (`hechos_establecidos` no se rellena) |
 
-Los cinco subagentes están probados uno a uno con datos de juguete (ver la
-tabla final de `DECISIONES.md`), y la máquina que los encadena ya existe. Lo
-que falta para tener una novela de principio a fin es el ensamblador, los
-resúmenes redactados por un modelo y la compactación de hechos.
+Con esto se puede generar una novela completa de principio a fin. Lo que
+queda pendiente no bloquea la generación, pero conviene saberlo:
+
+- **La compactación de hechos** no hace nada todavía. Con pocos capítulos no se
+  dispara; en una novela larga es lo que evita que la ventana crezca.
+- **`hechos_establecidos` no se rellena.** Nadie extrae hechos de los capítulos
+  escritos, así que la biblia no crece durante la generación y el bloque de
+  hechos vigentes de la ventana del escritor va vacío. La continuidad se apoya
+  mientras tanto en los resúmenes y en el texto del capítulo anterior.
 
 Los comandos marcados con ⬜ en la sección 2 fallarán hasta que llegue su etapa.
 Eso es lo esperado, no un error de instalación.
@@ -87,9 +93,16 @@ python -m pip install pytest
 
 ### 1.3 Los subagentes
 
-Los cinco agentes viven en `.claude/agents/` y sus skills puente en
+Los seis agentes viven en `.claude/agents/` y sus skills puente en
 `.claude/skills/`. No hay que instalarlos: Claude Code los descubre al abrir el
 proyecto.
+
+| Subagente | Cuándo actúa | Modelo |
+|---|---|---|
+| `arquitecto` | Una vez, al principio: escribe la biblia | `modelos.arquitecto` |
+| `escritor` | Una vez por intento de capítulo | El escalón que toque de `escalera_escritor` |
+| `continuidad`, `genero`, `estilo` | Los tres a la vez, tras cada intento | `modelos.validadores` |
+| `resumidor` | Una vez por capítulo cerrado, salvo el último | `modelos.resumidor` |
 
 Dos cosas que ahorran una tarde de depuración, ambas comprobadas y anotadas en
 `DECISIONES.md`:
@@ -163,8 +176,8 @@ python -m src.orquestacion comprobar
 ```
 
 Verifica lo que tiene que estar en su sitio antes de empezar: la versión de
-Claude Code, la configuración válida, los cinco subagentes con su
-`omitClaudeMd`, las cinco skills puente y los prompts de `prompts/`.
+Claude Code, la configuración válida, los seis subagentes con su
+`omitClaudeMd`, las seis skills puente y los prompts de `prompts/`.
 
 ### 2.4 Arrancar y conducir una generación ✅
 
@@ -182,7 +195,16 @@ python -m src.orquestacion registrar-biblia    --archivo salida/.tmp/biblia.raw
 python -m src.orquestacion registrar-intento   --capitulo 3 --archivo salida/.tmp/cap-03.raw
 python -m src.orquestacion registrar-veredicto --capitulo 3 --validador estilo --archivo salida/.tmp/v.raw
 python -m src.orquestacion resolver            --capitulo 3
+python -m src.orquestacion ventana resumidor --capitulo 3
+python -m src.orquestacion registrar-resumen --capitulo 3 --archivo salida/.tmp/r.raw
+python -m src.orquestacion registrar-resumen --capitulo 3 --usar-sinopsis
+python -m src.orquestacion ensamblar            # manuscrito.md e informe-validacion.md
 ```
+
+`--usar-sinopsis` es la válvula de escape del resumen: no delega en nadie y cae
+a la sinopsis del outline. Se usa si el resumidor devuelve algo ilegible dos
+veces seguidas. La regla 1 manda: una novela no se queda parada esperando un
+resumen de tres frases.
 
 `estado` es el comando que hace que la sesión no tenga que recordar nada: dice
 en qué capítulo y en qué intento va, con qué modelo, y cuál es el siguiente
@@ -227,7 +249,7 @@ Antes de gastar una sola delegación:
 
 - La versión de Claude Code es 2.1.271 o superior. Por debajo, los validadores
   reciben CLAUDE.md y el aislamiento del spec §2.2 no se cumple.
-- Los cinco subagentes existen, llevan `omitClaudeMd: true` y declaran su skill
+- Los seis subagentes existen, llevan `omitClaudeMd: true` y declaran su skill
   puente. Los prompts de `prompts/` existen y no están vacíos.
 - Los alias de modelo de `config.json` están entre `haiku`, `sonnet`, `opus` y
   `fable`. Un alias inválido falla en el momento de delegar, no al arrancar, así
@@ -337,18 +359,46 @@ puntúan 4 y uno alto puntúa 5: gana el primero, porque **menor puntuación es
 mejor**. En caso de empate gana el intento más tardío, por haber incorporado más
 feedback. El capítulo se marca en el informe como `ACEPTADO_POR_PUNTUACION`.
 
-**g. Al aprobar, actualizar la memoria larga.** Se escriben `salida/biblia.json`
-(hechos nuevos, timeline), `salida/resumenes/cap-NN.md` (2–3 frases) y
-`salida/memoria-estilo.json`. Si `hechos_establecidos` supera
+**g. Al aprobar, actualizar la memoria larga.** Se escribe
+`salida/memoria-estilo.json` con las frases que el validador de estilo manda
+vigilar, y se delega en el subagente `resumidor` para obtener
+`salida/resumenes/cap-NN.md` (2–3 frases).
+
+Ese resumen es lo **único** que sabrán de este capítulo los escritores de los
+capítulos N+2 en adelante, así que resume lo que el capítulo **dice**, no lo que
+el outline había planeado. El resumidor no recibe el outline justamente por eso
+(`DECISIONES.md`, decisión 10). El último capítulo no se resume: nadie leería
+ese resumen.
+
+Los hechos nuevos y la timeline todavía no se extraen: ver la tabla de la
+sección 0. Si `hechos_establecidos` supera
 `contexto.umbral_compactacion` entradas, se lanza una pasada de compactación que
 funde los hechos efímeros antiguos en un resumen por capítulo. Los hechos
 `permanente` no se compactan nunca.
 
 ### 3.6 Paso 6 — Ensamblar
 
-Concatena los capítulos aprobados con su portada en `salida/manuscrito.md` y
-genera `salida/informe-validacion.md`. El ensamblador no reescribe nada. Después
-borra `salida/.tmp/`, salvo que `runtime.conservar_intentos` sea `true`.
+```powershell
+python -m src.orquestacion ensamblar
+```
+
+Concatena los capítulos con su portada en `salida/manuscrito.md` y genera
+`salida/informe-validacion.md`. Después borra `salida/.tmp/`, salvo que
+`runtime.conservar_intentos` sea `true`.
+
+Tres cosas que el ensamblador **no** hace, y las tres a propósito:
+
+- **No reescribe ni retoca nada.** Con el manuscrito entero delante es tentador
+  arreglar aquí una transición floja. Si lo hiciera, el informe dejaría de
+  describir el manuscrito: diría que el capítulo 7 se aceptó con tres problemas,
+  pero el capítulo 7 del manuscrito ya no sería ese. La trazabilidad entre lo
+  auditado y lo entregado es lo único que hace útil al informe.
+- **No inventa los capítulos que falten.** Un capítulo que no llegó a generarse
+  no aparece en el manuscrito, y el informe lo marca `SIN_GENERAR`. Un
+  manuscrito con un capítulo vacío sería un manuscrito que miente.
+- **No borra `.tmp/` antes de escribir el informe.** Todos los intentos y
+  veredictos viven ahí; al revés, el informe saldría vacío y el dato ya no se
+  podría recuperar.
 
 ---
 
@@ -380,7 +430,7 @@ ningún significado.
 es Claude Code, delegando en subagentes. Un módulo de Python que importe un
 cliente HTTP es un error de diseño, no una optimización.
 
-**5. El aislamiento de los validadores no se toca.** Los cinco subagentes llevan
+**5. El aislamiento de los validadores no se toca.** Los seis subagentes llevan
 `omitClaudeMd: true` y `tools: Read` (o ninguna herramienta), y cada validador
 recibe solo su ventana. Ese aislamiento es lo que hace que tres veredictos
 independientes signifiquen algo: si los tres vieran el mismo material y las
@@ -417,11 +467,13 @@ y el contrato permite hasta seis intentos por capítulo.
 |---|---|---|
 | `capitulos/cap-NN.md` | Texto de cada capítulo generado | Al terminar cada capítulo |
 | `estado.json` | Progreso: capítulo actual, intento, modelo activo, capítulos aprobados, delegaciones gastadas | Tras cada intento |
-| `resumenes/cap-NN.md` | 2–3 frases por capítulo aprobado | Tras cada aprobación |
+| `resumenes/cap-NN.md` | 2–3 frases escritas por el subagente `resumidor` | Tras cerrar cada capítulo, salvo el último |
 | `memoria-estilo.json` | Muletillas y frases recurrentes detectadas | Tras cada validación de estilo |
 | `.tmp/cap-NN-intento-M.md` | Texto de cada intento | Cada intento |
 | `.tmp/cap-NN-intento-M.json` | Veredictos y puntuación de ese intento | Cada intento |
 | `.tmp/cap-NN-intento-M-<validador>.raw` | Respuesta cruda de cada validador, antes de parsearla | Cada veredicto |
+| `.tmp/cap-NN-resumen.raw` | Respuesta cruda del resumidor | Cada resumen |
+| `.tmp/cap-NN-ventana.json` | Tamaño en tokens y recortes de la ventana del escritor | Al pedir la ventana |
 
 Los `.tmp` son obligatorios durante la ejecución: sin ellos no se puede elegir la
 mejor versión al agotar la escalera. Se borran al ensamblar salvo que

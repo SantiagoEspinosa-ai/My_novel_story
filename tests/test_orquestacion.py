@@ -25,17 +25,8 @@ from tests.ayudas import biblia_valida, config_minima, problema, veredicto
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture
-def entorno(tmp_path):
-    """Configuracion de juguete con salida/ en una carpeta temporal.
-
-    Devuelve (config, salida). El directorio de salida es absoluto para que
-    `directorio_salida` no lo resuelva contra la raiz del proyecto real: los
-    tests no pueden escribir en la salida de verdad.
-    """
-    config = config_minima(3, runtime={"directorio_salida": str(tmp_path / "salida")})
-    salida = orquestacion.directorio_salida(config)
-    return config, salida
+# La fixture `entorno` (config de juguete + salida en carpeta temporal) vive en
+# tests/conftest.py, para que tests/test_ensamblador.py use exactamente la misma.
 
 
 def _silencio(*args, **kwargs):
@@ -77,6 +68,30 @@ def _validar_intento(config, salida, tmp_path, capitulo, estados):
             _archivo(tmp_path, "v-{0}.raw".format(validador), crudo),
             escribir=_silencio,
         )
+
+
+def _resumir(config, salida, tmp_path, capitulo, texto=None):
+    """Registra el resumen de un capitulo cerrado, como haria el resumidor."""
+    crudo = json.dumps(
+        {"capitulo": capitulo, "resumen": texto or "Pasa algo en el {0}.".format(capitulo)},
+        ensure_ascii=False,
+    )
+    orquestacion.cmd_registrar_resumen(
+        config, salida, capitulo,
+        _archivo(tmp_path, "r.raw", crudo), escribir=_silencio,
+    )
+
+
+def _cerrar_capitulo(config, salida, tmp_path, capitulo, texto):
+    """Escribe, valida con tres PASA, resuelve y resume. El camino feliz."""
+    orquestacion.cmd_registrar_intento(
+        config, salida, capitulo, _archivo(tmp_path, "cap.md", texto),
+        escribir=_silencio,
+    )
+    _validar_intento(config, salida, tmp_path, capitulo, {})
+    orquestacion.cmd_resolver(config, salida, capitulo, escribir=_silencio)
+    if capitulo < config["estructura"]["num_capitulos"]:
+        _resumir(config, salida, tmp_path, capitulo)
 
 
 # ---------------------------------------------------------------------------
@@ -205,10 +220,17 @@ def test_tres_pasa_aprueban_el_capitulo_y_escriben_el_texto(entorno, tmp_path):
     assert orquestacion.ruta_capitulo(salida, 1).read_text(encoding="utf-8") == (
         "El texto bueno."
     )
-    assert orquestacion.ruta_resumen(salida, 1).is_file()
+    # El resumen todavia NO existe: lo escribe el paso siguiente, no `resolver`.
+    assert not orquestacion.ruta_resumen(salida, 1).is_file()
     estado = modulo_estado.cargar(salida)
     assert estado["capitulos_aprobados"] == [1]
     assert estado["capitulos_marcados"] == []
+
+    # Entre aprobar un capitulo y escribir el siguiente va el resumen: el texto
+    # completo vive en .tmp/, que se borra al ensamblar.
+    paso = orquestacion.siguiente_paso(config, salida)
+    assert (paso["paso"], paso["capitulo"], paso["modelo"]) == ("resumir", 1, "haiku")
+    _resumir(config, salida, tmp_path, 1)
     assert orquestacion.siguiente_paso(config, salida)["capitulo"] == 2
 
 
@@ -299,6 +321,7 @@ def test_agotada_la_escalera_gana_la_puntuacion_mas_baja(entorno, tmp_path):
     estado = modulo_estado.cargar(salida)
     assert estado["capitulos_marcados"] == [1]
     assert estado["capitulos_aprobados"] == []
+    _resumir(config, salida, tmp_path, 1)
     assert orquestacion.siguiente_paso(config, salida)["capitulo"] == 2
 
 
@@ -331,6 +354,7 @@ def test_el_capitulo_siguiente_arranca_en_el_escalon_que_gano(entorno, tmp_path)
     )
     _validar_intento(config, salida, tmp_path, 1, {})
     orquestacion.cmd_resolver(config, salida, 1, escribir=_silencio)
+    _resumir(config, salida, tmp_path, 1)
 
     paso = orquestacion.siguiente_paso(config, salida)
     assert (paso["capitulo"], paso["modelo"], paso["de"]) == (2, "sonnet", 4)
@@ -350,6 +374,7 @@ def test_sin_mantener_voz_ganadora_se_vuelve_al_primer_escalon(tmp_path):
     )
     _validar_intento(config, salida, tmp_path, 1, {})
     orquestacion.cmd_resolver(config, salida, 1, escribir=_silencio)
+    _resumir(config, salida, tmp_path, 1)
 
     paso = orquestacion.siguiente_paso(config, salida)
     assert (paso["modelo"], paso["de"]) == ("haiku", 6)
@@ -359,6 +384,7 @@ def test_aceptar_por_puntuacion_no_conserva_ninguna_voz(entorno, tmp_path):
     """No gano nadie, asi que el capitulo siguiente empieza por abajo."""
     config, salida = _preparar(entorno, tmp_path)
     _fallar_capitulo(config, salida, tmp_path, 1, 6, ["media"] * 6)
+    _resumir(config, salida, tmp_path, 1)
     paso = orquestacion.siguiente_paso(config, salida)
     assert (paso["capitulo"], paso["modelo"]) == (2, "haiku")
 
@@ -531,6 +557,7 @@ def test_reanudar_no_regenera_los_capitulos_aprobados(entorno, tmp_path):
     )
     _validar_intento(config, salida, tmp_path, 1, {})
     orquestacion.cmd_resolver(config, salida, 1, escribir=_silencio)
+    _resumir(config, salida, tmp_path, 1)
 
     # Segunda "sesion": se vuelve a lanzar iniciar, como haria quien reanuda.
     orquestacion.cmd_iniciar(config, salida, escribir=_silencio)
@@ -553,19 +580,18 @@ def test_el_capitulo_anterior_entra_entero_y_los_previos_no(entorno, tmp_path):
     """La regla del N-1: lo que mantiene la ventana constante sea cual sea N."""
     config, salida = _preparar(entorno, tmp_path)
     for capitulo in (1, 2):
-        orquestacion.cmd_registrar_intento(
-            config, salida, capitulo,
-            _archivo(tmp_path, "cap.md", "MARCA-DEL-CAPITULO-{0}".format(capitulo)),
-            escribir=_silencio,
+        _cerrar_capitulo(
+            config, salida, tmp_path, capitulo,
+            "MARCA-DEL-CAPITULO-{0}".format(capitulo),
         )
-        _validar_intento(config, salida, tmp_path, capitulo, {})
-        orquestacion.cmd_resolver(config, salida, capitulo, escribir=_silencio)
 
     lineas = []
     orquestacion.cmd_ventana(config, salida, "escritor", 3, escribir=lineas.append)
     texto = "\n".join(lineas)
+    # El capitulo 2 entra entero; del 1 solo entra su resumen.
     assert "MARCA-DEL-CAPITULO-2" in texto
     assert "MARCA-DEL-CAPITULO-1" not in texto
+    assert "Pasa algo en el 1." in texto
 
 
 # ---------------------------------------------------------------------------
