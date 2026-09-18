@@ -57,7 +57,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import Body, FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from src import biblia as modulo_biblia
 from src import config as modulo_config
@@ -108,6 +108,62 @@ def _tipo_de(ruta: Path) -> str:
     if adivinado and adivinado.startswith("text/"):
         return adivinado + "; charset=utf-8"
     return adivinado or "application/octet-stream"
+
+
+# Tope de lo que se sirve de una vez. Los archivos de este proyecto son
+# capitulos y JSON de estado: el mas grande medido ronda los 45 KB. Un archivo
+# de mas de esto en `salida/` no es una novela, es un accidente, y se corta con
+# un error claro en vez de intentar cargarlo entero en memoria.
+MAXIMO_A_SERVIR = 32 * 1024 * 1024
+
+
+def respuesta_de_archivo(destino: Path) -> Response:
+    """Sirve un archivo leyendo sus bytes de una vez, no en trozos.
+
+    POR QUE NO `FileResponse`
+    -------------------------
+    `FileResponse` declara `Content-Length` con el `stat()` del archivo y
+    DESPUES lo va leyendo por trozos. Si el archivo **crece entre esas dos
+    cosas**, manda mas bytes de los que prometio y la conexion muere con:
+
+        h11._util.LocalProtocolError: Too much data for declared Content-Length
+
+    Y aqui hay un archivo que crece constantemente: `salida/.log-generacion.txt`,
+    al que el proceso de generacion va anadiendo su salida. El panel ademas
+    **dice en pantalla donde esta**, asi que abrirlo en el navegador durante una
+    generacion es lo natural, y era justo lo que reventaba el servidor.
+    Reproducido: 150 de 150 peticiones a un archivo en crecimiento fallaban.
+
+    Leyendo los bytes de una vez, lo que se declara y lo que se manda salen de
+    la MISMA lectura, asi que no pueden discrepar: se sirve la foto del archivo
+    en el instante en que se leyo. Que esa foto se quede vieja un segundo
+    despues da igual; que sea incoherente consigo misma, no.
+
+    Se pierde la lectura por trozos, que aqui no hace falta: los archivos son
+    capitulos de novela y JSON de estado, ninguno llega al megabyte.
+    """
+    try:
+        datos = destino.read_bytes()
+    except OSError as error:
+        raise HTTPException(status_code=404, detail="No he podido leer ese archivo") from error
+
+    if len(datos) > MAXIMO_A_SERVIR:
+        raise HTTPException(status_code=413, detail={
+            "mensaje": "Ese archivo es demasiado grande para servirlo entero "
+                       "({0} bytes).".format(len(datos)),
+            "pista": "En salida/ no deberia haber archivos asi. Abrelo desde el "
+                     "disco.",
+        })
+
+    # `Content-Length` lo calcula Starlette a partir de estos mismos bytes.
+    return Response(
+        content=datos,
+        media_type=_tipo_de(destino),
+        # Sin cache: el panel repregunta por estado.json cada pocos segundos y
+        # una respuesta cacheada haria que el seguimiento en vivo ensenara datos
+        # viejos, que es peor que no tener seguimiento.
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 def directorio_salida(raiz: Path) -> Path:
@@ -1971,14 +2027,7 @@ def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None,
     @app.get("/{ruta:path}")
     def servir(ruta: str = ""):
         destino = resolver_peticion(ruta, raiz, salida)
-        return FileResponse(
-            destino,
-            media_type=_tipo_de(destino),
-            # Sin cache: el panel repregunta por estado.json cada pocos segundos
-            # y una respuesta cacheada haria que el seguimiento en vivo ensenara
-            # datos viejos, que es peor que no tener seguimiento.
-            headers={"Cache-Control": "no-store"},
-        )
+        return respuesta_de_archivo(destino)
 
     return app
 

@@ -638,6 +638,89 @@ enterrarlo bajo un «no devolvió JSON» que apunta al sitio equivocado.
 
 ---
 
+### Hallazgo 15 — El archivo que crece mientras se sirve
+
+**El síntoma.** El servidor reventaba la conexión con:
+
+```
+h11._util.LocalProtocolError: Too much data for declared Content-Length
+```
+
+**La hipótesis razonable, que resultó falsa.** Que el `Content-Length` se
+calculara sobre **caracteres** y se mandaran **bytes**: en UTF-8 cada tilde y
+cada eñe ocupan dos bytes y cuentan como un carácter, así que un manuscrito en
+castellano sobraría un byte por cada acento. Encaja con el mensaje de error,
+encaja con que el proyecto escriba en español, y es un fallo clásico.
+
+Se midió antes de tocar nada:
+
+| Archivo | Caracteres | Bytes UTF-8 | `Content-Length` | Recibidos |
+|---|---|---|---|---|
+| `cap-01.md` | 7767 | 8045 | **8128** | **8128** |
+| `biblia.json` | — | — | **9816** | **9816** |
+| `manuscrito.md` | — | — | **44744** | **44744** |
+
+Cuadraba exacto, con 278 bytes de acentos de por medio. `FileResponse` saca la
+longitud de `st_size`, que ya son bytes. **No era eso.**
+
+**La causa real.** `FileResponse` declara la longitud con un `stat()` y
+**después** lee el archivo por trozos. Si el archivo **crece entre esas dos
+cosas**, manda más bytes de los que prometió y h11 aborta.
+
+Y hay un archivo que crece sin parar: `salida/.log-generacion.txt`, al que el
+proceso de generación va añadiendo su salida. Peor: **el panel dice en pantalla
+dónde está**, así que abrirlo en el navegador mientras se genera es lo natural.
+Reproducido: con un archivo en crecimiento, **150 de 150 peticiones fallaban** y
+el servidor escupía 300 «Too much data».
+
+**La cura.** Leer los bytes de una vez y devolverlos como cuerpo: lo que se
+declara y lo que se manda salen de **la misma lectura**, así que no pueden
+discrepar. Se sirve la foto del archivo en el instante en que se leyó; que esa
+foto envejezca un segundo después da igual, que sea incoherente consigo misma
+no. Se pierde la lectura por trozos, que aquí no hace falta: el archivo más
+grande del proyecto son 45 KB. Hay un tope de 32 MB con error explicado, por si
+algún día aparece algo que no debería estar ahí.
+
+---
+
+#### La tercera frontera, y el tercer fixture demasiado limpio
+
+Este es el mismo patrón que los hallazgos 13 y 14, por tercera vez:
+
+| Hallazgo | La frontera | Lo que cambiaba al cruzarla |
+|---|---|---|
+| 13 | `CreateProcess` | Un nombre del `PATH` no resuelve si no es un `.exe` |
+| 14 | `cmd.exe` | Un argumento se corta en el primer salto de línea |
+| 15 | El tiempo | Un archivo ya no mide lo que medía al empezar a mandarlo |
+
+Las dos primeras eran fronteras de **forma**; esta es de **momento**. El dato
+no cambió de formato: cambió mientras lo cruzaba.
+
+Y los tests no lo cazaron por la misma razón de siempre, con dos capas:
+
+1. Los archivos de prueba eran **ASCII o casi**. Si la causa hubiera sido la
+   que parecía —caracteres contra bytes—, tampoco la habrían cazado.
+2. Los archivos de prueba estaban **quietos**. Ninguno crecía mientras se
+   servía, que es la condición que hace fallar al servidor.
+
+> **La regla, ampliada:** un fixture tiene que parecerse a la realidad no solo
+> en su **forma** —el `.cmd`, los acentos— sino en su **comportamiento**. Si en
+> producción el archivo crece, el estado cambia o dos cosas pasan a la vez, un
+> fixture quieto prueba un mundo que no existe. Los tests de
+> `tests/test_servidor_bytes.py` sirven un archivo mientras otro hilo lo hace
+> crecer, y se comprobó que fallan sin el arreglo.
+
+**Un apunte de la investigación que conviene guardar.** Al intentar reproducir
+la carrera por otra vía —reescribir `estado.json` atómicamente mientras se
+servía— salió que en Windows `os.replace` **falla con `PermissionError`** si el
+destino está abierto por otro proceso. O sea: mientras el panel leía
+`estado.json`, el harness no habría podido reescribirlo. La ventana es
+minúscula y con el arreglo se reduce aún más, porque el archivo se abre, se lee
+y se cierra de inmediato en vez de quedar abierto mientras se envía por trozos.
+No se ha visto fallar, pero está anotado por si algún día aparece.
+
+---
+
 ### Estado de las pruebas de los subagentes (2026-09-17)
 
 Todos probados con datos de juguete, con infracciones plantadas a propósito para

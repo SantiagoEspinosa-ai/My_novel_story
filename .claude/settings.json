@@ -8,5 +8,14 @@
     "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "https://us.cloud.langfuse.com/api/public/otel/v1/traces",
     "OTEL_TRACES_EXPORT_INTERVAL": "5000",
     "OTEL_RESOURCE_ATTRIBUTES": "service.name=my-novel-story"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python -m src.orquestacion *)",
+      "PowerShell(python -m src.orquestacion *)",
+      "Bash(python -m pytest*)",
+      "PowerShell(python -m pytest*)",
+      "Edit(salida/**)"
+    ]
   }
 }

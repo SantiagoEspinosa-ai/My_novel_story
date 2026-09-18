@@ -889,6 +889,8 @@ manuscrito: la regla 1 manda, y es preferible a un hueco, pero conviene saberlo.
 |---|---|---|
 | El panel dice «el servidor respondió 500» y nada más | No debería pasar ya: todo error sale con cuerpo explicado. Si vuelve a verse, es un fallo del propio manejador | Mira la terminal donde lanzaste `python -m src.servidor`: la traza completa está ahí |
 | La sesión responde pidiendo un dato («dime cuántos capítulos…») | El prompt le llegó incompleto | El panel lo dice con esas palabras. Si vuelve a pasar, comprueba qué recibe de verdad el subproceso: `DECISIONES.md`, hallazgo 14 |
+| `Too much data for declared Content-Length` en la terminal del servidor | Un archivo creció mientras se servía | Arreglado: los archivos se leen de una vez (`DECISIONES.md`, hallazgo 15). Pasaba al abrir el log de generación en el navegador mientras se generaba |
+| La generación dice que terminó bien pero no hay capítulos nuevos | No debería pasar ya | El panel marca ese caso como fallo (`sin_efecto`) y el log lo escribe como `TERMINADA SIN HACER NADA`. Mira el log: la sesión suele explicar por qué |
 | `FileNotFoundError: [WinError 2]` al generar o ampliar | El ejecutable se estaba buscando por su nombre suelto. En Windows `claude` es un `.CMD` y `CreateProcess` no aplica `PATHEXT` | Ya está arreglado: todo se lanza por su ruta absoluta (`DECISIONES.md`, hallazgo 13). Si reaparece con otro programa, resuélvelo con `resolver_ejecutable()` |
 | `503 No encuentro el ejecutable 'claude'` | El servidor no ve Claude Code en su `PATH` | Comprueba que `claude --version` funciona **en la misma terminal** desde la que lanzas el servidor. Un `PATH` puesto en otra ventana no cuenta |
 | Ampliar responde `409` con capítulos pendientes | La novela no está terminada | Termina los capítulos que faltan, o acéptalos. No se amplía a medias a propósito |
@@ -1212,6 +1214,14 @@ Todas las respuestas de archivo van con `Cache-Control: no-store`: el panel
 repregunta por `estado.json` cada pocos segundos, y una respuesta cacheada sería
 seguimiento en vivo de datos viejos. Los archivos de texto van con el charset
 declarado, para que un manuscrito con acentos no llegue roto.
+
+**Los archivos se leen de una vez, no por trozos.** Es deliberado y arregla un
+fallo real: `salida/.log-generacion.txt` crece mientras la generación escribe, y
+servirlo por trozos declaraba un tamaño con `stat()` y mandaba otro, matando la
+conexión con `Too much data for declared Content-Length`. Leyéndolo de una vez,
+lo que se declara y lo que se manda salen de la misma lectura (`DECISIONES.md`,
+hallazgo 15). Hay un tope de 32 MB con error explicado; el archivo más grande
+del proyecto son 45 KB.
 
 `GET /api/salud` devuelve dónde está la raíz, dónde está `salida/`, si existen,
 en qué dirección escucha y **la lista de lo que el servidor puede escribir**.
