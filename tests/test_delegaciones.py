@@ -236,3 +236,96 @@ def test_el_informe_se_regenera_sin_la_sesion_que_genero(entorno, tmp_path):
     assert "Coste: delegaciones y tokens" in texto
     assert "escritor" in texto
     assert "9.000" in texto  # los tokens de entrada del escritor, con miles
+
+
+# ---------------------------------------------------------------------------
+# Reconciliacion: la comprobacion que habria cazado el contador corto
+# ---------------------------------------------------------------------------
+
+
+def test_el_suelo_cuenta_arquitecto_escritor_y_veredictos(entorno, tmp_path):
+    config, salida = _preparar(entorno, tmp_path)
+    config["runtime"]["conservar_intentos"] = True
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Texto."), escribir=_silencio
+    )
+    for validador in ("continuidad", "genero", "estilo"):
+        orquestacion.cmd_registrar_veredicto(
+            config, salida, 1, validador,
+            _archivo(tmp_path, "v.raw", veredicto(validador, 1, "PASA", [])),
+            escribir=_silencio,
+        )
+
+    suelo = orquestacion.suelo_de_delegaciones(config, salida)
+    assert suelo["arquitecto"] == 1
+    assert suelo["escritor"] == 1
+    assert suelo["validadores"] == 3
+    assert suelo["suelo"] == 5
+    assert suelo["completo"] is True
+
+
+def test_el_veredicto_de_longitud_no_suma_al_suelo(entorno, tmp_path):
+    """No cuesta una delegacion: lo emite el contador de palabras, gratis."""
+    config, salida = _preparar(entorno, tmp_path)
+    config["estructura"]["palabras_min"] = 5000  # fuerza el FALLO de longitud
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Texto corto."),
+        escribir=_silencio,
+    )
+    suelo = orquestacion.suelo_de_delegaciones(config, salida)
+    assert suelo["validadores"] == 0
+    assert suelo["suelo"] == 2  # arquitecto + escritor
+
+
+def test_reconciliar_avisa_si_el_contador_baja_del_suelo(entorno, tmp_path):
+    config, salida = _preparar(entorno, tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Texto."), escribir=_silencio
+    )
+    # Simula el fallo original: delegaciones que produjeron trabajo sin contarse.
+    estado = modulo_estado.cargar(salida)
+    estado["delegaciones"] = 0
+    modulo_estado.guardar(estado, salida)
+
+    lineas = []
+    codigo = orquestacion.cmd_reconciliar(config, salida, escribir=lineas.append)
+    assert codigo == 1
+    assert any("por DEBAJO del suelo" in l for l in lineas)
+
+
+def test_reconciliar_celebra_que_sobren_delegaciones(entorno, tmp_path):
+    """Que sobre es lo normal: la diferencia son los reintentos por formato."""
+    config, salida = _preparar(entorno, tmp_path)
+    orquestacion.cmd_registrar_intento(
+        config, salida, 1, _archivo(tmp_path, "cap.md", "Texto."), escribir=_silencio
+    )
+    orquestacion.cmd_registrar_delegacion(
+        config, salida, "escritor", capitulo=1, nota="devolvio un resumen",
+        escribir=_silencio,
+    )
+    lineas = []
+    orquestacion.cmd_reconciliar(config, salida, escribir=lineas.append)
+    assert any("supera al suelo en 1" in l for l in lineas)
+
+
+def test_marcar_el_contador_incompleto_se_ve_en_el_estado(entorno, tmp_path):
+    config, salida = _preparar(entorno, tmp_path)
+    orquestacion.cmd_marcar_contador_incompleto(
+        config, salida, "faltan dos reintentos por formato", escribir=_silencio
+    )
+    estado = modulo_estado.cargar(salida)
+    assert delegaciones.nota(estado)["contador_es_suelo"] is True
+
+    lineas = []
+    orquestacion.informe_de_estado(config, salida, escribir=lineas.append)
+    assert any("es un SUELO" in l for l in lineas)
+
+
+def test_el_informe_avisa_de_un_contador_incompleto(entorno, tmp_path):
+    config, salida = _preparar(entorno, tmp_path)
+    orquestacion.cmd_marcar_contador_incompleto(
+        config, salida, "faltan dos reintentos por formato", escribir=_silencio
+    )
+    orquestacion.cmd_informe(config, salida, escribir=_silencio)
+    texto = orquestacion.ruta_informe(salida).read_text(encoding="utf-8")
+    assert "suelo, no una medida" in texto

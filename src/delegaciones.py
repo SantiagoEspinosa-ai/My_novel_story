@@ -41,6 +41,13 @@ CLAVE = "delegaciones_detalle"
 # con estados antiguos y porque es lo que mira el freno de mano de la regla 6.
 CLAVE_CONTADOR = "delegaciones"
 
+# Clave donde se deja constancia de que el contador de esta generacion no es
+# fiable. Existe porque hay un caso que no se puede arreglar hacia atras: una
+# delegacion que se emitio, no dejo ningun archivo y no se anoto es
+# indistinguible de una que nunca ocurrio. Cuando eso pasa, el numero no se
+# inventa: se marca como suelo y se dice por que.
+CLAVE_NOTA = "delegaciones_nota"
+
 # Orden en que se muestran los roles en los informes. No es alfabetico: es el
 # orden en que actuan durante la generacion, que es como mejor se lee.
 ORDEN_ROLES = ("arquitecto", "escritor", "continuidad", "genero", "estilo", "resumidor")
@@ -217,6 +224,27 @@ def reparto_manuscrito(estado):
         else:
             _sumar(cubos["no_aplica"], entrada)
     return cubos
+
+
+def marcar_incompleto(estado, motivo):
+    """Deja constancia de que el contador de esta generacion es un suelo.
+
+    Se usa cuando se sabe que faltan delegaciones pero no cuantas: corregir el
+    numero a ojo seria peor que dejarlo bajo, porque un numero inventado no se
+    distingue despues de uno medido. Un suelo declarado si se distingue.
+    """
+    estado[CLAVE_NOTA] = {
+        "contador_es_suelo": True,
+        "motivo": motivo,
+        "anotado": _ahora_iso(),
+    }
+    return estado[CLAVE_NOTA]
+
+
+def nota(estado):
+    """La anotacion de contador incompleto, o None si el contador es fiable."""
+    valor = estado.get(CLAVE_NOTA)
+    return valor if isinstance(valor, dict) and valor.get("contador_es_suelo") else None
 
 
 def coherente(estado):

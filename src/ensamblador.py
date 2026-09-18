@@ -328,6 +328,14 @@ def _bloque_coste(estado):
 
     lineas = ["## Coste: delegaciones y tokens", ""]
 
+    anotacion = delegaciones.nota(estado)
+    if anotacion:
+        lineas += [
+            "> **El contador de esta generacion es un suelo, no una medida.** " +
+            str(anotacion.get("motivo", "")),
+            "",
+        ]
+
     if not entradas:
         lineas += [
             "Esta generacion gasto **{0}** delegacion(es), pero no tiene "

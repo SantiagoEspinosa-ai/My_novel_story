@@ -448,6 +448,59 @@ def anotar_delegacion(estado, salida, rol, modelo=None, capitulo=None,
     return entrada
 
 
+def suelo_de_delegaciones(config, salida):
+    """Minimo de delegaciones que los archivos de disco justifican.
+
+    POR QUE EXISTE
+    --------------
+    Un contador que solo sabe sumar no puede avisar de que le falta algo. Esta
+    funcion reconstruye, desde los artefactos que quedaron en `salida/`, cuantas
+    delegaciones hicieron falta como minimo para producirlos, y permite
+    compararlo con el contador:
+
+        contador > suelo   normal: la diferencia son reintentos que no dejaron
+                           artefacto (respuestas ilegibles, delegaciones
+                           abortadas). Es la senal de que se estan contando.
+        contador == suelo  sospechoso en una novela con reescrituras: significa
+                           que ningun reintento se anoto.
+        contador < suelo   error: se perdieron delegaciones que si produjeron
+                           trabajo.
+
+    Devuelve un diccionario con el desglose y con `completo`, que dice si el
+    calculo pudo mirar los intentos de verdad o solo lo que quedo tras borrar
+    `.tmp/`.
+    """
+    total_capitulos = config.get("estructura", {}).get("num_capitulos", 0)
+
+    intentos = 0
+    veredictos = 0
+    for numero in range(1, total_capitulos + 1):
+        for intento in intentos_de_capitulo(salida, numero):
+            intentos += 1
+            # Los veredictos se cuentan uno a uno y no como "tres por intento":
+            # el de longitud no cuesta delegacion y un validador puede faltar.
+            veredictos += sum(
+                1 for v in intento.get("veredictos", [])
+                if v.get("validador") in puntuacion.VALIDADORES
+            )
+
+    arquitecto = 1 if modulo_biblia.existe(salida) else 0
+
+    # Los resumenes son el unico artefacto ambiguo: `--usar-sinopsis` escribe
+    # uno sin delegar en nadie. Para un SUELO hay que quedarse corto, asi que
+    # se cuentan aparte y se dejan fuera del minimo garantizado.
+    resumenes = len(cargar_resumenes(salida))
+
+    return {
+        "arquitecto": arquitecto,
+        "escritor": intentos,
+        "validadores": veredictos,
+        "resumenes_en_disco": resumenes,
+        "suelo": arquitecto + intentos + veredictos,
+        "completo": intentos > 0,
+    }
+
+
 def limite_delegaciones(config):
     return int(config.get("limites", {}).get("delegaciones_max_totales", 300))
 
@@ -678,6 +731,14 @@ def informe_de_estado(config, salida, escribir=print):
                 estado.get("delegaciones", 0), limite_delegaciones(config)
             )
         )
+        anotacion = delegaciones.nota(estado)
+        if anotacion:
+            # El aviso va pegado al numero, no en una nota al pie: quien lee
+            # "59 delegaciones" tiene que enterarse ahi mismo de que son al
+            # menos 59, no exactamente 59.
+            escribir("  ^ ese contador es un SUELO, no una medida: {0}".format(
+                anotacion.get("motivo", "")
+            ))
         suma = delegaciones.totales(estado)
         if suma["delegaciones"]:
             linea = "Tokens anotados: {0} de entrada, {1} de salida".format(
@@ -957,6 +1018,92 @@ def cmd_ventana(config, salida, rol, capitulo=None, escribir=print):
         )
 
     escribir(ventana.texto)
+    return 0
+
+
+def cmd_reconciliar(config, salida, escribir=print):
+    """Compara el contador de delegaciones con lo que el disco justifica.
+
+    Es la comprobacion que habria cazado el fallo del contador: si nunca sobra
+    ninguna delegacion sobre el suelo, es que los reintentos no se estan
+    anotando.
+    """
+    estado = cargar_estado(config, salida)
+    contador = estado.get("delegaciones", 0)
+    detalle = delegaciones.listar(estado)
+    suelo = suelo_de_delegaciones(config, salida)
+
+    escribir("== Reconciliacion del contador de delegaciones ==")
+    escribir("")
+    escribir("Lo que el disco justifica como minimo:")
+    escribir("  arquitecto (hay biblia)      {0:>4}".format(suelo["arquitecto"]))
+    escribir("  escritor (1 por intento)     {0:>4}".format(suelo["escritor"]))
+    escribir("  validadores (1 por veredicto){0:>4}".format(suelo["validadores"]))
+    escribir("  " + "-" * 32)
+    escribir("  SUELO                        {0:>4}".format(suelo["suelo"]))
+    escribir("")
+    escribir("  resumenes en disco           {0:>4}  (no entran en el suelo:".format(
+        suelo["resumenes_en_disco"]
+    ))
+    escribir("                                     --usar-sinopsis escribe uno sin delegar)")
+    escribir("")
+    escribir("Contador en estado.json:       {0:>4}".format(contador))
+    escribir("Entradas con detalle:          {0:>4}".format(len(detalle)))
+    escribir("")
+
+    if not suelo["completo"]:
+        escribir(
+            "AVISO: no quedan intentos en salida/.tmp/, asi que el suelo esta\n"
+            "  incompleto y esta comparacion no concluye nada. Con\n"
+            "  runtime.conservar_intentos en true, los intentos se conservan y\n"
+            "  este comando puede hacer su trabajo."
+        )
+        escribir("")
+
+    anotacion = delegaciones.nota(estado)
+    if anotacion:
+        escribir("El contador esta marcado como INCOMPLETO:")
+        escribir("  {0}".format(anotacion.get("motivo", "")))
+        escribir("")
+        return 0
+
+    if not suelo["completo"]:
+        return 0
+
+    diferencia = contador - suelo["suelo"]
+    if diferencia < 0:
+        escribir(
+            "ERROR: el contador ({0}) esta por DEBAJO del suelo ({1}). Se han\n"
+            "  perdido {2} delegacion(es) que si produjeron trabajo. Arreglo:\n"
+            "  anota las que falten con `registrar-delegacion`, o marca el\n"
+            "  contador como incompleto.".format(contador, suelo["suelo"], -diferencia)
+        )
+        return 1
+    if diferencia == 0:
+        escribir(
+            "El contador coincide EXACTAMENTE con el suelo. En una novela con\n"
+            "  reescrituras eso es sospechoso: significa que ninguna delegacion\n"
+            "  sin artefacto (respuesta ilegible, delegacion abortada) se anoto.\n"
+            "  Repasa si falto algun `registrar-delegacion`."
+        )
+        return 0
+    escribir(
+        "El contador supera al suelo en {0}. Esa diferencia son delegaciones que\n"
+        "  no dejaron artefacto: reintentos por formato y delegaciones abortadas.\n"
+        "  Es lo esperado, y es la senal de que se estan contando.".format(diferencia)
+    )
+    return 0
+
+
+def cmd_marcar_contador_incompleto(config, salida, motivo, escribir=print):
+    """Deja escrito en estado.json que el contador de esta generacion es un suelo."""
+    estado = cargar_estado(config, salida)
+    anotacion = delegaciones.marcar_incompleto(estado, motivo)
+    modulo_estado.guardar(estado, salida)
+    escribir("Contador marcado como incompleto en {0}.".format(
+        modulo_estado.ruta(salida)
+    ))
+    escribir("  {0}".format(anotacion["motivo"]))
     return 0
 
 
@@ -1587,6 +1734,17 @@ def construir_parser():
     )
     con_tokens(resumen)
 
+    sub.add_parser(
+        "reconciliar",
+        help="compara el contador de delegaciones con lo que el disco justifica",
+    )
+
+    incompleto = sub.add_parser(
+        "marcar-contador-incompleto",
+        help="deja escrito que el contador de esta generacion es un suelo",
+    )
+    incompleto.add_argument("--motivo", required=True)
+
     sub.add_parser("ensamblar", help="escribe el manuscrito y el informe")
     sub.add_parser(
         "informe", help="reescribe solo el informe, sin tocar .tmp/ ni el manuscrito"
@@ -1638,6 +1796,10 @@ def main(argv=None):
                 config, salida, args.capitulo, args.archivo, args.usar_sinopsis,
                 args.tokens_in, args.tokens_out,
             )
+        if args.comando == "reconciliar":
+            return cmd_reconciliar(config, salida)
+        if args.comando == "marcar-contador-incompleto":
+            return cmd_marcar_contador_incompleto(config, salida, args.motivo)
         if args.comando == "ensamblar":
             return cmd_ensamblar(config, salida)
         if args.comando == "informe":

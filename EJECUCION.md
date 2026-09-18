@@ -235,6 +235,37 @@ en ese caso el `registrar-*` correspondiente ya la contó antes de fallar.
 tocar el manuscrito ni borrar `.tmp/`. Sirve para sacar el informe de una novela
 terminada hace semanas desde una sesión que no la generó.
 
+### 2.5 Comprobar que el contador no miente ✅
+
+```powershell
+python -m src.orquestacion reconciliar
+```
+
+Reconstruye, desde los artefactos de `salida/`, cuántas delegaciones hicieron
+falta **como mínimo** para producirlos, y lo compara con el contador:
+
+| Resultado | Qué significa |
+|---|---|
+| contador **>** suelo | Normal. La diferencia son delegaciones que no dejaron artefacto: reintentos por formato y delegaciones abortadas. Es la señal de que se están contando |
+| contador **=** suelo | Sospechoso en una novela con reescrituras: ningún reintento se anotó. Repasa si faltó algún `registrar-delegacion` |
+| contador **<** suelo | Error. Se perdieron delegaciones que sí produjeron trabajo |
+
+El suelo solo se puede calcular si los intentos siguen en `salida/.tmp/`, o sea
+con `runtime.conservar_intentos` en `true`. Sin ellos el comando lo dice y no
+concluye nada, en vez de dar por bueno un suelo de cero.
+
+Cuando se sabe que faltan delegaciones pero no cuántas:
+
+```powershell
+python -m src.orquestacion marcar-contador-incompleto --motivo "..."
+```
+
+Deja escrito en `estado.json` que ese contador es un **suelo y no una medida**.
+A partir de ahí, el comando `estado` y el informe de validación lo advierten
+junto al número. Se marca en vez de corregir a ojo porque un número escrito a
+mano deja de distinguirse después de uno medido, y entonces ya no se puede
+confiar en ninguno de los dos.
+
 `--usar-sinopsis` es la válvula de escape del resumen: no delega en nadie y cae
 a la sinopsis del outline. Se usa si el resumidor devuelve algo ilegible dos
 veces seguidas. La regla 1 manda: una novela no se queda parada esperando un
