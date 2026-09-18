@@ -41,6 +41,17 @@ from src import servidor  # noqa: E402
 from tests.ayudas import biblia_valida  # noqa: E402
 
 
+# Estos tests prueban CÓMO se arranca el ejecutable, no la comprobación previa
+# de permisos, que tiene sus propios tests. Se da por buena para no lanzar una
+# sesión de verdad en cada uno.
+SESION_QUE_PUEDE = lambda: {"puede": True}
+
+
+def app(proyecto, **extra):
+    extra.setdefault("comprobador_sesion", SESION_QUE_PUEDE)
+    return servidor.crear_app(proyecto, **extra)
+
+
 ES_WINDOWS = sys.platform == "win32"
 
 
@@ -171,7 +182,7 @@ def test_ampliar_llega_a_arrancar_el_claude_postizo(proyecto, tmp_path, monkeypa
     """
     carpeta = crear_claude_postizo(tmp_path / "bin", "no soy json")
     monkeypatch.setenv("PATH", str(carpeta))
-    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente = TestClient(app(proyecto))
     detalle = error_de_ampliacion(cliente)
     assert "no devolvio json" in detalle["mensaje"].lower()
     assert "no soy json" in detalle["respuesta"]
@@ -185,7 +196,7 @@ def test_generar_tambien_arranca_un_claude_que_es_un_script(proyecto, tmp_path, 
     """
     carpeta = crear_claude_postizo(tmp_path / "bin", "generando")
     monkeypatch.setenv("PATH", str(carpeta))
-    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente = TestClient(app(proyecto))
     r = cliente.post("/api/generar")
     assert r.status_code == 200, r.text
     assert r.json()["viva"] in (True, False)   # puede haber terminado ya
@@ -198,7 +209,7 @@ def test_generar_tambien_arranca_un_claude_que_es_un_script(proyecto, tmp_path, 
 
 def test_si_claude_no_esta_ampliar_da_503_y_no_copia(proyecto, tmp_path, monkeypatch):
     monkeypatch.setenv("PATH", str(tmp_path / "vacia"))
-    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente = TestClient(app(proyecto))
     r = cliente.post("/api/ampliar", json={"capitulos": 1})
     assert r.status_code == 503
     assert not list(proyecto.glob("salida-novela-*"))
@@ -223,7 +234,7 @@ def test_un_fallo_de_arranque_se_explica_en_vez_de_dar_un_500_pelado(proyecto, m
     # verdad es además más fiel: el mensaje que se enseña es el del sistema.
     monkeypatch.setattr(servidor, "resolver_ejecutable", lambda nombre: "C:/falso/claude.cmd")
 
-    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente = TestClient(app(proyecto))
     detalle = error_de_ampliacion(cliente)
     assert "no se ha podido arrancar" in detalle["mensaje"].lower()
     # `FileNotFoundError` es literalmente el nombre que salía en la traza del
@@ -238,7 +249,7 @@ def test_una_excepcion_imprevista_llega_al_navegador_explicada(proyecto, monkeyp
         raise RuntimeError("algo que nadie penso")
     monkeypatch.setattr(servidor, "novela_completa", revienta)
 
-    cliente = TestClient(servidor.crear_app(proyecto), raise_server_exceptions=False)
+    cliente = TestClient(app(proyecto), raise_server_exceptions=False)
     r = cliente.post("/api/ampliar", json={"capitulos": 1})
     assert r.status_code == 500
     detalle = r.json()["detail"]
@@ -305,7 +316,7 @@ def test_el_numero_que_entra_por_http_llega_al_subproceso(proyecto, tmp_path, mo
     carpeta = crear_claude_que_guarda_lo_que_recibe(tmp_path / "bin", capturado)
     monkeypatch.setenv("PATH", str(carpeta))
 
-    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente = TestClient(app(proyecto))
     cliente.post("/api/ampliar", json={"capitulos": 7})
     esperar_ampliacion(cliente)
 
@@ -325,7 +336,7 @@ def test_el_prompt_llega_entero_y_no_solo_su_primera_linea(proyecto, tmp_path, m
     carpeta = crear_claude_que_guarda_lo_que_recibe(tmp_path / "bin", capturado)
     monkeypatch.setenv("PATH", str(carpeta))
 
-    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente = TestClient(app(proyecto))
     cliente.post("/api/ampliar", json={"capitulos": 2})
     esperar_ampliacion(cliente)
 
@@ -351,7 +362,7 @@ def test_el_prompt_de_generar_tambien_llega_por_stdin(proyecto, tmp_path, monkey
     carpeta = crear_claude_que_guarda_lo_que_recibe(tmp_path / "bin", capturado)
     monkeypatch.setenv("PATH", str(carpeta))
 
-    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente = TestClient(app(proyecto))
     cliente.post("/api/generar")
     for _ in range(100):
         if not cliente.get("/api/generacion").json()["viva"]:
@@ -372,7 +383,7 @@ def test_una_respuesta_que_pide_datos_se_dice_con_esas_palabras(proyecto):
     """
     def sesion_que_pregunta(prompt):
         return 0, "Dime cuantos capitulos anadir, un entero entre 1 y 20.", ""
-    cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_que_pregunta))
+    cliente = TestClient(app(proyecto, ejecutor_ampliar=sesion_que_pregunta))
     detalle = error_de_ampliacion(cliente, 2)
     assert detalle["pidio_datos"] is True
     assert "pidio informacion que no se le dio" in detalle["mensaje"]
@@ -384,7 +395,7 @@ def test_una_respuesta_que_no_es_json_pero_tampoco_pregunta_se_dice_distinto(pro
     """No todo lo que no es JSON es una pregunta: el mensaje se separa."""
     def sesion_charlatana(prompt):
         return 0, "He ampliado la novela correctamente y he guardado todo.", ""
-    cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_charlatana))
+    cliente = TestClient(app(proyecto, ejecutor_ampliar=sesion_charlatana))
     detalle = error_de_ampliacion(cliente, 2)
     assert detalle["pidio_datos"] is False
     assert "no devolvio json" in detalle["mensaje"].lower()
@@ -394,7 +405,7 @@ def test_si_la_sesion_muere_sin_decir_nada_se_ve_su_stderr(proyecto):
     """Cuando el error viene de la sesión de Claude Code, se enseña su salida."""
     def sesion_que_falla(prompt):
         return 1, "", "Error: no se pudo iniciar la sesion"
-    cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_que_falla))
+    cliente = TestClient(app(proyecto, ejecutor_ampliar=sesion_que_falla))
     detalle = error_de_ampliacion(cliente)
     assert detalle["codigo_salida"] == 1
     assert "no se pudo iniciar la sesion" in detalle["salida_de_la_sesion"]

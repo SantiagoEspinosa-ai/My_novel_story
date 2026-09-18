@@ -476,6 +476,68 @@ def comando_generacion() -> list[str]:
 # nunca un salto de linea.
 
 
+# El prompt de la comprobacion previa. Fijo, como todos los demas.
+#
+# POR QUE SE COMPRUEBA ESTO, Y POR QUE ANTES DE COPIAR
+# ----------------------------------------------------
+# Que `claude` este instalado no basta. Una sesion sin permiso para ejecutar
+# `python` no puede dar un solo paso del contrato —`estado` dice que toca,
+# `registrar-*` cuenta las palabras, `resolver` elige el intento— y ademas, al
+# ser headless, no puede pedir ese permiso: el dialogo no tiene donde
+# aparecer. Paso de verdad: la sesion lo explico perfectamente en su log y
+# salio con codigo 0, dejando una copia de seguridad hecha, una carpeta nueva
+# y ni una linea escrita.
+#
+# Comprobarlo cuesta una sesion de tres segundos y evita copiar carpetas y
+# arrancar una generacion que no puede funcionar.
+PROMPT_COMPROBAR_SESION = (
+    "Ejecuta exactamente este comando y nada mas: python -m src.orquestacion --help\n"
+    "Si el comando se ejecuta, responde SOLO con la palabra LISTO.\n"
+    "Si no puedes ejecutarlo por el motivo que sea —permisos, ruta, lo que "
+    "sea—, responde SOLO con: ERROR: <el motivo en una sola linea>.\n"
+    "No hagas nada mas. No leas archivos. No expliques nada."
+)
+SEGUNDOS_COMPROBAR_SESION = 180
+
+
+def comprobar_que_la_sesion_puede(raiz: Path) -> dict:
+    """Lanza una sesion minima y comprueba que puede ejecutar el harness.
+
+    Devuelve `{"puede": True}` o `{"puede": False, "motivo": ...}` con lo que
+    la propia sesion haya contestado, que es el mejor diagnostico posible: lo
+    dice quien se ha topado con el problema.
+    """
+    codigo, fuera, error = ejecutar_claude(
+        raiz, PROMPT_COMPROBAR_SESION, SEGUNDOS_COMPROBAR_SESION)
+    texto = (fuera or "").strip()
+    if "LISTO" in texto.upper() and "ERROR:" not in texto.upper():
+        return {"puede": True, "respuesta": texto[:400]}
+    return {
+        "puede": False,
+        "codigo_salida": codigo,
+        "respuesta": texto[-1500:],
+        "salida_de_la_sesion": (error or "")[-800:],
+    }
+
+
+def exigir_que_la_sesion_pueda(comprobador):
+    """Corta con un 503 explicado si la sesion no puede ejecutar el harness."""
+    resultado = comprobador()
+    if resultado.get("puede"):
+        return resultado
+    raise HTTPException(status_code=503, detail={
+        "mensaje": "No se ha lanzado nada. La sesión de Claude Code no puede "
+                   "ejecutar los comandos del harness, así que no daría ni un "
+                   "paso: el contrato entero son comandos de Python.",
+        "pista": "Suele ser permisos. Añade a `.claude/settings.json` una "
+                 "sección `permissions` que permita "
+                 "`Bash(python -m src.orquestacion *)`, o lanza la generación "
+                 "desde una sesión interactiva y acepta el permiso una vez.",
+        "respuesta": resultado.get("respuesta"),
+        "salida_de_la_sesion": resultado.get("salida_de_la_sesion"),
+    })
+
+
 def siguiente_carpeta_copia(raiz: Path) -> Path:
     """La primera `salida-novela-N/` libre. No pisa ninguna existente."""
     n = 1
@@ -529,10 +591,14 @@ class Generacion:
     justo el tipo de cosa que en Windows sale mal y mata el proceso equivocado.
     """
 
-    def __init__(self, raiz: Path, salida: Path, comando=None):
+    def __init__(self, raiz: Path, salida: Path, comando=None,
+                 comprobar_sesion=None):
         self.raiz = raiz
         self.salida = salida
         self._construir_comando = comando or comando_generacion
+        # Comprobacion previa de que la sesion puede ejecutar el harness.
+        # Se inyecta para que los tests no lancen sesiones de verdad.
+        self._comprobar_sesion = comprobar_sesion
         self.proceso: subprocess.Popen | None = None
         self.info: dict = {}
 
@@ -566,6 +632,9 @@ class Generacion:
         # limpio»... como si acabara de pasar.
         self._foto_estado: dict = {}
         self._primera_foto = True
+
+        # Lo que habia hecho antes de lanzar, para comparar al cerrar.
+        self._antes_de_generar: dict | None = None
 
     # --- fases -------------------------------------------------------------
     def _entrar_en_fase(self, fase, **datos):
@@ -636,6 +705,10 @@ class Generacion:
         # explicado el WinError 2 que esto evita.
         comando = list(self._construir_comando())
         comando[0] = resolver_ejecutable(comando[0])
+        # Y que la sesion pueda ejecutar el harness, no solo que exista el
+        # programa. Tambien antes de copiar: ver PROMPT_COMPROBAR_SESION.
+        if self._comprobar_sesion is not None:
+            exigir_que_la_sesion_pueda(self._comprobar_sesion)
 
         self.salida.mkdir(parents=True, exist_ok=True)
         try:
@@ -648,6 +721,10 @@ class Generacion:
             }) from error
 
         inicio = _ahora()
+        # Foto de lo que hay ANTES de empezar. Al cerrar se compara: una
+        # generacion que termina con codigo 0 sin haber cambiado nada no es un
+        # exito, por muy limpia que sea su salida.
+        self._antes_de_generar = self._huella_del_trabajo()
         with self.log.open("a", encoding="utf-8") as f:
             f.write("\n===== GENERACION LANZADA {0} =====\n".format(inicio))
             if copia["copiado"]:
@@ -820,6 +897,29 @@ class Generacion:
                 pass
             self._cerrar()
 
+    def _huella_del_trabajo(self) -> dict:
+        """Una foto de lo que hay hecho, para poder ver despues si cambio algo.
+
+        No mira el reloj ni los archivos temporales: mira **lo que cuenta como
+        trabajo** —capitulos cerrados, delegaciones gastadas y el manuscrito—,
+        que es lo unico cuya ausencia convierte un «terminado» en un fallo.
+        """
+        estado = self._leer_estado_harness()
+        manuscrito = self.salida / "manuscrito.md"
+        try:
+            firma_manuscrito = manuscrito.stat().st_size if manuscrito.is_file() else -1
+        except OSError:
+            firma_manuscrito = -1
+        capitulos = self.salida / "capitulos"
+        return {
+            "delegaciones": estado.get("delegaciones", 0),
+            "aprobados": sorted(estado.get("capitulos_aprobados") or []),
+            "marcados": sorted(estado.get("capitulos_marcados") or []),
+            "manuscrito": firma_manuscrito,
+            "capitulos": sorted(p.name for p in capitulos.glob("cap-*.md"))
+                         if capitulos.is_dir() else [],
+        }
+
     def _cerrar(self):
         """Deja constancia de que el proceso ya no esta. Se puede llamar dos veces.
 
@@ -841,12 +941,24 @@ class Generacion:
         fin = _ahora()
         detenida = self.info.get("detenida_a_mano")
 
+        # ¿Cambio algo? Un codigo 0 sin trabajo hecho NO es un exito.
+        #
+        # Paso de verdad: la sesion no pudo ejecutar los comandos del harness
+        # porque le faltaban permisos, lo explico impecablemente en su log, y
+        # salio con codigo 0. El panel dijo «terminó bien» sobre una novela que
+        # nadie habia tocado, que es la peor forma de fallar: en silencio y con
+        # aspecto de acierto.
+        despues = self._huella_del_trabajo()
+        hizo_algo = despues != (self._antes_de_generar or {})
+
         if detenida:
             titular = "DETENIDA A MANO"
-        elif codigo == 0:
-            titular = "TERMINADA"
-        else:
+        elif codigo != 0:
             titular = "CAIDA"
+        elif not hizo_algo:
+            titular = "TERMINADA SIN HACER NADA"
+        else:
+            titular = "TERMINADA"
 
         try:
             with self.log.open("a", encoding="utf-8") as f:
@@ -858,17 +970,34 @@ class Generacion:
                         "estado se puede retomar con `python -m src.orquestacion "
                         "estado`.\n"
                     )
+                elif titular == "TERMINADA SIN HACER NADA":
+                    f.write(
+                        "La sesion termino limpiamente pero no cambio nada: ni un "
+                        "capitulo, ni una delegacion, ni el manuscrito. Lo que dijo "
+                        "esta mas arriba en este mismo log y ahi esta el motivo.\n"
+                    )
         except OSError:
             pass
 
         marca_colgada = self._limpiar_delegacion_en_curso()
 
+        if detenida:
+            estado_final = narracion.FASE_DETENIDA
+        elif codigo != 0:
+            estado_final = narracion.FASE_CAIDA
+        elif not hizo_algo:
+            estado_final = narracion.FASE_SIN_EFECTO
+        else:
+            estado_final = narracion.FASE_TERMINADA
         self.info.update({
-            "estado": "detenida" if detenida else ("terminada" if codigo == 0 else "caida"),
+            "estado": estado_final,
             "fin": fin,
             "codigo_salida": codigo,
+            "hizo_algo": hizo_algo,
             "delegacion_colgada": marca_colgada,
         })
+        self.fase = estado_final
+        self.fase_desde = time.time()
         self._guardar_marca()
 
     def _limpiar_delegacion_en_curso(self) -> dict | None:
@@ -1129,6 +1258,10 @@ def _mensaje_de_generacion(r: dict) -> str:
     estado = r.get("estado")
     if estado == "terminada":
         return "La ultima generacion termino bien."
+    if estado == narracion.FASE_SIN_EFECTO:
+        return ("La ultima generacion termino sin escribir nada: ni un capitulo, "
+                "ni una delegacion, ni el manuscrito. No es un exito. El motivo "
+                "esta en el log.")
     if estado == "detenida":
         return "La ultima generacion se detuvo a mano."
     if estado == "caida":
@@ -1455,7 +1588,8 @@ def _asegurar_resumen(salida: Path, capitulo: int, propuesto, biblia: dict) -> d
     return {"capitulo": capitulo, "origen": "sinopsis_del_outline", "texto": texto}
 
 
-def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None) -> FastAPI:
+def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None,
+              comprobador_sesion=None) -> FastAPI:
     """Monta la aplicacion. `raiz` se puede pasar para los tests.
 
     Que la raiz sea un parametro y no una constante es lo que permite probar el
@@ -1468,7 +1602,13 @@ def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None) -> 
     # eso es lo que permite probar el ciclo entero sin gastar delegaciones. Es
     # un parametro de Python, no de HTTP: desde el navegador no hay forma de
     # tocarlo.
-    generacion = Generacion(raiz, salida, comando)
+    # Con un comando de generacion inyectado (los tests) no se comprueba la
+    # sesion: no hay ninguna que comprobar.
+    comprobar_sesion = comprobador_sesion or (
+        None if comando is not None
+        else (lambda: comprobar_que_la_sesion_puede(raiz)))
+    generacion = Generacion(raiz, salida, comando,
+                            comprobar_sesion=comprobar_sesion)
 
     def bloqueo_actual():
         """Por que no se puede editar la configuracion ahora mismo, si es que no.
@@ -1677,6 +1817,8 @@ def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None) -> 
         # poder arrancar, no tiene sentido dejar una carpeta de copia suelta.
         if ejecutor_ampliar is None:
             resolver_ejecutable("claude")
+            if comprobar_sesion is not None:
+                exigir_que_la_sesion_pueda(comprobar_sesion)
 
         num_nuevo = num_viejo + int(cuerpo["capitulos"])
 

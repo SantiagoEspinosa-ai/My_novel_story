@@ -45,6 +45,12 @@ FASE_CAIDA = "caida"
 FASE_DETENIDA = "detenida"
 FASE_FALLO_AMPLIACION = "fallo_ampliacion"
 
+# Termino con codigo 0 y no escribio nada. Parece un exito y no lo es: paso de
+# verdad cuando la sesion no pudo ejecutar los comandos del harness por
+# permisos, lo explico en su log y salio limpiamente. El panel decia «terminó
+# bien» sobre una novela que no se habia tocado.
+FASE_SIN_EFECTO = "sin_efecto"
+
 # Cuanto es «lo normal» en cada fase, en segundos. Pasado ese tiempo la frase
 # se acompana de un comentario, porque la alternativa es que quien mira se
 # quede adivinando si aquello se ha colgado.
@@ -65,6 +71,16 @@ NORMAL_SEGUNDOS = {
 NORMAL_POR_DEFECTO = 600
 
 ROLES_VALIDADORES = ("continuidad", "genero", "estilo")
+
+# Entre un paso y el siguiente no hay nadie trabajando, y aun asi la cosa
+# avanza. La primera version de esta frase explicaba el mecanismo —«entre una
+# delegacion y la siguiente no hay ningun subagente trabajando»— y eso es
+# exactamente lo que este modulo existe para no hacer: quien mira la pantalla
+# no tiene por que saber que hay delegaciones ni subagentes.
+#
+# Cuando no se sabe bien que esta pasando, la respuesta corta es mejor que una
+# explicacion de por que no se sabe.
+FRASE_ENTRE_PASOS = "Preparando el siguiente paso"
 
 
 def _lista_en_castellano(numeros):
@@ -192,27 +208,37 @@ def frase_de_reposo(resumen):
     """Que decir cuando no hay nada en marcha.
 
     Nunca «sin actividad» a secas: eso no distingue una novela terminada de una
-    que se cayo hace una hora. Se dice que no hay nada Y que fue lo ultimo.
+    que se cayo hace una hora.
+
+    Pero tampoco tres frases encadenadas. La primera version pegaba el estado Y
+    lo ultimo que paso, y salia esto:
+
+        «No hay nada en marcha. La última generación terminó bien. Lo último
+         que pasó: La sesión está decidiendo el siguiente paso: entre una...»
+
+    La tercera frase era ruido y ademas repetia lo que ya decia la segunda. Si
+    se sabe como termino, con eso basta; solo cuando NO se sabe se recurre a
+    contar lo ultimo que se vio.
     """
     resumen = resumen or {}
-    ultimo = resumen.get("ultima_frase")
     fase = resumen.get("fase")
 
-    if fase == FASE_TERMINADA:
-        cabeza = "No hay nada en marcha. La última generación terminó bien"
-    elif fase == FASE_DETENIDA:
-        cabeza = "No hay nada en marcha. La última generación se paró a mano"
-    elif fase == FASE_CAIDA:
-        cabeza = "No hay nada en marcha. La última generación se cayó sin terminar"
-    elif fase == FASE_FALLO_AMPLIACION:
-        cabeza = ("No hay nada en marcha. La ampliación no salió adelante y la "
-                  "novela quedó como estaba")
-    else:
-        cabeza = "No hay nada en marcha"
+    conocidas = {
+        FASE_TERMINADA: "No hay nada en marcha. La última generación terminó bien.",
+        FASE_DETENIDA: "No hay nada en marcha. La última generación se paró a mano.",
+        FASE_CAIDA: "No hay nada en marcha. La última generación se cayó sin terminar.",
+        FASE_SIN_EFECTO: ("No hay nada en marcha. La última generación terminó sin "
+                          "escribir nada; el log dice por qué."),
+        FASE_FALLO_AMPLIACION: ("No hay nada en marcha. La ampliación no salió "
+                                "adelante y la novela quedó como estaba."),
+    }
+    if fase in conocidas:
+        return conocidas[fase]
 
+    ultimo = resumen.get("ultima_frase")
     if ultimo:
-        return "{0}. Lo último que pasó: {1}".format(cabeza, ultimo.rstrip("."))
-    return cabeza + "."
+        return "No hay nada en marcha. Lo último: {0}.".format(ultimo.rstrip("."))
+    return "No hay nada en marcha."
 
 
 def comentario_si_tarda(clave, segundos):

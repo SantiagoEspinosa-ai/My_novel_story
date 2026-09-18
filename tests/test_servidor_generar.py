@@ -184,12 +184,73 @@ def test_el_log_recoge_lo_que_escribe_el_proceso(proyecto):
 
 
 def test_al_terminar_bien_lo_dice(proyecto):
-    cliente = hacer_cliente(proyecto, CODIGO_QUE_TERMINA_BIEN)
+    """Terminar bien es terminar con código 0 **y habiendo hecho algo**."""
+    cliente = hacer_cliente(proyecto, comando_que_escribe_un_capitulo(proyecto))
     cliente.post("/api/generar")
     final = esperar_a_que_acabe(cliente)
     assert final["estado"] == "terminada"
     assert final["codigo_salida"] == 0
     assert "termino bien" in final["mensaje"]
+
+
+# ---------------------------------------------------------------------------
+# Terminar con código 0 sin hacer nada NO es un éxito
+# ---------------------------------------------------------------------------
+#
+# Pasó de verdad: la sesión no podía ejecutar los comandos del harness por
+# permisos, lo explicó impecablemente en su log y salió con código 0. El panel
+# dijo «terminó bien» sobre una novela que nadie había tocado. Un fallo
+# silencioso con aspecto de acierto es el peor de los fallos.
+
+
+def comando_que_escribe_un_capitulo(proyecto):
+    """Un «claude» de mentira que sí deja trabajo hecho."""
+    destino = (proyecto / "salida" / "capitulos" / "cap-02.md").as_posix()
+    texto = "# Capitulo 2" + chr(10) + chr(10) + "Texto." + chr(10)
+    return comando_falso(
+        "print('escribiendo el capitulo 2')",
+        "open(r'" + destino + "', 'w', encoding='utf-8').write(" + repr(texto) + ")")
+
+
+def test_terminar_con_codigo_cero_sin_escribir_nada_no_es_un_exito(proyecto):
+    cliente = hacer_cliente(proyecto, CODIGO_QUE_TERMINA_BIEN)
+    cliente.post("/api/generar")
+    final = esperar_a_que_acabe(cliente)
+    assert final["codigo_salida"] == 0          # salió limpiamente...
+    assert final["estado"] == "sin_efecto"      # ...y aun así no es un éxito
+    assert "no es un exito" in final["mensaje"].lower()
+    assert "sin escribir nada" in final["mensaje"]
+
+
+def test_el_log_dice_que_no_hizo_nada(proyecto):
+    """Y remite a lo que la propia sesión dejó escrito, que es el diagnóstico."""
+    cliente = hacer_cliente(proyecto, comando_falso(
+        "print('No puedo ejecutar python: me falta permiso.')"))
+    cliente.post("/api/generar")
+    final = esperar_a_que_acabe(cliente)
+    texto = "\n".join(final["log"])
+    assert "TERMINADA SIN HACER NADA" in texto
+    assert "no cambio nada" in texto
+    # Lo que dijo la sesión sigue ahí, que es donde está el motivo.
+    assert "me falta permiso" in texto
+
+
+def test_una_generacion_que_si_escribe_no_se_marca_como_vacia(proyecto):
+    """El otro lado: si tocó algo, es un éxito y se dice como tal."""
+    cliente = hacer_cliente(proyecto, comando_que_escribe_un_capitulo(proyecto))
+    cliente.post("/api/generar")
+    final = esperar_a_que_acabe(cliente)
+    assert final["estado"] == "terminada"
+    assert (proyecto / "salida" / "capitulos" / "cap-02.md").is_file()
+
+
+def test_detenerla_no_se_confunde_con_no_haber_hecho_nada(proyecto):
+    """Pararla a mano tiene su propio estado, aunque tampoco haya hecho nada."""
+    cliente = hacer_cliente(proyecto, CODIGO_QUE_NO_TERMINA)
+    cliente.post("/api/generar")
+    cliente.post("/api/detener")
+    final = cliente.get("/api/generacion").json()
+    assert final["estado"] == "detenida"
 
 
 def test_no_se_pueden_lanzar_dos_a_la_vez(proyecto):

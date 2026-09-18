@@ -111,12 +111,38 @@ def test_ninguna_frase_usa_jerga_del_sistema():
                                "modelo": "opus"}, CONFIG),
         n.frase_de_delegacion({"rol": "validadores", "capitulo": 5}, CONFIG),
     ]
-    jerga = ["delegacion_en_curso", "ACEPTADO_POR_PUNTUACION", "FALLO", "PASA",
-             "estado.json", "num_capitulos", "subagente", "outline"]
+    frases.append(n.FRASE_ENTRE_PASOS)
+    frases.append(n.frase_de_reposo({"fase": n.FASE_TERMINADA}))
+    frases.append(n.frase_de_reposo({"fase": n.FASE_SIN_EFECTO}))
+    frases.append(n.frase_de_delegacion({"rol": "resumidor", "capitulo": 2}, CONFIG))
+    frases.append(n.comentario_si_tarda("escritor", 900))
+
+    # Nombres del sistema: se comparan TAL CUAL, respetando mayúsculas. Si se
+    # comparara sin ellas, el veredicto `PASA` chocaría con «qué pasa», que es
+    # castellano corriente y no jerga.
+    nombres_internos = ["delegacion_en_curso", "ACEPTADO_POR_PUNTUACION",
+                        "FALLO", "PASA", "estado.json", "num_capitulos", "outline"]
+    # Palabras internas del vocabulario del proyecto: describen el mecanismo,
+    # no lo que pasa. Se colaron en una frase y por eso están aquí.
+    palabras_internas = ["sesión", "sesion", "delegación", "delegacion",
+                         "subagente", "subagentes"]
     for frase in frases:
         assert frase
-        for palabra in jerga:
+        for palabra in nombres_internos:
             assert palabra not in frase, (palabra, frase)
+        for palabra in palabras_internas:
+            assert palabra not in frase.lower(), (palabra, frase)
+
+
+def test_la_frase_de_entre_pasos_es_corta_y_no_explica_el_mecanismo():
+    """Decía «La sesión está decidiendo el siguiente paso: entre una delegación
+    y la siguiente no hay ningún subagente trabajando».
+
+    Tres palabras internas y una explicación de por qué no se sabe nada. Si no
+    se sabe qué está pasando, se dice corto.
+    """
+    assert n.FRASE_ENTRE_PASOS == "Preparando el siguiente paso"
+    assert len(n.FRASE_ENTRE_PASOS) < 40
 
 
 # ---------------------------------------------------------------------------
@@ -202,10 +228,35 @@ def test_si_todos_aprueban_no_hay_frase_de_reescritura():
 
 def test_el_reposo_nunca_es_un_sin_actividad_a_secas():
     """«Sin actividad» no distingue una novela terminada de una caída."""
+    frase = n.frase_de_reposo({"fase": n.FASE_TERMINADA})
+    assert "No hay nada en marcha" in frase
+    assert "terminó bien" in frase
+
+
+def test_el_reposo_no_encadena_tres_frases():
+    """Si se sabe cómo terminó, con eso basta.
+
+    La versión anterior pegaba el estado Y lo último que pasó, y salía «No hay
+    nada en marcha. La última generación terminó bien. Lo último que pasó:
+    Preparando el siguiente paso», donde la tercera frase era ruido.
+    """
     frase = n.frase_de_reposo({"fase": n.FASE_TERMINADA,
                                "ultima_frase": "Capítulo 6 aprobado limpio"})
-    assert "terminó bien" in frase
-    assert "Lo último que pasó: Capítulo 6 aprobado limpio" in frase
+    assert frase.count(".") <= 2
+    assert "Lo último" not in frase
+
+
+def test_sin_saber_como_termino_si_se_cuenta_lo_ultimo():
+    """Ahí sí aporta: es lo único que se sabe."""
+    frase = n.frase_de_reposo({"ultima_frase": "Capítulo 6 aprobado limpio"})
+    assert frase == "No hay nada en marcha. Lo último: Capítulo 6 aprobado limpio."
+
+
+def test_una_generacion_que_no_hizo_nada_no_se_cuenta_como_exito():
+    """Terminar con código 0 sin escribir nada no es terminar bien."""
+    frase = n.frase_de_reposo({"fase": n.FASE_SIN_EFECTO})
+    assert "sin escribir nada" in frase
+    assert "terminó bien" not in frase
 
 
 def test_el_reposo_distingue_caida_de_parada_y_de_terminada():
