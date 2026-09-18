@@ -679,8 +679,8 @@ http://localhost:8000/panel.html</code>
       <span id="red-resumen">—</span>
       <span class="sep">·</span>
       <label class="interruptor"><input type="checkbox" id="chk-refresco" checked>
-        Refresco automático</label>
-      <button class="boton" id="btn-recargar" type="button">Releer todo</button>
+        Actualizar solo, cada pocos segundos</label>
+      <button class="boton" id="btn-recargar" type="button">Volver a leer los archivos</button>
     </div>
     <div id="red-fallos" class="fallos-red"></div>
 
@@ -2009,19 +2009,26 @@ function renderGeneracion(){
           "paras ahora, no se habrá escrito ningún capítulo.") +
       "</p></div>";
     html += '<button class="boton-fuerte boton-parar" type="button" id="btn-detener">' +
-      (g.viva ? "Detener generación" : "Detener") + "</button>";
+      (g.viva ? "Parar ahora" : "Parar ahora") + "</button>";
     html += "</div>";
   } else {
     const roto = g.estado === "caida" || g.estado === "desconocida";
+    const s = situacionDeLaNovela();
     html += '<div class="control tarjeta">';
     html += '<div class="cuerpo">';
-    html += '<div class="rotulo">Generar</div>';
-    html += "<p class=\"detalle\" style=\"margin-top:6px\">" +
-      (roto ? "<strong style=\"color:var(--carmin)\">" + esc(g.mensaje) + "</strong>"
-            : esc(g.mensaje || "No se ha lanzado ninguna generación todavía.")) +
-      "</p></div>";
-    html += '<button class="boton-fuerte" type="button" id="btn-generar">' +
-      "Generar novela…</button>";
+    if (roto){
+      html += "<p class=\"detalle\"><strong style=\"color:var(--carmin)\">" +
+        esc(g.mensaje) + "</strong></p>";
+    }
+    html += '<div style="font-size:16.5px;line-height:1.5">' + s.explicacion + "</div>";
+    if (s.aviso){
+      html += '<div class="detalle" style="margin-top:8px">' + s.aviso + "</div>";
+    }
+    html += "</div>";
+    if (s.etiqueta){
+      html += '<button class="boton-fuerte" type="button" id="btn-generar">' +
+        esc(s.etiqueta) + "</button>";
+    }
     html += "</div>";
   }
 
@@ -2029,33 +2036,67 @@ function renderGeneracion(){
   // con la carpeta de copia por su nombre, y hay que TECLEAR la palabra para
   // que el boton final se active. Este boton copia carpetas y arranca un
   // proceso que gasta delegaciones: no puede pulsarse sin querer.
+  // La confirmación solo tiene sentido si hay algo que escribir. Puede quedar
+  // abierta y que el estado cambie por debajo —una generación que termina
+  // mientras se lee—, y entonces hablaría de «0 capítulos» con la lista vacía.
+  if (confirmacionAbierta && !situacionDeLaNovela().etiqueta) confirmacionAbierta = false;
+
   if (confirmacionAbierta && !enMarcha){
-    html += '<div class="confirmar"><h3>Esto va a pasar si continúas</h3><ul>';
-    if (g.hay_novela_que_copiar){
-      html += "<li>La novela que hay ahora en <code>salida/</code> se copiará a " +
-        "<code>" + esc(g.proxima_copia) + "/</code>, y después se sobrescribirá.</li>";
+    // La confirmación habla de lo que va a ocurrir, no de la operación: quien
+    // la lee quiere saber qué pasa con SU novela, no cómo se llama el endpoint.
+    const s = situacionDeLaNovela();
+    const n = estadoNovela();
+    const escritos = n.total - n.pendientes.length;
+
+    html += '<div class="confirmar"><h3>' +
+      (s.caso === "sin_biblia"
+        ? "Se va a escribir una novela entera de cero"
+        : "Se " + (n.pendientes.length === 1 ? "va" : "van") + " a escribir " +
+          (n.pendientes.length === 1
+            ? "el capítulo " + n.pendientes[0]
+            : n.pendientes.length + " capítulos: el " + listaLegible(n.pendientes))) +
+      "</h3><ul>";
+
+    if (s.caso !== "sin_biblia"){
+      html += "<li><strong>Los " + escritos + " capítulos ya escritos no se " +
+        "tocan.</strong> Ni su texto, ni su plan, ni sus validaciones.</li>";
+      html += "<li>Cada capítulo nuevo lo escribe el escritor y lo auditan los " +
+        "tres validadores. Si no pasa, se reescribe hasta " +
+        esc(String(intentosPorCapitulo())) + " veces, subiendo de modelo.</li>";
     } else {
-      html += "<li>No hay ninguna novela en <code>salida/</code>, así que no se " +
-        "copiará nada.</li>";
+      html += "<li>El arquitecto inventará la premisa, los personajes y el plan " +
+        "de los <strong>" + n.total + " capítulos</strong>, y después se " +
+        "escribirán todos.</li>";
     }
-    html += "<li>Se arrancará una sesión de Claude Code en segundo plano, que " +
-      "<strong>gasta delegaciones</strong> hasta terminar la novela entera.</li>";
-    html += "<li>Puede tardar minutos. Se puede parar, pero lo ya gastado no vuelve.</li>";
+
+    if (g.hay_novela_que_copiar){
+      html += "<li>Antes de empezar se guarda una copia de lo que hay ahora en " +
+        "<code>" + esc(g.proxima_copia) + "/</code>, por si quieres volver atrás.</li>";
+    }
+    html += "<li>Tarda minutos y <strong>gasta delegaciones</strong>. Se puede " +
+      "parar en cualquier momento, pero lo ya gastado no vuelve.</li>";
     html += "</ul>";
-    html += '<div class="teclear"><label for="palabra-clave">Escribe ' +
-      "<strong>GENERAR</strong> para habilitar el botón:</label>" +
+
+    const siQuiero = s.caso === "sin_biblia"
+      ? "Sí, empezar la novela"
+      : (n.pendientes.length === 1
+          ? "Sí, escribir el capítulo " + n.pendientes[0]
+          : "Sí, escribir los " + n.pendientes.length + " capítulos");
+
+    html += '<div class="teclear"><label for="palabra-clave">Para confirmar, ' +
+      "escribe <strong>GENERAR</strong>:</label>" +
       '<input type="text" id="palabra-clave" autocomplete="off" spellcheck="false" ' +
       'placeholder="GENERAR">' +
       '<button class="boton-fuerte" type="button" id="btn-generar-ya" disabled>' +
-      "Generar ahora</button>" +
-      '<button class="boton" type="button" id="btn-cancelar">Cancelar</button></div>';
+      esc(siQuiero) + "</button>" +
+      '<button class="boton" type="button" id="btn-cancelar">Mejor no</button></div>';
     html += "</div>";
   }
 
   if (falloGeneracion){
     html += htmlFallo(falloGeneracion,
       '<button class="boton" type="button" id="btn-cerrar-fallo-gen" ' +
-      'style="margin-top:10px">Ocultar</button>');
+      'style="margin-top:10px">Ocultar este aviso</button>');
   }
 
   // Ampliar vive aqui al lado porque es la otra cosa que se le puede pedir a
@@ -2089,7 +2130,7 @@ function renderGeneracion(){
     caja.focus();
     bYa.addEventListener("click", async () => {
       bYa.disabled = true;
-      bYa.textContent = "Lanzando…";
+      bYa.textContent = "Arrancando…";
       const r = await pedirJson("api/generar", { method: "POST" });
       confirmacionAbierta = false;
       // El fallo se pinta en la pagina, no en un `alert`: un aviso del
@@ -2106,7 +2147,7 @@ function renderGeneracion(){
   const bDet = $("#btn-detener");
   if (bDet) bDet.addEventListener("click", async () => {
     bDet.disabled = true;
-    bDet.textContent = "Deteniendo…";
+    bDet.textContent = "Parando…";
     await pedirJson("api/detener", { method: "POST" });
     await refrescarGeneracion();
     renderAhora();
@@ -2130,6 +2171,78 @@ let ampliando = false;
 let ampliarDesde = null;
 let relojAmpliar = null;
 let resultadoAmpliacion = null;
+
+/* Qué va a pasar de verdad si se pulsa el botón principal.
+
+   El botón lanza siempre lo mismo por dentro (`POST /api/generar`), pero lo que
+   ESO hace depende del estado: la sesión ejecuta `estado` y hace lo que diga.
+   Sin biblia diseña la novela entera; con capítulos pendientes escribe
+   exactamente esos; con todo hecho solo reensambla. Una etiqueta fija como
+   «Generar novela» sería falsa en dos de los tres casos, y en el peor invita a
+   creer que se empieza de cero teniendo cuatro capítulos escritos.
+
+   Así que la etiqueta la decide el estado, y la frase de debajo dice también
+   lo que NO va a pasar, que es la mitad que tranquiliza. */
+function situacionDeLaNovela(){
+  const n = estadoNovela();
+  const escritos = n.total - n.pendientes.length;
+  const hayBiblia = !!D.biblia;
+
+  if (!hayBiblia){
+    return {
+      caso: "sin_biblia",
+      etiqueta: "Empezar una novela nueva",
+      explicacion: "Todavía no hay ninguna novela: falta la biblia, que es el " +
+        "plan del que salen todos los capítulos.",
+      aviso: "El arquitecto diseñará la premisa, los personajes y el outline, y " +
+        "después se escribirán los <strong>" + n.total + " capítulos</strong> de " +
+        "cero. No hay nada escrito que perder.",
+    };
+  }
+
+  if (n.pendientes.length){
+    const lista = n.pendientes.length === 1
+      ? "el capítulo " + n.pendientes[0]
+      : "los capítulos " + listaLegible(n.pendientes);
+    return {
+      caso: "faltan_capitulos",
+      etiqueta: "Escribir " + lista,
+      explicacion: n.pendientes.length === 1
+        ? "El plan ya existe y queda <strong>un capítulo</strong> por escribir."
+        : "El plan ya existe y quedan <strong>" + n.pendientes.length +
+          " capítulos</strong> por escribir.",
+      aviso: "Escribe " + lista + " siguiendo el plan de la biblia. " +
+        "<strong>No toca los " + escritos + " capítulos que ya están escritos</strong>, " +
+        "ni su texto ni su plan.",
+    };
+  }
+
+  // Todo escrito: generar no escribiría nada, solo volvería a ensamblar. Decir
+  // «generar» aquí sería prometer algo que no pasa, así que no hay botón y se
+  // explica por qué, y se remite a lo que sí tiene sentido hacer.
+  return {
+    caso: "todo_escrito",
+    etiqueta: null,
+    explicacion: "<strong>No queda ningún capítulo por escribir</strong>: los " +
+      n.total + " están hechos y el manuscrito está montado.",
+    aviso: "Para seguir esta novela, añádele capítulos con el control de abajo. " +
+      "Para empezar otra distinta, cambia la premisa en Configuración y borra " +
+      "la carpeta <code>salida/</code> a mano.",
+  };
+}
+
+// Cuántas veces puede reescribirse un capítulo antes de darse por bueno. Sale
+// de la escalera configurada, no de un número inventado.
+function intentosPorCapitulo(){
+  const mod = ((API.config && API.config.efectiva) || D.config || {}).modelos || {};
+  const peldanos = Array.isArray(mod.escalera_escritor) ? mod.escalera_escritor.length : 3;
+  return Math.max(1, peldanos * (Number(mod.intentos_por_modelo) || 2));
+}
+
+function listaLegible(numeros){
+  if (numeros.length === 1) return String(numeros[0]);
+  return numeros.slice(0, -1).join(", ") + " y " + numeros[numeros.length - 1];
+}
 
 function estadoNovela(){
   const e = D.estado || {};
@@ -2209,14 +2322,14 @@ function htmlAmpliar(g, enMarcha){
       "Sin él, el escritor del capítulo " + (Number(res.capitulo) + 1) +
       " arrancaría sin saber qué pasó justo antes.</div>";
     html += '<button class="boton" type="button" id="btn-cerrar-ampliacion" ' +
-      'style="margin-top:14px">Entendido, ocultar</button>';
+      'style="margin-top:14px">Ya lo he leído, ocultar esto</button>';
     html += "</div>";
   } else if (resultadoAmpliacion && !resultadoAmpliacion.ok){
     html += htmlFallo(resultadoAmpliacion,
       '<p class="detalle" style="margin-top:10px">La biblia y ' +
       "<code>config.json</code> han quedado exactamente como estaban.</p>" +
       '<button class="boton" type="button" id="btn-cerrar-ampliacion" ' +
-      'style="margin-top:10px">Ocultar</button>');
+      'style="margin-top:10px">Ocultar este aviso</button>');
   }
 
   // --- el control, solo si la novela esta completa y no hay nada en marcha ---
@@ -2225,51 +2338,63 @@ function htmlAmpliar(g, enMarcha){
   if (!novela.completa){
     if (novela.total){
       html += '<div class="control tarjeta"><div class="cuerpo">' +
-        '<div class="rotulo">Ampliar</div>' +
-        "<p class=\"detalle\" style=\"margin-top:6px\">Solo se puede ampliar una " +
-        "novela terminada. Faltan por aprobar los capítulos <strong>" +
-        esc(novela.pendientes.join(", ")) + "</strong>: ampliar ahora mezclaría " +
-        "terminar lo que falta con añadir lo que no estaba.</p></div></div>";
+        '<div style="font-size:16.5px;line-height:1.5">Todavía no se le pueden ' +
+        "añadir capítulos a esta novela.</div>" +
+        '<div class="detalle" style="margin-top:8px">Primero hay que terminar ' +
+        (novela.pendientes.length === 1
+          ? "el capítulo <strong>" + novela.pendientes[0] + "</strong>"
+          : "los capítulos <strong>" + listaLegible(novela.pendientes) + "</strong>") +
+        ", que están planificados pero sin escribir. Añadir más ahora mezclaría " +
+        "dos cosas: acabar lo que falta y empezar lo que no estaba.</div></div></div>";
     }
     return html;
   }
 
   html += '<div class="control tarjeta"><div class="cuerpo">';
-  html += '<div class="rotulo">Ampliar</div>';
-  html += "<p class=\"detalle\" style=\"margin-top:6px\">La novela está completa con " +
-    "<strong>" + novela.total + " capítulos</strong>. Ampliar añade capítulos al " +
-    "final <strong>sin regenerar nada de lo aprobado</strong>: el arquitecto " +
-    "escribe el plan de los nuevos y tú decides después si lo generas.</p></div>";
+  html += '<div style="font-size:16.5px;line-height:1.5">Esta novela está ' +
+    "terminada: <strong>" + novela.total + " capítulos</strong> escritos y " +
+    "montados. Se le pueden añadir más al final.</div>";
+  html += '<div class="detalle" style="margin-top:8px">El arquitecto inventará ' +
+    "qué pasa en los capítulos nuevos y se escribirán solos. <strong>Los " +
+    novela.total + " capítulos de ahora no se tocan</strong>: seguirán con el " +
+    "mismo texto y el mismo plan.</div></div>";
   html += '<div style="display:flex;gap:10px;align-items:center">';
-  html += '<label for="cuantos-ampliar" class="detalle">Añadir</label>' +
+  html += '<label for="cuantos-ampliar" class="detalle">Cuántos añadir</label>' +
     '<input type="number" id="cuantos-ampliar" min="1" max="20" step="1" value="' +
     esc(ultimoCuantos) + '" style="width:80px;font:inherit;padding:10px 12px;' +
     'border:1px solid var(--regla-fuerte);border-radius:7px">';
-  html += '<button class="boton-fuerte" type="button" id="btn-ampliar">Ampliar…</button>';
+  html += '<button class="boton-fuerte" type="button" id="btn-ampliar">' +
+    "Añadir capítulos a esta novela</button>";
   html += "</div></div>";
 
   if (confirmarAmpliar){
-    html += '<div class="confirmar"><h3>Esto va a pasar si continúas</h3><ul>';
-    html += "<li>La novela de <strong>" + novela.total + " capítulos</strong> que hay " +
-      "ahora se copiará a <code>" + esc(g.proxima_copia || "salida-novela-N") +
-      "/</code>.</li>";
-    html += "<li>Se lanzará una sesión de Claude Code para que el " +
-      "<strong>arquitecto</strong> escriba el outline de los capítulos nuevos. " +
-      "Gasta delegaciones, aunque muchas menos que generar.</li>";
-    html += "<li><strong>No se regenerará nada de lo aprobado</strong>, y si el " +
-      "arquitecto intentara reescribir un capítulo ya escrito, se rechaza entero.</li>";
-    html += "<li>La petición <strong>tarda uno o dos minutos</strong> y el navegador " +
-      "se queda esperando: hay que traer el plan para que puedas leerlo.</li>";
-    html += "<li>Al terminar <strong>no se genera nada</strong>. Verás las entradas " +
-      "nuevas y decides tú.</li>";
+    const nuevos = [];
+    for (let i = 1; i <= ultimoCuantos; i++) nuevos.push(novela.total + i);
+    const cuales = nuevos.length === 1
+      ? "el capítulo " + nuevos[0]
+      : "los capítulos " + listaLegible(nuevos);
+
+    html += '<div class="confirmar"><h3>Se ' + (nuevos.length === 1 ? "va" : "van") +
+      " a añadir y escribir " + esc(cuales) + "</h3><ul>";
+    html += "<li><strong>Los " + novela.total + " capítulos de ahora no se tocan.</strong> " +
+      "Si el arquitecto intentara cambiar uno, se rechaza la ampliación entera y " +
+      "la novela se queda como está.</li>";
+    html += "<li>Primero el arquitecto inventa qué pasa en " + esc(cuales) +
+      ", y <strong>lo verás en pantalla en cuanto lo tenga</strong>, antes de que " +
+      "se escriba una sola línea.</li>";
+    html += "<li>Después se escriben solos, sin pedirte nada más. Si al leer el " +
+      "plan no te convence, puedes pararlo ahí: habrás gastado lo del arquitecto " +
+      "y no lo de la novela.</li>";
+    html += "<li>Antes de nada se guarda una copia de lo que hay ahora en " +
+      "<code>" + esc(g.proxima_copia || "salida-novela-N") + "/</code>.</li>";
     html += "</ul>";
-    html += '<div class="teclear"><label for="palabra-ampliar">Escribe ' +
-      "<strong>AMPLIAR</strong> para habilitar el botón:</label>" +
+    html += '<div class="teclear"><label for="palabra-ampliar">Para confirmar, ' +
+      "escribe <strong>AMPLIAR</strong>:</label>" +
       '<input type="text" id="palabra-ampliar" autocomplete="off" spellcheck="false" ' +
       'placeholder="AMPLIAR">' +
       '<button class="boton-fuerte" type="button" id="btn-ampliar-ya" disabled>' +
-      "Ampliar ahora</button>" +
-      '<button class="boton" type="button" id="btn-cancelar-ampliar">Cancelar</button>' +
+      "Sí, añadir " + esc(cuales) + "</button>" +
+      '<button class="boton" type="button" id="btn-cancelar-ampliar">Mejor no</button>' +
       "</div></div>";
   }
   return html;
@@ -2596,9 +2721,9 @@ function renderConfiguracion(){
 
   html += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px">';
   html += '<button class="boton-fuerte" type="button" id="btn-guardar"' + inhab + ">" +
-    "Guardar en config.json</button>";
-  html += '<button class="boton" type="button" id="btn-previo">Ver lo que se enviará</button>';
-  html += '<button class="boton" type="button" id="btn-recargar-cfg">Descartar y releer</button>';
+    "Guardar estos ajustes</button>";
+  html += '<button class="boton" type="button" id="btn-previo">Ver qué se va a guardar</button>';
+  html += '<button class="boton" type="button" id="btn-recargar-cfg">Deshacer mis cambios</button>';
   html += "</div>";
   html += '<div id="cfg-previo" style="margin-top:16px"></div>';
   html += "</div></div>";
