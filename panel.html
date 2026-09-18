@@ -146,6 +146,60 @@ h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
 @keyframes latido{0%,100%{opacity:1}50%{opacity:.25}}
 
 /* ===================================================================
+   3b. EL RECUADRO DE «QUÉ ESTÁ PASANDO»
+
+   Es lo más grande de la pantalla, y no por capricho: esto se proyecta en
+   una sala y es lo único que la gente del fondo va a poder leer. Todo lo
+   demás del panel es consultable acercándose; esta frase no.
+
+   De ahí las decisiones de tamaño: la frase arranca en 30px y llega a 62,
+   con la línea apretada (1.12) para que una frase de dos líneas siga
+   cabiendo, y `text-wrap: balance` para que no quede una palabra suelta
+   colgando en la segunda línea.
+   =================================================================== */
+.ahora{
+  padding:clamp(24px,4vw,44px) clamp(22px,4vw,48px);
+  margin-bottom:26px;border-left:6px solid var(--regla-fuerte);
+}
+.ahora.viva{border-left-color:var(--naranja);background:var(--naracion-fondo,var(--hoja))}
+.ahora-alto{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.ahora-frase{
+  /* Tiene que ganar a TODO lo demás de la página, y por margen visible. La
+     referencia es `.cifra-gigante`, que llega a 68px: esta llega a 84. Si
+     algún día se sube aquella, hay que subir esta por encima, o el número
+     del progreso le robará la mirada a la frase desde el fondo de la sala. */
+  font-size:clamp(32px,5.6vw,84px);
+  line-height:1.12;
+  font-weight:700;
+  letter-spacing:-.02em;
+  text-wrap:balance;
+  margin:0;
+}
+.ahora.quieta .ahora-frase{font-size:clamp(22px,3vw,38px);color:var(--tinta-media);font-weight:600}
+.ahora-pie{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-top:18px}
+.ahora-reloj{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:clamp(20px,2.6vw,34px);font-weight:700;color:var(--naranja-hondo);
+  letter-spacing:-.02em;
+}
+.ahora.quieta .ahora-reloj{color:var(--tinta-suave)}
+.ahora-lento{
+  margin-top:16px;padding:12px 16px;border:1px dashed var(--regla-fuerte);
+  border-radius:8px;font-size:15px;color:var(--tinta-media);background:var(--papel);
+}
+
+/* El histórico, deliberadamente pequeño: sirve para reconstruir lo que pasó
+   mientras no mirabas, no para competir con la frase de arriba. */
+.historico{margin-top:20px;padding-top:16px;border-top:1px solid var(--regla)}
+.historico .rotulo{margin-bottom:8px}
+.historico ol{list-style:none;display:flex;flex-direction:column;gap:5px}
+.historico li{
+  display:flex;gap:12px;font-size:13.5px;color:var(--tinta-media);line-height:1.45;
+}
+.historico li:first-child{color:var(--tinta);font-weight:600}
+.historico time{font-family:var(--mono);font-size:12px;color:var(--tinta-suave);flex:none}
+
+/* ===================================================================
    4. MONITOREO — mitad de arriba, en vivo
    =================================================================== */
 .vivo-marco{padding:clamp(20px,3vw,30px);margin-bottom:34px}
@@ -588,6 +642,7 @@ http://localhost:8000/panel.html</code>
 
     <!-- ---------- 1. MONITOREO ---------- -->
     <section id="v-monitoreo" role="tabpanel" aria-labelledby="tab-monitoreo">
+      <div id="mon-ahora"></div>
       <div id="mon-generacion"></div>
       <div id="mon-vivo" class="vivo-marco tarjeta"></div>
       <div id="mon-recorrido"></div>
@@ -956,6 +1011,11 @@ async function latir(){
     const antes = API.generacion ? API.generacion.estado + ":" + (API.generacion.log || []).length : "";
     await refrescarGeneracion();
     const ahora = API.generacion ? API.generacion.estado + ":" + (API.generacion.log || []).length : "";
+    // El recuadro se repinta SIEMPRE que hay backend, no solo cuando cambia
+    // el estado del proceso: la frase cambia sola al pasar de una delegacion a
+    // otra, y el aviso de lentitud aparece con el tiempo, sin que cambie nada
+    // mas. Es una sustitucion de texto, no cuesta nada.
+    renderAhora();
     if (ahora !== antes){
       renderGeneracion();
       // Si la generacion arranco o termino, lo que se puede editar cambia.
@@ -1099,6 +1159,7 @@ function aprobacionPorValidador(){
    =================================================================== */
 function render(){
   $("#cab-titulo").textContent = tituloNovela();
+  renderAhora();
   renderVivo(false);
   renderRecorrido();
   renderBiblia();
@@ -1809,6 +1870,106 @@ async function refrescarConfig(){
   return API.config;
 }
 
+/* ---------- EL RECUADRO DE «QUÉ ESTÁ PASANDO» ----------
+   Lo primero de la pantalla y lo más grande. La frase la compone el servidor
+   (`src/narracion.py`), aquí solo se pinta: si la lógica de redactarla viviera
+   en los dos sitios, acabarían diciendo cosas distintas.
+
+   El cronómetro sí corre en local, cada segundo, entre una consulta y la
+   siguiente. Es lo que convierte una pantalla parada en una que está
+   esperando, y no cuesta ni una petición. */
+let relojAhora = null;
+let baseReloj = { segundos: null, desde: null };
+
+function renderAhora(){
+  const cont = $("#mon-ahora");
+  if (!cont) return;
+  const g = API.generacion;
+
+  // Sin backend no hay frase que dar, y decir algo inventado sería peor que
+  // no decir nada: el panel se está sirviendo sin quien sepa qué pasa.
+  if (!API.hay || !g){
+    cont.innerHTML = "";
+    return;
+  }
+
+  const enMarcha = !!g.hay_algo_en_marcha;
+  let html = '<div class="ahora tarjeta ' + (enMarcha ? "viva" : "quieta") + '">';
+
+  html += '<div class="ahora-alto">';
+  html += enMarcha
+    ? '<span class="pastilla viva"><span class="punto late"></span>En marcha</span>'
+    : '<span class="pastilla quieta"><span class="punto"></span>Parada</span>';
+  if (g.fase && enMarcha){
+    html += '<span class="rotulo">' + esc(nombreDeFase(g.fase)) + "</span>";
+  }
+  html += "</div>";
+
+  html += '<p class="ahora-frase">' + esc(g.frase || "—") + "</p>";
+
+  html += '<div class="ahora-pie">';
+  if (g.segundos_en_fase !== null && g.segundos_en_fase !== undefined){
+    html += '<span class="rotulo">Lleva</span>' +
+      '<span class="ahora-reloj" id="reloj-ahora">' +
+      esc(g.duracion_en_fase || "—") + "</span>";
+  }
+  html += "</div>";
+
+  if (g.aviso_lentitud){
+    html += '<div class="ahora-lento">⏳ ' + esc(g.aviso_lentitud) + "</div>";
+  }
+
+  // El histórico, pequeño: para reconstruir lo que pasó sin haber estado
+  // mirando la pantalla todo el rato.
+  const historial = g.historial || [];
+  if (historial.length){
+    html += '<div class="historico"><div class="rotulo">Lo que ha ido pasando</div><ol>';
+    for (const linea of historial){
+      html += "<li><time>" + esc(horaCorta(linea.momento)) + "</time><span>" +
+        esc(linea.frase) + "</span></li>";
+    }
+    html += "</ol></div>";
+  }
+
+  html += "</div>";
+  cont.innerHTML = html;
+
+  // El reloj se ancla a lo que dijo el servidor y sigue solo desde ahí.
+  baseReloj = { segundos: g.segundos_en_fase, desde: Date.now() };
+  if (relojAhora) clearInterval(relojAhora);
+  relojAhora = null;
+  if (enMarcha && baseReloj.segundos !== null && baseReloj.segundos !== undefined){
+    relojAhora = setInterval(tictacAhora, 1000);
+  }
+}
+
+function tictacAhora(){
+  const el = $("#reloj-ahora");
+  if (!el || baseReloj.segundos === null || baseReloj.segundos === undefined) return;
+  const va = baseReloj.segundos + Math.round((Date.now() - baseReloj.desde) / 1000);
+  el.textContent = duracion(va);
+}
+
+function horaCorta(iso){
+  const t = Date.parse(iso);
+  if (!isFinite(t)) return "";
+  const d = new Date(t);
+  return dosCifras(d.getHours()) + ":" + dosCifras(d.getMinutes()) + ":" +
+    dosCifras(d.getSeconds());
+}
+
+// El nombre de la fase, para la etiqueta pequeña de arriba. La frase grande ya
+// dice lo que pasa; esto solo sitúa en qué punto del proceso va.
+function nombreDeFase(fase){
+  return {
+    copiando: "Paso 1 de 4 · copia de seguridad",
+    arquitecto: "Paso 2 de 4 · el plan",
+    validando: "Paso 3 de 4 · comprobaciones",
+    lanzando: "Paso 4 de 4 · arrancando",
+    generando: "Escribiendo la novela",
+  }[fase] || fase;
+}
+
 /* ---------- control de generacion, en Monitoreo ---------- */
 let confirmacionAbierta = false;
 let falloGeneracion = null;
@@ -1829,14 +1990,26 @@ function renderGeneracion(){
   const g = API.generacion || {};
   let html = "";
 
-  if (g.viva){
+  // «En marcha» NO es solo «hay un proceso de generacion vivo»: durante la
+  // copia y mientras trabaja el arquitecto no hay proceso de generacion y sin
+  // embargo la operacion esta en curso. Si el boton de detener solo apareciera
+  // con `viva`, justo en la fase mas larga —el arquitecto— no habria forma de
+  // parar, que es lo contrario de lo que se pidio.
+  const enMarcha = !!(g.viva || g.hay_algo_en_marcha);
+
+  if (enMarcha){
     html += '<div class="control tarjeta generando">';
     html += '<div class="cuerpo"><span class="pastilla viva"><span class="punto late"></span>' +
-      "Generando</span>";
-    html += '<p class="detalle" style="margin-top:8px">' + esc(g.mensaje || "") +
-      " · el proceso escribe en <code>salida/.log-generacion.txt</code></p></div>";
+      (g.viva ? "Generando" : "Trabajando") + "</span>";
+    html += '<p class="detalle" style="margin-top:8px">' +
+      (g.viva
+        ? esc(g.mensaje || "") + " · el proceso escribe en " +
+          "<code>salida/.log-generacion.txt</code>"
+        : "La operación está en curso. Se puede parar en cualquier momento: si " +
+          "paras ahora, no se habrá escrito ningún capítulo.") +
+      "</p></div>";
     html += '<button class="boton-fuerte boton-parar" type="button" id="btn-detener">' +
-      "Detener generación</button>";
+      (g.viva ? "Detener generación" : "Detener") + "</button>";
     html += "</div>";
   } else {
     const roto = g.estado === "caida" || g.estado === "desconocida";
@@ -1856,7 +2029,7 @@ function renderGeneracion(){
   // con la carpeta de copia por su nombre, y hay que TECLEAR la palabra para
   // que el boton final se active. Este boton copia carpetas y arranca un
   // proceso que gasta delegaciones: no puede pulsarse sin querer.
-  if (confirmacionAbierta && !g.viva){
+  if (confirmacionAbierta && !enMarcha){
     html += '<div class="confirmar"><h3>Esto va a pasar si continúas</h3><ul>';
     if (g.hay_novela_que_copiar){
       html += "<li>La novela que hay ahora en <code>salida/</code> se copiará a " +
@@ -1889,7 +2062,7 @@ function renderGeneracion(){
   // una novela: generarla de cero, o alargarla. Las dos copian carpetas y las
   // dos gastan delegaciones, asi que las dos llevan la misma confirmacion
   // escrita.
-  html += htmlAmpliar(g);
+  html += htmlAmpliar(g, enMarcha);
 
   if (g.log && g.log.length){
     html += '<div class="bloque"><h2>Log de la generación</h2>' +
@@ -1923,6 +2096,7 @@ function renderGeneracion(){
       // navegador se cierra de un clic y se lleva la explicacion con el.
       falloGeneracion = r.ok ? null : leerFallo(r, "No se ha lanzado nada");
       await refrescarGeneracion();
+      renderAhora();
       renderGeneracion();
       await refrescarConfig();
       renderConfiguracion();
@@ -1935,6 +2109,7 @@ function renderGeneracion(){
     bDet.textContent = "Deteniendo…";
     await pedirJson("api/detener", { method: "POST" });
     await refrescarGeneracion();
+    renderAhora();
     renderGeneracion();
     await refrescarConfig();
     renderConfiguracion();
@@ -1966,7 +2141,7 @@ function estadoNovela(){
   return { total, pendientes, completa: total > 0 && pendientes.length === 0 };
 }
 
-function htmlAmpliar(g){
+function htmlAmpliar(g, enMarcha){
   const novela = estadoNovela();
   let html = "";
 
@@ -2044,8 +2219,8 @@ function htmlAmpliar(g){
       'style="margin-top:10px">Ocultar</button>');
   }
 
-  // --- el control, solo si la novela esta completa ---
-  if (g.viva) return html;
+  // --- el control, solo si la novela esta completa y no hay nada en marcha ---
+  if (enMarcha) return html;
 
   if (!novela.completa){
     if (novela.total){
@@ -2171,6 +2346,7 @@ async function lanzarAmpliacion(cuantos){
   // todo para que el resto de vistas no se queden con los numeros de antes.
   await Promise.all([refrescarGeneracion(), refrescarConfig()]);
   await cargarPorRed();
+  renderAhora();
   renderGeneracion();
   $("#mon-generacion").scrollIntoView({
     behavior: prefiereQuieto() ? "auto" : "smooth", block: "start" });

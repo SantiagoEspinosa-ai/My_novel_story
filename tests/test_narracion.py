@@ -86,6 +86,20 @@ def test_el_arquitecto_dice_que_capitulos_esta_disenando():
         n.FASE_ARQUITECTO, {"capitulos_nuevos": [5, 6, 7]})
 
 
+def test_las_contracciones_estan_bien_hechas():
+    """«del capítulo», no «de el capítulo».
+
+    Con la frase proyectada a ochenta píxeles en una sala, una contracción sin
+    hacer se lee como un descuido del sistema entero.
+    """
+    una = n.frase_de_fase(n.FASE_LANZANDO, {"capitulos_nuevos": [6]})
+    varias = n.frase_de_fase(n.FASE_LANZANDO, {"capitulos_nuevos": [6, 7]})
+    assert una == "Arrancando la escritura del capítulo 6"
+    assert varias == "Arrancando la escritura de los capítulos 6 y 7"
+    for frase in (una, varias):
+        assert "de el " not in frase
+
+
 def test_ninguna_frase_usa_jerga_del_sistema():
     """Quien mira el panel no tiene por qué saber cómo se llaman las cosas."""
     frases = [

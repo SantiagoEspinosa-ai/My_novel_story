@@ -1048,7 +1048,7 @@ que funciona igual desde la raíz o desde una carpeta `docs/`.
 
 | Vista | Qué cuenta |
 |---|---|
-| **Monitoreo** | La principal. Arriba, en vivo: qué agente trabaja, desde cuándo, con qué modelo, y el progreso. Abajo, el recorrido: todos los intentos de cada capítulo con sus veredictos, su puntuación y **los problemas sin resolver con su evidencia** |
+| **Monitoreo** | La principal. Arriba del todo, **la frase de qué está pasando ahora**, en grande, con su cronómetro y el histórico. Después, en vivo: qué agente trabaja, con qué modelo, y el progreso. Abajo, el recorrido: todos los intentos de cada capítulo con sus veredictos, su puntuación y **los problemas sin resolver con su evidencia** |
 | **Biblia** | Contra qué validan los validadores: premisa, conflicto, ambientación, personajes con sus rasgos fijos, outline cruzado con lo que de verdad pasó, y hechos establecidos |
 | **Consumo** | Dónde se fue el gasto y **cuánto se tiró**. Reparto por rol, modelo y capítulo. Lo no medido se dice con palabras, nunca con un `0` |
 | **Configuración** | Los ajustes de la próxima novela. Con backend, **guarda de verdad**; sin él, explica que hace falta |
@@ -1067,6 +1067,29 @@ botones que van a fallar.
 la que se va a copiar la novela de ahora— y hay que **teclear la palabra
 `GENERAR`** para que el botón final se active. Ese botón copia carpetas y
 arranca un proceso que gasta delegaciones; no puede pulsarse sin querer.
+
+**Lo primero y más grande de la pantalla es una frase.** Arriba del todo, en
+Monitoreo, hay un recuadro que dice **en lenguaje llano qué está pasando ahora
+mismo**, con el tiempo que lleva en ese paso: «El escritor está redactando el
+capítulo 5, intento 2 de 6, con opus». Debajo, en pequeño, el histórico de las
+últimas frases, para reconstruir lo que pasó sin haber estado mirando.
+
+El tamaño no es decoración. Esa frase llega a 84 píxeles, por encima de
+cualquier otra cosa de la página —el número del progreso se queda en 68—,
+porque el panel se proyecta en una sala y es lo único que se lee desde el
+fondo. Si algún día se agranda otro elemento, hay que subir esta por encima o
+dejará de cumplir su función.
+
+La frase la compone el servidor (`src/narracion.py`, sección 11.4), no el
+panel: si la lógica de redactarla viviera en los dos sitios, acabarían
+diciendo cosas distintas. El cronómetro sí corre en local, cada segundo, entre
+una consulta y la siguiente.
+
+**El botón de detener está visible durante toda la operación**, no solo
+mientras se escribe. Durante la copia y mientras trabaja el arquitecto no hay
+ningún proceso de generación vivo, y aun así se puede parar: si el botón
+apareciera solo con la generación en marcha, justo en la fase más larga no
+habría forma de detener, que es lo contrario de lo que hace falta.
 
 **Ampliar está al lado, con la misma protección.** El control solo aparece
 cuando la novela está **completa**; si falta algún capítulo por aprobar, en su

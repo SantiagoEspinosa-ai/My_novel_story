@@ -178,8 +178,10 @@ def frase_de_fase(fase, datos=None):
 
     if fase == FASE_LANZANDO:
         if capitulos:
-            return ("Arrancando la escritura de {0} {1}".format(
-                "el capítulo" if len(capitulos) == 1 else "los capítulos",
+            # «del capítulo», no «de el capítulo»: la contracción no es un
+            # detalle cosmético cuando la frase se proyecta a 80 píxeles.
+            return ("Arrancando la escritura {0} {1}".format(
+                "del capítulo" if len(capitulos) == 1 else "de los capítulos",
                 _lista_en_castellano(capitulos)))
         return "Arrancando la generación"
 
