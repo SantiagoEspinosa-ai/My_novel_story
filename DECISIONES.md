@@ -561,6 +561,83 @@ terminal; el resumen viaja.
 
 ---
 
+### Hallazgo 14 — El mismo `.CMD`, segundo mordisco: el prompt truncado
+
+**El síntoma.** Ampliar devolvía `502`. La sesión de Claude Code hacía bien
+todas las precondiciones, llegaba al paso de delegar y respondía: *«Dime
+cuántos capítulos añadir, un entero entre 1 y 20»*. El número **sí** se
+validaba, **sí** aparecía en lo que devolvía `prompt_ampliar`, y aun así no le
+llegaba.
+
+**La causa.** No era el prompt: era el transporte. El prompt iba como
+argumento (`claude -p "<texto>"`), y `claude` es un `.CMD` (hallazgo 13), así
+que la invocación pasa por `cmd.exe`, cuyo analizador de línea de comandos
+**termina el comando en el primer salto de línea**.
+
+Medido con un script que imprime lo que recibe:
+
+| Enviado | Recibido |
+|---|---|
+| 2303 caracteres, 46 líneas | **60 caracteres**: la primera línea |
+
+Lo que llegaba era `AMPLIAR UNA NOVELA YA TERMINADA. No generes ningun
+capitulo.` y se acabó. Sin el número, sin las instrucciones, sin la
+advertencia del arco. La sesión hizo lo único razonable con un encargo
+truncado: pedir el dato que le faltaba.
+
+**Lo peor es cómo se manifiesta.** El fallo aparecía tres capas más allá de su
+causa, y disfrazado: el servidor lo veía como «el modelo no devolvió JSON», que
+apunta a un problema de formato del modelo. Ni el número, ni el transporte, ni
+el `.CMD` salían por ningún lado.
+
+**La cura: el prompt por la entrada estándar.** `claude -p` sin argumento lee
+de stdin, y por ahí no hay línea de comandos que analizar: llega el texto
+entero con sus saltos de línea, y de paso desaparece el límite de longitud de
+la línea de comandos de Windows. Comprobado contra el `claude` real con un
+prompt de dos líneas cuya segunda pedía añadir una palabra: respondió
+`LISTO COMPLETO`.
+
+Se aplicó **también a `generar`**, que hoy se salvaba de milagro porque su
+prompt es de una sola línea. Eso es suerte, no diseño: bastaba con que alguien
+le añadiera un salto de línea para que empezara a truncarse en silencio.
+
+---
+
+#### La lección, otra vez la misma: probar el recorrido, no la interfaz
+
+El hallazgo 13 terminaba diciendo que un doble de prueba tiene que tener la
+forma de lo real. Este caso dice lo siguiente, y es la mitad que faltaba.
+
+Había **dos** tests sobre el número de capítulos:
+
+- que se valida como entero entre 1 y 20 (siete casos parametrizados);
+- que aparece en el texto que devuelve `prompt_ampliar()`.
+
+Los dos pasaban. Y el número no llegaba. Porque los dos miraban **los
+extremos** —lo que entra y lo que se construye— y ninguno miraba **el
+recorrido**: qué recibe el proceso al otro lado.
+
+> **La regla:** cuando un dato cruza una frontera —un proceso, la red, un
+> archivo, un formato—, el test tiene que comprobarlo **al otro lado de la
+> frontera**, no antes de cruzarla. Verificar que el dato se construye bien y
+> que la función que lo construye se llama con lo correcto deja sin probar
+> exactamente el tramo donde se pierde.
+
+El test que faltaba monta un `claude` postizo que **guarda en un archivo todo
+lo que recibe**, argumentos y entrada estándar, y comprueba que el número que
+entró por HTTP aparece ahí. Se verificó que falla sin el arreglo: con el
+prompt como argumento, los dos tests del recorrido se ponen rojos y el resto
+sigue verde, que es la prueba de que cubren algo que antes no cubría nadie.
+
+**Y el mensaje de error, que también era parte del problema.** Una sesión que
+pide un dato no está fallando: está diciendo qué le falta. Su respuesta **es**
+el diagnóstico. Ahora el servidor distingue ese caso con una heurística
+conservadora y responde «la sesión pidió información que no se le dio [...] el
+encargo le llegó incompleto», con lo que preguntó en primer plano, en vez de
+enterrarlo bajo un «no devolvió JSON» que apunta al sitio equivocado.
+
+---
+
 ### Estado de las pruebas de los subagentes (2026-09-17)
 
 Todos probados con datos de juguete, con infracciones plantadas a propósito para

@@ -1722,6 +1722,7 @@ function leerFallo(r, titulo){
     salidaSesion: o.salida_de_la_sesion || null,
     pendientes: o.capitulos_pendientes || null,
     copia: o.copia || null,
+    pidioDatos: !!o.pidio_datos,
     estado: r.estado,
   };
 }
@@ -1756,13 +1757,20 @@ function htmlFallo(f, extra){
   }
   // Cuando el fallo viene de la sesion de Claude Code, lo que dijo ES el
   // diagnostico: se ensena tal cual, en consola, sin resumir.
+  if (f.respuesta && f.pidioDatos){
+    // Cuando la sesion pregunta, su respuesta no es un error de formato: es
+    // el diagnostico. Va primero y con su propio titulo, no enterrada al final.
+    html += '<div class="rotulo" style="margin-top:12px;color:var(--carmin)">' +
+      "Lo que la sesión pidió</div>" +
+      '<div class="consola" style="margin-top:6px">' + esc(f.respuesta) + "</div>";
+  }
   if (f.salidaSesion){
     html += '<div class="rotulo" style="margin-top:12px">Lo que dijo la sesión' +
       (f.codigo_salida !== null ? " (terminó con código " + esc(f.codigo_salida) + ")" : "") +
       "</div><div class=\"consola\" style=\"margin-top:6px\">" +
       esc(f.salidaSesion) + "</div>";
   }
-  if (f.respuesta){
+  if (f.respuesta && !f.pidioDatos){
     html += '<div class="rotulo" style="margin-top:12px">Lo que devolvió, que no ' +
       "era lo esperado</div><div class=\"consola\" style=\"margin-top:6px\">" +
       esc(f.respuesta) + "</div>";

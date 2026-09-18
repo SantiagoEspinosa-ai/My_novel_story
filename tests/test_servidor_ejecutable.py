@@ -234,6 +234,148 @@ def test_una_excepcion_imprevista_llega_al_navegador_explicada(proyecto, monkeyp
     assert "Traceback" not in json.dumps(detalle)
 
 
+# ---------------------------------------------------------------------------
+# El prompt tiene que LLEGAR entero, no solo construirse bien
+# ---------------------------------------------------------------------------
+#
+# El segundo mordisco del mismo `.CMD`. El prompt se pasaba como argumento, y
+# `cmd.exe` termina la línea de comandos en el primer salto de línea: de un
+# prompt de 2303 caracteres y 46 líneas llegaban 60, su primera línea. La
+# sesión recibía un encargo truncado, no podía saberlo, y pedía el dato que le
+# faltaba. Desde fuera parecía «el modelo no devolvió JSON».
+#
+# Los tests que había validaban que el número fuera un entero y que apareciera
+# en lo que devuelve `prompt_ampliar`. Ninguno comprobaba que **llegara al otro
+# lado**: probaban la interfaz, no el recorrido. Es exactamente el patrón del
+# hallazgo 13.
+
+
+def crear_claude_que_guarda_lo_que_recibe(carpeta, destino):
+    """Un `claude` postizo que escribe en un archivo TODO lo que le llega.
+
+    Tiene la forma del real —un script del `PATH`— y además captura sus
+    argumentos y su entrada estándar, que es lo que permite comprobar por
+    dónde y cómo llega el prompt.
+    """
+    carpeta.mkdir(parents=True, exist_ok=True)
+    espia = carpeta / "espia.py"
+    # Sin `.format()`: el propio código del espía lleva llaves y chocarían.
+    fuente = (
+        "import sys, json\n"
+        "datos = {'args': sys.argv[1:], 'stdin': sys.stdin.read()}\n"
+        "open(r'RUTA_DESTINO', 'w', encoding='utf-8').write("
+        "json.dumps(datos, ensure_ascii=False))\n"
+        "print('capturado')\n"
+    ).replace("RUTA_DESTINO", str(destino))
+    espia.write_text(fuente, encoding="utf-8")
+    if ES_WINDOWS:
+        guion = carpeta / "claude.cmd"
+        guion.write_text('@echo off\r\n"{0}" "{1}" %*\r\n'.format(
+            sys.executable, espia), encoding="utf-8")
+    else:
+        guion = carpeta / "claude"
+        guion.write_text('#!/bin/sh\nexec "{0}" "{1}" "$@"\n'.format(
+            sys.executable, espia), encoding="utf-8")
+        guion.chmod(0o755)
+    return carpeta
+
+
+def test_el_numero_que_entra_por_http_llega_al_subproceso(proyecto, tmp_path, monkeypatch):
+    """EL test que faltaba. Recorre HTTP → endpoint → prompt → proceso.
+
+    Antes del arreglo, lo que llegaba al proceso era la primera línea del
+    prompt y el número no aparecía por ninguna parte, que es justo el fallo
+    que se vio en la práctica.
+    """
+    capturado = tmp_path / "recibido.json"
+    carpeta = crear_claude_que_guarda_lo_que_recibe(tmp_path / "bin", capturado)
+    monkeypatch.setenv("PATH", str(carpeta))
+
+    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente.post("/api/ampliar", json={"capitulos": 7})
+
+    assert capturado.is_file(), "el subproceso no llegó a arrancar"
+    recibido = json.loads(capturado.read_text(encoding="utf-8"))
+    # El prompt viaja por la entrada estándar, no como argumento.
+    llegado = recibido["stdin"]
+
+    assert "7" in llegado, "el número no llegó al subproceso"
+    assert "anadirle 7" in llegado
+    assert "los 7 capitulos nuevos" in llegado
+
+
+def test_el_prompt_llega_entero_y_no_solo_su_primera_linea(proyecto, tmp_path, monkeypatch):
+    """La causa del truncado, comprobada sobre lo que de verdad recibe."""
+    capturado = tmp_path / "recibido.json"
+    carpeta = crear_claude_que_guarda_lo_que_recibe(tmp_path / "bin", capturado)
+    monkeypatch.setenv("PATH", str(carpeta))
+
+    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente.post("/api/ampliar", json={"capitulos": 2})
+
+    esperado = servidor.prompt_ampliar(2)
+    llegado = json.loads(capturado.read_text(encoding="utf-8"))["stdin"]
+
+    assert llegado.strip() == esperado.strip(), (
+        "llegaron {0} caracteres de {1}".format(len(llegado), len(esperado)))
+    # Y las tres cosas que el prompt tiene que decir y que iban detrás del
+    # primer salto de línea, que era justo lo que se perdía.
+    assert "LA NOVELA ESTABA CERRADA Y SE REABRE" in llegado
+    assert "resumidor" in llegado
+    assert llegado.count("\n") > 20
+
+
+def test_el_prompt_de_generar_tambien_llega_por_stdin(proyecto, tmp_path, monkeypatch):
+    """`generar` hoy se salva porque su prompt es de una sola línea.
+
+    Eso es suerte, no diseño: bastaría con que alguien le añadiera un salto de
+    línea para que empezara a truncarse en silencio. Va por stdin igual.
+    """
+    capturado = tmp_path / "recibido.json"
+    carpeta = crear_claude_que_guarda_lo_que_recibe(tmp_path / "bin", capturado)
+    monkeypatch.setenv("PATH", str(carpeta))
+
+    cliente = TestClient(servidor.crear_app(proyecto))
+    cliente.post("/api/generar")
+    for _ in range(100):
+        if not cliente.get("/api/generacion").json()["viva"]:
+            break
+
+    recibido = json.loads(capturado.read_text(encoding="utf-8"))
+    assert recibido["stdin"].strip() == servidor.PROMPT_GENERACION.strip()
+    assert "EJECUCION.md" in recibido["stdin"]
+    # El prompt no va como argumento: el comando es solo `claude -p`.
+    assert recibido["args"] == ["-p"]
+
+
+def test_una_respuesta_que_pide_datos_se_dice_con_esas_palabras(proyecto):
+    """Lo que pasó de verdad: la sesión pidió el número que no le llegó.
+
+    Su respuesta ES el diagnóstico. Tratarla como «no devolvió JSON» la
+    entierra bajo un problema de formato que no existe.
+    """
+    def sesion_que_pregunta(prompt):
+        return 0, "Dime cuantos capitulos anadir, un entero entre 1 y 20.", ""
+    cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_que_pregunta))
+    r = cliente.post("/api/ampliar", json={"capitulos": 2})
+    assert r.status_code == 502
+    detalle = r.json()["detail"]
+    assert detalle["pidio_datos"] is True
+    assert "pidio informacion que no se le dio" in detalle["mensaje"]
+    assert "el encargo le llego incompleto" in detalle["mensaje"].replace("ó", "o")
+    assert "Dime cuantos capitulos" in detalle["respuesta"]
+
+
+def test_una_respuesta_que_no_es_json_pero_tampoco_pregunta_se_dice_distinto(proyecto):
+    """No todo lo que no es JSON es una pregunta: el mensaje se separa."""
+    def sesion_charlatana(prompt):
+        return 0, "He ampliado la novela correctamente y he guardado todo.", ""
+    cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_charlatana))
+    detalle = cliente.post("/api/ampliar", json={"capitulos": 2}).json()["detail"]
+    assert detalle["pidio_datos"] is False
+    assert "no devolvio json" in detalle["mensaje"].lower()
+
+
 def test_si_la_sesion_muere_sin_decir_nada_se_ve_su_stderr(proyecto):
     """Cuando el error viene de la sesión de Claude Code, se enseña su salida."""
     def sesion_que_falla(prompt):

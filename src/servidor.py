@@ -438,8 +438,40 @@ def comando_generacion() -> list[str]:
 
     Va como lista, nunca como cadena, para que no exista la posibilidad de que
     algo se interprete: no hay shell que interprete nada.
+
+    **El prompt NO va aqui.** Va por la entrada estandar, por el motivo que
+    explica `EL PROMPT VIAJA POR STDIN` mas abajo. Este comando es solo
+    `claude -p`, que en esa forma lee lo que se le mande por stdin.
     """
-    return ["claude", "-p", PROMPT_GENERACION]
+    return ["claude", "-p"]
+
+
+# ---------------------------------------------------------------------------
+# EL PROMPT VIAJA POR STDIN, NO COMO ARGUMENTO
+# ---------------------------------------------------------------------------
+#
+# Pasarlo como argumento parece lo natural (`claude -p "<texto>"`) y funciona
+# mientras el texto quepa en una linea. En cuanto tiene un salto de linea, en
+# Windows se pierde todo lo que va detras del primero.
+#
+# El motivo es el mismo `.CMD` del hallazgo 13: `claude` no es un binario, es
+# un script de cmd, asi que la invocacion pasa por `cmd.exe`, y el analizador
+# de linea de comandos de cmd **termina el comando en el primer salto de
+# linea**. Medido: un prompt de 2303 caracteres y 46 lineas llegaba al otro
+# lado convertido en 60 caracteres, su primera linea.
+#
+# Y lo peor es como se manifiesta: la sesion recibe un encargo truncado, no
+# tiene forma de saber que le falta contexto, y responde lo unico razonable,
+# que es pedir el dato que no le han dado. Desde fuera se ve como «el modelo
+# no devolvio JSON», que apunta justo al sitio equivocado.
+#
+# Por stdin no hay linea de comandos que analizar: llega el texto entero, con
+# sus saltos de linea, y ademas desaparece el limite de longitud de la linea
+# de comandos de Windows. `claude -p` sin argumento lee de stdin.
+#
+# Esto vale para los dos prompts. El de generacion hoy es de una sola linea y
+# se salvaba por los pelos; mantenerlo asi seria confiar en que nadie le anada
+# nunca un salto de linea.
 
 
 def siguiente_carpeta_copia(raiz: Path) -> Path:
@@ -574,7 +606,8 @@ class Generacion:
                 cwd=str(self.raiz),
                 stdout=salida_log,
                 stderr=subprocess.STDOUT,
-                stdin=subprocess.DEVNULL,
+                stdin=subprocess.PIPE,   # el prompt entra por aqui
+                text=True, encoding="utf-8", errors="replace",
                 shell=False,      # nunca shell: no hay nada que interpretar
             )
         except OSError as error:
@@ -590,6 +623,24 @@ class Generacion:
                 "errores": ["{0}: {1}".format(type(error).__name__, error)],
                 "ejecutable": comando[0],
             }) from error
+
+        # El prompt entra ahora, por la entrada estandar. Se escribe y se
+        # cierra: cerrar es lo que le dice a la sesion que el encargo esta
+        # completo; sin eso esperaria mas entrada para siempre.
+        #
+        # Con su propia red, y aparte del arranque: si el proceso muriera nada
+        # mas nacer, escribir en su entrada da BrokenPipeError, y eso no es un
+        # fallo del lanzamiento sino un proceso que ya no esta. De contarlo se
+        # encarga el cierre normal, con su codigo de salida.
+        try:
+            self.proceso.stdin.write(PROMPT_GENERACION)
+            self.proceso.stdin.close()
+        except (BrokenPipeError, OSError, ValueError) as error:
+            with self.log.open("a", encoding="utf-8") as f:
+                f.write("AVISO: no se pudo entregar el prompt por la entrada "
+                        "estandar ({0}: {1}). El proceso ya no estaba "
+                        "escuchando.\n".format(type(error).__name__, error))
+
         self.info = {
             "estado": "en_marcha",
             "pid": self.proceso.pid,
@@ -935,7 +986,8 @@ def ejecutar_claude(raiz: Path, prompt: str, segundos: int) -> tuple[int, str, s
     ejecutable = resolver_ejecutable("claude")
     try:
         proceso = subprocess.run(
-            [ejecutable, "-p", prompt],
+            [ejecutable, "-p"],
+            input=prompt,              # por stdin: ver EL PROMPT VIAJA POR STDIN
             cwd=str(raiz), capture_output=True, text=True,
             encoding="utf-8", errors="replace",
             timeout=segundos, shell=False,
@@ -958,6 +1010,40 @@ def ejecutar_claude(raiz: Path, prompt: str, segundos: int) -> tuple[int, str, s
             "ejecutable": ejecutable,
         }) from error
     return proceso.returncode, (proceso.stdout or ""), (proceso.stderr or "")
+
+
+# Senales de que la sesion no esta fallando, sino PREGUNTANDO. Se miran sobre
+# una respuesta que ya sabemos que no es JSON.
+#
+# Por que merece la pena distinguirlo: cuando la sesion pide un dato, su
+# respuesta ES el diagnostico —dice exactamente que le falto—, y tratarla como
+# «no devolvio JSON» la entierra bajo un problema de formato que no existe.
+# Fue justo lo que paso cuando el prompt llegaba truncado: la sesion pedia el
+# numero de capitulos y el panel hablaba de JSON.
+SENALES_DE_PREGUNTA = (
+    "dime ", "dime,", "indicame", "indícame", "necesito saber", "necesito que",
+    "cuantos capitulos", "cuántos capítulos", "no me has dicho", "no se me ha",
+    "falta el dato", "por favor, indica", "puedes indicar", "que numero",
+    "qué número", "especifica", "no se especifica", "no has indicado",
+)
+
+
+def parece_peticion_de_datos(texto: str) -> bool:
+    """Dice si la sesion, en vez de trabajar, esta pidiendo un dato.
+
+    Heuristica deliberadamente simple y conservadora: se exige una senal
+    explicita de peticion, no basta con que haya un interrogante. Un falso
+    positivo aqui solo cambia el texto del error; un falso negativo devuelve
+    el mensaje generico de siempre, que es lo que habia antes.
+    """
+    if not texto:
+        return False
+    bajo = texto.lower()
+    if any(senal in bajo for senal in SENALES_DE_PREGUNTA):
+        return True
+    # Una respuesta corta y con interrogante tambien es una pregunta: las
+    # respuestas de trabajo son largas y no preguntan.
+    return len(texto.strip()) < 400 and ("?" in texto or "¿" in texto)
 
 
 def _entradas_por_capitulo(outline):
@@ -1302,11 +1388,20 @@ def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None) -> 
         try:
             respuesta = puntuacion.extraer_json(bruto)
         except puntuacion.ErrorDeVeredicto as error:
+            pidio_datos = parece_peticion_de_datos(bruto)
             raise HTTPException(status_code=502, detail={
-                "mensaje": "El arquitecto no devolvio JSON, asi que no se ha "
-                           "tocado nada. Debajo esta lo que si devolvio.",
+                "mensaje": (
+                    "La sesion pidio informacion que no se le dio, en vez de "
+                    "hacer el trabajo. Eso significa que el encargo le llego "
+                    "incompleto: lo que respondio, aqui debajo, dice "
+                    "exactamente que le falto. No se ha tocado nada."
+                ) if pidio_datos else (
+                    "El arquitecto no devolvio JSON, asi que no se ha tocado "
+                    "nada. Debajo esta lo que si devolvio."
+                ),
+                "pidio_datos": pidio_datos,
                 "codigo_salida": codigo,
-                "errores": [str(error)],
+                "errores": [] if pidio_datos else [str(error)],
                 "respuesta": (bruto or "")[-3000:],
                 "salida_de_la_sesion": (error_sesion or "")[-2000:],
                 "copia": copia}) from error

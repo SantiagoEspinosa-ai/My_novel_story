@@ -340,12 +340,16 @@ def test_generar_no_acepta_nada_del_navegador(proyecto):
     assert "borra todo" not in texto
 
 
-def test_el_comando_real_es_claude_con_un_prompt_fijo():
+def test_el_comando_real_es_claude_y_el_prompt_no_va_en_el():
+    """El prompt viaja por la entrada estándar, no como argumento.
+
+    Como argumento se trunca en el primer salto de línea cuando el ejecutable
+    es un `.cmd`, que es lo que es `claude` en Windows (`DECISIONES.md`,
+    hallazgo 14). El comando es solo `claude -p`.
+    """
     comando = servidor.comando_generacion()
-    assert comando[0] == "claude"
-    assert comando[1] == "-p"
-    assert comando[2] == servidor.PROMPT_GENERACION
-    assert len(comando) == 3
+    assert comando == ["claude", "-p"]
+    assert servidor.PROMPT_GENERACION not in comando
     # El prompt arranca el flujo por donde manda el contrato de ejecución.
     assert "EJECUCION.md" in servidor.PROMPT_GENERACION
     assert "empezar-delegacion" in servidor.PROMPT_GENERACION

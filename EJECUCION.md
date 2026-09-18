@@ -887,6 +887,7 @@ manuscrito: la regla 1 manda, y es preferible a un hueco, pero conviene saberlo.
 | Síntoma | Qué pasa | Arreglo |
 |---|---|---|
 | El panel dice «el servidor respondió 500» y nada más | No debería pasar ya: todo error sale con cuerpo explicado. Si vuelve a verse, es un fallo del propio manejador | Mira la terminal donde lanzaste `python -m src.servidor`: la traza completa está ahí |
+| La sesión responde pidiendo un dato («dime cuántos capítulos…») | El prompt le llegó incompleto | El panel lo dice con esas palabras. Si vuelve a pasar, comprueba qué recibe de verdad el subproceso: `DECISIONES.md`, hallazgo 14 |
 | `FileNotFoundError: [WinError 2]` al generar o ampliar | El ejecutable se estaba buscando por su nombre suelto. En Windows `claude` es un `.CMD` y `CreateProcess` no aplica `PATHEXT` | Ya está arreglado: todo se lanza por su ruta absoluta (`DECISIONES.md`, hallazgo 13). Si reaparece con otro programa, resuélvelo con `resolver_ejecutable()` |
 | `503 No encuentro el ejecutable 'claude'` | El servidor no ve Claude Code en su `PATH` | Comprueba que `claude --version` funciona **en la misma terminal** desde la que lanzas el servidor. Un `PATH` puesto en otra ventana no cuenta |
 | Ampliar responde `409` con capítulos pendientes | La novela no está terminada | Termina los capítulos que faltan, o acéptalos. No se amplía a medias a propósito |
@@ -1211,6 +1212,19 @@ la terminal. El detalle completo está en `DECISIONES.md`, hallazgo 13.
 Sigue sin usarse shell y los argumentos siguen yendo como lista: lo único que
 cambia es que `argv[0]` es una ruta y no un nombre.
 
+**Y el prompt no va como argumento: va por la entrada estándar.** Es el mismo
+`.CMD` mordiendo por segunda vez. Al pasar por `cmd.exe`, el analizador de
+línea de comandos **termina el comando en el primer salto de línea**: un prompt
+de 2303 caracteres y 46 líneas llegaba al otro lado convertido en 60
+caracteres, su primera línea. La sesión recibía un encargo truncado, no podía
+saberlo, y pedía el dato que le faltaba; desde fuera parecía que el modelo no
+sabía devolver JSON (`DECISIONES.md`, hallazgo 14).
+
+`claude -p` sin argumento lee de stdin. Por ahí llega el texto entero y
+desaparece además el límite de longitud de la línea de comandos. Los dos
+prompts van así, también el de generación, que hoy es de una sola línea y se
+salvaba por casualidad.
+
 ### 11.4 Los errores se explican, siempre
 
 
@@ -1224,6 +1238,7 @@ página.
 | Lo que llega no vale (claves, tipos, biblia inválida) | `400` | `mensaje` y la lista entera de `errores` |
 | Hay algo en marcha, o la novela está a medias | `409` | `mensaje`, y `bloqueo` o `capitulos_pendientes` |
 | La sesión de Claude Code devolvió algo que no sirve | `502` | `codigo_salida`, **lo que devolvió** y **su `stderr`** |
+| La sesión **pidió un dato** en vez de trabajar | `502` | `pidio_datos: true` y lo que preguntó, en primer plano. Significa que el encargo le llegó incompleto |
 | No está el ejecutable | `503` | `mensaje` y una `pista` con qué comprobar |
 | El arquitecto no contestó a tiempo | `504` | `mensaje` con el límite que se agotó |
 | Cualquier cosa imprevista | `500` | El tipo y el mensaje de la excepción, y dónde está la traza |
