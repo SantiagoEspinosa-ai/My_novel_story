@@ -4,7 +4,6 @@
     "spec": "SPEC-generador-novelas-v3.md",
     "descripcion": "Configuracion unica del harness generador de novelas. Todos los valores ajustables viven aqui. El orquestador es Claude Code y los agentes son subagentes de proyecto (.claude/agents/), asi que aqui no hay proveedores, ni claves, ni parametros de red: esas cosas las gestiona Claude Code."
   },
-
   "novela": {
     "titulo": null,
     "genero": "terror",
@@ -13,39 +12,50 @@
     "idioma": "es",
     "semilla_tematica": "mundo post apocaliptico donde la IA nos domina y se tiene que hacer todo a la antigua desde la creacion de la rueda"
   },
-
   "estructura": {
-    "num_capitulos": 4,
+    "num_capitulos": 5,
     "palabras_min": 1200,
     "palabras_max": 2200
   },
-
   "modelos": {
     "_comentario": "Alias validos de la herramienta de subagentes: haiku, sonnet, opus, fable. El orquestador los pasa en cada delegacion y pisan al campo model del frontmatter del subagente.",
-    "escalera_escritor": ["haiku", "sonnet", "opus"],
+    "escalera_escritor": [
+      "haiku",
+      "sonnet",
+      "opus"
+    ],
     "intentos_por_modelo": 2,
     "mantener_voz_ganadora": true,
     "arquitecto": "sonnet",
     "validadores": "haiku",
     "resumidor": "haiku"
   },
-
   "validacion": {
-    "validadores_activos": ["continuidad", "genero", "estilo"],
+    "validadores_activos": [
+      "continuidad",
+      "genero",
+      "estilo"
+    ],
     "paralelo": true,
-    "pesos_gravedad": { "alta": 5, "media": 2, "baja": 1 },
+    "pesos_gravedad": {
+      "alta": 5,
+      "media": 2,
+      "baja": 1
+    },
     "reintentos_parseo_json": 1,
     "json_no_parseable_es": "FALLO"
   },
-
   "contexto": {
     "max_tokens_contexto": 100000,
     "ventana_hechos": 3,
     "umbral_compactacion": 60,
     "capitulos_completos_en_ventana": 1,
-    "orden_recorte": ["hechos_efimeros", "resumenes", "capitulo_anterior"]
+    "orden_recorte": [
+      "hechos_efimeros",
+      "resumenes",
+      "capitulo_anterior"
+    ]
   },
-
   "runtime": {
     "directorio_salida": "./salida",
     "directorio_prompts": "./prompts",
@@ -54,25 +64,38 @@
     "nivel_log": "info",
     "registrar_tamano_contexto": true
   },
-
   "limites": {
     "_comentario": "Freno de mano. El coste en dolares ya no es medible desde aqui: las llamadas van con la suscripcion y el orquestador no recibe datos de uso. Lo que si se puede contar son las delegaciones a subagentes.",
     "delegaciones_max_totales": 300,
     "abortar_si_supera_delegaciones": true
   },
-
   "perfiles": {
     "romance": {
-      "estructura": { "palabras_min": 1400, "palabras_max": 2400 },
-      "novela": { "tono": "calido, con atencion al detalle sensorial" }
+      "estructura": {
+        "palabras_min": 1400,
+        "palabras_max": 2400
+      },
+      "novela": {
+        "tono": "calido, con atencion al detalle sensorial"
+      }
     },
     "drama": {
-      "estructura": { "palabras_min": 1500, "palabras_max": 2600 },
-      "novela": { "tono": "seco, sin sentimentalismo" }
+      "estructura": {
+        "palabras_min": 1500,
+        "palabras_max": 2600
+      },
+      "novela": {
+        "tono": "seco, sin sentimentalismo"
+      }
     },
     "terror": {
-      "estructura": { "palabras_min": 900, "palabras_max": 1600 },
-      "novela": { "tono": "sobrio, contenido, sin adjetivacion excesiva" }
+      "estructura": {
+        "palabras_min": 900,
+        "palabras_max": 1600
+      },
+      "novela": {
+        "tono": "sobrio, contenido, sin adjetivacion excesiva"
+      }
     }
   }
 }

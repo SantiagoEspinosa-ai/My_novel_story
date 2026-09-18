@@ -29,6 +29,7 @@ que se pueda arrancar.
 import json
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -117,7 +118,23 @@ def test_resolver_ejecutable_da_un_error_claro_si_no_esta(tmp_path, monkeypatch)
 # ---------------------------------------------------------------------------
 
 
-RESPUESTA_BUENA = {"biblia": None, "resumen_del_antiguo_ultimo": None}
+def esperar_ampliacion(cliente, intentos=300):
+    """La ampliacion es asincrona: se sondea hasta que la tuberia termina."""
+    for _ in range(intentos):
+        estado = cliente.get("/api/generacion").json()
+        amp = estado.get("ampliacion") or {}
+        if amp.get("estado") in ("fallida", "detenida", "generando"):
+            return estado
+        time.sleep(0.05)
+    raise AssertionError("la ampliacion de prueba no termino")
+
+
+def error_de_ampliacion(cliente, cuantos=1):
+    r = cliente.post("/api/ampliar", json={"capitulos": cuantos})
+    assert r.status_code == 200, r.text
+    final = esperar_ampliacion(cliente)
+    assert final["ampliacion"]["estado"] == "fallida", final["ampliacion"]
+    return final["ampliacion"]["error"] or {}
 
 
 @pytest.fixture
@@ -155,9 +172,7 @@ def test_ampliar_llega_a_arrancar_el_claude_postizo(proyecto, tmp_path, monkeypa
     carpeta = crear_claude_postizo(tmp_path / "bin", "no soy json")
     monkeypatch.setenv("PATH", str(carpeta))
     cliente = TestClient(servidor.crear_app(proyecto))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 502, r.text
-    detalle = r.json()["detail"]
+    detalle = error_de_ampliacion(cliente)
     assert "no devolvio json" in detalle["mensaje"].lower()
     assert "no soy json" in detalle["respuesta"]
 
@@ -201,20 +216,19 @@ def test_un_fallo_de_arranque_se_explica_en_vez_de_dar_un_500_pelado(proyecto, m
     trae cuerpo, lo único que puede decir es «el servidor respondió 500», que
     no le sirve a nadie.
     """
-    def revienta(*args, **kwargs):
-        raise OSError(2, "El sistema no puede encontrar el archivo especificado")
-    monkeypatch.setattr(servidor.subprocess, "run", revienta)
+    # Se apunta a un ejecutable que no existe y se deja que el sistema operativo
+    # falle de verdad. Antes este test simulaba `subprocess.run`, pero desde que
+    # el arquitecto se lanza con `Popen` —para que `detener` pueda matarlo— esa
+    # simulación probaba una rama que ya no se recorre. Dejar que reviente de
+    # verdad es además más fiel: el mensaje que se enseña es el del sistema.
     monkeypatch.setattr(servidor, "resolver_ejecutable", lambda nombre: "C:/falso/claude.cmd")
 
     cliente = TestClient(servidor.crear_app(proyecto))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 500
-    detalle = r.json()["detail"]
+    detalle = error_de_ampliacion(cliente)
     assert "no se ha podido arrancar" in detalle["mensaje"].lower()
-    # `OSError(2, ...)` lo convierte Python en `FileNotFoundError`, que es
-    # literalmente el nombre que salía en la traza del fallo original.
+    # `FileNotFoundError` es literalmente el nombre que salía en la traza del
+    # fallo original, y el mensaje del sistema viaja con él.
     assert any("FileNotFoundError" in e for e in detalle["errores"]), detalle["errores"]
-    assert any("no puede encontrar el archivo" in e for e in detalle["errores"])
     assert detalle["ejecutable"] == "C:/falso/claude.cmd"
 
 
@@ -293,6 +307,7 @@ def test_el_numero_que_entra_por_http_llega_al_subproceso(proyecto, tmp_path, mo
 
     cliente = TestClient(servidor.crear_app(proyecto))
     cliente.post("/api/ampliar", json={"capitulos": 7})
+    esperar_ampliacion(cliente)
 
     assert capturado.is_file(), "el subproceso no llegó a arrancar"
     recibido = json.loads(capturado.read_text(encoding="utf-8"))
@@ -312,6 +327,7 @@ def test_el_prompt_llega_entero_y_no_solo_su_primera_linea(proyecto, tmp_path, m
 
     cliente = TestClient(servidor.crear_app(proyecto))
     cliente.post("/api/ampliar", json={"capitulos": 2})
+    esperar_ampliacion(cliente)
 
     esperado = servidor.prompt_ampliar(2)
     llegado = json.loads(capturado.read_text(encoding="utf-8"))["stdin"]
@@ -357,9 +373,7 @@ def test_una_respuesta_que_pide_datos_se_dice_con_esas_palabras(proyecto):
     def sesion_que_pregunta(prompt):
         return 0, "Dime cuantos capitulos anadir, un entero entre 1 y 20.", ""
     cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_que_pregunta))
-    r = cliente.post("/api/ampliar", json={"capitulos": 2})
-    assert r.status_code == 502
-    detalle = r.json()["detail"]
+    detalle = error_de_ampliacion(cliente, 2)
     assert detalle["pidio_datos"] is True
     assert "pidio informacion que no se le dio" in detalle["mensaje"]
     assert "el encargo le llego incompleto" in detalle["mensaje"].replace("ó", "o")
@@ -371,7 +385,7 @@ def test_una_respuesta_que_no_es_json_pero_tampoco_pregunta_se_dice_distinto(pro
     def sesion_charlatana(prompt):
         return 0, "He ampliado la novela correctamente y he guardado todo.", ""
     cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_charlatana))
-    detalle = cliente.post("/api/ampliar", json={"capitulos": 2}).json()["detail"]
+    detalle = error_de_ampliacion(cliente, 2)
     assert detalle["pidio_datos"] is False
     assert "no devolvio json" in detalle["mensaje"].lower()
 
@@ -381,8 +395,6 @@ def test_si_la_sesion_muere_sin_decir_nada_se_ve_su_stderr(proyecto):
     def sesion_que_falla(prompt):
         return 1, "", "Error: no se pudo iniciar la sesion"
     cliente = TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=sesion_que_falla))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 502
-    detalle = r.json()["detail"]
+    detalle = error_de_ampliacion(cliente)
     assert detalle["codigo_salida"] == 1
     assert "no se pudo iniciar la sesion" in detalle["salida_de_la_sesion"]

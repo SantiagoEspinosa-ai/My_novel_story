@@ -40,6 +40,7 @@ dice qué puedes ejecutar hoy:
 | Panel de control de la generación | `panel.html` | ✅ implementado, seis vistas (ver sección 10) |
 | Tests de carga del panel | `tests/test_panel_carga.py`, `tests/panel_sonda.js` | ✅ implementado (requieren `node`; si no está, se saltan) |
 | Servidor local del panel | `src/servidor.py` | ✅ implementado: sirve el panel, escribe `config.json`, arranca generaciones y amplía novelas (ver sección 11) |
+| Narración del estado en lenguaje llano | `src/narracion.py` | ✅ implementado (ver sección 11.4) |
 | Telemetría OTEL hacia Langfuse | `.claude/settings.json`, `herramientas/` | ✅ implementado (requiere una variable de entorno con la credencial; ver la sección 9) |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
 | Hechos y timeline extraídos de cada capítulo | biblia | ⬜ pendiente (`hechos_establecidos` no se rellena) |
@@ -1179,9 +1180,9 @@ python -m src.servidor --puerto 8765   # otro puerto
 | `GET /api/salud` | Dónde mira el servidor, y **qué puede escribir** |
 | `GET /api/config` | La configuración, en sus dos formas, y si ahora mismo se puede tocar |
 | `PUT /api/config` | Aplica cambios sobre `config.json` |
-| `POST /api/ampliar` | Añade capítulos a una novela terminada, sin regenerar nada |
+| `POST /api/ampliar` | Añade capítulos a una novela terminada **y arranca su escritura**, sin regenerar nada |
 | `POST /api/generar` | Copia la novela actual y arranca una generación en segundo plano |
-| `GET /api/generacion` | Si hay algo en marcha, desde cuándo, y las últimas líneas del log |
+| `GET /api/generacion` | En qué fase va, **la frase de lo que está pasando**, el histórico, el outline nuevo y las últimas líneas del log |
 | `POST /api/detener` | Para la generación en marcha |
 
 Todas las respuestas de archivo van con `Cache-Control: no-store`: el panel
@@ -1225,7 +1226,54 @@ desaparece además el límite de longitud de la línea de comandos. Los dos
 prompts van así, también el de generación, que hoy es de una sola línea y se
 salvaba por casualidad.
 
-### 11.4 Los errores se explican, siempre
+### 11.4 Qué está pasando ahora: la frase, no los campos
+
+`GET /api/generacion` devuelve, además del estado del proceso, **una frase en
+lenguaje llano** con lo que está ocurriendo. No es un adorno: el panel tenía
+todos los datos y aun así no se entendía, porque enseñaba campos sueltos
+—`rol: escritor`, `capitulo: 5`, `intento: 2`— y había que recomponer la frase
+mentalmente. Peor: durante los pasos que **no** son una delegación, como
+copiar archivos o esperar al arquitecto, `estado.json` no cambia, así que la
+pantalla decía «sin actividad» mientras el servidor trabajaba.
+
+| Campo | Qué es |
+|---|---|
+| `fase` | En qué paso va: `copiando`, `arquitecto`, `validando`, `lanzando`, `generando`, y los finales |
+| `frase` | Una sola frase, legible, de lo que pasa **ahora** |
+| `segundos_en_fase` y `duracion_en_fase` | Cuánto lleva en este paso |
+| `aviso_lentitud` | Solo si el paso se alarga más de lo normal |
+| `historial` | Las últimas frases, de la más reciente a la más antigua |
+| `outline_nuevo` | El plan de los capítulos añadidos, en cuanto existe |
+
+Las frases las construye `src/narracion.py`, que no toca disco ni red: recibe
+diccionarios y devuelve texto. El tono es sujeto, verbo y lo que hace, sin
+jerga del sistema:
+
+```
+Copiando la novela actual a salida-novela-2, antes de tocar nada
+El arquitecto está diseñando qué pasa en los capítulos 5 y 6
+El escritor está redactando el capítulo 5, intento 2 de 6, con opus
+Los tres validadores están auditando el capítulo 5 a la vez
+El capítulo 5 no pasó: estilo encontró 3 problemas. Reescribiendo
+Capítulo 5 aprobado limpio. Pasando al 6
+```
+
+Tres detalles que costaron su test y conviene conocer:
+
+- **Cuando no hay nada en marcha se dice igual de claro**, y con lo último que
+  pasó: «No hay nada en marcha. La última generación se cayó sin terminar. Lo
+  último que pasó: …». Un «sin actividad» a secas no distingue una novela
+  terminada de una que murió hace una hora.
+- **Si un paso se alarga, se menciona.** Pasado lo normal para ese paso —del
+  orden de tres minutos para el arquitecto o cinco para el escritor— la
+  respuesta trae un aviso que dice cuánto lleva, que todavía puede terminar
+  bien y que se puede detener. Callarse deja a quien mira adivinando si se
+  colgó.
+- **La primera lectura no cuenta eventos**, solo toma la foto del estado. Si no,
+  al abrir el panel sobre una novela terminada hace días el histórico se
+  llenaría de «Capítulo 1 aprobado limpio», «Capítulo 2 aprobado limpio»…
+
+### 11.5 Los errores se explican, siempre
 
 
 Ningún fallo de este servidor sale sin cuerpo. La razón es sencilla: el panel
@@ -1248,7 +1296,7 @@ tocó algo** y **dónde mirar**. Cuando el fallo viene de la sesión de Claude
 Code, lo que dijo la sesión **es** el diagnóstico y se enseña tal cual, sin
 resumir.
 
-### 11.5 Las cuatro reglas de seguridad
+### 11.6 Las cuatro reglas de seguridad
 
 
 Este es el primer componente del proyecto que abre un puerto, y va a crecer
@@ -1282,7 +1330,7 @@ simbólico que apunte fuera.
 
 ---
 
-### 11.6 Leer y escribir la configuración
+### 11.7 Leer y escribir la configuración
 
 
 **`GET /api/config`** devuelve cuatro cosas:
@@ -1342,7 +1390,7 @@ reescribe el archivo.
 > a mano se expanden. Si el formato del archivo te importa, edítalo a mano en
 > lugar de por el panel.
 
-### 11.7 Generar desde el panel
+### 11.8 Generar desde el panel
 
 
 **`POST /api/generar`** hace tres cosas, en este orden, y si falla cualquiera
@@ -1402,7 +1450,7 @@ y en Windows la forma obvia de intentarlo mata el proceso.
 lo mata. Después hace lo mismo del cierre: log, limpieza de la marca y
 anotación.
 
-### 11.8 Ampliar una novela terminada
+### 11.9 Ampliar una novela terminada
 
 
 Llevar una novela de N capítulos a N+M **sin regenerar nada de lo aprobado**.
@@ -1418,6 +1466,26 @@ entradas. Subir ese número a mano no amplía nada: deja la biblia inválida y e
 harness deja de arrancar. Ampliar de verdad son **dos cambios que tienen que
 ocurrir juntos o ninguno**: el outline crece y el número sube. Todo el endpoint
 está construido alrededor de esa atomicidad.
+
+**Ampliar y generar son una sola operación.** Al confirmar, el servidor hace
+todo seguido —copia, pide el outline, lo valida, lo guarda, sube
+`num_capitulos` y **arranca la escritura**— sin pedir confirmación en medio.
+La petición **no espera**: devuelve en cuanto la operación arranca y el
+seguimiento va por `GET /api/generacion`, que es lo que el panel ya consulta.
+
+Juntarlas quita un punto de control humano, así que hay tres cosas que lo
+sustituyen y que no se pueden perder:
+
+- **El outline nuevo se puede leer en cuanto existe**, antes de que haya un
+  solo capítulo escrito. Aparece en `outline_nuevo`.
+- **Se puede detener en cualquier fase**, incluida la del arquitecto. Parar al
+  leer el plan cuesta las delegaciones del arquitecto, no las de la novela
+  entera.
+- **Si el arquitecto falla o la biblia no valida, no se genera nada** y la
+  novela queda como estaba. Eso ya no viaja en la respuesta HTTP —que solo
+  dice «arrancada»— sino en `ampliacion.error`.
+
+`POST /api/generar` se mantiene aparte, para regenerar sin ampliar.
 
 #### Los siete pasos, y dónde se para
 

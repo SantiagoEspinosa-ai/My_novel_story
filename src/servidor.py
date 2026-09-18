@@ -51,6 +51,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
@@ -61,6 +62,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from src import biblia as modulo_biblia
 from src import config as modulo_config
 from src import delegaciones
+from src import narracion
 from src import puntuacion
 from src import redaccion
 
@@ -534,6 +536,63 @@ class Generacion:
         self.proceso: subprocess.Popen | None = None
         self.info: dict = {}
 
+        # --- fases y narracion ---
+        # `fase` es lo que este servidor esta haciendo, que NO siempre coincide
+        # con lo que hace el harness: copiar archivos o pedirle el outline al
+        # arquitecto son pasos del servidor, y durante ellos `estado.json` no
+        # cambia. Sin esto, el panel diria «sin actividad» mientras trabajamos.
+        self.fase = narracion.FASE_INACTIVA
+        self.fase_desde: float | None = None
+        self.fase_datos: dict = {}
+        self.historial: list[dict] = []
+        self.ultima_frase: str | None = None
+
+        # De la ampliacion, para poder ensenar el plan nuevo en cuanto exista
+        # y sin esperar a que se escriba el primer capitulo.
+        self.outline_nuevo: list | None = None
+        self.ampliacion: dict | None = None
+
+        # Para detener durante CUALQUIER fase, no solo mientras se genera.
+        self.proceso_arquitecto: subprocess.Popen | None = None
+        self.cancelada = False
+        self._hilo: threading.Thread | None = None
+
+        # Foto anterior del estado, para saber que ha cambiado desde la ultima
+        # vez que alguien pregunto y poder contarlo.
+        #
+        # La primera lectura NO cuenta eventos, solo toma la foto. Si no, al
+        # abrir el panel sobre una novela terminada hace dias, el historico se
+        # llenaria de «Capitulo 1 aprobado limpio», «Capitulo 2 aprobado
+        # limpio»... como si acabara de pasar.
+        self._foto_estado: dict = {}
+        self._primera_foto = True
+
+    # --- fases -------------------------------------------------------------
+    def _entrar_en_fase(self, fase, **datos):
+        """Cambia de fase y deja constancia de la anterior en el historico."""
+        self._anotar_frase(narracion.frase_de_fase(fase, datos))
+        self.fase = fase
+        self.fase_desde = time.time()
+        self.fase_datos = datos
+
+    def _anotar_frase(self, frase):
+        """Apunta una frase en el historico, si es nueva.
+
+        Se filtran las repetidas porque el panel pregunta cada pocos segundos y
+        la mayoria de las veces no ha cambiado nada: un historico con la misma
+        linea cuarenta veces no deja seguir nada.
+        """
+        if not frase or frase == self.ultima_frase:
+            return
+        self.ultima_frase = frase
+        self.historial.append({"frase": frase, "momento": _ahora()})
+        del self.historial[:-60]
+
+    def segundos_en_fase(self):
+        if self.fase_desde is None:
+            return None
+        return max(0, int(time.time() - self.fase_desde))
+
     # --- archivos ---
     @property
     def log(self) -> Path:
@@ -660,6 +719,97 @@ class Generacion:
         hilo.start()
         return self.estado()
 
+    # --- ampliar y generar, en una sola operacion --------------------------
+    def ampliar_y_generar(self, cuantos, prompt, ejecutor, al_validar):
+        """Arranca la operacion completa en segundo plano y vuelve enseguida.
+
+        La secuencia es copiar, pedir el outline, validarlo, guardarlo, subir
+        `num_capitulos` y lanzar la generacion. Lo unico que este metodo
+        devuelve es que ha empezado: el resto se sigue por `estado()`, que es
+        lo que el panel ya consulta.
+
+        `al_validar` es la funcion que valida y guarda; vive fuera de esta
+        clase porque necesita la configuracion y la biblia, y aqui solo se
+        orquestan las fases.
+        """
+        self.cancelada = False
+        self.outline_nuevo = None
+        self.ampliacion = {"estado": "en_marcha", "cuantos": cuantos,
+                           "inicio": _ahora(), "error": None}
+        self._hilo = threading.Thread(
+            target=self._tuberia_ampliacion,
+            args=(cuantos, prompt, ejecutor, al_validar), daemon=True)
+        self._hilo.start()
+
+    def _tuberia_ampliacion(self, cuantos, prompt, ejecutor, al_validar):
+        """Los cinco pasos, seguidos. Si algo falla, no se genera nada."""
+        try:
+            # --- 1. copiar ---
+            self._entrar_en_fase(narracion.FASE_COPIANDO)
+            copia = copiar_novela(self.raiz, self.salida)
+            self.ampliacion["copia"] = copia
+            self.fase_datos["destino"] = copia.get("destino")
+            self._anotar_frase(narracion.frase_de_fase(
+                narracion.FASE_COPIANDO, self.fase_datos))
+            if self._cancelado("después de copiar"):
+                return
+
+            # --- 2. el arquitecto ---
+            self._entrar_en_fase(narracion.FASE_ARQUITECTO,
+                                 capitulos_nuevos=self.ampliacion.get("capitulos_nuevos"))
+            codigo, bruto, error_sesion = ejecutor(prompt, self)
+            if self._cancelado("mientras trabajaba el arquitecto"):
+                return
+
+            # --- 3 y 4. validar, guardar y subir num_capitulos ---
+            self._entrar_en_fase(narracion.FASE_VALIDANDO)
+            resultado = al_validar(codigo, bruto, error_sesion, copia)
+            self.outline_nuevo = resultado["outline_nuevo"]
+            self.ampliacion.update(resultado)
+            # El plan ya existe: se cuenta ahora, sin esperar a ningun capitulo.
+            self._anotar_frase(
+                "Plan nuevo listo y validado: {0} capítulo(s) añadido(s). "
+                "Ya se puede leer".format(len(self.outline_nuevo or [])))
+
+            # --- 5. generar ---
+            self._entrar_en_fase(
+                narracion.FASE_LANZANDO,
+                capitulos_nuevos=[int(e.get("capitulo")) for e in (self.outline_nuevo or [])])
+            if self._cancelado("antes de empezar a escribir"):
+                return
+            self.lanzar()
+            self.ampliacion["estado"] = "generando"
+
+        except HTTPException as error:
+            self._fallo_ampliacion(error.detail)
+        except Exception as error:  # noqa: BLE001 - se informa, no se traga
+            traceback.print_exc()
+            self._fallo_ampliacion({
+                "mensaje": "La ampliación se ha parado por un fallo inesperado. "
+                           "No se ha generado nada.",
+                "errores": ["{0}: {1}".format(type(error).__name__, error)]})
+
+    def _cancelado(self, cuando):
+        """Si se pidio detener, corta la tuberia aqui y lo deja contado."""
+        if not self.cancelada:
+            return False
+        self.ampliacion["estado"] = "detenida"
+        self.fase = narracion.FASE_DETENIDA
+        self.fase_desde = time.time()
+        self._anotar_frase(
+            "Ampliación detenida {0}. No se ha generado ningún capítulo".format(cuando))
+        return True
+
+    def _fallo_ampliacion(self, detalle):
+        """La ampliacion no sale adelante: se cuenta y no se genera nada."""
+        self.ampliacion["estado"] = "fallida"
+        self.ampliacion["error"] = detalle
+        self.fase = narracion.FASE_FALLO_AMPLIACION
+        self.fase_desde = time.time()
+        self._anotar_frase(
+            "La ampliación no salió adelante: {0} La novela ha quedado como "
+            "estaba".format((detalle or {}).get("mensaje", "")))
+
     def _vigilar(self, archivo_abierto):
         try:
             self.proceso.wait()
@@ -745,17 +895,56 @@ class Generacion:
             return colgada
         return colgada if isinstance(colgada, dict) else None
 
+    def _matar(self, proceso):
+        if proceso is None or proceso.poll() is not None:
+            return False
+        proceso.terminate()
+        try:
+            proceso.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proceso.kill()
+            proceso.wait(timeout=10)
+        return True
+
     def detener(self) -> dict:
+        """Para lo que haya en marcha, sea la fase que sea.
+
+        Esto es lo que hace que ampliar y generar en una sola operacion no sea
+        un salto al vacio: se puede leer el outline en cuanto aparece y parar
+        ahi, habiendo gastado las delegaciones del arquitecto en vez de las de
+        la novela entera.
+        """
+        # Se marca antes de matar nada: la tuberia mira esta bandera entre
+        # fases, asi que aunque el proceso muera limpio, no sigue adelante.
+        self.cancelada = True
+
+        paro_arquitecto = self._matar(self.proceso_arquitecto)
+        if paro_arquitecto:
+            if self.ampliacion:
+                self.ampliacion["estado"] = "detenida"
+            self.fase = narracion.FASE_DETENIDA
+            self.fase_desde = time.time()
+            self._anotar_frase(
+                "Ampliación detenida mientras el arquitecto trabajaba. La novela "
+                "ha quedado como estaba y no se ha generado nada")
+            return {"paro": True,
+                    "mensaje": "Se ha parado al arquitecto. No se ha tocado la novela.",
+                    "generacion": self.estado()}
+
         if not self.viva():
+            en_tuberia = self._hilo is not None and self._hilo.is_alive()
+            if en_tuberia:
+                self._anotar_frase("Se ha pedido detener: la ampliación parará en "
+                                   "cuanto termine el paso que está haciendo")
+                return {"paro": True,
+                        "mensaje": "Se ha pedido detener; la operacion parara en el "
+                                   "siguiente paso.",
+                        "generacion": self.estado()}
             return {"paro": False, "mensaje": "No habia ninguna generacion en marcha.",
                     "generacion": self.estado()}
+
         self.info["detenida_a_mano"] = True
-        self.proceso.terminate()
-        try:
-            self.proceso.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            self.proceso.kill()
-            self.proceso.wait(timeout=10)
+        self._matar(self.proceso)
         self._cerrar()
         return {"paro": True, "mensaje": "Generacion detenida.", "generacion": self.estado()}
 
@@ -807,7 +996,121 @@ class Generacion:
             respuesta["segundos"] = None
 
         respuesta["mensaje"] = _mensaje_de_generacion(respuesta)
+        respuesta.update(self._narrar())
         return respuesta
+
+    def _narrar(self) -> dict:
+        """La frase de ahora, el histórico y el aviso si esto se alarga.
+
+        Se calcula al preguntar, no en un bucle de fondo: sin nadie mirando no
+        hace falta narrar nada, y asi no hay un hilo mas que mantener vivo.
+        """
+        config = self._config_para_narrar()
+        estado_harness = self._leer_estado_harness()
+        marca = estado_harness.get(delegaciones.CLAVE_EN_CURSO)
+
+        # Lo que haya cambiado desde la ultima vez que alguien pregunto se
+        # cuenta antes que nada: es el «mientras no mirabas pasó esto».
+        total = (config.get("estructura") or {}).get("num_capitulos")
+        if self._primera_foto:
+            self._primera_foto = False      # solo se toma la foto, sin contar nada
+        else:
+            for frase in narracion.eventos_entre(
+                    self._foto_estado, estado_harness,
+                    problemas_por_capitulo=self._problemas_recientes(estado_harness),
+                    total_capitulos=total):
+                self._anotar_frase(frase)
+        self._foto_estado = {
+            "capitulos_aprobados": list(estado_harness.get("capitulos_aprobados") or []),
+            "capitulos_marcados": list(estado_harness.get("capitulos_marcados") or []),
+        }
+
+        # La frase de ahora: manda la fase del servidor mientras esta en una
+        # suya; si esta generando, manda lo que diga el harness.
+        clave_lentitud = self.fase
+        frase = None
+        if self.fase in (narracion.FASE_COPIANDO, narracion.FASE_ARQUITECTO,
+                         narracion.FASE_VALIDANDO, narracion.FASE_LANZANDO):
+            frase = narracion.frase_de_fase(self.fase, self.fase_datos)
+        elif self.viva():
+            frase = narracion.frase_de_delegacion(marca, config)
+            if marca:
+                clave_lentitud = str(marca.get("rol") or "").lower()
+                inicio = delegaciones.segundos_en_curso(estado_harness)
+                if inicio is not None:
+                    return self._empaquetar(frase, inicio, clave_lentitud)
+            else:
+                frase = ("La sesión está decidiendo el siguiente paso: entre una "
+                         "delegación y la siguiente no hay ningún subagente "
+                         "trabajando")
+
+        if frase:
+            self._anotar_frase(frase)
+            return self._empaquetar(frase, self.segundos_en_fase(), clave_lentitud)
+
+        # Nada en marcha: se dice, y con lo último que pasó.
+        reposo = narracion.frase_de_reposo({
+            "fase": self.fase if self.fase != narracion.FASE_INACTIVA
+                    else (self.info or {}).get("estado"),
+            "ultima_frase": self.ultima_frase,
+        })
+        return self._empaquetar(reposo, None, None, en_marcha=False)
+
+    def _empaquetar(self, frase, segundos, clave, en_marcha=True):
+        return {
+            "fase": self.fase,
+            "frase": frase,
+            "segundos_en_fase": segundos,
+            "duracion_en_fase": narracion.duracion_legible(segundos),
+            "aviso_lentitud": narracion.comentario_si_tarda(clave, segundos)
+                              if clave else None,
+            "historial": list(reversed(self.historial[-12:])),
+            "hay_algo_en_marcha": bool(en_marcha),
+            "outline_nuevo": self.outline_nuevo,
+            "ampliacion": self.ampliacion,
+        }
+
+    def _leer_estado_harness(self) -> dict:
+        archivo = self.salida / "estado.json"
+        if not archivo.is_file():
+            return {}
+        try:
+            return json.loads(archivo.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return {}
+
+    def _config_para_narrar(self) -> dict:
+        try:
+            return modulo_config.cargar_config(
+                ruta_config=ruta_config(self.raiz), volcar=False)
+        except Exception:
+            return {}
+
+    def _problemas_recientes(self, estado_harness) -> dict:
+        """Por que no paso limpio cada capitulo, leido de los intentos de .tmp/.
+
+        Si `.tmp/` ya no esta —se borra al ensamblar— se devuelve lo que haya,
+        que puede ser nada: entonces la frase lo dice de forma generica en vez
+        de inventarse un motivo.
+        """
+        resumen = {}
+        carpeta = self.salida / ".tmp"
+        if not carpeta.is_dir():
+            return resumen
+        for archivo in sorted(carpeta.glob("cap-*-intento-*.json")):
+            try:
+                datos = json.loads(archivo.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            if not datos.get("elegido"):
+                continue
+            frase = narracion.frase_de_reescritura(
+                datos.get("capitulo"), datos.get("veredictos"))
+            if frase:
+                # Se quiere el motivo, no la frase entera de reescritura.
+                resumen[int(datos["capitulo"])] = frase.split(": ", 1)[-1].replace(
+                    ". Reescribiendo", "")
+        return resumen
 
 
 def _segundos_entre(desde: str, hasta: str):
@@ -974,7 +1277,8 @@ def resolver_ejecutable(nombre: str) -> str:
     return ruta
 
 
-def ejecutar_claude(raiz: Path, prompt: str, segundos: int) -> tuple[int, str, str]:
+def ejecutar_claude(raiz: Path, prompt: str, segundos: int,
+                    registrar_en=None) -> tuple[int, str, str]:
     """Lanza una sesion de Claude Code y devuelve (codigo, stdout, stderr).
 
     Sincrono a proposito: quien amplia necesita el resultado para poder leerlo
@@ -985,6 +1289,22 @@ def ejecutar_claude(raiz: Path, prompt: str, segundos: int) -> tuple[int, str, s
     """
     ejecutable = resolver_ejecutable("claude")
     try:
+        # Con `registrar_en` el proceso queda a la vista de quien pueda querer
+        # matarlo. Es lo que permite pulsar «detener» mientras el arquitecto
+        # trabaja, en vez de tener que esperar a que acabe para poder parar.
+        if registrar_en is not None:
+            proceso_vivo = subprocess.Popen(
+                [ejecutable, "-p"], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                cwd=str(raiz), text=True, encoding="utf-8", errors="replace",
+                shell=False)
+            registrar_en.proceso_arquitecto = proceso_vivo
+            try:
+                fuera, error = proceso_vivo.communicate(prompt, timeout=segundos)
+            finally:
+                registrar_en.proceso_arquitecto = None
+            return proceso_vivo.returncode, (fuera or ""), (error or "")
+
         proceso = subprocess.run(
             [ejecutable, "-p"],
             input=prompt,              # por stdin: ver EL PROMPT VIAJA POR STDIN
@@ -1353,120 +1673,134 @@ def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None) -> 
         biblia_antigua_bytes = ruta_biblia.read_bytes()
         biblia_antigua = json.loads(biblia_antigua_bytes.decode("utf-8"))
 
-        # El ejecutable se resuelve ANTES de copiar, por el mismo motivo que en
-        # `generar`: si la ampliacion no va a poder arrancar, no tiene sentido
-        # dejar una carpeta de copia suelta por el proyecto.
+        # El ejecutable se resuelve ANTES de copiar: si la operacion no va a
+        # poder arrancar, no tiene sentido dejar una carpeta de copia suelta.
         if ejecutor_ampliar is None:
             resolver_ejecutable("claude")
 
-        # --- 3. la copia, igual que al generar ---
-        try:
-            copia = copiar_novela(raiz, salida)
-        except OSError as error:
-            raise HTTPException(status_code=500, detail={
-                "mensaje": "No se ha ampliado nada: no he podido copiar la novela "
-                           "actual, y tocar la biblia sin copia es arriesgado.",
-                "error": str(error)}) from error
-
-        # --- 4. el arquitecto, via Claude Code ---
-        correr = ejecutor_ampliar or (
-            lambda prompt: ejecutar_claude(raiz, prompt, SEGUNDOS_MAXIMO_AMPLIAR))
-        resultado = correr(texto_prompt)
-        # El ejecutor de verdad devuelve tres cosas; los de los tests, dos.
-        codigo, bruto = resultado[0], resultado[1]
-        error_sesion = resultado[2] if len(resultado) > 2 else ""
-
-        if codigo != 0 and not (bruto or "").strip():
-            raise HTTPException(status_code=502, detail={
-                "mensaje": "La sesion de Claude Code termino con error y no "
-                           "devolvio nada. No se ha tocado nada.",
-                "codigo_salida": codigo,
-                "salida_de_la_sesion": (error_sesion or "")[-3000:],
-                "copia": copia,
-            })
-
-        try:
-            respuesta = puntuacion.extraer_json(bruto)
-        except puntuacion.ErrorDeVeredicto as error:
-            pidio_datos = parece_peticion_de_datos(bruto)
-            raise HTTPException(status_code=502, detail={
-                "mensaje": (
-                    "La sesion pidio informacion que no se le dio, en vez de "
-                    "hacer el trabajo. Eso significa que el encargo le llego "
-                    "incompleto: lo que respondio, aqui debajo, dice "
-                    "exactamente que le falto. No se ha tocado nada."
-                ) if pidio_datos else (
-                    "El arquitecto no devolvio JSON, asi que no se ha tocado "
-                    "nada. Debajo esta lo que si devolvio."
-                ),
-                "pidio_datos": pidio_datos,
-                "codigo_salida": codigo,
-                "errores": [] if pidio_datos else [str(error)],
-                "respuesta": (bruto or "")[-3000:],
-                "salida_de_la_sesion": (error_sesion or "")[-2000:],
-                "copia": copia}) from error
-
-        biblia_nueva = respuesta.get("biblia") if isinstance(respuesta, dict) else None
-        if not isinstance(biblia_nueva, dict):
-            raise HTTPException(status_code=502, detail={
-                "mensaje": "La respuesta no traia ninguna biblia bajo la clave "
-                           "'biblia'. No se ha tocado nada.",
-                "codigo_salida": codigo,
-                "respuesta": (bruto or "")[-3000:],
-                "salida_de_la_sesion": (error_sesion or "")[-2000:],
-                "copia": copia})
-
         num_nuevo = num_viejo + int(cuerpo["capitulos"])
 
-        # --- 5. validar antes de escribir: las dos cosas, y en memoria ---
-        errores = comprobar_que_solo_anade(biblia_antigua, biblia_nueva, num_viejo)
-        try:
-            biblia_validada = modulo_biblia.validar(
-                modulo_biblia.normalizar(biblia_nueva), num_nuevo)
-        except modulo_biblia.ErrorDeBiblia as error:
-            biblia_validada = None
-            errores.append(str(error))
+        # A partir de aqui la peticion ya no espera. Lo que queda —copiar,
+        # pedir el outline, validarlo, guardarlo y arrancar la escritura— corre
+        # en segundo plano y se sigue por `GET /api/generacion`, que es lo que
+        # el panel ya consulta.
+        #
+        # Lo que NO cambia al volverse asincrono: si el arquitecto falla o la
+        # biblia no valida, no se genera nada y la novela queda como estaba.
+        # Eso ocurre dentro de la tuberia, y se cuenta en el estado en vez de
+        # en la respuesta HTTP.
 
-        candidata_config = fusionar_config(
-            config_actual, {"estructura": {"num_capitulos": num_nuevo}})
-        errores.extend(validar_config_candidata(candidata_config))
+        def validar_y_guardar(codigo, bruto, error_sesion, copia):
+            """Los pasos 3 y 4: comprobarlo todo y, solo entonces, escribir."""
+            if codigo != 0 and not (bruto or "").strip():
+                raise HTTPException(status_code=502, detail={
+                    "mensaje": "La sesion de Claude Code termino con error y no "
+                               "devolvio nada. No se ha tocado nada.",
+                    "codigo_salida": codigo,
+                    "salida_de_la_sesion": (error_sesion or "")[-3000:],
+                    "copia": copia,
+                })
 
-        if errores:
-            raise HTTPException(status_code=400, detail={
-                "mensaje": "No se ha escrito nada. La biblia ampliada no pasa la "
-                           "validacion:",
-                "errores": errores,
-                "copia": copia})
+            try:
+                respuesta = puntuacion.extraer_json(bruto)
+            except puntuacion.ErrorDeVeredicto as error:
+                pidio_datos = parece_peticion_de_datos(bruto)
+                raise HTTPException(status_code=502, detail={
+                    "mensaje": (
+                        "La sesion pidio informacion que no se le dio, en vez de "
+                        "hacer el trabajo. Eso significa que el encargo le llego "
+                        "incompleto: lo que respondio, aqui debajo, dice "
+                        "exactamente que le falto. No se ha tocado nada."
+                    ) if pidio_datos else (
+                        "El arquitecto no devolvio JSON, asi que no se ha tocado "
+                        "nada. Debajo esta lo que si devolvio."
+                    ),
+                    "pidio_datos": pidio_datos,
+                    "codigo_salida": codigo,
+                    "errores": [] if pidio_datos else [str(error)],
+                    "respuesta": (bruto or "")[-3000:],
+                    "salida_de_la_sesion": (error_sesion or "")[-2000:],
+                    "copia": copia}) from error
 
-        # --- 6. escribir, y deshacer si algo falla a mitad ---
-        # La biblia y `num_capitulos` tienen que cambiar juntos: una biblia de
-        # N+M entradas con un config que dice N deja el harness sin arrancar.
-        try:
-            modulo_biblia.guardar(biblia_validada, salida)
-            escribir_config(raiz, candidata_config)
-        except Exception as error:
-            ruta_biblia.write_bytes(biblia_antigua_bytes)
-            raise HTTPException(status_code=500, detail={
-                "mensaje": "Fallo al escribir. La biblia se ha dejado como estaba.",
-                "errores": [str(error)]}) from error
+            biblia_nueva = respuesta.get("biblia") if isinstance(respuesta, dict) else None
+            if not isinstance(biblia_nueva, dict):
+                raise HTTPException(status_code=502, detail={
+                    "mensaje": "La respuesta no traia ninguna biblia bajo la clave "
+                               "'biblia'. No se ha tocado nada.",
+                    "codigo_salida": codigo,
+                    "respuesta": (bruto or "")[-3000:],
+                    "salida_de_la_sesion": (error_sesion or "")[-2000:],
+                    "copia": copia})
 
-        # --- el resumen del que era el ultimo capitulo ---
-        resumen = _asegurar_resumen(
-            salida, num_viejo, respuesta.get("resumen_del_antiguo_ultimo"),
-            biblia_validada)
+            errores = comprobar_que_solo_anade(biblia_antigua, biblia_nueva, num_viejo)
+            try:
+                biblia_validada = modulo_biblia.validar(
+                    modulo_biblia.normalizar(biblia_nueva), num_nuevo)
+            except modulo_biblia.ErrorDeBiblia as error:
+                biblia_validada = None
+                errores.append(str(error))
 
-        nuevas = [e for e in biblia_validada.get("outline", [])
-                  if int(e.get("capitulo", 0)) > num_viejo]
+            candidata_config = fusionar_config(
+                config_actual, {"estructura": {"num_capitulos": num_nuevo}})
+            errores.extend(validar_config_candidata(candidata_config))
+
+            if errores:
+                raise HTTPException(status_code=400, detail={
+                    "mensaje": "No se ha escrito nada. La biblia ampliada no pasa la "
+                               "validacion:",
+                    "errores": errores,
+                    "copia": copia})
+
+            # La biblia y `num_capitulos` cambian juntos: una biblia de N+M
+            # entradas con un config que dice N deja el harness sin arrancar.
+            try:
+                modulo_biblia.guardar(biblia_validada, salida)
+                escribir_config(raiz, candidata_config)
+            except Exception as error:
+                ruta_biblia.write_bytes(biblia_antigua_bytes)
+                raise HTTPException(status_code=500, detail={
+                    "mensaje": "Fallo al escribir. La biblia se ha dejado como estaba.",
+                    "errores": [str(error)]}) from error
+
+            resumen = _asegurar_resumen(
+                salida, num_viejo, respuesta.get("resumen_del_antiguo_ultimo"),
+                biblia_validada)
+            nuevas = [e for e in biblia_validada.get("outline", [])
+                      if int(e.get("capitulo", 0)) > num_viejo]
+            return {
+                "capitulos_antes": num_viejo,
+                "capitulos_ahora": num_nuevo,
+                "outline_nuevo": nuevas,
+                "resumen_del_antiguo_ultimo": resumen,
+            }
+
+        def correr_arquitecto(prompt, gen):
+            """Lanza al arquitecto dejando el proceso a la vista de `detener`."""
+            if ejecutor_ampliar is not None:
+                salida_ejecutor = ejecutor_ampliar(prompt)
+                return (salida_ejecutor[0], salida_ejecutor[1],
+                        salida_ejecutor[2] if len(salida_ejecutor) > 2 else "")
+            return ejecutar_claude(
+                raiz, prompt, SEGUNDOS_MAXIMO_AMPLIAR, registrar_en=gen)
+
+        generacion.ampliacion = None
+        generacion.ampliar_y_generar(
+            int(cuerpo["capitulos"]), texto_prompt, correr_arquitecto, validar_y_guardar)
+        generacion.ampliacion["capitulos_nuevos"] = list(
+            range(num_viejo + 1, num_nuevo + 1))
+
         return JSONResponse({
             "ok": True,
+            "arrancada": True,
             "capitulos_antes": num_viejo,
             "capitulos_ahora": num_nuevo,
-            "copia": copia,
-            "outline_nuevo": nuevas,
-            "resumen_del_antiguo_ultimo": resumen,
-            "mensaje": "Ampliada de {0} a {1} capitulos. No se ha regenerado "
-                       "nada de lo aprobado: los {0} capitulos de antes siguen "
-                       "intactos.".format(num_viejo, num_nuevo),
+            "capitulos_nuevos": list(range(num_viejo + 1, num_nuevo + 1)),
+            "mensaje": "Ampliación en marcha: se copiará la novela, el arquitecto "
+                       "escribirá el plan de los {0} capítulo(s) nuevo(s) y la "
+                       "escritura arrancará sola. El outline aparecerá en el panel "
+                       "en cuanto exista, y se puede detener en cualquier momento."
+                       .format(num_nuevo - num_viejo),
+            "seguimiento": "GET /api/generacion",
         })
 
     @app.get("/api/generacion")

@@ -21,6 +21,8 @@ de HTTP.
 """
 
 import json
+import sys
+import time
 
 import pytest
 
@@ -89,8 +91,48 @@ def arquitecto_que_amplia(hasta, con_resumen=True, tocar=None):
     return ejecutor
 
 
+# Un "claude" de mentira para la GENERACION que arranca al final de la
+# ampliacion. Sin esto, una ampliacion que sale bien lanzaria el `claude` de
+# verdad desde la suite de tests, que es lo ultimo que queremos.
+GENERACION_FALSA = lambda: [sys.executable, "-c", "print('generando capitulos nuevos')"]
+
+
 def cliente_con(proyecto, ejecutor):
-    return TestClient(servidor.crear_app(proyecto, ejecutor_ampliar=ejecutor))
+    return TestClient(servidor.crear_app(
+        proyecto, comando=GENERACION_FALSA, ejecutor_ampliar=ejecutor))
+
+
+def arrancar_y_esperar(cliente, cuantos, intentos=300):
+    """Lanza la ampliacion y espera a que la tuberia llegue a su final.
+
+    La peticion ya no espera: devuelve en cuanto la operacion arranca. Lo que
+    se comprueba despues vive en `GET /api/generacion`, que es lo que el panel
+    consulta. Se sondea en vez de dormir un rato fijo.
+    """
+    respuesta = cliente.post("/api/ampliar", json={"capitulos": cuantos})
+    if respuesta.status_code != 200:
+        return respuesta, None
+    for _ in range(intentos):
+        estado = cliente.get("/api/generacion").json()
+        amp = estado.get("ampliacion") or {}
+        if amp.get("estado") in ("fallida", "detenida", "generando"):
+            return respuesta, estado
+        time.sleep(0.05)
+    raise AssertionError("la ampliacion de prueba no termino")
+
+
+def esperar_fallo(cliente, cuantos):
+    """Arranca una ampliacion que va a fallar y devuelve el detalle del fallo.
+
+    Al volverse asincrona, un rechazo del arquitecto o de la validacion ya no
+    viaja en la respuesta HTTP —que solo dice «arrancada»— sino en el estado,
+    bajo `ampliacion.error`. Lo que NO cambia es lo que de verdad importa: que
+    no se genere nada y que la novela quede como estaba.
+    """
+    respuesta, final = arrancar_y_esperar(cliente, cuantos)
+    assert respuesta.status_code == 200, respuesta.text
+    assert final["ampliacion"]["estado"] == "fallida", final["ampliacion"]
+    return final["ampliacion"]["error"] or {}
 
 
 def estado_en_disco(proyecto):
@@ -109,11 +151,10 @@ def estado_en_disco(proyecto):
 
 def test_amplia_de_tres_a_cinco(proyecto):
     cliente = cliente_con(proyecto, arquitecto_que_amplia(5))
-    r = cliente.post("/api/ampliar", json={"capitulos": 2})
+    r, final = arrancar_y_esperar(cliente, 2)
     assert r.status_code == 200, r.text
-    cuerpo = r.json()
-    assert cuerpo["capitulos_antes"] == 3
-    assert cuerpo["capitulos_ahora"] == 5
+    assert r.json()["arrancada"] is True
+    assert final["ampliacion"]["estado"] == "generando"
     # Las dos cosas cambian juntas, que es el nudo del asunto.
     biblia = json.loads((proyecto / "salida" / "biblia.json").read_text(encoding="utf-8"))
     config = json.loads((proyecto / "config.json").read_text(encoding="utf-8"))
@@ -124,8 +165,8 @@ def test_amplia_de_tres_a_cinco(proyecto):
 def test_devuelve_el_outline_nuevo_para_poder_leerlo(proyecto):
     """Se enseña ANTES de generar: hay que poder decidir si vale."""
     cliente = cliente_con(proyecto, arquitecto_que_amplia(5))
-    cuerpo = cliente.post("/api/ampliar", json={"capitulos": 2}).json()
-    nuevas = cuerpo["outline_nuevo"]
+    _, final = arrancar_y_esperar(cliente, 2)
+    nuevas = final["outline_nuevo"]
     assert [e["capitulo"] for e in nuevas] == [4, 5]
     assert all(e.get("sinopsis") and e.get("cambio") for e in nuevas)
 
@@ -133,7 +174,8 @@ def test_devuelve_el_outline_nuevo_para_poder_leerlo(proyecto):
 def test_no_toca_los_capitulos_ya_escritos(proyecto):
     antes = estado_en_disco(proyecto)["capitulos"]
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4))
-    assert cliente.post("/api/ampliar", json={"capitulos": 1}).status_code == 200
+    r, _ = arrancar_y_esperar(cliente, 1)
+    assert r.status_code == 200
     despues = estado_en_disco(proyecto)["capitulos"]
     assert antes == despues
 
@@ -141,7 +183,7 @@ def test_no_toca_los_capitulos_ya_escritos(proyecto):
 def test_conserva_el_outline_de_los_capitulos_viejos(proyecto):
     viejo = json.loads((proyecto / "salida" / "biblia.json").read_text(encoding="utf-8"))
     cliente = cliente_con(proyecto, arquitecto_que_amplia(5))
-    cliente.post("/api/ampliar", json={"capitulos": 2})
+    arrancar_y_esperar(cliente, 2)
     nuevo = json.loads((proyecto / "salida" / "biblia.json").read_text(encoding="utf-8"))
     assert nuevo["outline"][:3] == viejo["outline"]
     assert nuevo["personajes"] == viejo["personajes"]
@@ -150,9 +192,10 @@ def test_conserva_el_outline_de_los_capitulos_viejos(proyecto):
 
 def test_copia_la_novela_antes_de_tocar_la_biblia(proyecto):
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4))
-    cuerpo = cliente.post("/api/ampliar", json={"capitulos": 1}).json()
-    assert cuerpo["copia"]["copiado"] is True
-    copia = proyecto / cuerpo["copia"]["destino"]
+    _, final = arrancar_y_esperar(cliente, 1)
+    copia_info = final["ampliacion"]["copia"]
+    assert copia_info["copiado"] is True
+    copia = proyecto / copia_info["destino"]
     # La copia tiene la biblia ANTERIOR, que es para lo que sirve.
     guardada = json.loads((copia / "biblia.json").read_text(encoding="utf-8"))
     assert len(guardada["outline"]) == 3
@@ -161,7 +204,7 @@ def test_copia_la_novela_antes_de_tocar_la_biblia(proyecto):
 def test_el_estado_queda_listo_para_el_primer_capitulo_nuevo(proyecto):
     """Ni se tocan los aprobados ni hace falta reanudar a mano."""
     cliente = cliente_con(proyecto, arquitecto_que_amplia(5))
-    cliente.post("/api/ampliar", json={"capitulos": 2})
+    arrancar_y_esperar(cliente, 2)
     estado = json.loads((proyecto / "salida" / "estado.json").read_text(encoding="utf-8"))
     assert estado["capitulos_aprobados"] == [1, 2]
     assert estado["capitulos_marcados"] == [3]
@@ -185,29 +228,29 @@ def test_crea_el_resumen_que_faltaba_del_antiguo_ultimo(proyecto):
     resumen3 = proyecto / "salida" / "resumenes" / "cap-03.md"
     assert not resumen3.exists()
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4))
-    cuerpo = cliente.post("/api/ampliar", json={"capitulos": 1}).json()
+    _, final = arrancar_y_esperar(cliente, 1)
     assert resumen3.is_file()
     assert "tres frases" in resumen3.read_text(encoding="utf-8")
-    assert cuerpo["resumen_del_antiguo_ultimo"]["origen"] == "resumidor"
+    assert final["ampliacion"]["resumen_del_antiguo_ultimo"]["origen"] == "resumidor"
 
 
 def test_si_el_resumidor_no_lo_da_se_cae_a_la_sinopsis(proyecto):
     """Válvula de escape: peor que el acta, pero el escritor no se queda ciego."""
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4, con_resumen=False))
-    cuerpo = cliente.post("/api/ampliar", json={"capitulos": 1}).json()
+    _, final = arrancar_y_esperar(cliente, 1)
     resumen3 = proyecto / "salida" / "resumenes" / "cap-03.md"
     assert resumen3.is_file()
     assert resumen3.read_text(encoding="utf-8").strip()
-    assert cuerpo["resumen_del_antiguo_ultimo"]["origen"] == "sinopsis_del_outline"
+    assert final["ampliacion"]["resumen_del_antiguo_ultimo"]["origen"] == "sinopsis_del_outline"
 
 
 def test_un_resumen_que_ya_existia_no_se_pisa(proyecto):
     resumen3 = proyecto / "salida" / "resumenes" / "cap-03.md"
     resumen3.write_text("El resumen bueno que ya estaba.", encoding="utf-8")
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4))
-    cuerpo = cliente.post("/api/ampliar", json={"capitulos": 1}).json()
+    _, final = arrancar_y_esperar(cliente, 1)
     assert resumen3.read_text(encoding="utf-8") == "El resumen bueno que ya estaba."
-    assert cuerpo["resumen_del_antiguo_ultimo"]["origen"] == "ya_existia"
+    assert final["ampliacion"]["resumen_del_antiguo_ultimo"]["origen"] == "ya_existia"
 
 
 # ---------------------------------------------------------------------------
@@ -249,9 +292,8 @@ def test_una_biblia_invalida_no_se_guarda(proyecto):
         b["outline"][3] = {"capitulo": 4}      # sin sinopsis ni cambio
     antes = estado_en_disco(proyecto)
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4, tocar=rompe))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 400
-    assert r.json()["detail"]["errores"]
+    error = esperar_fallo(cliente, 1)
+    assert error["errores"]
     assert estado_en_disco(proyecto) == antes
 
 
@@ -259,8 +301,7 @@ def test_un_outline_con_menos_entradas_de_las_pedidas_se_rechaza(proyecto):
     """Se piden 2 y el arquitecto devuelve 1: no cuadra con num_capitulos."""
     antes = estado_en_disco(proyecto)
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4))
-    r = cliente.post("/api/ampliar", json={"capitulos": 2})
-    assert r.status_code == 400
+    esperar_fallo(cliente, 2)
     assert estado_en_disco(proyecto) == antes
 
 
@@ -274,9 +315,8 @@ def test_si_el_arquitecto_reescribe_un_capitulo_viejo_se_rechaza(proyecto):
         b["outline"][1]["sinopsis"] = "Otra cosa completamente distinta."
     antes = estado_en_disco(proyecto)
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4, tocar=reescribe))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 400
-    assert any("capitulo 2" in e for e in r.json()["detail"]["errores"])
+    error = esperar_fallo(cliente, 1)
+    assert any("capitulo 2" in e for e in error["errores"])
     assert estado_en_disco(proyecto) == antes
 
 
@@ -285,25 +325,24 @@ def test_si_cambia_los_personajes_se_rechaza(proyecto):
         b["personajes"][0]["nombre"] = "Otra persona"
     antes = estado_en_disco(proyecto)
     cliente = cliente_con(proyecto, arquitecto_que_amplia(4, tocar=toca))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 400
-    assert any("personajes" in e for e in r.json()["detail"]["errores"])
+    error = esperar_fallo(cliente, 1)
+    assert any("personajes" in e for e in error["errores"])
     assert estado_en_disco(proyecto) == antes
 
 
 def test_si_el_arquitecto_no_devuelve_json_no_se_toca_nada(proyecto):
     antes = estado_en_disco(proyecto)
     cliente = cliente_con(proyecto, lambda prompt: (0, "Claro, ahora mismo lo hago."))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 502
+    error = esperar_fallo(cliente, 1)
+    assert "no devolvio json" in error["mensaje"].lower()
     assert estado_en_disco(proyecto) == antes
 
 
 def test_si_la_respuesta_no_trae_biblia_no_se_toca_nada(proyecto):
     antes = estado_en_disco(proyecto)
     cliente = cliente_con(proyecto, lambda prompt: (0, json.dumps({"otra_cosa": 1})))
-    r = cliente.post("/api/ampliar", json={"capitulos": 1})
-    assert r.status_code == 502
+    error = esperar_fallo(cliente, 1)
+    assert "no traia ninguna biblia" in error["mensaje"]
     assert estado_en_disco(proyecto) == antes
 
 
