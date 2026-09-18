@@ -35,7 +35,11 @@ dice qué puedes ejecutar hoy:
 | Resúmenes redactados por un modelo | subagente `resumidor` | ✅ implementado |
 | Ensamblador e informe | `src/ensamblador.py` | ✅ implementado |
 | Registro de delegaciones y tokens | `src/delegaciones.py` | ✅ implementado |
-| Panel de control de la generación | `panel.html` | ✅ implementado (ver sección 10) |
+| Marca de delegación en curso | `src/delegaciones.py` (`delegacion_en_curso`) | ✅ implementado (la sesión la escribe antes de delegar; ver sección 2.4) |
+| Filtro de redacción de secretos | `src/redaccion.py` | ✅ implementado (se aplica al volcar `config-efectiva.json`) |
+| Panel de control de la generación | `panel.html` | ✅ implementado, seis vistas (ver sección 10) |
+| Tests de carga del panel | `tests/test_panel_carga.py`, `tests/panel_sonda.js` | ✅ implementado (requieren `node`; si no está, se saltan) |
+| Servidor local del panel | `src/servidor.py` | ✅ implementado: sirve el panel, escribe `config.json` y arranca generaciones (ver sección 11) |
 | Telemetría OTEL hacia Langfuse | `.claude/settings.json`, `herramientas/` | ✅ implementado (requiere una variable de entorno con la credencial; ver la sección 9) |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
 | Hechos y timeline extraídos de cada capítulo | biblia | ⬜ pendiente (`hechos_establecidos` no se rellena) |
@@ -64,6 +68,7 @@ Eso es lo esperado, no un error de instalación.
 | Claude Code 2.1.271 o superior | `claude --version` | Por debajo de 2.1.271, `omitClaudeMd` se ignora en silencio y los validadores dejan de estar aislados (`DECISIONES.md`, hallazgo 3) |
 | Python 3.10 o superior | `python --version` | Probado con 3.12 |
 | pytest | `python -m pytest --version` | Solo para los tests |
+| FastAPI, uvicorn, httpx | `python -c "import fastapi, uvicorn, httpx"` | Solo para el servidor del panel (sección 11) y sus tests. El harness genera novelas sin ellos |
 
 Y nada más. En concreto, **no** hacen falta:
 
@@ -84,6 +89,15 @@ Desde la raíz del proyecto, en PowerShell:
 ```powershell
 python -m pip install pytest
 ```
+
+Y, si vas a usar el panel con su servidor:
+
+```powershell
+python -m pip install fastapi uvicorn httpx
+```
+
+Esas tres no hacen falta para generar novelas: el harness y sus comandos
+funcionan sin ellas. Si no están, los tests del servidor se saltan.
 
 Si prefieres aislar el proyecto (recomendado, pero opcional):
 
@@ -160,8 +174,15 @@ python -m pytest tests/test_config.py -v     # solo los de configuración
 python -m pytest -k perfil -v                # solo los que mencionan "perfil"
 ```
 
-Los tests **no tocan la red y no delegan en ningún subagente**: usan
+Los tests **no salen a internet y no delegan en ningún subagente**: usan
 configuraciones de juguete en carpetas temporales. Deben pasar siempre.
+
+La única excepción, y conviene saberla: `tests/test_panel_carga.py` levanta un
+servidor estático de la librería estándar en `127.0.0.1` con un puerto que elige
+el sistema, y ejecuta con `node` el JavaScript real de `panel.html` contra él.
+Es tráfico local, contra una carpeta temporal, y es la única forma honesta de
+comprobar que un capítulo que está en disco llega a la pantalla. Si no hay
+`node` instalado, esos tests se saltan en vez de fallar.
 
 ### 2.2 Comprobar la configuración efectiva ✅
 
@@ -192,6 +213,8 @@ Code, que va invocando estos comandos entre delegación y delegación.
 python -m src.orquestacion iniciar              # prepara salida/ y el estado
 python -m src.orquestacion iniciar --desde-cero # ignora el estado anterior
 python -m src.orquestacion estado               # qué toca hacer ahora
+python -m src.orquestacion empezar-delegacion --rol escritor --modelo opus --capitulo 4 --intento 2
+python -m src.orquestacion cancelar-delegacion  # borra la marca sin registrar nada
 python -m src.orquestacion ventana arquitecto
 python -m src.orquestacion ventana escritor --capitulo 3
 python -m src.orquestacion ventana estilo --capitulo 3
@@ -235,6 +258,56 @@ en ese caso el `registrar-*` correspondiente ya la contó antes de fallar.
 `informe` reescribe `informe-validacion.md` a partir de lo que hay en disco, sin
 tocar el manuscrito ni borrar `.tmp/`. Sirve para sacar el informe de una novela
 terminada hace semanas desde una sesión que no la generó.
+
+#### `empezar-delegacion`: decir que algo está pasando ✅
+
+**La sesión tiene que lanzarlo justo antes de cada delegación**, sin excepción,
+igual que registra el resultado justo después. No es instrumentación de lujo:
+es la única señal en disco de que la generación está viva.
+
+```powershell
+python -m src.orquestacion empezar-delegacion --rol escritor --modelo opus `
+    --capitulo 4 --intento 2
+```
+
+Escribe en `estado.json` la clave `delegacion_en_curso` con el rol, el modelo,
+el capítulo, el intento y la hora de inicio:
+
+```json
+"delegacion_en_curso": {
+  "rol": "escritor", "modelo": "opus", "capitulo": 4,
+  "intento": 2, "inicio": "2026-09-18T16:20:31Z"
+}
+```
+
+La marca **desaparece sola** en cuanto se registra el resultado: los cinco
+comandos `registrar-*` pasan todos por el mismo sitio y la limpian ahí, así que
+no hay que acordarse de nada al terminar.
+
+El motivo de que exista es que el resto del registro solo sabe de delegaciones
+**terminadas**: una entrada aparece en `delegaciones_detalle` cuando ya hay una
+respuesta que anotar. Mientras el escritor con `opus` piensa durante dos o tres
+minutos no hay ni un byte en disco que lo diga, y desde fuera —desde el panel, o
+desde otra ventana— una generación trabajando y una abandonada a medias se ven
+**exactamente igual**.
+
+Detalles que ahorran confusión:
+
+- **Solo hay una marca a la vez**, y la nueva pisa a la anterior. Los tres
+  validadores se lanzan en paralelo, así que marcarlos uno a uno dejaría ver
+  solo el último: para ese paso se marca `--rol validadores`, que es lo que de
+  verdad está ocurriendo.
+- **Una marca vieja no es una generación viva.** Si la sesión muere entre el
+  marcado y el registro, la marca se queda puesta. Eso no es un fallo: dice
+  «esto se lanzó y no se supo más», que es información cierta y además la que
+  más falta hace. El comando `estado` avisa cuando una marca lleva más de
+  quince minutos.
+- **`cancelar-delegacion` es solo para lo que no se llegó a lanzar.** Una
+  delegación que sí se lanzó y no devolvió nada **no se cancela**: se anota con
+  `registrar-delegacion`, que además la cuenta. Cancelar algo que ya se pagó
+  devolvería el contador al problema que ya hubo una vez.
+- **La clave es opcional hacia atrás.** Un `estado.json` de una generación
+  anterior, que no la tenga, se sigue leyendo sin tocar nada.
 
 ### 2.5 Comprobar que el contador no miente ✅
 
@@ -309,6 +382,30 @@ Dos detalles que conviene tener presentes:
 El resultado se vuelca en `salida/config-efectiva.json` antes de la primera
 delegación, para que el informe sea reproducible.
 
+Ese volcado pasa por el **filtro de redacción** (`src/redaccion.py`). La capa 4
+copia variables de entorno dentro de la configuración, así que una variable mal
+elegida —`NOVELA_ALGO_TOKEN`— acabaría escrita en claro en un archivo que se
+guarda, se comparte para reproducir una generación y lo lee el panel por red. El
+filtro mira el **nombre** de cada clave, no su valor, y sustituye por
+`[REDACTADO]` el valor de toda clave que contenga `KEY`, `TOKEN`, `SECRET`,
+`AUTH` o `CREDENTIAL`, sin distinguir mayúsculas.
+
+Dos consecuencias prácticas:
+
+- **Solo se redacta la copia que se escribe.** El harness sigue trabajando en
+  memoria con la configuración completa, así que ningún ajuste deja de aplicarse
+  por estar redactado en el archivo.
+- **Enmascara de más antes que de menos.** Los patrones se buscan como
+  subcadena, de modo que una clave llamada `monkey` también saldría redactada.
+  Es deliberado: redactar de más estropea la legibilidad de un volcado,
+  redactar de menos filtra un secreto.
+- **Salvo las excepciones de `CLAVES_EXENTAS`.** En este harness `token`
+  significa casi siempre token de modelo, no credencial: `max_tokens_contexto`,
+  `tokens`, `tokens_in`, `tokens_out` y `sin_tokens` están exentas por nombre
+  exacto. Sin esa lista, `max_tokens_contexto` salía redactado del volcado, que
+  es un ajuste real y hace falta para reproducir una generación. La exención es
+  por nombre completo y no por patrón: `tokens_de_acceso` sigue redactándose.
+
 ### 3.2 Paso 2 — Verificar el entorno
 
 Antes de gastar una sola delegación:
@@ -348,6 +445,12 @@ Esta es la segunda y última excepción a la regla de no abortar: sin biblia no
 hay novela que escribir, así que seguir no tendría sentido.
 
 ### 3.5 Paso 5 — Bucle por capítulos
+
+Antes de **cada una** de las delegaciones que siguen —el escritor, los
+validadores, el resumidor— la sesión lanza `empezar-delegacion` (sección 2.4).
+Es un paso más del bucle, no un extra: sin él no hay forma de saber desde fuera
+que la generación está trabajando. Al registrar el resultado la marca se borra
+sola.
 
 Para cada capítulo del outline, en orden:
 
@@ -557,7 +660,7 @@ y el contrato permite hasta seis intentos por capítulo.
 | `manuscrito.md` | Portada más los capítulos concatenados en orden. El producto |
 | `biblia.json` | Estado canónico final: premisa, personajes, outline, timeline, hechos |
 | `informe-validacion.md` | Qué pasó en cada capítulo. Ver la sección 7 |
-| `config-efectiva.json` | La configuración realmente usada tras fusionar las cuatro capas |
+| `config-efectiva.json` | La configuración realmente usada tras fusionar las cuatro capas, con los valores de claves sensibles sustituidos por `[REDACTADO]` (sección 3.1) |
 
 ### 5.2 Memoria de trabajo
 
@@ -595,6 +698,12 @@ Cada delegación deja una entrada en la lista `delegaciones_detalle`:
   "en_manuscrito": true
 }
 ```
+
+Junto a esa lista, y solo mientras hay algo en marcha, vive la clave
+`delegacion_en_curso` (sección 2.4). La lista mira al pasado y esa clave al
+presente: sin ella, `estado.json` describe con todo detalle lo que ya terminó y
+no dice absolutamente nada de lo que está pasando ahora, que es justo lo que
+necesita cualquiera que esté mirando la generación mientras ocurre.
 
 Tres cosas que conviene entender de este archivo:
 
@@ -892,29 +1001,65 @@ vistas: **Recorrido**, **Arquitectura**, **Estructura**, **Tokens** y **Libro**.
 Vive en la raíz del proyecto y **se versiona**. No va dentro de `salida/`, que
 está en `.gitignore`: ahí se perdería en cada limpieza y no llegaría a nadie.
 
-### 10.1 Las dos formas de abrirlo
+### 10.1 Cómo se abre
 
-La página detecta sola cómo se ha abierto y enseña **solo** los controles del
-modo en el que está. Nunca los dos a la vez: un selector de archivos que no hace
-falta invita a cargar a mano lo que ya está cargado, y dos fuentes distintas
-para los mismos datos es justo lo que el panel existe para evitar.
-
-**Servida por un servidor local.** Es la forma normal de usarlo. Desde la raíz:
+**El panel necesita un servidor.** No hay una segunda forma de usarlo.
 
 ```powershell
-python -m http.server 8765 --bind 127.0.0.1
+python -m src.servidor
 ```
 
-y abre <http://127.0.0.1:8765/panel.html>. Con `http://` la página lee `salida/`
-por su cuenta con `fetch`, al arrancar y cada vez que se pulsa «Volver a leer
-salida/». No hay nada que arrastrar. Para pararlo, `Ctrl+C`.
+y abre <http://127.0.0.1:8000/>. La página lee `salida/` por su cuenta con
+`fetch`, al arrancar, cada pocos segundos mientras hay una generación en marcha,
+y cuando se pulsa «Releer todo». Los detalles del servidor están en la
+sección 11. Para pararlo, `Ctrl+C`.
 
-**Abierta desde el disco (`file://`).** Doble clic en el archivo. El navegador
-prohíbe que una página abierta así lea el disco, de modo que aparece el selector:
-se arrastra la carpeta `salida/` entera, o se eligen los archivos a mano.
+Cualquier servidor estático sirve igual para el panel, porque la página solo
+lee archivos:
+
+```powershell
+python -m http.server 8000 --bind 127.0.0.1
+```
+
+**Abierta desde el disco (`file://`) no funciona, y lo dice.** El navegador
+prohíbe que una página abierta así lea archivos locales. En ese caso el panel no
+enseña una interfaz a medias ni un selector de archivos: se para en seco, en
+grande, con el comando del servidor escrito para copiarlo. Una página que parece
+rota y una página que solo necesita un servidor tienen que distinguirse a la
+primera.
 
 La página busca `salida/` primero a su lado y después un nivel más arriba, así
 que funciona igual desde la raíz o desde una carpeta `docs/`.
+
+### 10.1b Las seis vistas
+
+| Vista | Qué cuenta |
+|---|---|
+| **Monitoreo** | La principal. Arriba, en vivo: qué agente trabaja, desde cuándo, con qué modelo, y el progreso. Abajo, el recorrido: todos los intentos de cada capítulo con sus veredictos, su puntuación y **los problemas sin resolver con su evidencia** |
+| **Biblia** | Contra qué validan los validadores: premisa, conflicto, ambientación, personajes con sus rasgos fijos, outline cruzado con lo que de verdad pasó, y hechos establecidos |
+| **Consumo** | Dónde se fue el gasto y **cuánto se tiró**. Reparto por rol, modelo y capítulo. Lo no medido se dice con palabras, nunca con un `0` |
+| **Configuración** | Los ajustes de la próxima novela. Con backend, **guarda de verdad**; sin él, explica que hace falta |
+| **Arquitectura** | Por qué hay tres validadores con contexto aislado. No muestra datos: es el argumento |
+| **Libro** | La novela, para leerla. Serif, columna estrecha, sin instrumentación |
+
+**Con backend y sin backend.** El panel funciona de las dos maneras y lo detecta
+solo, preguntando una vez por `/api/salud`. Servido por un servidor estático
+lee la novela y ya; con `python -m src.servidor` detrás aparecen las dos cosas
+que **escriben**: guardar la configuración y lanzar una generación. Si no hay
+backend, esos controles no se pintan y se dice por qué, en vez de enseñar
+botones que van a fallar.
+
+**El botón de generar está detrás de una confirmación escrita.** No es un
+«¿seguro?»: es una lista de lo que va a pasar —incluida **la carpeta exacta** a
+la que se va a copiar la novela de ahora— y hay que **teclear la palabra
+`GENERAR`** para que el botón final se active. Ese botón copia carpetas y
+arranca un proceso que gasta delegaciones; no puede pulsarse sin querer.
+
+**La vista Configuración señala qué valores está pisando el archivo.** El
+perfil del género **no gana** a `config.json`: si una clave está en las dos
+partes, manda la del archivo (sección 3.1). Como eso es al revés de lo que
+parece, la vista lo dice clave por clave, con el valor de cada lado y cómo
+arreglarlo. También avisa de que guardar reformatea el archivo.
 
 ### 10.2 Qué archivos pide, y qué pasa si falta alguno
 
@@ -939,6 +1084,22 @@ ausente, y las peticiones opcionales van en tandas de cuatro: treinta a la vez
 contra un servidor estático sencillo hacen que alguna se caiga, y una petición
 caída aquí se leería como un capítulo que no existe.
 
+**Cuántos capítulos busca.** El panel no se fía de `config-efectiva.json` para
+saber cuántos hay: esa cuenta es un **suelo**, no un techo. Busca al menos hasta
+el mayor de tres números —`estructura.num_capitulos`, el capítulo más alto que
+`estado.json` da por aprobado o marcado, y el más alto que ya haya cargado del
+manuscrito— y a partir de ahí sigue subiendo hasta encontrar **tres ausencias
+seguidas**, con un tope de 99. Por eso los capítulos se piden en serie y no en
+tandas: cada respuesta decide si hay que seguir buscando.
+
+Esto arregla un fallo real: antes el número salía solo de
+`config-efectiva.json`, así que un capítulo que estuviera en disco pero fuera de
+esa cuenta no se llegaba a pedir. Y un archivo que no se pide no da 404: no da
+nada, así que la vista Libro salía vacía sin que el panel denunciara nada. Los
+tests de `tests/test_panel_carga.py` ejecutan el JavaScript real de la página
+contra un servidor de juguete y fallan si un capítulo que está en disco no llega
+a la pantalla. Necesitan `node`; sin él se saltan.
+
 ### 10.3 La tabla de aprobación por validador
 
 La vista **Recorrido** abre con una tabla que dice, de cada validador, cuántos
@@ -958,7 +1119,201 @@ los capítulos de uno en uno, que es exactamente por lo que la tabla existe.
 
 ---
 
-## 11. Documentos relacionados
+## 11. El servidor local (`src/servidor.py`)
+
+### 11.1 Qué es, y qué no es
+
+Un servidor HTTP **para la máquina de quien lo lanza y para nadie más**. Sirve
+`panel.html` y los archivos de `salida/`. Está construido con FastAPI.
+
+Lo que **no** es, y conviene tenerlo claro antes de leer el resto:
+
+- **No llama a ningún modelo.** Hoy no lanza ningún proceso.
+- **No sale a la red.** Escucha; no pide nada a nadie. La regla del proyecto de
+  que ningún módulo de Python salga a la red sigue intacta.
+- **No sirve el proyecto entero.** Solo el panel y `salida/`.
+
+```powershell
+python -m src.servidor                 # http://127.0.0.1:8000/
+python -m src.servidor --puerto 8765   # otro puerto
+```
+
+### 11.2 Los endpoints de hoy
+
+| Método y ruta | Qué hace |
+|---|---|
+| `GET /` y `GET /panel.html` | El panel |
+| `GET /salida/<lo que sea>` | Un archivo de `salida/`, incluido lo de `.tmp/` |
+| `GET /api/salud` | Dónde mira el servidor, y **qué puede escribir** |
+| `GET /api/config` | La configuración, en sus dos formas, y si ahora mismo se puede tocar |
+| `PUT /api/config` | Aplica cambios sobre `config.json` |
+| `POST /api/generar` | Copia la novela actual y arranca una generación en segundo plano |
+| `GET /api/generacion` | Si hay algo en marcha, desde cuándo, y las últimas líneas del log |
+| `POST /api/detener` | Para la generación en marcha |
+
+Todas las respuestas de archivo van con `Cache-Control: no-store`: el panel
+repregunta por `estado.json` cada pocos segundos, y una respuesta cacheada sería
+seguimiento en vivo de datos viejos. Los archivos de texto van con el charset
+declarado, para que un manuscrito con acentos no llegue roto.
+
+`GET /api/salud` devuelve dónde está la raíz, dónde está `salida/`, si existen,
+en qué dirección escucha y **la lista de lo que el servidor puede escribir**.
+Hoy vale `["config.json"]`. Esa lista es una declaración, no un adorno: crece
+solo cuando el servidor gana permiso para tocar algo nuevo, y hay un test que
+hay que cambiar a mano cuando eso pasa.
+
+### 11.4 Leer y escribir la configuración
+
+**`GET /api/config`** devuelve cuatro cosas:
+
+| Campo | Qué es |
+|---|---|
+| `archivo` | El contenido literal de `config.json`. **Esto es lo que se edita** |
+| `efectiva` | La que el harness usará de verdad, tras aplicar valores por defecto, perfil de género y variables `NOVELA_` |
+| `editable` | `false` si hay una generación en marcha |
+| `errores` | Si `config.json` no es válido, aquí está el porqué |
+
+Se devuelven las dos formas porque responden a preguntas distintas. Ver solo una
+confunde: se edita `palabras_min` en el archivo, el perfil del género lo pisa, y
+la generación usa otro número sin que nada lo explique (sección 3.1).
+
+Las dos salen **redactadas** por `src/redaccion.py`, igual que el volcado de la
+configuración efectiva.
+
+**`PUT /api/config`** aplica cambios. Lo más importante de este endpoint es lo
+que **no** hace: el cuerpo de la petición **no es la configuración nueva**. Es
+una lista de ajustes a cambiar, y todo lo que no venga se queda como está.
+
+```powershell
+# cambia dos ajustes y no toca nada más
+{"estructura": {"num_capitulos": 5}, "novela": {"genero": "romance"}}
+```
+
+Para escribir hay que pasar **cuatro puertas, en este orden**. Si falla
+cualquiera, la respuesta dice por qué y **`config.json` queda intacto**:
+
+1. **No hay una generación en marcha.** Se mira `delegacion_en_curso` de
+   `estado.json` (sección 2.4). Si la hay, la respuesta es `409` y no se toca
+   nada: cambiar la configuración a media novela dejaría unos capítulos escritos
+   con unos ajustes y el resto con otros.
+2. **Las claves existen y los tipos encajan.** Una clave que no esté ya en
+   `config.json` es un error, no un añadido; un texto donde había un número es
+   un error. Las claves que empiezan por guion bajo (`_meta`, `_comentario`) son
+   documentación del archivo y no se editan desde aquí. Un valor que llegue como
+   `[REDACTADO]` se rechaza, para que no se guarde esa palabra como si fuera el
+   valor real.
+3. **La configuración resultante entera pasa por `src/config.py`.** No el cambio
+   suelto: el archivo completo, cargado como se cargaría de verdad. Así un
+   `num_capitulos: 0` o un rango de palabras imposible se rechazan con el mismo
+   mensaje que daría el harness al arrancar.
+4. **Se escribe de forma atómica.** Primero a un temporal en la misma carpeta y
+   después renombrado, igual que `estado.json`: un `config.json` a medias dejaría
+   el harness sin arrancar.
+
+Los errores vienen **todos juntos**, no de uno en uno, que es el mismo criterio
+que usa el validador de la biblia. La respuesta de éxito lista los cambios con
+su valor anterior y el nuevo, y si no había nada que cambiar lo dice y no
+reescribe el archivo.
+
+> **Consecuencia que conviene conocer:** al escribir, `config.json` se reformatea
+> con sangría de dos espacios. El contenido y el orden de las claves se conservan
+> enteros, incluidos los `_comentario`, pero las líneas que estuvieran compactadas
+> a mano se expanden. Si el formato del archivo te importa, edítalo a mano en
+> lugar de por el panel.
+
+### 11.5 Generar desde el panel
+
+**`POST /api/generar`** hace tres cosas, en este orden, y si falla cualquiera
+no se pasa a la siguiente:
+
+1. **Comprueba que existe el ejecutable `claude`.** Si no está en el `PATH`,
+   responde `503` y no toca nada. Se mira antes de copiar para no dejar una
+   carpeta de copia suelta por una generación que no iba a arrancar.
+2. **Copia la novela actual a `salida-novela-N/`**, con el primer `N` libre. Si
+   hay algo que copiar y la copia falla, **no se genera**: generar encima de una
+   novela terminada la pierde para siempre, y eso no se arregla después. La
+   respuesta dice a qué carpeta se copió.
+3. **Arranca `claude -p` en segundo plano** y **vuelve enseguida**. Una
+   generación son minutos; dejar la petición HTTP esperando todo ese rato no
+   aporta nada, porque el seguimiento en vivo ya se hace repreguntando por
+   `estado.json`.
+
+El endpoint **no recibe nada**. El comando y el prompt son constantes de
+`src/servidor.py`: desde el navegador solo se puede decir «empieza» y «para»,
+nunca «empieza con esto». Se lanza sin shell y con la lista de argumentos
+separada, así que no hay nada que pueda interpretarse.
+
+La salida del proceso, la suya y la de sus errores, va a
+`salida/.log-generacion.txt`, en modo añadir. Ese log es el único rastro que
+queda si algo se tuerce, así que no se trunca nunca.
+
+**`GET /api/generacion`** devuelve si hay algo vivo, desde cuándo, el código de
+salida si ya terminó, a qué carpeta se copió la novela anterior y las últimas
+líneas del log (40 por defecto, `?lineas=N` para cambiarlo).
+
+#### Qué pasa cuando el proceso se muere
+
+Es el caso que más cuidado necesita, porque una generación que muere en
+silencio deja el panel mintiendo. Siempre que el proceso termina —bien, mal o
+detenido a mano— pasan tres cosas:
+
+1. **Se escribe en el log cómo terminó**, con la hora y el código de salida.
+   Una caída se marca como `CAIDA` y explica que lo que haya en `salida/` es lo
+   que quedó a medias.
+2. **Se limpia `delegacion_en_curso` del estado.** Si el proceso murió a media
+   delegación, esa marca se queda puesta, y sin limpiarla el panel enseñaría
+   «escritor, trabajando» para siempre y la configuración quedaría bloqueada
+   sin que nada estuviera generando.
+3. **Se anota con qué murió**, para poder contarlo: «murió con el escritor del
+   capítulo 2 abierto» es mucho más útil que «murió».
+
+Esto lo hace un vigilante que espera al proceso, y además se comprueba cada vez
+que alguien pregunta por el estado. Con las dos vías, una generación no puede
+quedar marcada como viva cuando ya no lo está.
+
+**Si reinicias el servidor con una generación en marcha**, el servidor nuevo no
+es dueño de ese proceso y **lo dice**: responde `desconocida` en vez de
+adivinar. Comprobar si un PID ajeno sigue vivo de forma portable no es fiable,
+y en Windows la forma obvia de intentarlo mata el proceso.
+
+**`POST /api/detener`** termina el proceso, le da diez segundos y, si no se va,
+lo mata. Después hace lo mismo del cierre: log, limpieza de la marca y
+anotación.
+
+### 11.3 Las cuatro reglas de seguridad
+
+Este es el primer componente del proyecto que abre un puerto, y va a crecer
+hasta escribir `config.json` y arrancar procesos. Las reglas no son opcionales:
+
+1. **Escucha solo en `127.0.0.1`.** La dirección es una constante del código, no
+   un parámetro de la línea de comandos. Un servidor que va a escribir
+   configuración y arrancar procesos no puede acabar expuesto a la red local
+   por un descuido al lanzarlo. No hay bandera para cambiarlo.
+2. **Lista blanca, no lista negra.** Solo se sirven `panel.html` y lo que cuelga
+   de `salida/`. Cualquier otra cosa del proyecto es `404` aunque exista. Esto
+   importa de verdad: en la raíz hay un `.env` con una clave de la arquitectura
+   anterior, y un servidor que sirviera el directorio entero la dejaría a un
+   `GET` de distancia.
+3. **Ninguna ruta sale del proyecto.** La ruta pedida se resuelve —lo que
+   deshace `..` y sigue los enlaces simbólicos— y después se comprueba que cae
+   dentro de `salida/`. El orden importa: comprobar la cadena antes de
+   resolverla no sirve de nada.
+4. **Lo que no se sirve devuelve `404`, no `403`.** Un `403` confirmaría que el
+   archivo existe, y eso ya es información que nadie tiene por qué sacar de
+   aquí.
+
+Si `runtime.directorio_salida` apuntara fuera del proyecto, el servidor **no
+arranca** y lo dice: servir por HTTP una carpeta cualquiera del disco es
+exactamente lo que no puede pasar.
+
+Los tests de `tests/test_servidor.py` prueban sobre todo lo que **no** se debe
+servir: el `.env`, el código, la documentación, y los intentos de salirse con
+`..`, con la ruta codificada en porcentajes, con rutas absolutas y con un enlace
+simbólico que apunte fuera.
+
+---
+
+## 12. Documentos relacionados
 
 | Documento | Para qué |
 |---|---|

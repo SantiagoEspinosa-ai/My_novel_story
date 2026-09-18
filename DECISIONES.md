@@ -410,6 +410,60 @@ diga en su cuerpo qué longitud espera.
 
 ---
 
+### Decisión 12 — Un servidor local que arranca Claude Code, y qué regla rompe
+
+**Qué cambió.** El panel pasó de ser una página servida por `python -m
+http.server` a tener un backend propio, `src/servidor.py`, con FastAPI. Ese
+backend escribe `config.json` y, cuando se pulsa «generar», **arranca el CLI de
+Claude Code como subproceso** (`claude -p` con un prompt fijo).
+
+**Qué regla dejó de ser cierta.** El `CLAUDE.md` decía que ningún Python del
+proyecto invoca modelos. Con `src/servidor.py` lanzando `claude -p`, la frase
+tal cual estaba escrita ya no describía el proyecto, y una regla que no
+describe el proyecto no protege nada: la siguiente sesión la lee, ve que el
+código la contradice, y deja de fiarse del resto del documento.
+
+**Por qué no se borró, sino que se precisó.** Lo que la regla protege sigue
+intacto, y es lo importante: en este proyecto **no hay credenciales, no hay
+cliente HTTP hacia ningún proveedor y no hay SDK de modelos**. La diferencia
+entre «llamar a un modelo» y «arrancar el programa que llama a los modelos» no
+es un tecnicismo, es toda la arquitectura:
+
+| Llamar a un modelo | Arrancar Claude Code |
+|---|---|
+| Hace falta una clave de API | No hace falta ninguna: son las credenciales del CLI |
+| Hace falta elegir proveedor y endpoint | No hay endpoint que elegir |
+| El código tiene que reintentar, parsear y contar tokens | Eso lo hace la sesión, como cuando la lanzas tú |
+| Sale a la red desde Python | Es un `subprocess` |
+
+Lanzar `claude -p` desde el servidor es exactamente lo mismo que escribirlo en
+la terminal, solo que lo dispara un botón. El orquestador sigue siendo la
+sesión de Claude Code.
+
+**La segunda regla que hubo que tocar, y esta duele más.** El proyecto prohíbe
+escribir texto de prompt dentro del código Python: los prompts viven en
+`prompts/`. Pero el prompt de arranque de la generación (`PROMPT_GENERACION`)
+está en `src/servidor.py` a propósito, y tiene que estarlo. Ese texto es lo
+único que separa «el navegador puede decir *empieza*» de «el navegador puede
+decir *qué se ejecuta*». Si viviera en un archivo editable, o pudiera
+componerse con algo que llega en la petición, dejaría de ser una constante y el
+endpoint pasaría a ser ejecución remota de código con pasos extra.
+
+No es un prompt de sistema de ningún subagente —esos siguen todos en
+`prompts/`—: es la orden de arranque del orquestador, y pertenece al código por
+la misma razón por la que la dirección de escucha (`127.0.0.1`) también es una
+constante y no un parámetro.
+
+**Lo que se hizo para que la separación no se pierda sola.** El proyecto pasó
+de una dependencia a cuatro, y la promesa de que el harness sigue funcionando
+sin FastAPI se rompe sola con el tiempo. `tests/test_harness_sin_servidor.py`
+la convierte en algo comprobable: lanza un intérprete con FastAPI, uvicorn,
+httpx y starlette **bloqueados** y exige que los nueve módulos del harness se
+importen y que su línea de comandos arranque. Hay además un test que comprueba
+que el bloqueo bloquea, porque si no el verde no significaría nada.
+
+---
+
 ### Estado de las pruebas de los subagentes (2026-09-17)
 
 Todos probados con datos de juguete, con infracciones plantadas a propósito para

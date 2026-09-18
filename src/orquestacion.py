@@ -444,8 +444,57 @@ def anotar_delegacion(estado, salida, rol, modelo=None, capitulo=None,
         estado, rol, modelo=modelo, capitulo=capitulo, intento=intento,
         tokens_in=tokens_in, tokens_out=tokens_out, nota=nota,
     )
+    # Registrar un resultado significa que la delegacion que estaba en marcha
+    # ya no lo esta. Se limpia aqui, en el unico sitio por el que pasan todos
+    # los `registrar-*`, para que no dependa de que cada comando se acuerde.
+    # Si la marca era de otra cosa, tambien se limpia: una marca que no se
+    # corresponde con lo que acaba de pasar esta obsoleta igualmente.
+    delegaciones.limpiar_en_curso(estado)
     modulo_estado.guardar(estado, salida)
     return entrada
+
+
+def cmd_empezar_delegacion(config, salida, rol, modelo=None, capitulo=None,
+                           intento=None, escribir=print):
+    """Marca en el estado que se va a delegar ahora mismo.
+
+    Lo llama la sesion justo ANTES de cada delegacion. Sin esto, `estado.json`
+    solo cuenta lo que ya termino, y quien mira desde fuera —el panel, o tu—
+    no puede distinguir una generacion trabajando de una abandonada.
+    """
+    estado = cargar_estado(config, salida)
+    marca = delegaciones.marcar_en_curso(
+        estado, rol, modelo=modelo, capitulo=capitulo, intento=intento
+    )
+    modulo_estado.guardar(estado, salida)
+    escribir("En curso: {0}{1}{2} (modelo {3}), desde {4}.".format(
+        marca["rol"],
+        "" if marca["capitulo"] is None else " capitulo {0}".format(marca["capitulo"]),
+        "" if marca["intento"] is None else " intento {0}".format(marca["intento"]),
+        marca["modelo"] or "sin especificar",
+        marca["inicio"],
+    ))
+    return 0
+
+
+def cmd_cancelar_delegacion(config, salida, escribir=print):
+    """Borra la marca de delegacion en curso sin registrar ningun resultado.
+
+    Es para cuando la sesion marco una delegacion y al final no la lanzo. Una
+    delegacion que SI se lanzo y no devolvio nada no se cancela: se anota con
+    `registrar-delegacion`, que ademas la cuenta. Cancelar lo que se pago seria
+    volver a dejar el contador corto, que es el problema que ya hubo una vez.
+    """
+    estado = cargar_estado(config, salida)
+    marca = delegaciones.limpiar_en_curso(estado)
+    modulo_estado.guardar(estado, salida)
+    if marca:
+        escribir("Marca borrada: {0} (iba desde {1}).".format(
+            marca.get("rol"), marca.get("inicio")
+        ))
+    else:
+        escribir("No habia ninguna delegacion marcada como en curso.")
+    return 0
 
 
 def suelo_de_delegaciones(config, salida):
@@ -752,6 +801,29 @@ def informe_de_estado(config, salida, escribir=print):
         escribir("Biblia: {0}".format(
             "si" if modulo_biblia.existe(salida) else "todavia no"
         ))
+        marca = delegaciones.en_curso(estado)
+        if marca:
+            segundos = delegaciones.segundos_en_curso(estado)
+            escribir("EN CURSO AHORA: {0}{1}{2}, modelo {3}, desde {4}{5}".format(
+                marca.get("rol"),
+                "" if marca.get("capitulo") is None
+                else " capitulo {0}".format(marca["capitulo"]),
+                "" if marca.get("intento") is None
+                else " intento {0}".format(marca["intento"]),
+                marca.get("modelo") or "sin especificar",
+                marca.get("inicio"),
+                "" if segundos is None else " ({0} s)".format(segundos),
+            ))
+            # Un marcador viejo no es una generacion viva. Se dice, porque la
+            # diferencia entre "esta trabajando" y "murio a media delegacion"
+            # es justo lo que esta marca existe para aclarar.
+            if segundos is not None and segundos > 900:
+                escribir(
+                    "  ^ lleva mas de 15 minutos: lo normal es que la sesion "
+                    "muriera a media delegacion. Si no hay nada trabajando, "
+                    "limpia con `cancelar-delegacion` o anota lo que se gasto "
+                    "con `registrar-delegacion`."
+                )
     else:
         escribir("Sin estado: no se ha iniciado ninguna generacion.")
 
@@ -1734,6 +1806,20 @@ def construir_parser():
     )
     con_tokens(resumen)
 
+    empezar = sub.add_parser(
+        "empezar-delegacion",
+        help="marca en el estado la delegacion que se va a lanzar ahora",
+    )
+    empezar.add_argument("--rol", required=True)
+    empezar.add_argument("--modelo")
+    empezar.add_argument("--capitulo", type=int)
+    empezar.add_argument("--intento", type=int)
+
+    sub.add_parser(
+        "cancelar-delegacion",
+        help="borra la marca de delegacion en curso sin registrar resultado",
+    )
+
     sub.add_parser(
         "reconciliar",
         help="compara el contador de delegaciones con lo que el disco justifica",
@@ -1796,6 +1882,12 @@ def main(argv=None):
                 config, salida, args.capitulo, args.archivo, args.usar_sinopsis,
                 args.tokens_in, args.tokens_out,
             )
+        if args.comando == "empezar-delegacion":
+            return cmd_empezar_delegacion(
+                config, salida, args.rol, args.modelo, args.capitulo, args.intento
+            )
+        if args.comando == "cancelar-delegacion":
+            return cmd_cancelar_delegacion(config, salida)
         if args.comando == "reconciliar":
             return cmd_reconciliar(config, salida)
         if args.comando == "marcar-contador-incompleto":

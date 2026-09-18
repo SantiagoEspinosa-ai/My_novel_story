@@ -45,14 +45,37 @@ exactos.
 
 - **La capa de modelos son los subagentes de Claude Code.** Nunca OpenRouter,
   nunca la API de Anthropic directamente, nunca un SDK dentro del código.
+  **Ningún módulo de Python de este proyecto habla con un modelo.** Hay una
+  cosa que sí hace uno y conviene decirla con precisión, porque es fácil
+  leerla como una excepción y no lo es: `src/servidor.py` puede **arrancar el
+  CLI de Claude Code** (`claude -p`) como subproceso, cuando se pulsa «generar»
+  en el panel. Arrancar el programa que habla con los modelos no es hablar con
+  los modelos: ahí no hay credenciales, ni cliente HTTP, ni endpoint, ni nada
+  que configurar. Es un `subprocess`. Quien delega sigue siendo la sesión de
+  Claude Code, igual que cuando la lanzas tú a mano. El porqué está en
+  `DECISIONES.md`, decisión 12.
 - **Ningún módulo de Python sale a la red.** Si un módulo necesita importar un
-  cliente HTTP, el diseño está mal.
+  cliente HTTP para *pedir* algo, el diseño está mal. `src/servidor.py`
+  **escucha** en `127.0.0.1`, que es lo contrario: no pide nada a nadie, y no
+  acepta conexiones de fuera de la máquina.
+- **FastAPI es del panel, no del harness.** `src/servidor.py` es el único
+  módulo que puede importar FastAPI, uvicorn o httpx. El harness tiene que
+  seguir generando novelas en una máquina donde no estén instaladas, y
+  `tests/test_harness_sin_servidor.py` lo comprueba lanzando un intérprete con
+  esas librerías bloqueadas.
 - **No hay claves de API en este proyecto.** Ni en el código, ni en
   `config.json`, ni en variables de entorno. Las credenciales son de Claude
   Code, no del harness.
 - Los prompts de sistema viven en `prompts/` y se leen en tiempo de ejecución.
   Nunca escribas texto de prompt dentro del código Python ni dentro del cuerpo
   de un subagente: el cuerpo del subagente solo apunta a su skill puente.
+  **Una excepción, y solo una:** el prompt con el que `src/servidor.py` arranca
+  una generación (`PROMPT_GENERACION`) vive en el código, a propósito. Es
+  seguridad, no descuido: ese texto es lo único que separa «el navegador puede
+  decir empieza» de «el navegador puede decir qué se ejecuta». Si viviera en un
+  archivo editable o pudiera componerse con algo que llega de fuera, dejaría de
+  ser una constante. No es un prompt de sistema de ningún subagente: es la
+  orden de arranque del orquestador.
 - Cada subagente lleva `omitClaudeMd: true`. Ese aislamiento es lo que da
   sentido a tener validadores separados; no lo quites.
 - Los validadores devuelven JSON. Si no parsea tras un reintento, es FALLO,

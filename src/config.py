@@ -24,6 +24,8 @@ import json
 import os
 from pathlib import Path
 
+from src import redaccion
+
 # Raiz del proyecto: este archivo vive en <raiz>/src/config.py
 RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
 
@@ -399,12 +401,19 @@ def volcar_config_efectiva(config):
 
     Sirve para que el informe sea reproducible: ahi queda, exactamente, con que
     valores se genero la novela despues de aplicar las cuatro capas.
+
+    Lo que se escribe pasa antes por el filtro de redaccion (`src/redaccion.py`).
+    La capa 4 copia variables de entorno dentro de la configuracion, asi que una
+    variable mal elegida (`NOVELA_..._TOKEN`) acabaria en claro en un archivo
+    que se guarda, se comparte y lo lee el panel. El harness sigue trabajando en
+    memoria con la configuracion completa: lo unico redactado es esta copia.
     """
     directorio = ruta_salida(config)
     directorio.mkdir(parents=True, exist_ok=True)
     destino = directorio / "config-efectiva.json"
     destino.write_text(
-        json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        json.dumps(redaccion.redactar(config), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
     )
     return destino
 

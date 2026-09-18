@@ -48,6 +48,31 @@ CLAVE_CONTADOR = "delegaciones"
 # inventa: se marca como suelo y se dice por que.
 CLAVE_NOTA = "delegaciones_nota"
 
+# Clave donde se anota la delegacion que esta EN MARCHA ahora mismo.
+#
+# Por que hace falta. El resto de este modulo solo sabe de delegaciones
+# terminadas: una entrada aparece en `delegaciones_detalle` cuando ya hay una
+# respuesta que registrar. Mientras un subagente piensa —y el escritor con
+# `opus` piensa dos o tres minutos— no hay ni una sola senal en disco de que
+# este pasando algo. Para quien mira `estado.json` desde fuera, una generacion
+# trabajando y una generacion abandonada a medias se ven exactamente igual.
+#
+# Esta clave es esa senal. La escribe la sesion ANTES de delegar y desaparece
+# en cuanto el resultado se registra. Su valor:
+#
+#     {"rol": "escritor", "modelo": "opus", "capitulo": 4,
+#      "intento": 2, "inicio": "2026-09-18T16:20:31Z"}
+#
+# `inicio` permite calcular cuanto lleva la delegacion en curso sin guardar un
+# cronometro en ninguna parte: basta con restar esa hora de la actual cada vez
+# que alguien mira.
+#
+# Ojo con lo que NO garantiza: si la sesion muere entre el marcado y el
+# registro, la clave se queda ahi, y entonces dice "esto se lanzo y nunca se
+# supo mas", que sigue siendo informacion cierta y util. No es un candado ni un
+# bloqueo; es una nota de "estoy aqui".
+CLAVE_EN_CURSO = "delegacion_en_curso"
+
 # Orden en que se muestran los roles en los informes. No es alfabetico: es el
 # orden en que actuan durante la generacion, que es como mejor se lee.
 ORDEN_ROLES = ("arquitecto", "escritor", "continuidad", "genero", "estilo", "resumidor")
@@ -118,6 +143,68 @@ def anotar(estado, rol, modelo=None, capitulo=None, intento=None,
     entradas.append(entrada)
     estado[CLAVE_CONTADOR] = estado.get(CLAVE_CONTADOR, 0) + 1
     return entrada
+
+
+def marcar_en_curso(estado, rol, modelo=None, capitulo=None, intento=None):
+    """Deja constancia de que se va a delegar AHORA, antes de hacerlo.
+
+    Se llama justo antes de la delegacion, nunca despues: el valor de esta
+    marca es precisamente cubrir el hueco de tiempo en el que el subagente esta
+    trabajando y no hay nada escrito en disco.
+
+    Solo puede haber una marca a la vez, y la nueva pisa a la anterior. Eso es
+    deliberado y tiene una consecuencia que conviene conocer: los tres
+    validadores se lanzan en paralelo, asi que marcar los tres dejaria ver solo
+    el ultimo. Para ese caso se marca el rol `validadores`, que es lo que de
+    verdad esta pasando (los tres a la vez), en vez de fingir que hay uno solo.
+
+    No guarda nada en disco: de eso se encarga quien llame, igual que en
+    `anotar`.
+    """
+    estado[CLAVE_EN_CURSO] = {
+        "rol": rol,
+        "modelo": modelo,
+        "capitulo": capitulo,
+        "intento": intento,
+        "inicio": _ahora_iso(),
+    }
+    return estado[CLAVE_EN_CURSO]
+
+
+def limpiar_en_curso(estado):
+    """Quita la marca de delegacion en curso y devuelve la que hubiera.
+
+    Devolver la marca sirve para saber que se estaba haciendo, por ejemplo para
+    decir cuanto tardo. Si no habia ninguna, devuelve None y no pasa nada: que
+    se registre un resultado sin marca previa es normal en una sesion que no
+    marque, y esto no puede ser un error que corte la generacion.
+    """
+    return estado.pop(CLAVE_EN_CURSO, None)
+
+
+def en_curso(estado):
+    """La delegacion en marcha ahora mismo, o None si no hay ninguna."""
+    marca = estado.get(CLAVE_EN_CURSO)
+    return marca if isinstance(marca, dict) else None
+
+
+def segundos_en_curso(estado, ahora=None):
+    """Cuanto lleva trabajando la delegacion en curso, en segundos.
+
+    Devuelve None si no hay ninguna marca o si su `inicio` no se puede leer: es
+    preferible no decir nada a dar un numero inventado. `ahora` se puede pasar
+    para que los tests no dependan del reloj.
+    """
+    marca = en_curso(estado)
+    if not marca:
+        return None
+    try:
+        inicio = datetime.strptime(marca.get("inicio", ""), "%Y-%m-%dT%H:%M:%SZ")
+    except (TypeError, ValueError):
+        return None
+    inicio = inicio.replace(tzinfo=timezone.utc)
+    ahora = ahora or datetime.now(timezone.utc)
+    return max(0, int((ahora - inicio).total_seconds()))
 
 
 def marcar_en_manuscrito(estado, capitulo, intento_ganador):

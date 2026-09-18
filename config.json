@@ -11,11 +11,11 @@
     "tono": "sobrio, contenido, sin adjetivacion excesiva",
     "punto_de_vista": "tercera persona limitada",
     "idioma": "es",
-    "semilla_tematica": null
+    "semilla_tematica": "mundo post apocaliptico donde la IA nos domina y se tiene que hacer todo a la antigua desde la creacion de la rueda"
   },
 
   "estructura": {
-    "num_capitulos": 3,
+    "num_capitulos": 4,
     "palabras_min": 1200,
     "palabras_max": 2200
   },
