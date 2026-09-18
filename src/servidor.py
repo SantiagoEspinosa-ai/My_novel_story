@@ -51,14 +51,17 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
+from src import biblia as modulo_biblia
 from src import config as modulo_config
 from src import delegaciones
+from src import puntuacion
 from src import redaccion
 
 # La raiz del proyecto: este archivo vive en <raiz>/src/servidor.py
@@ -536,15 +539,12 @@ class Generacion:
                 "generacion": self.estado(),
             })
 
-        if shutil.which(self._construir_comando()[0]) is None:
-            # Se comprueba ANTES de copiar: si no se va a poder generar, no
-            # tiene sentido dejar una carpeta de copia suelta.
-            raise HTTPException(status_code=503, detail={
-                "mensaje": "No encuentro el ejecutable '{0}' en el PATH. Sin el "
-                           "no hay quien genere la novela: el harness no llama a "
-                           "ninguna API, delega en Claude Code."
-                           .format(self._construir_comando()[0]),
-            })
+        # Se resuelve ANTES de copiar: si no se va a poder generar, no tiene
+        # sentido dejar una carpeta de copia suelta. Y se resuelve a ruta
+        # ABSOLUTA, no al nombre: ver `resolver_ejecutable`, que es donde esta
+        # explicado el WinError 2 que esto evita.
+        comando = list(self._construir_comando())
+        comando[0] = resolver_ejecutable(comando[0])
 
         self.salida.mkdir(parents=True, exist_ok=True)
         try:
@@ -568,14 +568,28 @@ class Generacion:
         # `stdout` y `stderr` al mismo archivo, en modo anadir: el log es el
         # unico rastro que queda si el proceso muere, asi que no se trunca.
         salida_log = self.log.open("a", encoding="utf-8", errors="replace")
-        self.proceso = subprocess.Popen(
-            self._construir_comando(),
-            cwd=str(self.raiz),
-            stdout=salida_log,
-            stderr=subprocess.STDOUT,
-            stdin=subprocess.DEVNULL,
-            shell=False,          # nunca shell: no hay nada que interpretar
-        )
+        try:
+            self.proceso = subprocess.Popen(
+                comando,
+                cwd=str(self.raiz),
+                stdout=salida_log,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                shell=False,      # nunca shell: no hay nada que interpretar
+            )
+        except OSError as error:
+            # Si el arranque falla, se dice por que y se deja constancia en el
+            # log: una generacion que no llega ni a empezar tambien tiene que
+            # dejar rastro.
+            salida_log.write("ARRANQUE FALLIDO: {0}: {1}\n".format(
+                type(error).__name__, error))
+            salida_log.close()
+            raise HTTPException(status_code=500, detail={
+                "mensaje": "No se ha podido arrancar Claude Code. No hay ninguna "
+                           "generacion en marcha.",
+                "errores": ["{0}: {1}".format(type(error).__name__, error)],
+                "ejecutable": comando[0],
+            }) from error
         self.info = {
             "estado": "en_marcha",
             "pid": self.proceso.pid,
@@ -781,7 +795,261 @@ def _mensaje_de_generacion(r: dict) -> str:
     return "No se ha lanzado ninguna generacion todavia."
 
 
-def crear_app(raiz: Path | None = None, comando=None) -> FastAPI:
+# ---------------------------------------------------------------------------
+# Ampliar una novela terminada
+# ---------------------------------------------------------------------------
+#
+# EL CUELLO DE BOTELLA QUE ESTO RESUELVE
+# --------------------------------------
+# `src/biblia.py` exige que el outline tenga EXACTAMENTE `num_capitulos`
+# entradas. Asi que subir el numero a mano no amplia nada: deja la biblia
+# invalida y el harness deja de arrancar. Ampliar de verdad son dos cambios que
+# tienen que ocurrir juntos o no ocurrir: el outline crece y el numero sube.
+#
+# Todo lo que sigue esta construido alrededor de esa atomicidad. Se valida
+# entero antes de escribir nada, y si algo falla despues de haber tocado la
+# biblia, se restaura.
+#
+# QUIEN ESCRIBE LAS ENTRADAS NUEVAS
+# ---------------------------------
+# El arquitecto, no este codigo. Aqui no se inventa una sinopsis ni se compone
+# una entrada de outline a mano: se lanza una sesion de Claude Code que delega
+# en el subagente `arquitecto`, y este modulo se limita a validar lo que
+# devuelve y guardarlo si pasa. Un outline escrito por el servidor seria texto
+# de novela salido de un `str.format`, que es justo lo que el proyecto entero
+# evita.
+
+MAX_AMPLIAR = 20
+SEGUNDOS_MAXIMO_AMPLIAR = 900
+
+# El unico dato que llega del navegador en toda la API es este numero, y por eso
+# se valida como numero antes de tocar la plantilla. Interpolar un entero
+# comprobado en un texto fijo no puede inyectar nada: no hay ninguna cadena del
+# cliente que llegue al prompt.
+PLANTILLA_PROMPT_AMPLIAR = """\
+AMPLIAR UNA NOVELA YA TERMINADA. No generes ningun capitulo.
+
+La novela de este proyecto esta completa y ensamblada. Hay que anadirle {cuantos}
+capitulo(s) mas al final, sin tocar ni una linea de lo ya escrito.
+
+QUE TIENES QUE HACER, EN ESTE ORDEN:
+
+1. Lee `salida/biblia.json`, `config.json` y el texto de los capitulos ya
+   escritos que haya en `salida/capitulos/`. El ULTIMO capitulo escrito leelo
+   entero: los capitulos nuevos arrancan de lo que ese texto dice que paso, no
+   de lo que el outline habia planeado.
+
+2. Delega en el subagente `arquitecto` para que escriba las entradas de outline
+   y de timeline de los {cuantos} capitulos nuevos. Pasale en el mensaje:
+   - la biblia actual entera;
+   - el texto del ultimo capitulo escrito;
+   - y esta advertencia, que es la mas importante:
+
+     LA NOVELA ESTABA CERRADA Y SE REABRE. El ultimo capitulo escrito era el
+     final: resolvia el conflicto central. Los capitulos nuevos NO pueden
+     repetir ese climax ni volver a plantear el mismo conflicto ya resuelto.
+     Tienen que abrir algo que nazca de las consecuencias de ese final, con su
+     propio arco, y cerrarlo. El genero manda igual que antes, pero la fase del
+     arco vuelve a empezar: no se escribe otro final, se escribe lo que pasa
+     despues de uno.
+
+   El arquitecto tiene que conservar TAL CUAL el titulo, la premisa, el
+   conflicto central, la ambientacion, los personajes, las entradas de outline
+   que ya existen y los hechos establecidos. Solo anade.
+
+3. Comprueba si existe el resumen del que hasta ahora era el ULTIMO capitulo,
+   en `salida/resumenes/`. El resumidor se salta el ultimo capitulo de una
+   novela, asi que lo normal es que falte. Si falta, delega en el subagente
+   `resumidor` para obtenerlo: sin el, el escritor del primer capitulo nuevo
+   arrancaria sin saber que paso justo antes.
+
+4. Devuelve SOLO un JSON con esta forma exacta, sin texto antes ni despues y
+   sin vallas de codigo:
+
+   {{"biblia": <la biblia COMPLETA y ampliada, con todas sus claves>,
+     "resumen_del_antiguo_ultimo": {{"capitulo": <numero>, "resumen": "<texto>"}}
+        o null si ya existia}}
+
+NO escribas ningun archivo. NO ejecutes `registrar-biblia` ni ningun otro
+comando que modifique `salida/`. De guardar se encarga quien te ha lanzado,
+despues de validar lo que devuelvas.
+"""
+
+
+def prompt_ampliar(cuantos) -> str:
+    """El prompt de ampliacion, con el unico parametro que acepta la API.
+
+    Se valida como entero ANTES de tocar la plantilla. Es la unica cosa que
+    viaja del navegador a un prompt en todo el proyecto, y por eso tiene que
+    ser un numero y no poder ser otra cosa.
+    """
+    if isinstance(cuantos, bool) or not isinstance(cuantos, int):
+        raise HTTPException(status_code=400, detail={
+            "mensaje": "Cuantos capitulos anadir tiene que ser un numero entero."})
+    if not (1 <= cuantos <= MAX_AMPLIAR):
+        raise HTTPException(status_code=400, detail={
+            "mensaje": "Se pueden anadir entre 1 y {0} capitulos de una vez. "
+                       "Has pedido {1}.".format(MAX_AMPLIAR, cuantos)})
+    return PLANTILLA_PROMPT_AMPLIAR.format(cuantos=cuantos)
+
+
+def resolver_ejecutable(nombre: str) -> str:
+    """La ruta ABSOLUTA del ejecutable, o un error claro si no esta.
+
+    POR QUE NO BASTA CON PONER EL NOMBRE
+    ------------------------------------
+    En Windows, `claude` instalado con npm no es un `.exe`: es un
+    `claude.CMD`. `shutil.which()` lo encuentra porque aplica `PATHEXT`, pero
+    `CreateProcess` —que es lo que hay debajo de `subprocess` sin shell— **no
+    aplica PATHEXT**: busca el nombre tal cual y solo ejecuta binarios. Asi
+    que pasar `"claude"` falla con `[WinError 2] El sistema no puede encontrar
+    el archivo especificado`, aunque el comando funcione perfectamente en la
+    terminal y aunque `which` lo acabe de encontrar.
+
+    La cura es resolverlo aqui y pasar la ruta completa, que si se ejecuta.
+    Todo lo que lance procesos en este modulo tiene que pasar por esta
+    funcion; pasar el nombre suelto es el error que ya nos costo un 500.
+    """
+    ruta = shutil.which(nombre)
+    if ruta is None:
+        raise HTTPException(status_code=503, detail={
+            "mensaje": "No encuentro el ejecutable '{0}' en el PATH. El harness "
+                       "no llama a ninguna API: delega en Claude Code, y para "
+                       "eso hace falta tenerlo instalado y accesible desde la "
+                       "misma sesion que lanzo el servidor.".format(nombre),
+            "pista": "Comprueba que `{0} --version` funciona en la terminal "
+                     "desde la que lanzaste `python -m src.servidor`.".format(nombre),
+        })
+    return ruta
+
+
+def ejecutar_claude(raiz: Path, prompt: str, segundos: int) -> tuple[int, str, str]:
+    """Lanza una sesion de Claude Code y devuelve (codigo, stdout, stderr).
+
+    Sincrono a proposito: quien amplia necesita el resultado para poder leerlo
+    antes de decidir si le vale. Sin shell y con los argumentos separados.
+
+    `stderr` se devuelve en vez de tirarse porque, cuando algo va mal, es lo
+    unico que explica por que: un 500 pelado no le sirve a nadie.
+    """
+    ejecutable = resolver_ejecutable("claude")
+    try:
+        proceso = subprocess.run(
+            [ejecutable, "-p", prompt],
+            cwd=str(raiz), capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+            timeout=segundos, shell=False,
+        )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail={
+            "mensaje": "El arquitecto no contesto en {0} segundos, asi que se "
+                       "abandono la espera. No se ha tocado nada.".format(segundos),
+            "pista": "Una ampliacion normal tarda uno o dos minutos. Si pasa "
+                     "esto, mira si la sesion de Claude Code se quedo esperando "
+                     "una confirmacion.",
+        })
+    except OSError as error:
+        # Aqui caia el WinError 2. Ahora no deberia pasar, pero si vuelve a
+        # pasar por otro motivo, que se vea el motivo y no un 500 desnudo.
+        raise HTTPException(status_code=500, detail={
+            "mensaje": "No se ha podido arrancar Claude Code, asi que no se ha "
+                       "tocado nada.",
+            "errores": ["{0}: {1}".format(type(error).__name__, error)],
+            "ejecutable": ejecutable,
+        }) from error
+    return proceso.returncode, (proceso.stdout or ""), (proceso.stderr or "")
+
+
+def _entradas_por_capitulo(outline):
+    return {int(e.get("capitulo")): e for e in (outline or []) if e.get("capitulo") is not None}
+
+
+def comprobar_que_solo_anade(antigua: dict, nueva: dict, num_viejo: int) -> list[str]:
+    """Exige que la biblia ampliada conserve intacto todo lo anterior.
+
+    Es la garantia de «no se regenera lo que ya esta aprobado», llevada a la
+    biblia: si el arquitecto reescribiera la sinopsis del capitulo 2, el
+    capitulo 2 escrito dejaria de corresponderse con su plan, y el informe de
+    validacion pasaria a mentir sobre una novela que nadie ha vuelto a tocar.
+    """
+    problemas = []
+    for clave in ("titulo", "genero", "premisa", "conflicto_central",
+                  "ambientacion", "personajes"):
+        if json.dumps(antigua.get(clave), sort_keys=True, ensure_ascii=False) != \
+           json.dumps(nueva.get(clave), sort_keys=True, ensure_ascii=False):
+            problemas.append(
+                "'{0}' ha cambiado. La ampliacion solo puede anadir capitulos, "
+                "no reescribir lo que ya estaba.".format(clave))
+
+    viejas = _entradas_por_capitulo(antigua.get("outline"))
+    nuevas = _entradas_por_capitulo(nueva.get("outline"))
+    for numero in sorted(viejas):
+        if numero not in nuevas:
+            problemas.append("falta la entrada de outline del capitulo {0}.".format(numero))
+            continue
+        if json.dumps(viejas[numero], sort_keys=True, ensure_ascii=False) != \
+           json.dumps(nuevas[numero], sort_keys=True, ensure_ascii=False):
+            problemas.append(
+                "la entrada de outline del capitulo {0} ha cambiado, y ese "
+                "capitulo ya esta escrito.".format(numero))
+
+    faltan = [n for n in range(1, num_viejo + 1) if n not in nuevas]
+    if faltan:
+        problemas.append("faltan entradas de outline: {0}.".format(faltan))
+    return problemas
+
+
+def novela_completa(config: dict, salida: Path):
+    """(completa, pendientes). Ampliar una novela a medias mezcla dos cosas."""
+    archivo = salida / "estado.json"
+    if not archivo.is_file():
+        return False, None
+    try:
+        estado = json.loads(archivo.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False, None
+    total = int(config.get("estructura", {}).get("num_capitulos") or 0)
+    hechos = set(estado.get("capitulos_aprobados") or []) | set(
+        estado.get("capitulos_marcados") or [])
+    pendientes = [n for n in range(1, total + 1) if n not in hechos]
+    return (not pendientes and total > 0), pendientes
+
+
+def _asegurar_resumen(salida: Path, capitulo: int, propuesto, biblia: dict) -> dict:
+    """Garantiza que el capitulo que era el ultimo tiene resumen.
+
+    El resumidor se salta el ultimo capitulo de una novela, porque nadie leeria
+    ese resumen. Al ampliar deja de ser el ultimo, y entonces ese resumen SI se
+    lee: es lo unico que el escritor del capitulo N+2 sabra de el.
+
+    Tres caminos, de mejor a peor, y se dice cual se uso:
+      - ya existia;
+      - lo escribio el resumidor en esta ampliacion;
+      - no lo escribio nadie, y se cae a la sinopsis del outline. Es la misma
+        valvula de escape que `registrar-resumen --usar-sinopsis`: peor que el
+        acta, infinitamente mejor que dejar al escritor a ciegas.
+    """
+    destino = salida / "resumenes" / "cap-{0:02d}.md".format(capitulo)
+    if destino.is_file() and destino.read_text(encoding="utf-8").strip():
+        return {"capitulo": capitulo, "origen": "ya_existia", "texto": None}
+
+    destino.parent.mkdir(parents=True, exist_ok=True)
+
+    texto = None
+    if isinstance(propuesto, dict):
+        texto = (propuesto.get("resumen") or "").strip() or None
+    if texto:
+        destino.write_text(texto + "\n", encoding="utf-8")
+        return {"capitulo": capitulo, "origen": "resumidor", "texto": texto}
+
+    entrada = next((e for e in biblia.get("outline", [])
+                    if int(e.get("capitulo", 0)) == capitulo), {})
+    texto = (entrada.get("sinopsis") or "Capitulo {0}.".format(capitulo)).strip()
+    destino.write_text(texto + "\n", encoding="utf-8")
+    return {"capitulo": capitulo, "origen": "sinopsis_del_outline", "texto": texto}
+
+
+def crear_app(raiz: Path | None = None, comando=None, ejecutor_ampliar=None) -> FastAPI:
     """Monta la aplicacion. `raiz` se puede pasar para los tests.
 
     Que la raiz sea un parametro y no una constante es lo que permite probar el
@@ -819,6 +1087,29 @@ def crear_app(raiz: Path | None = None, comando=None) -> FastAPI:
         redoc_url=None,
     )
 
+    @app.exception_handler(Exception)
+    def cualquier_fallo(request, error):
+        """Red de seguridad: ningun error sale de aqui sin explicacion.
+
+        Sin esto, cualquier excepcion que no se hubiera previsto llega al
+        navegador como un `500 Internal Server Error` pelado, sin cuerpo. El
+        panel entonces solo puede decir «el servidor respondio 500», que no
+        sirve para nada: la explicacion se queda en la terminal del servidor,
+        que es justo donde no esta mirando quien usa la pagina.
+
+        La traza NO se manda al navegador; el tipo y el mensaje si, que es lo
+        que permite entender que paso, y el resto queda en la terminal.
+        """
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"detail": {
+            "mensaje": "El servidor ha fallado de una forma que no estaba "
+                       "prevista. No se da por hecho que la operacion se haya "
+                       "completado.",
+            "errores": ["{0}: {1}".format(type(error).__name__, error)],
+            "pista": "La traza completa esta en la terminal donde lanzaste "
+                     "`python -m src.servidor`.",
+        }})
+
     @app.get("/api/salud")
     def salud():
         """Lo minimo para saber que el servidor esta en pie y donde mira."""
@@ -833,7 +1124,9 @@ def crear_app(raiz: Path | None = None, comando=None) -> FastAPI:
             # gana un permiso nuevo, y hay un test que hay que cambiar a mano.
             "escribe": ["config.json", "salida/" + NOMBRE_LOG,
                         "salida/" + NOMBRE_MARCA_GENERACION,
-                        "salida-novela-N/ (copia antes de generar)"],
+                        "salida-novela-N/ (copia antes de generar o ampliar)",
+                        "salida/biblia.json (solo al ampliar)",
+                        "salida/resumenes/cap-NN.md (solo al ampliar)"],
             "lanza_procesos": [comando_generacion()[0]],
         })
 
@@ -925,6 +1218,160 @@ def crear_app(raiz: Path | None = None, comando=None) -> FastAPI:
             "cambios": lista_cambios,
             "mensaje": "config.json actualizado con {0} cambio(s).".format(
                 len(lista_cambios)),
+        })
+
+    @app.post("/api/ampliar")
+    def ampliar(cuerpo: dict = Body(default={})):
+        """Anade capitulos a una novela terminada, sin regenerar nada.
+
+        Devuelve las entradas de outline nuevas para poder LEERLAS antes de
+        decidir si se lanza la generacion. Ampliar no genera: deja el plan
+        puesto y el estado listo.
+        """
+        texto_prompt = prompt_ampliar((cuerpo or {}).get("capitulos"))
+
+        # --- 1. nada en marcha ---
+        bloqueo = bloqueo_actual()
+        if bloqueo is not None:
+            raise HTTPException(status_code=409, detail={
+                "mensaje": "Hay una generacion en marcha. Ampliar ahora dejaria "
+                           "el outline creciendo debajo de un escritor que ya "
+                           "esta trabajando.",
+                "bloqueo": bloqueo})
+
+        config_actual = leer_config_archivo(raiz)
+        try:
+            efectiva = modulo_config.cargar_config(
+                ruta_config=ruta_config(raiz), volcar=False)
+        except modulo_config.ErrorDeConfiguracion as error:
+            raise HTTPException(status_code=400, detail={
+                "mensaje": "La configuracion actual no es valida; arreglala antes "
+                           "de ampliar.",
+                "errores": [str(error)]}) from error
+
+        num_viejo = int(efectiva["estructura"]["num_capitulos"])
+
+        # --- 2. la novela tiene que estar completa ---
+        completa, pendientes = novela_completa(efectiva, salida)
+        if not completa:
+            raise HTTPException(status_code=409, detail={
+                "mensaje": "La novela no esta terminada, asi que no se puede "
+                           "ampliar todavia. Ampliar a medias mezcla dos cosas: "
+                           "terminar lo que falta y anadir lo que no estaba.",
+                "capitulos_pendientes": pendientes})
+
+        ruta_biblia = salida / "biblia.json"
+        if not ruta_biblia.is_file():
+            raise HTTPException(status_code=409, detail={
+                "mensaje": "No hay biblia que ampliar en salida/biblia.json."})
+        biblia_antigua_bytes = ruta_biblia.read_bytes()
+        biblia_antigua = json.loads(biblia_antigua_bytes.decode("utf-8"))
+
+        # El ejecutable se resuelve ANTES de copiar, por el mismo motivo que en
+        # `generar`: si la ampliacion no va a poder arrancar, no tiene sentido
+        # dejar una carpeta de copia suelta por el proyecto.
+        if ejecutor_ampliar is None:
+            resolver_ejecutable("claude")
+
+        # --- 3. la copia, igual que al generar ---
+        try:
+            copia = copiar_novela(raiz, salida)
+        except OSError as error:
+            raise HTTPException(status_code=500, detail={
+                "mensaje": "No se ha ampliado nada: no he podido copiar la novela "
+                           "actual, y tocar la biblia sin copia es arriesgado.",
+                "error": str(error)}) from error
+
+        # --- 4. el arquitecto, via Claude Code ---
+        correr = ejecutor_ampliar or (
+            lambda prompt: ejecutar_claude(raiz, prompt, SEGUNDOS_MAXIMO_AMPLIAR))
+        resultado = correr(texto_prompt)
+        # El ejecutor de verdad devuelve tres cosas; los de los tests, dos.
+        codigo, bruto = resultado[0], resultado[1]
+        error_sesion = resultado[2] if len(resultado) > 2 else ""
+
+        if codigo != 0 and not (bruto or "").strip():
+            raise HTTPException(status_code=502, detail={
+                "mensaje": "La sesion de Claude Code termino con error y no "
+                           "devolvio nada. No se ha tocado nada.",
+                "codigo_salida": codigo,
+                "salida_de_la_sesion": (error_sesion or "")[-3000:],
+                "copia": copia,
+            })
+
+        try:
+            respuesta = puntuacion.extraer_json(bruto)
+        except puntuacion.ErrorDeVeredicto as error:
+            raise HTTPException(status_code=502, detail={
+                "mensaje": "El arquitecto no devolvio JSON, asi que no se ha "
+                           "tocado nada. Debajo esta lo que si devolvio.",
+                "codigo_salida": codigo,
+                "errores": [str(error)],
+                "respuesta": (bruto or "")[-3000:],
+                "salida_de_la_sesion": (error_sesion or "")[-2000:],
+                "copia": copia}) from error
+
+        biblia_nueva = respuesta.get("biblia") if isinstance(respuesta, dict) else None
+        if not isinstance(biblia_nueva, dict):
+            raise HTTPException(status_code=502, detail={
+                "mensaje": "La respuesta no traia ninguna biblia bajo la clave "
+                           "'biblia'. No se ha tocado nada.",
+                "codigo_salida": codigo,
+                "respuesta": (bruto or "")[-3000:],
+                "salida_de_la_sesion": (error_sesion or "")[-2000:],
+                "copia": copia})
+
+        num_nuevo = num_viejo + int(cuerpo["capitulos"])
+
+        # --- 5. validar antes de escribir: las dos cosas, y en memoria ---
+        errores = comprobar_que_solo_anade(biblia_antigua, biblia_nueva, num_viejo)
+        try:
+            biblia_validada = modulo_biblia.validar(
+                modulo_biblia.normalizar(biblia_nueva), num_nuevo)
+        except modulo_biblia.ErrorDeBiblia as error:
+            biblia_validada = None
+            errores.append(str(error))
+
+        candidata_config = fusionar_config(
+            config_actual, {"estructura": {"num_capitulos": num_nuevo}})
+        errores.extend(validar_config_candidata(candidata_config))
+
+        if errores:
+            raise HTTPException(status_code=400, detail={
+                "mensaje": "No se ha escrito nada. La biblia ampliada no pasa la "
+                           "validacion:",
+                "errores": errores,
+                "copia": copia})
+
+        # --- 6. escribir, y deshacer si algo falla a mitad ---
+        # La biblia y `num_capitulos` tienen que cambiar juntos: una biblia de
+        # N+M entradas con un config que dice N deja el harness sin arrancar.
+        try:
+            modulo_biblia.guardar(biblia_validada, salida)
+            escribir_config(raiz, candidata_config)
+        except Exception as error:
+            ruta_biblia.write_bytes(biblia_antigua_bytes)
+            raise HTTPException(status_code=500, detail={
+                "mensaje": "Fallo al escribir. La biblia se ha dejado como estaba.",
+                "errores": [str(error)]}) from error
+
+        # --- el resumen del que era el ultimo capitulo ---
+        resumen = _asegurar_resumen(
+            salida, num_viejo, respuesta.get("resumen_del_antiguo_ultimo"),
+            biblia_validada)
+
+        nuevas = [e for e in biblia_validada.get("outline", [])
+                  if int(e.get("capitulo", 0)) > num_viejo]
+        return JSONResponse({
+            "ok": True,
+            "capitulos_antes": num_viejo,
+            "capitulos_ahora": num_nuevo,
+            "copia": copia,
+            "outline_nuevo": nuevas,
+            "resumen_del_antiguo_ultimo": resumen,
+            "mensaje": "Ampliada de {0} a {1} capitulos. No se ha regenerado "
+                       "nada de lo aprobado: los {0} capitulos de antes siguen "
+                       "intactos.".format(num_viejo, num_nuevo),
         })
 
     @app.get("/api/generacion")

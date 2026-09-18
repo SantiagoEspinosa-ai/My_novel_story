@@ -39,7 +39,7 @@ dice qué puedes ejecutar hoy:
 | Filtro de redacción de secretos | `src/redaccion.py` | ✅ implementado (se aplica al volcar `config-efectiva.json`) |
 | Panel de control de la generación | `panel.html` | ✅ implementado, seis vistas (ver sección 10) |
 | Tests de carga del panel | `tests/test_panel_carga.py`, `tests/panel_sonda.js` | ✅ implementado (requieren `node`; si no está, se saltan) |
-| Servidor local del panel | `src/servidor.py` | ✅ implementado: sirve el panel, escribe `config.json` y arranca generaciones (ver sección 11) |
+| Servidor local del panel | `src/servidor.py` | ✅ implementado: sirve el panel, escribe `config.json`, arranca generaciones y amplía novelas (ver sección 11) |
 | Telemetría OTEL hacia Langfuse | `.claude/settings.json`, `herramientas/` | ✅ implementado (requiere una variable de entorno con la credencial; ver la sección 9) |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
 | Hechos y timeline extraídos de cada capítulo | biblia | ⬜ pendiente (`hechos_establecidos` no se rellena) |
@@ -882,6 +882,17 @@ manuscrito: la regla 1 manda, y es preferible a un hueco, pero conviene saberlo.
 | Dos intentos del mismo capítulo puntúan raro | Sin temperatura fija, el validador no es del todo reproducible | Es esperado y está documentado en `DECISIONES.md`, decisión 9. Fíate de los problemas concretos y de su evidencia, no de diferencias de uno o dos puntos |
 | `ModuleNotFoundError: No module named 'src'` | Lo lanzaste desde otra carpeta | Ejecuta siempre desde la raíz del proyecto |
 
+### 8.4 El servidor del panel
+
+| Síntoma | Qué pasa | Arreglo |
+|---|---|---|
+| El panel dice «el servidor respondió 500» y nada más | No debería pasar ya: todo error sale con cuerpo explicado. Si vuelve a verse, es un fallo del propio manejador | Mira la terminal donde lanzaste `python -m src.servidor`: la traza completa está ahí |
+| `FileNotFoundError: [WinError 2]` al generar o ampliar | El ejecutable se estaba buscando por su nombre suelto. En Windows `claude` es un `.CMD` y `CreateProcess` no aplica `PATHEXT` | Ya está arreglado: todo se lanza por su ruta absoluta (`DECISIONES.md`, hallazgo 13). Si reaparece con otro programa, resuélvelo con `resolver_ejecutable()` |
+| `503 No encuentro el ejecutable 'claude'` | El servidor no ve Claude Code en su `PATH` | Comprueba que `claude --version` funciona **en la misma terminal** desde la que lanzas el servidor. Un `PATH` puesto en otra ventana no cuenta |
+| Ampliar responde `409` con capítulos pendientes | La novela no está terminada | Termina los capítulos que faltan, o acéptalos. No se amplía a medias a propósito |
+| Aparece una `salida-novela-N/` que no pedí | La copia se hace **antes** de delegar, así que un fallo posterior la deja hecha | Es un duplicado de la novela actual y se puede borrar. El panel lo dice cuando pasa |
+| `python -m src.servidor` falla al importar FastAPI | No está instalado | `python -m pip install fastapi uvicorn httpx`. El harness genera novelas sin ellas; solo el panel las necesita |
+
 ---
 
 ## 9. Telemetría: ver la generación en Langfuse
@@ -1055,6 +1066,24 @@ la que se va a copiar la novela de ahora— y hay que **teclear la palabra
 `GENERAR`** para que el botón final se active. Ese botón copia carpetas y
 arranca un proceso que gasta delegaciones; no puede pulsarse sin querer.
 
+**Ampliar está al lado, con la misma protección.** El control solo aparece
+cuando la novela está **completa**; si falta algún capítulo por aprobar, en su
+lugar se explica cuáles y por qué no se puede ampliar todavía. La confirmación
+pide teclear **`AMPLIAR`** y dice las cinco cosas que van a pasar, entre ellas
+que no se regenera nada de lo aprobado y que la petición tarda un par de
+minutos.
+
+Mientras se espera, la página **no se queda quieta**: enseña un cronómetro, la
+lista de lo que el servidor está haciendo, y dice con todas las letras que la
+espera es a propósito, que es una delegación real a un modelo y que no se
+recargue. Dos minutos de pantalla parada se leen como «se ha colgado», y eso
+es un fallo de la interfaz aunque el servidor esté trabajando bien.
+
+Al terminar, **enseña las entradas de outline nuevas** —la sinopsis y el
+cambio de cada capítulo añadido— junto con qué pasó con el resumen del que era
+el último capítulo. Ampliar **no genera nada**: deja el plan puesto para que se
+pueda leer y decidir.
+
 **La vista Configuración señala qué valores está pisando el archivo.** El
 perfil del género **no gana** a `config.json`: si una clave está en las dos
 partes, manda la del archivo (sección 3.1). Como eso es al revés de lo que
@@ -1123,6 +1152,7 @@ los capítulos de uno en uno, que es exactamente por lo que la tabla existe.
 
 ### 11.1 Qué es, y qué no es
 
+
 Un servidor HTTP **para la máquina de quien lo lanza y para nadie más**. Sirve
 `panel.html` y los archivos de `salida/`. Está construido con FastAPI.
 
@@ -1140,6 +1170,7 @@ python -m src.servidor --puerto 8765   # otro puerto
 
 ### 11.2 Los endpoints de hoy
 
+
 | Método y ruta | Qué hace |
 |---|---|
 | `GET /` y `GET /panel.html` | El panel |
@@ -1147,6 +1178,7 @@ python -m src.servidor --puerto 8765   # otro puerto
 | `GET /api/salud` | Dónde mira el servidor, y **qué puede escribir** |
 | `GET /api/config` | La configuración, en sus dos formas, y si ahora mismo se puede tocar |
 | `PUT /api/config` | Aplica cambios sobre `config.json` |
+| `POST /api/ampliar` | Añade capítulos a una novela terminada, sin regenerar nada |
 | `POST /api/generar` | Copia la novela actual y arranca una generación en segundo plano |
 | `GET /api/generacion` | Si hay algo en marcha, desde cuándo, y las últimas líneas del log |
 | `POST /api/detener` | Para la generación en marcha |
@@ -1162,7 +1194,81 @@ Hoy vale `["config.json"]`. Esa lista es una declaración, no un adorno: crece
 solo cuando el servidor gana permiso para tocar algo nuevo, y hay un test que
 hay que cambiar a mano cuando eso pasa.
 
-### 11.4 Leer y escribir la configuración
+### 11.3 Cómo se arranca Claude Code, y por qué así
+
+
+Todo lo que este servidor lanza pasa por `resolver_ejecutable()`, que devuelve
+la **ruta absoluta** del programa. Nunca se pasa el nombre suelto, y no es una
+manía:
+
+En Windows, `claude` instalado con npm **no es un `.exe`**: es un `claude.CMD`.
+`shutil.which()` lo encuentra porque aplica `PATHEXT`, pero `CreateProcess`
+—que es lo que hay debajo de `subprocess` cuando no se usa shell— **no lo
+aplica**: busca el nombre literal y solo ejecuta binarios. El resultado es un
+`FileNotFoundError: [WinError 2]` en un comando que funciona perfectamente en
+la terminal. El detalle completo está en `DECISIONES.md`, hallazgo 13.
+
+Sigue sin usarse shell y los argumentos siguen yendo como lista: lo único que
+cambia es que `argv[0]` es una ruta y no un nombre.
+
+### 11.4 Los errores se explican, siempre
+
+
+Ningún fallo de este servidor sale sin cuerpo. La razón es sencilla: el panel
+solo puede enseñar lo que el servidor le mande, y un `500` pelado deja la
+explicación en la terminal, que es justo donde no está mirando quien usa la
+página.
+
+| Qué pasó | Código | Qué trae la respuesta |
+|---|---|---|
+| Lo que llega no vale (claves, tipos, biblia inválida) | `400` | `mensaje` y la lista entera de `errores` |
+| Hay algo en marcha, o la novela está a medias | `409` | `mensaje`, y `bloqueo` o `capitulos_pendientes` |
+| La sesión de Claude Code devolvió algo que no sirve | `502` | `codigo_salida`, **lo que devolvió** y **su `stderr`** |
+| No está el ejecutable | `503` | `mensaje` y una `pista` con qué comprobar |
+| El arquitecto no contestó a tiempo | `504` | `mensaje` con el límite que se agotó |
+| Cualquier cosa imprevista | `500` | El tipo y el mensaje de la excepción, y dónde está la traza |
+
+Las tres cosas que siempre se dicen cuando algo falla: **qué falló**, **si se
+tocó algo** y **dónde mirar**. Cuando el fallo viene de la sesión de Claude
+Code, lo que dijo la sesión **es** el diagnóstico y se enseña tal cual, sin
+resumir.
+
+### 11.5 Las cuatro reglas de seguridad
+
+
+Este es el primer componente del proyecto que abre un puerto, y va a crecer
+hasta escribir `config.json` y arrancar procesos. Las reglas no son opcionales:
+
+1. **Escucha solo en `127.0.0.1`.** La dirección es una constante del código, no
+   un parámetro de la línea de comandos. Un servidor que va a escribir
+   configuración y arrancar procesos no puede acabar expuesto a la red local
+   por un descuido al lanzarlo. No hay bandera para cambiarlo.
+2. **Lista blanca, no lista negra.** Solo se sirven `panel.html` y lo que cuelga
+   de `salida/`. Cualquier otra cosa del proyecto es `404` aunque exista. Esto
+   importa de verdad: en la raíz hay un `.env` con una clave de la arquitectura
+   anterior, y un servidor que sirviera el directorio entero la dejaría a un
+   `GET` de distancia.
+3. **Ninguna ruta sale del proyecto.** La ruta pedida se resuelve —lo que
+   deshace `..` y sigue los enlaces simbólicos— y después se comprueba que cae
+   dentro de `salida/`. El orden importa: comprobar la cadena antes de
+   resolverla no sirve de nada.
+4. **Lo que no se sirve devuelve `404`, no `403`.** Un `403` confirmaría que el
+   archivo existe, y eso ya es información que nadie tiene por qué sacar de
+   aquí.
+
+Si `runtime.directorio_salida` apuntara fuera del proyecto, el servidor **no
+arranca** y lo dice: servir por HTTP una carpeta cualquiera del disco es
+exactamente lo que no puede pasar.
+
+Los tests de `tests/test_servidor.py` prueban sobre todo lo que **no** se debe
+servir: el `.env`, el código, la documentación, y los intentos de salirse con
+`..`, con la ruta codificada en porcentajes, con rutas absolutas y con un enlace
+simbólico que apunte fuera.
+
+---
+
+### 11.6 Leer y escribir la configuración
+
 
 **`GET /api/config`** devuelve cuatro cosas:
 
@@ -1221,7 +1327,8 @@ reescribe el archivo.
 > a mano se expanden. Si el formato del archivo te importa, edítalo a mano en
 > lugar de por el panel.
 
-### 11.5 Generar desde el panel
+### 11.7 Generar desde el panel
+
 
 **`POST /api/generar`** hace tres cosas, en este orden, y si falla cualquiera
 no se pasa a la siguiente:
@@ -1280,38 +1387,74 @@ y en Windows la forma obvia de intentarlo mata el proceso.
 lo mata. Después hace lo mismo del cierre: log, limpieza de la marca y
 anotación.
 
-### 11.3 Las cuatro reglas de seguridad
+### 11.8 Ampliar una novela terminada
 
-Este es el primer componente del proyecto que abre un puerto, y va a crecer
-hasta escribir `config.json` y arrancar procesos. Las reglas no son opcionales:
 
-1. **Escucha solo en `127.0.0.1`.** La dirección es una constante del código, no
-   un parámetro de la línea de comandos. Un servidor que va a escribir
-   configuración y arrancar procesos no puede acabar expuesto a la red local
-   por un descuido al lanzarlo. No hay bandera para cambiarlo.
-2. **Lista blanca, no lista negra.** Solo se sirven `panel.html` y lo que cuelga
-   de `salida/`. Cualquier otra cosa del proyecto es `404` aunque exista. Esto
-   importa de verdad: en la raíz hay un `.env` con una clave de la arquitectura
-   anterior, y un servidor que sirviera el directorio entero la dejaría a un
-   `GET` de distancia.
-3. **Ninguna ruta sale del proyecto.** La ruta pedida se resuelve —lo que
-   deshace `..` y sigue los enlaces simbólicos— y después se comprueba que cae
-   dentro de `salida/`. El orden importa: comprobar la cadena antes de
-   resolverla no sirve de nada.
-4. **Lo que no se sirve devuelve `404`, no `403`.** Un `403` confirmaría que el
-   archivo existe, y eso ya es información que nadie tiene por qué sacar de
-   aquí.
+Llevar una novela de N capítulos a N+M **sin regenerar nada de lo aprobado**.
 
-Si `runtime.directorio_salida` apuntara fuera del proyecto, el servidor **no
-arranca** y lo dice: servir por HTTP una carpeta cualquiera del disco es
-exactamente lo que no puede pasar.
+```
+POST /api/ampliar      {"capitulos": 2}
+```
 
-Los tests de `tests/test_servidor.py` prueban sobre todo lo que **no** se debe
-servir: el `.env`, el código, la documentación, y los intentos de salirse con
-`..`, con la ruta codificada en porcentajes, con rutas absolutas y con un enlace
-simbólico que apunte fuera.
+#### El cuello de botella que esto resuelve
 
----
+`src/biblia.py` exige que el outline tenga **exactamente** `num_capitulos`
+entradas. Subir ese número a mano no amplía nada: deja la biblia inválida y el
+harness deja de arrancar. Ampliar de verdad son **dos cambios que tienen que
+ocurrir juntos o ninguno**: el outline crece y el número sube. Todo el endpoint
+está construido alrededor de esa atomicidad.
+
+#### Los siete pasos, y dónde se para
+
+1. **No hay ninguna generación en marcha.** Ampliar con una en curso dejaría el
+   outline creciendo debajo de un escritor que ya está trabajando. → `409`
+2. **La novela está completa.** Si queda algún capítulo por aprobar, se
+   rechaza y se dice cuáles: ampliar a medias mezcla terminar lo que falta con
+   añadir lo que no estaba. → `409`
+3. **Se copia la novela a `salida-novela-N/`**, igual que al generar.
+4. **El arquitecto escribe las entradas nuevas.** Se lanza una sesión de Claude
+   Code que delega en el subagente `arquitecto`. **Las entradas no las escribe
+   el servidor**: un outline salido de un `str.format` sería texto de novela
+   escrito por código, que es justo lo que este proyecto evita. La llamada es
+   **síncrona** —hay que poder leer lo que propone antes de decidir— con un
+   límite de 15 minutos.
+5. **Se valida entero antes de escribir nada**, y con dos exigencias:
+   - la biblia ampliada cumple el contrato 7.1 con el número nuevo;
+   - y **solo añade**. Si el arquitecto reescribiera la sinopsis de un capítulo
+     ya escrito, o cambiara los personajes o la premisa, se rechaza. Ese
+     capítulo dejaría de corresponderse con su plan y el informe de validación
+     pasaría a mentir sobre una novela que nadie ha vuelto a tocar. → `400`
+6. **Se escribe la biblia y se sube `num_capitulos`.** Si la segunda escritura
+   falla, **la biblia se restaura**: una biblia de N+M entradas con un config
+   que dice N deja el harness sin arrancar.
+7. **El estado no se toca.** Los capítulos aprobados y marcados siguen donde
+   estaban, así que los nuevos salen como pendientes por sí solos y
+   `python -m src.orquestacion estado` ya apunta al primero.
+
+La respuesta trae **las entradas de outline nuevas**, para leerlas antes de
+lanzar la generación.
+
+#### Dos detalles que ya habían mordido
+
+**El capítulo que era el último dejó de serlo.** El resumidor se salta el
+último capítulo de una novela, porque nadie leería ese resumen. Al ampliar sí
+se lee: es lo único que el escritor del capítulo N+2 sabrá de él. El endpoint
+lo comprueba y lo genera si falta, por tres caminos, y **dice cuál usó**: ya
+existía, lo escribió el resumidor en esta ampliación, o se cayó a la sinopsis
+del outline (la misma válvula que `registrar-resumen --usar-sinopsis`).
+
+**El arco del género se reabre.** La novela estaba cerrada: el último capítulo
+resolvía el conflicto central. El prompt se lo dice al arquitecto con todas las
+letras —que no repita ese clímax, que abra algo que nazca de las consecuencias
+de ese final y lo cierre, y que la fase del arco vuelve a empezar—, porque sin
+esa advertencia lo natural es que proponga otro final.
+
+#### El único dato del navegador que llega a un prompt
+
+Es `capitulos`, y es un **entero** entre 1 y 20, validado como número **antes**
+de tocar la plantilla. No hay ninguna cadena del cliente que llegue al prompt:
+interpolar un entero comprobado en un texto fijo no puede inyectar nada. Todo
+lo demás del prompt es constante del código, como en `generar`.
 
 ## 12. Documentos relacionados
 

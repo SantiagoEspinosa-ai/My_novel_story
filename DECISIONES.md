@@ -464,6 +464,103 @@ que el bloqueo bloquea, porque si no el verde no significaría nada.
 
 ---
 
+### Hallazgo 13 — `claude` es un `.CMD`, y un doble de test demasiado limpio
+
+**El síntoma.** `POST /api/ampliar` devolvía un `500`. La traza del servidor:
+
+```
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+  ... subprocess.run(["claude", "-p", prompt])
+```
+
+Y al mismo tiempo, `claude --version` funcionaba perfectamente en la terminal.
+
+**La causa.** En Windows, `claude` instalado con npm no es un ejecutable: es un
+script.
+
+```
+shutil.which('claude')  →  C:\Users\...\AppData\Roaming\npm\claude.CMD
+```
+
+`shutil.which()` lo encuentra porque aplica `PATHEXT`. `CreateProcess` —que es
+lo que hay debajo de `subprocess` cuando no se usa shell— **no aplica
+`PATHEXT`**: busca el nombre literal y solo ejecuta binarios. De ahí que la
+comprobación previa pasara y el arranque fallara justo después, que es la
+combinación más confusa posible: el programa está, `which` lo ve, y aun así no
+arranca.
+
+Comprobado en tres líneas:
+
+| Lo que se pasa a `subprocess` | Resultado |
+|---|---|
+| `["claude", "--version"]` | `FileNotFoundError: [WinError 2]` |
+| `[shutil.which("claude"), "--version"]` | `codigo=0`, `2.1.274 (Claude Code)` |
+
+**La cura.** Resolver con `which` y pasar la **ruta absoluta**. Se hace en
+`resolver_ejecutable()`, por donde pasa todo lo que lanza procesos. No hace
+falta `shell=True` ni `cmd /c`: con la ruta completa, `subprocess` ejecuta el
+`.CMD` sin problema. Sigue sin haber shell y los argumentos siguen yendo como
+lista; lo único que cambia es que `argv[0]` es una ruta.
+
+**Afectaba también a `generar`**, que se lanzaba igual y todavía no se había
+pulsado nunca. Habría muerto con el mismo error la primera vez.
+
+---
+
+#### La lección que vale más que el hallazgo: un doble demasiado limpio
+
+Había veintidós tests de generación y veintiséis de ampliación, y ninguno lo
+cazó. El motivo importa más que el bug:
+
+**Los dobles se construían con `sys.executable`**, es decir, con la ruta
+absoluta de un `.exe` de verdad:
+
+```python
+comando_falso = lambda: [sys.executable, "-c", codigo]
+```
+
+Ese doble tiene la interfaz correcta —una lista de argumentos que lanza un
+proceso que escribe y termina con un código— pero **no tiene la forma del
+ejecutable real**. El tramo que rompía en producción era «resolver un nombre
+suelto contra el `PATH`», y el doble se lo saltaba entero porque ya venía
+resuelto y además era un binario.
+
+> **La regla que sacamos:** un doble de prueba tiene que tener **la misma forma
+> que lo real**, no solo la misma interfaz. Si en producción se lanza un script
+> del `PATH`, el doble tiene que ser un script del `PATH`. Un doble más limpio
+> que la realidad deja sin probar justo el tramo que rompe, y da un verde que
+> no significa nada.
+
+`tests/test_servidor_ejecutable.py` monta ahora un `claude.cmd` de mentira en
+una carpeta que se pone en el `PATH`, con la misma forma que el de npm, y
+recorre el arranque de verdad. Incluye un test que reproduce el
+`FileNotFoundError` en su forma mínima: no prueba nuestro código, prueba que la
+causa diagnosticada es la que es, y avisaría si algún día Python cambiara ese
+comportamiento y el arreglo pudiera simplificarse.
+
+Esto se generaliza más allá de los ejecutables: vale para rutas con espacios o
+acentos, archivos con BOM, finales de línea de Windows y cualquier sitio donde
+el entorno real sea más áspero que el de laboratorio.
+
+**Un defecto de regalo.** Al escribir el test del `503` («si no está `claude`,
+no se amplía») saltó algo que no se buscaba: en `ampliar`, la copia de
+seguridad se hacía **antes** de comprobar el ejecutable, así que un `503`
+dejaba una carpeta `salida-novela-N/` suelta. En `generar` sí estaba en el
+orden correcto y no se había aplicado aquí. Un test escrito para una cosa
+encontró otra, que es lo que pasa cuando el test recorre el camino real en vez
+de uno equivalente.
+
+**Y lo que el `500` enseñó del panel.** El error llegaba al navegador sin
+cuerpo, así que la página solo podía decir «el servidor respondió 500» mientras
+la explicación entera estaba en la terminal del servidor: justo donde no mira
+quien usa el panel. Se añadió un manejador global que convierte cualquier
+excepción imprevista en JSON con el tipo y el mensaje, y el `stderr` de la
+sesión de Claude Code dejó de tirarse, porque cuando el fallo viene de ahí, lo
+que dijo la sesión **es** el diagnóstico. La traza sigue quedándose en la
+terminal; el resumen viaja.
+
+---
+
 ### Estado de las pruebas de los subagentes (2026-09-17)
 
 Todos probados con datos de juguete, con infracciones plantadas a propósito para

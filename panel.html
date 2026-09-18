@@ -944,6 +944,10 @@ function firmaEstructural(e){
 
 async function latir(){
   if (!RED.base || RED.cargando) return;
+  // Mientras una ampliacion esta en vuelo no se repinta nada. El indicador de
+  // espera es lo unico que dice que la pagina no se ha colgado, y cualquier
+  // repintado por debajo lo borraria justo cuando mas falta hace.
+  if (ampliando) return;
 
   // Con backend detras, el proceso de generacion se vigila aparte: puede estar
   // vivo y todavia no haber escrito nada en estado.json, y puede haberse caido
@@ -1687,6 +1691,86 @@ function tablaReparto(titulo, grupos, sinEntrada){
    =================================================================== */
 const API = { hay: false, salud: null, generacion: null, config: null };
 
+/* Traduce una respuesta fallida a algo que se pueda leer en pantalla.
+
+   El motivo por el que esta funcion existe: el panel llego a ensenar «El
+   servidor respondio 500» y nada mas, mientras la explicacion entera estaba en
+   la terminal del servidor, que es justo donde no mira quien usa la pagina. Un
+   error que no se ve es un error que no se puede arreglar.
+
+   El detalle puede llegar de tres formas, y las tres se recogen:
+     - un objeto con `mensaje` y `errores`, que es lo normal aqui;
+     - una cadena suelta, que es lo que devuelve FastAPI por su cuenta;
+     - nada en absoluto, si el servidor no llego ni a responder. */
+function leerFallo(r, titulo){
+  const d = (r.cuerpo && r.cuerpo.detail);
+  if (typeof d === "string"){
+    return { ok: false, titulo, mensaje: d, errores: [], estado: r.estado };
+  }
+  const o = d || {};
+  return {
+    ok: false,
+    titulo,
+    mensaje: o.mensaje || (r.estado
+      ? "El servidor respondió " + r.estado + " y no explicó por qué."
+      : "No se pudo contactar con el servidor. ¿Sigue levantado?"),
+    errores: o.errores || [],
+    pista: o.pista || null,
+    ejecutable: o.ejecutable || null,
+    codigo_salida: (o.codigo_salida === undefined ? null : o.codigo_salida),
+    respuesta: o.respuesta || null,
+    salidaSesion: o.salida_de_la_sesion || null,
+    pendientes: o.capitulos_pendientes || null,
+    copia: o.copia || null,
+    estado: r.estado,
+  };
+}
+
+// Pinta un fallo con todo lo que el servidor haya contado de el. `extra` se
+// anade al final, dentro del mismo recuadro.
+function htmlFallo(f, extra){
+  let html = '<div class="errores-guardado"><div class="rotulo">' +
+    esc(f.titulo) + (f.estado ? " · HTTP " + f.estado : "") + "</div>";
+  // Ojo: este recuadro lo cierra el `return`, no cada rama.
+  html += "<p>" + esc(f.mensaje) + "</p>";
+  if ((f.errores || []).length){
+    html += "<ul>" + f.errores.map(e => "<li>" + esc(e) + "</li>").join("") + "</ul>";
+  }
+  if (f.pendientes){
+    html += "<p>Capítulos que faltan por aprobar: <strong>" +
+      esc(f.pendientes.join(", ")) + "</strong>.</p>";
+  }
+  if (f.ejecutable){
+    html += "<p class=\"detalle\">Ejecutable que se intentó arrancar: <code>" +
+      esc(f.ejecutable) + "</code></p>";
+  }
+  // La copia se hace antes de delegar, asi que un fallo posterior la deja
+  // hecha. Decirlo evita que aparezcan carpetas sin explicacion.
+  if (f.copia && f.copia.copiado){
+    html += "<p class=\"detalle\">La copia de seguridad sí llegó a hacerse, en " +
+      "<code>" + esc(f.copia.destino) + "/</code>. Como no se ha cambiado nada, " +
+      "esa carpeta es un duplicado de la novela actual y se puede borrar.</p>";
+  }
+  if (f.pista){
+    html += '<p class="detalle">' + esc(f.pista) + "</p>";
+  }
+  // Cuando el fallo viene de la sesion de Claude Code, lo que dijo ES el
+  // diagnostico: se ensena tal cual, en consola, sin resumir.
+  if (f.salidaSesion){
+    html += '<div class="rotulo" style="margin-top:12px">Lo que dijo la sesión' +
+      (f.codigo_salida !== null ? " (terminó con código " + esc(f.codigo_salida) + ")" : "") +
+      "</div><div class=\"consola\" style=\"margin-top:6px\">" +
+      esc(f.salidaSesion) + "</div>";
+  }
+  if (f.respuesta){
+    html += '<div class="rotulo" style="margin-top:12px">Lo que devolvió, que no ' +
+      "era lo esperado</div><div class=\"consola\" style=\"margin-top:6px\">" +
+      esc(f.respuesta) + "</div>";
+  }
+  html += extra || "";
+  return html + "</div>";
+}
+
 async function pedirJson(ruta, opciones){
   const r = await fetch(ruta, Object.assign({ cache: "no-store" }, opciones || {}));
   let cuerpo = null;
@@ -1719,6 +1803,7 @@ async function refrescarConfig(){
 
 /* ---------- control de generacion, en Monitoreo ---------- */
 let confirmacionAbierta = false;
+let falloGeneracion = null;
 
 function renderGeneracion(){
   const cont = $("#mon-generacion");
@@ -1786,12 +1871,30 @@ function renderGeneracion(){
     html += "</div>";
   }
 
+  if (falloGeneracion){
+    html += htmlFallo(falloGeneracion,
+      '<button class="boton" type="button" id="btn-cerrar-fallo-gen" ' +
+      'style="margin-top:10px">Ocultar</button>');
+  }
+
+  // Ampliar vive aqui al lado porque es la otra cosa que se le puede pedir a
+  // una novela: generarla de cero, o alargarla. Las dos copian carpetas y las
+  // dos gastan delegaciones, asi que las dos llevan la misma confirmacion
+  // escrita.
+  html += htmlAmpliar(g);
+
   if (g.log && g.log.length){
     html += '<div class="bloque"><h2>Log de la generación</h2>' +
       '<div class="consola">' + g.log.map(pintarLinea).join("\n") + "</div></div>";
   }
 
   cont.innerHTML = html;
+  engancharAmpliar();
+  const bCerrarFallo = $("#btn-cerrar-fallo-gen");
+  if (bCerrarFallo) bCerrarFallo.addEventListener("click", () => {
+    falloGeneracion = null;
+    renderGeneracion();
+  });
 
   const bGen = $("#btn-generar");
   if (bGen) bGen.addEventListener("click", () => { confirmacionAbierta = true; renderGeneracion(); });
@@ -1808,10 +1911,9 @@ function renderGeneracion(){
       bYa.textContent = "Lanzando…";
       const r = await pedirJson("api/generar", { method: "POST" });
       confirmacionAbierta = false;
-      if (!r.ok){
-        const d = (r.cuerpo && r.cuerpo.detail) || {};
-        alert("No se ha lanzado nada.\n\n" + (d.mensaje || "Error " + r.estado));
-      }
+      // El fallo se pinta en la pagina, no en un `alert`: un aviso del
+      // navegador se cierra de un clic y se lleva la explicacion con el.
+      falloGeneracion = r.ok ? null : leerFallo(r, "No se ha lanzado nada");
       await refrescarGeneracion();
       renderGeneracion();
       await refrescarConfig();
@@ -1829,6 +1931,241 @@ function renderGeneracion(){
     await refrescarConfig();
     renderConfiguracion();
   });
+}
+
+/* ---------- AMPLIAR UNA NOVELA TERMINADA ----------
+   Ampliar no genera nada: deja el plan puesto. Por eso el resultado que
+   importa no es «hecho», sino LAS ENTRADAS NUEVAS, que hay que poder leer
+   antes de decidir si valen y lanzar la generacion.
+
+   La peticion es sincrona y tarda minutos, asi que el indicador de espera no
+   es un adorno: dos minutos con el navegador aparentemente parado se leen como
+   «se ha colgado». Se dice que la espera es a proposito, que es una delegacion
+   real y cuanto lleva. */
+let confirmarAmpliar = false;
+let ampliando = false;
+let ampliarDesde = null;
+let relojAmpliar = null;
+let resultadoAmpliacion = null;
+
+function estadoNovela(){
+  const e = D.estado || {};
+  const total = numCapitulos();
+  const hechos = new Set([].concat(
+    e.capitulos_aprobados || [], e.capitulos_marcados || []).map(Number));
+  const pendientes = [];
+  for (let n = 1; n <= total; n++) if (!hechos.has(n)) pendientes.push(n);
+  return { total, pendientes, completa: total > 0 && pendientes.length === 0 };
+}
+
+function htmlAmpliar(g){
+  const novela = estadoNovela();
+  let html = "";
+
+  // --- mientras se espera ---
+  if (ampliando){
+    html += '<div class="control tarjeta generando" style="flex-direction:column;' +
+      'align-items:flex-start;gap:12px">';
+    html += '<span class="pastilla viva"><span class="punto late"></span>' +
+      "Ampliando · el arquitecto está trabajando</span>";
+    html += '<div class="cifra-grande" id="reloj-ampliar">0 s</div>';
+    html += "<p>El navegador está esperando <strong>a propósito</strong>: esta " +
+      "petición no vuelve hasta que el arquitecto haya escrito las entradas " +
+      "nuevas, porque tienes que poder leerlas. Es una delegación de verdad a un " +
+      "modelo, así que <strong>lo normal es que tarde uno o dos minutos</strong>. " +
+      "No recargues la página.</p>";
+    html += '<div class="detalle">Lo que el servidor está haciendo, en orden ' +
+      "(no informa del paso exacto):</div>";
+    html += '<ul class="reglas" style="width:100%">' +
+      "<li>Comprobar que la novela está completa</li>" +
+      "<li>Copiar la novela actual, por si acaso</li>" +
+      "<li><strong>Delegar en el arquitecto</strong> — este es el paso lento</li>" +
+      "<li>Validar la biblia ampliada antes de guardar nada</li>" +
+      "</ul>";
+    html += "</div>";
+    return html;
+  }
+
+  // --- el resultado, que es lo que de verdad importa ---
+  if (resultadoAmpliacion && resultadoAmpliacion.ok){
+    const r = resultadoAmpliacion.datos;
+    html += '<div class="bloque"><h2>Lo que propone el arquitecto</h2>';
+    html += '<div class="guardado-ok"><div class="rotulo">Ampliada de ' +
+      r.capitulos_antes + " a " + r.capitulos_ahora + " capítulos</div>" +
+      "<strong>No se ha generado nada todavía, y no se ha regenerado nada de lo " +
+      "aprobado.</strong> Los " + r.capitulos_antes + " capítulos de antes siguen " +
+      "intactos, con su texto y su outline. Lo único que ha cambiado es el plan: " +
+      "lee las entradas nuevas y, si te valen, lanza la generación.";
+    if (r.copia && r.copia.copiado){
+      html += " La novela anterior está copiada en <code>" + esc(r.copia.destino) +
+        "/</code>.";
+    }
+    html += "</div>";
+
+    html += '<div class="tarjeta" style="overflow:hidden">';
+    for (const e of (r.outline_nuevo || [])){
+      html += '<div class="paso"><div class="paso-num">CAP ' +
+        dosCifras(Number(e.capitulo)) + "</div><div class=\"paso-cuerpo\">";
+      html += '<div class="sinopsis">' + esc(e.sinopsis || "") + "</div>";
+      if (e.cambio) html += '<div class="cambio"><b>Cambia</b>' + esc(e.cambio) + "</div>";
+      html += '</div><div class="paso-cierre"><span class="sello">sin escribir</span>' +
+        "</div></div>";
+    }
+    html += "</div>";
+
+    const res = r.resumen_del_antiguo_ultimo || {};
+    const comoLoDice = {
+      ya_existia: "ya existía, no se ha tocado",
+      resumidor: "lo ha escrito el resumidor en esta ampliación",
+      sinopsis_del_outline: "el resumidor no lo dio, así que se ha caído a la " +
+        "sinopsis del outline: peor que el acta, pero el escritor no arranca a ciegas",
+    }[res.origen] || "sin datos";
+    html += '<div class="nota" style="border:1px solid var(--regla);border-radius:' +
+      'var(--radio);margin-top:12px">Resumen del capítulo ' + esc(res.capitulo) +
+      ", que hasta ahora era el último: <strong>" + esc(comoLoDice) + "</strong>. " +
+      "Sin él, el escritor del capítulo " + (Number(res.capitulo) + 1) +
+      " arrancaría sin saber qué pasó justo antes.</div>";
+    html += '<button class="boton" type="button" id="btn-cerrar-ampliacion" ' +
+      'style="margin-top:14px">Entendido, ocultar</button>';
+    html += "</div>";
+  } else if (resultadoAmpliacion && !resultadoAmpliacion.ok){
+    html += htmlFallo(resultadoAmpliacion,
+      '<p class="detalle" style="margin-top:10px">La biblia y ' +
+      "<code>config.json</code> han quedado exactamente como estaban.</p>" +
+      '<button class="boton" type="button" id="btn-cerrar-ampliacion" ' +
+      'style="margin-top:10px">Ocultar</button>');
+  }
+
+  // --- el control, solo si la novela esta completa ---
+  if (g.viva) return html;
+
+  if (!novela.completa){
+    if (novela.total){
+      html += '<div class="control tarjeta"><div class="cuerpo">' +
+        '<div class="rotulo">Ampliar</div>' +
+        "<p class=\"detalle\" style=\"margin-top:6px\">Solo se puede ampliar una " +
+        "novela terminada. Faltan por aprobar los capítulos <strong>" +
+        esc(novela.pendientes.join(", ")) + "</strong>: ampliar ahora mezclaría " +
+        "terminar lo que falta con añadir lo que no estaba.</p></div></div>";
+    }
+    return html;
+  }
+
+  html += '<div class="control tarjeta"><div class="cuerpo">';
+  html += '<div class="rotulo">Ampliar</div>';
+  html += "<p class=\"detalle\" style=\"margin-top:6px\">La novela está completa con " +
+    "<strong>" + novela.total + " capítulos</strong>. Ampliar añade capítulos al " +
+    "final <strong>sin regenerar nada de lo aprobado</strong>: el arquitecto " +
+    "escribe el plan de los nuevos y tú decides después si lo generas.</p></div>";
+  html += '<div style="display:flex;gap:10px;align-items:center">';
+  html += '<label for="cuantos-ampliar" class="detalle">Añadir</label>' +
+    '<input type="number" id="cuantos-ampliar" min="1" max="20" step="1" value="' +
+    esc(ultimoCuantos) + '" style="width:80px;font:inherit;padding:10px 12px;' +
+    'border:1px solid var(--regla-fuerte);border-radius:7px">';
+  html += '<button class="boton-fuerte" type="button" id="btn-ampliar">Ampliar…</button>';
+  html += "</div></div>";
+
+  if (confirmarAmpliar){
+    html += '<div class="confirmar"><h3>Esto va a pasar si continúas</h3><ul>';
+    html += "<li>La novela de <strong>" + novela.total + " capítulos</strong> que hay " +
+      "ahora se copiará a <code>" + esc(g.proxima_copia || "salida-novela-N") +
+      "/</code>.</li>";
+    html += "<li>Se lanzará una sesión de Claude Code para que el " +
+      "<strong>arquitecto</strong> escriba el outline de los capítulos nuevos. " +
+      "Gasta delegaciones, aunque muchas menos que generar.</li>";
+    html += "<li><strong>No se regenerará nada de lo aprobado</strong>, y si el " +
+      "arquitecto intentara reescribir un capítulo ya escrito, se rechaza entero.</li>";
+    html += "<li>La petición <strong>tarda uno o dos minutos</strong> y el navegador " +
+      "se queda esperando: hay que traer el plan para que puedas leerlo.</li>";
+    html += "<li>Al terminar <strong>no se genera nada</strong>. Verás las entradas " +
+      "nuevas y decides tú.</li>";
+    html += "</ul>";
+    html += '<div class="teclear"><label for="palabra-ampliar">Escribe ' +
+      "<strong>AMPLIAR</strong> para habilitar el botón:</label>" +
+      '<input type="text" id="palabra-ampliar" autocomplete="off" spellcheck="false" ' +
+      'placeholder="AMPLIAR">' +
+      '<button class="boton-fuerte" type="button" id="btn-ampliar-ya" disabled>' +
+      "Ampliar ahora</button>" +
+      '<button class="boton" type="button" id="btn-cancelar-ampliar">Cancelar</button>' +
+      "</div></div>";
+  }
+  return html;
+}
+
+let ultimoCuantos = 2;
+
+function engancharAmpliar(){
+  const bAbrir = $("#btn-ampliar");
+  if (bAbrir) bAbrir.addEventListener("click", () => {
+    const caja = $("#cuantos-ampliar");
+    if (caja) ultimoCuantos = parseInt(caja.value, 10) || 1;
+    confirmarAmpliar = true;
+    resultadoAmpliacion = null;
+    renderGeneracion();
+  });
+
+  const bCan = $("#btn-cancelar-ampliar");
+  if (bCan) bCan.addEventListener("click", () => {
+    confirmarAmpliar = false;
+    renderGeneracion();
+  });
+
+  const bCerrar = $("#btn-cerrar-ampliacion");
+  if (bCerrar) bCerrar.addEventListener("click", () => {
+    resultadoAmpliacion = null;
+    renderGeneracion();
+  });
+
+  const caja = $("#palabra-ampliar");
+  const bYa = $("#btn-ampliar-ya");
+  if (caja && bYa){
+    caja.addEventListener("input", () => { bYa.disabled = caja.value.trim() !== "AMPLIAR"; });
+    caja.focus();
+    bYa.addEventListener("click", () => lanzarAmpliacion(ultimoCuantos));
+  }
+}
+
+async function lanzarAmpliacion(cuantos){
+  confirmarAmpliar = false;
+  ampliando = true;
+  ampliarDesde = Date.now();
+  resultadoAmpliacion = null;
+  renderGeneracion();
+  // El reloj corre en local mientras la peticion esta en vuelo: es lo que
+  // convierte una pantalla parada en una pantalla que esta esperando.
+  relojAmpliar = setInterval(() => {
+    const el = $("#reloj-ampliar");
+    if (el) el.textContent = duracion(Math.round((Date.now() - ampliarDesde) / 1000));
+  }, 1000);
+
+  let r;
+  try {
+    r = await pedirJson("api/ampliar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ capitulos: cuantos }),
+    });
+  } catch (e){
+    r = { ok: false, estado: 0, cuerpo: null };
+  }
+
+  clearInterval(relojAmpliar);
+  relojAmpliar = null;
+  ampliando = false;
+
+  if (r.ok){
+    resultadoAmpliacion = { ok: true, datos: r.cuerpo };
+  } else {
+    resultadoAmpliacion = leerFallo(r, "No se ha ampliado nada");
+  }
+
+  // La biblia, el config y el total de capitulos han podido cambiar: se relee
+  // todo para que el resto de vistas no se queden con los numeros de antes.
+  await Promise.all([refrescarGeneracion(), refrescarConfig()]);
+  await cargarPorRed();
+  renderGeneracion();
+  $("#mon-generacion").scrollIntoView({
+    behavior: prefiereQuieto() ? "auto" : "smooth", block: "start" });
 }
 
 function pintarLinea(linea){
@@ -1967,10 +2304,9 @@ function renderConfiguracion(){
             " → <strong>" + esc(JSON.stringify(x.despues)) + "</strong></li>").join("") + "</ul>"
         : "") + "</div>";
   } else if (ultimoGuardado && !ultimoGuardado.ok){
-    html += '<div class="errores-guardado"><div class="rotulo">No se ha guardado nada</div>' +
-      "<p>" + esc(ultimoGuardado.mensaje) + "</p><ul>" +
-      (ultimoGuardado.errores || []).map(e => "<li>" + esc(e) + "</li>").join("") +
-      "</ul></div>";
+    html += htmlFallo(ultimoGuardado,
+      '<p class="detalle" style="margin-top:10px">config.json ha quedado ' +
+      "exactamente como estaba.</p>");
   }
 
   if (c.errores && c.errores.length){
@@ -2097,12 +2433,7 @@ function renderConfiguracion(){
     if (r.ok){
       ultimoGuardado = { ok: true, mensaje: r.cuerpo.mensaje, cambios: r.cuerpo.cambios };
     } else {
-      const d = (r.cuerpo && r.cuerpo.detail) || {};
-      ultimoGuardado = {
-        ok: false,
-        mensaje: d.mensaje || ("El servidor respondió " + r.estado + "."),
-        errores: d.errores || [],
-      };
+      ultimoGuardado = leerFallo(r, "No se ha guardado nada");
     }
     await refrescarConfig();
     renderConfiguracion();
