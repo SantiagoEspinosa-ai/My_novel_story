@@ -1,0 +1,1771 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Umbral de la Rueda — Galerada</title>
+<style>
+/* ===================================================================
+   PALETA
+   Galerada sobre un escritorio frio. El rojo es la pluma del corrector
+   y no se usa para nada mas: cada marca roja es un punto de penalizacion.
+   =================================================================== */
+:root{
+  --mesa:#DCDED7;
+  --hoja:#F7F7F4;
+  --hoja-2:#EFEFEA;
+  --tinta:#14171A;
+  --tinta-media:#4E5457;
+  --tinta-suave:#767C7E;
+  --regla:#C2C6BE;
+  --regla-fina:#D8DAD3;
+  --azul:#1B3A6B;
+  --rojo:#A3201B;
+  --rojo-tenue:#EBD5D2;
+  --verde:#2B5C3E;
+  --sombra:0 1px 0 rgba(20,23,26,.10), 0 10px 26px -18px rgba(20,23,26,.5);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Palladio L",Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono","Cascadia Mono","Segoe UI Mono","Roboto Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --mesa:#101317;
+    --hoja:#1B1F24;
+    --hoja-2:#23282E;
+    --tinta:#EAEBE7;
+    --tinta-media:#A7AEB0;
+    --tinta-suave:#848B8D;
+    --regla:#333A42;
+    --regla-fina:#282E35;
+    --azul:#8FB2E8;
+    --rojo:#EC7E74;
+    --rojo-tenue:#3A2320;
+    --verde:#72C391;
+    --sombra:0 1px 0 rgba(0,0,0,.4), 0 12px 30px -20px rgba(0,0,0,.9);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --mesa:#101317;
+  --hoja:#1B1F24;
+  --hoja-2:#23282E;
+  --tinta:#EAEBE7;
+  --tinta-media:#A7AEB0;
+  --tinta-suave:#848B8D;
+  --regla:#333A42;
+  --regla-fina:#282E35;
+  --azul:#8FB2E8;
+  --rojo:#EC7E74;
+  --rojo-tenue:#3A2320;
+  --verde:#72C391;
+  --sombra:0 1px 0 rgba(0,0,0,.4), 0 12px 30px -20px rgba(0,0,0,.9);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--mesa);
+  color:var(--tinta);
+  font-family:var(--mono);
+  font-size:17px;
+  line-height:1.5;
+  -webkit-text-size-adjust:100%;
+}
+@media (prefers-reduced-motion:no-preference){
+  a,button,.tab,.cap-link{transition:background-color .12s ease,color .12s ease,border-color .12s ease}
+}
+:focus-visible{
+  outline:3px solid var(--azul);
+  outline-offset:2px;
+}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-weight:600}
+p{margin:0}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+table{border-collapse:collapse;width:100%}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- estructura general ---------- */
+.envoltura{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0 72px}
+
+/* ---------- cabecera: portadilla ---------- */
+.masthead{
+  border-bottom:2px solid var(--tinta);
+  padding-block:26px 16px;
+  margin-bottom:0;
+}
+.masthead-fila{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between}
+.sello{
+  font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--tinta-suave);display:block;margin-bottom:10px;
+}
+.titulo-obra{
+  font-family:var(--serif);
+  font-size:clamp(34px,6.2vw,62px);
+  line-height:1.02;
+  letter-spacing:-.015em;
+  font-weight:600;
+}
+.subtitulo-obra{
+  font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-media);margin-top:12px;
+}
+.acciones-cabecera{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* ---------- pestañas: lengüetas de carpeta ---------- */
+.tablist{
+  display:flex;gap:2px;flex-wrap:wrap;
+  border-bottom:2px solid var(--tinta);
+  margin-bottom:34px;
+  padding-top:14px;
+}
+.tab{
+  font-family:var(--mono);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  padding:12px 18px;
+  color:var(--tinta-media);
+  background:var(--hoja-2);
+  border:1px solid var(--regla);
+  border-bottom:none;
+  margin-bottom:-2px;
+  position:relative;
+}
+.tab:hover{color:var(--tinta)}
+.tab[aria-selected="true"]{
+  background:var(--hoja);
+  color:var(--tinta);
+  border-color:var(--tinta);
+  border-bottom:2px solid var(--hoja);
+  font-weight:600;
+}
+.tab .tab-n{color:var(--tinta-suave);margin-right:8px;font-size:12px}
+.tab[aria-selected="true"] .tab-n{color:var(--azul)}
+
+/* ---------- botones ---------- */
+.boton{
+  font-family:var(--mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+  border:1.5px solid var(--tinta);padding:10px 16px;background:var(--hoja);color:var(--tinta);
+}
+.boton:hover{background:var(--tinta);color:var(--hoja)}
+.boton-sec{border-color:var(--regla);color:var(--tinta-media)}
+.boton-sec:hover{background:var(--hoja-2);color:var(--tinta);border-color:var(--tinta)}
+
+/* ---------- zona de carga ---------- */
+.cargador{
+  background:var(--hoja);
+  border:1.5px solid var(--regla);
+  padding:22px;
+  margin-bottom:34px;
+}
+.cargador.arrastrando{border-color:var(--azul);border-style:solid;background:var(--hoja-2)}
+.cargador-cabeza{display:flex;gap:16px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.cargador h2{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-suave)}
+.cargador-cuerpo{margin-top:16px;display:flex;gap:22px;flex-wrap:wrap;align-items:center}
+/* Sin esta linea, el display:flex de arriba gana al [hidden] del navegador y los
+   dos modos de carga se verian a la vez, que es justo lo que no puede pasar. */
+.cargador-cuerpo[hidden]{display:none}
+.cargador-pista{font-size:15px;color:var(--tinta-media);flex:1 1 320px;min-width:0}
+.cargador-pista code{color:var(--azul);font-weight:600}
+.inventario{margin-top:18px;border-top:1px solid var(--regla-fina);padding-top:14px;
+  display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--tinta-media)}
+.inv-item::before{content:"✓ ";color:var(--verde);font-weight:700}
+.inv-item.falta::before{content:"· ";color:var(--tinta-suave)}
+.inv-item.falta{color:var(--tinta-suave)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+
+/* ---------- vacío ---------- */
+.vacio{
+  background:var(--hoja);border:1.5px dashed var(--regla);
+  padding:clamp(28px,5vw,52px);
+}
+.vacio h3{font-family:var(--serif);font-size:clamp(22px,3.4vw,30px);margin-bottom:14px}
+.vacio p{color:var(--tinta-media);font-size:16px;max-width:62ch;margin-bottom:12px}
+.vacio ul{margin:16px 0 0;padding-left:0;list-style:none;font-size:15px}
+.vacio li{padding:7px 0;border-bottom:1px solid var(--regla-fina);color:var(--tinta-media)}
+.vacio li code{color:var(--azul);font-weight:600}
+
+/* ---------- titular de sección ---------- */
+.seccion-cabeza{margin-bottom:26px}
+.seccion-cabeza .eyebrow{
+  font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--tinta-suave);
+  display:block;margin-bottom:8px;
+}
+.seccion-cabeza h2{font-family:var(--serif);font-size:clamp(26px,4vw,40px);line-height:1.1}
+.seccion-cabeza .bajada{margin-top:12px;color:var(--tinta-media);font-size:16px;max-width:70ch}
+
+/* ===================================================================
+   VISTA 1 — RECORRIDO
+   =================================================================== */
+.titular{
+  font-family:var(--serif);
+  font-size:clamp(24px,4.4vw,44px);
+  line-height:1.18;
+  border-top:2px solid var(--tinta);
+  border-bottom:1px solid var(--regla);
+  padding-block:22px;
+  margin-bottom:34px;
+  max-width:24ch;
+}
+.titular b{font-weight:600;font-variant-numeric:tabular-nums}
+.titular .desc{color:var(--rojo)}
+.titular .viv{color:var(--verde)}
+
+.galerada{
+  background:var(--hoja);
+  border:1px solid var(--regla);
+  box-shadow:var(--sombra);
+  margin-bottom:28px;
+}
+.gal-cabeza{
+  display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline;
+  padding:18px 22px;border-bottom:2px solid var(--tinta);
+}
+.gal-cabeza h3{font-family:var(--serif);font-size:clamp(20px,2.8vw,27px);flex:1 1 auto;min-width:0}
+.gal-cabeza .cap-n{
+  font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--tinta-suave);display:block;margin-bottom:4px;
+}
+.estado-pill{
+  font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 11px;border:1.5px solid currentColor;white-space:nowrap;font-weight:600;
+}
+.estado-pill.ok{color:var(--verde)}
+.estado-pill.avg{color:var(--rojo)}
+.estado-pill.nada{color:var(--tinta-suave)}
+
+.intentos{width:100%}
+.intentos thead th{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-suave);
+  text-align:left;font-weight:600;padding:12px 10px;border-bottom:1px solid var(--regla);
+}
+.intentos thead th:first-child{padding-left:22px}
+.intentos thead th:last-child{padding-right:22px}
+.intentos td{padding:14px 10px;border-bottom:1px solid var(--regla-fina);vertical-align:middle}
+.intentos td:first-child{padding-left:22px}
+.intentos td:last-child{padding-right:22px}
+.intentos tr:last-child td{border-bottom:none}
+.intentos tr.descartado{color:var(--tinta-suave)}
+.intentos tr.entregado td{background:var(--hoja-2)}
+.intentos tr.entregado td:first-child{box-shadow:inset 4px 0 0 var(--verde)}
+
+.n-intento{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;width:1%}
+tr.descartado .n-intento{font-weight:400}
+.modelo{
+  font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--regla);padding:4px 9px;white-space:nowrap;
+}
+tr.entregado .modelo{border-color:var(--tinta);font-weight:600}
+
+/* marcas de veredicto */
+.marcas{display:flex;gap:6px;flex-wrap:wrap}
+.marca{
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 7px;border:1px solid var(--regla);color:var(--tinta-suave);white-space:nowrap;
+}
+.marca.falla{border-color:var(--rojo);color:var(--rojo);background:var(--rojo-tenue);font-weight:600}
+
+/* penalizacion: una marca roja por punto. Sin marcas = limpio. */
+.pena{display:flex;align-items:center;gap:10px;min-width:150px}
+.pena-marcas{display:flex;gap:3px;align-items:flex-end;height:22px}
+.pena-marca{width:3px;height:22px;background:var(--rojo);display:block;transform:skewX(-14deg)}
+.pena-cifra{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--rojo);min-width:2ch}
+.pena.limpia .pena-cifra{color:var(--verde)}
+.pena-limpio{
+  font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--verde);font-weight:600;
+}
+.sello-entregado{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--verde);
+  border:1.5px solid var(--verde);padding:4px 9px;white-space:nowrap;
+}
+.sello-fuera{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-suave)}
+
+.gal-pie{padding:16px 22px;border-top:1px solid var(--regla);font-size:14px;color:var(--tinta-media)}
+.problemas{list-style:none;margin:10px 0 0;padding:0}
+.problemas li{padding:12px 0;border-top:1px solid var(--regla-fina)}
+.prob-cabeza{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.grav{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--rojo);font-weight:700}
+.prob-quien{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-suave)}
+.prob-desc{color:var(--tinta);font-size:15px;margin-top:4px}
+.prob-ev{color:var(--tinta-media);font-size:14px;margin-top:6px;font-family:var(--serif);font-style:italic}
+
+/* ===================================================================
+   VISTA 2 — ARQUITECTURA
+   =================================================================== */
+.lienzo{
+  background:var(--hoja);border:1px solid var(--regla);box-shadow:var(--sombra);
+  padding:22px;overflow-x:auto;margin-bottom:30px;
+}
+.lienzo svg{display:block;width:100%;height:auto;min-width:760px}
+.svg-caja{fill:var(--hoja);stroke:var(--tinta);stroke-width:1.6}
+.svg-caja-sec{fill:var(--hoja-2);stroke:var(--regla);stroke-width:1.4}
+.svg-rot{fill:var(--tinta);font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:.04em}
+.svg-rot-min{fill:var(--tinta-media);font-family:var(--mono);font-size:11.5px;letter-spacing:.04em}
+.svg-rot-rojo{fill:var(--rojo);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em}
+.svg-rot-verde{fill:var(--verde);font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em}
+.svg-flecha{stroke:var(--tinta);stroke-width:1.6;fill:none}
+.svg-flecha-rojo{stroke:var(--rojo);stroke-width:1.8;fill:none;stroke-dasharray:7 4}
+.svg-llave{stroke:var(--regla);stroke-width:1.4;fill:none}
+.notas-diagrama{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0;
+  border-top:2px solid var(--tinta)}
+.nota-dg{padding:18px 20px 18px 0;border-right:1px solid var(--regla-fina)}
+.nota-dg:last-child{border-right:none}
+.nota-dg h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--azul);margin-bottom:8px}
+.nota-dg p{font-size:15px;color:var(--tinta-media)}
+@media (max-width:640px){.nota-dg{border-right:none;border-bottom:1px solid var(--regla-fina);padding-right:0}}
+
+/* ===================================================================
+   VISTA 3 — ESTRUCTURA
+   =================================================================== */
+.arbol{background:var(--hoja);border:1px solid var(--regla);box-shadow:var(--sombra)}
+.arbol-grupo{border-bottom:2px solid var(--tinta)}
+.arbol-grupo:last-child{border-bottom:none}
+.arbol-grupo > summary{
+  padding:16px 22px;cursor:pointer;list-style:none;
+  display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;
+}
+.arbol-grupo > summary::-webkit-details-marker{display:none}
+.arbol-grupo > summary::before{content:"▸";color:var(--azul);font-size:14px}
+.arbol-grupo[open] > summary::before{content:"▾"}
+.arbol-grupo > summary:hover{background:var(--hoja-2)}
+.arbol-ruta{font-size:16px;font-weight:600;letter-spacing:.02em}
+.arbol-papel{font-size:14px;color:var(--tinta-media);flex:1 1 260px;min-width:0}
+.arbol-lista{list-style:none;margin:0;padding:0 0 10px}
+.arbol-lista li{
+  display:grid;grid-template-columns:minmax(190px,270px) 1fr auto;gap:8px 20px;
+  padding:9px 22px;border-top:1px solid var(--regla-fina);align-items:baseline;
+}
+.arbol-lista li:hover{background:var(--hoja-2)}
+.f-nombre{font-size:14.5px;color:var(--tinta);word-break:break-word}
+.f-nombre .sangria{color:var(--regla)}
+.f-desc{font-size:14.5px;color:var(--tinta-media)}
+.f-lineas{font-size:12px;color:var(--tinta-suave);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:760px){
+  .arbol-lista li{grid-template-columns:1fr auto;gap:4px 12px}
+  .f-desc{grid-column:1 / -1}
+}
+
+/* ===================================================================
+   VISTA 4 — TOKENS
+   =================================================================== */
+.bloque-datos{background:var(--hoja);border:1px solid var(--regla);box-shadow:var(--sombra);
+  padding:22px;margin-bottom:26px}
+.bloque-datos h3{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--tinta-suave);
+  margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--regla)}
+.barras{display:flex;flex-direction:column;gap:14px}
+.barra-fila{display:grid;grid-template-columns:minmax(110px,150px) 1fr auto;gap:16px;align-items:center}
+.barra-et{font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--tinta-media)}
+.barra-pista{height:26px;background:var(--hoja-2);border:1px solid var(--regla-fina);position:relative}
+.barra-val{font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.tabla-datos th{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-suave);
+  text-align:left;font-weight:600;padding:10px 12px;border-bottom:1px solid var(--regla)}
+.tabla-datos td{padding:11px 12px;border-bottom:1px solid var(--regla-fina);font-variant-numeric:tabular-nums}
+.tabla-datos th.der,.tabla-datos td.der{text-align:right}
+.aviso{
+  border-left:4px solid var(--rojo);background:var(--rojo-tenue);
+  padding:18px 20px;margin-bottom:26px;font-size:15.5px;color:var(--tinta);
+}
+.aviso strong{font-weight:700}
+.aviso ul{margin:10px 0 0;padding-left:0;list-style:none}
+.aviso li{padding:5px 0;border-bottom:1px solid var(--regla-fina);font-size:14.5px}
+.aviso li:last-child{border-bottom:0}
+.nota-hallazgo{margin-top:18px;font-size:15.5px;line-height:1.6;color:var(--tinta-media);max-width:72ch}
+.nota-hallazgo strong{color:var(--tinta);font-weight:700}
+.red-lista{margin-top:14px;font-size:13.5px;color:var(--tinta-suave)}
+.red-lista summary{cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--tinta-suave);padding:6px 0}
+.red-lista ul{margin:8px 0 0;padding-left:0;list-style:none}
+.red-lista li{padding:4px 0;border-bottom:1px solid var(--regla-fina);display:flex;gap:12px;justify-content:space-between}
+.red-lista li:last-child{border-bottom:0}
+.red-lista .red-mal{color:var(--rojo)}
+.red-lista .red-bien{color:var(--verde)}
+.aviso code{color:var(--azul);font-weight:600}
+
+/* ===================================================================
+   VISTA 5 — LIBRO
+   Aqui se lee. Nada de instrumentacion.
+   =================================================================== */
+.libro-marco{background:var(--hoja);border:1px solid var(--regla);box-shadow:var(--sombra)}
+.libro-nav{
+  display:flex;gap:2px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--regla);
+  align-items:center;
+}
+.cap-link{
+  font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+  padding:8px 14px;border:1px solid var(--regla);color:var(--tinta-media);
+}
+.cap-link:hover{border-color:var(--tinta);color:var(--tinta)}
+.cap-link[aria-current="true"]{background:var(--tinta);color:var(--hoja);border-color:var(--tinta);font-weight:600}
+.libro-hint{margin-left:auto;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-suave)}
+.pagina{padding:clamp(26px,5vw,68px) clamp(20px,5vw,56px)}
+.pagina-medida{max-width:34em;margin:0 auto}
+.pagina h2{
+  font-family:var(--serif);font-weight:600;
+  font-size:clamp(28px,4.6vw,44px);line-height:1.12;letter-spacing:-.01em;
+  padding-bottom:22px;border-bottom:1px solid var(--regla);margin-bottom:30px;
+}
+.pagina h2 .cap-eyebrow{
+  display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--tinta-suave);margin-bottom:14px;font-weight:400;
+}
+.prosa p{
+  font-family:var(--serif);
+  font-size:clamp(19px,2.1vw,23px);
+  line-height:1.72;
+  margin-bottom:1.35em;
+  hyphens:auto;
+}
+.prosa p:last-child{margin-bottom:0}
+.prosa p.escena{text-align:center;color:var(--tinta-suave);letter-spacing:.5em;margin-block:2em}
+.libro-pie{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;
+  padding:20px;border-top:1px solid var(--regla)}
+.folio{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-suave)}
+
+/* ---------- pie ---------- */
+.pie{margin-top:52px;padding-top:22px;border-top:1px solid var(--regla);
+  font-size:13px;color:var(--tinta-suave);display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between}
+
+@media (max-width:620px){
+  body{font-size:16px}
+  .intentos thead{display:none}
+  .intentos td{display:block;padding:6px 20px;border-bottom:none}
+  .intentos td:first-child{padding-top:16px}
+  .intentos td:last-child{padding-bottom:16px}
+  .intentos tr{display:block;border-bottom:1px solid var(--regla-fina)}
+  .intentos tr.entregado td:first-child{box-shadow:inset 4px 0 0 var(--verde)}
+  .barra-fila{grid-template-columns:1fr auto;gap:6px 12px}
+  .barra-pista{grid-column:1 / -1}
+}
+</style>
+</head>
+<body>
+<div class="envoltura">
+
+  <header class="masthead">
+    <div class="masthead-fila">
+      <div>
+        <span class="sello">Harness generador de novelas · galerada de control</span>
+        <h1 class="titulo-obra" id="titulo-obra">Sin manuscrito cargado</h1>
+        <p class="subtitulo-obra" id="subtitulo-obra">Arrastra la carpeta <code>salida/</code> para llenar esta página</p>
+      </div>
+      <div class="acciones-cabecera">
+        <button class="boton boton-sec" id="btn-tema" type="button">Tema</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tablist" role="tablist" aria-label="Vistas del panel">
+    <button class="tab" role="tab" id="tab-recorrido"   aria-controls="v-recorrido"   aria-selected="true"  data-vista="recorrido"><span class="tab-n">1</span>Recorrido</button>
+    <button class="tab" role="tab" id="tab-arquitectura" aria-controls="v-arquitectura" aria-selected="false" data-vista="arquitectura" tabindex="-1"><span class="tab-n">2</span>Arquitectura</button>
+    <button class="tab" role="tab" id="tab-estructura"  aria-controls="v-estructura"  aria-selected="false" data-vista="estructura" tabindex="-1"><span class="tab-n">3</span>Estructura</button>
+    <button class="tab" role="tab" id="tab-tokens"      aria-controls="v-tokens"      aria-selected="false" data-vista="tokens" tabindex="-1"><span class="tab-n">4</span>Tokens</button>
+    <button class="tab" role="tab" id="tab-libro"       aria-controls="v-libro"       aria-selected="false" data-vista="libro" tabindex="-1"><span class="tab-n">5</span>Libro</button>
+  </nav>
+
+  <!-- ============ CARGADOR ============ -->
+  <section class="cargador" id="cargador" aria-label="Cargar archivos de la generación">
+    <div class="cargador-cabeza">
+      <h2>Fuente de datos</h2>
+      <span class="folio" id="estado-carga">nada cargado</span>
+    </div>
+    <!-- Modo file://: la pagina no puede leer el disco, los archivos los trae
+         el usuario. Solo uno de los dos modos esta visible, nunca los dos. -->
+    <div class="cargador-cuerpo" id="modo-archivo" hidden>
+      <p class="cargador-pista">
+        Esta página se ha abierto desde el disco (<code>file://</code>), así que no puede
+        leer archivos por su cuenta. Arrastra aquí la carpeta <code>salida/</code> entera,
+        o elige los archivos a mano. Nada sale de tu navegador.
+      </p>
+      <div class="acciones-cabecera">
+        <label class="boton" for="in-carpeta" tabindex="0" role="button">Elegir carpeta salida/</label>
+        <input type="file" id="in-carpeta" webkitdirectory directory multiple>
+        <label class="boton boton-sec" for="in-archivos" tabindex="0" role="button">Elegir archivos</label>
+        <input type="file" id="in-archivos" multiple>
+      </div>
+    </div>
+
+    <!-- Modo http(s)://: la pagina lee salida/ ella sola. No hay selector. -->
+    <div class="cargador-cuerpo" id="modo-red" hidden>
+      <p class="cargador-pista">
+        Esta página se está sirviendo por <code id="red-protocolo">http</code>, así que lee
+        <code id="red-base">salida/</code> ella sola. No hay nada que arrastrar: si falta
+        algo, lo dice aquí abajo con la ruta exacta.
+      </p>
+      <div class="acciones-cabecera">
+        <button class="boton" id="btn-recargar" type="button">Volver a leer salida/</button>
+      </div>
+    </div>
+    <div id="red-informe"></div>
+    <div class="inventario" id="inventario"></div>
+  </section>
+
+  <!-- ============ 1. RECORRIDO ============ -->
+  <section id="v-recorrido" role="tabpanel" aria-labelledby="tab-recorrido">
+    <div id="recorrido-cuerpo"></div>
+  </section>
+
+  <!-- ============ 2. ARQUITECTURA ============ -->
+  <section id="v-arquitectura" role="tabpanel" aria-labelledby="tab-arquitectura" hidden>
+    <div class="seccion-cabeza">
+      <span class="eyebrow">Vista 2 · El pipeline</span>
+      <h2>Quién habla con quién, y qué pasa cuando algo falla</h2>
+      <p class="bajada">
+        El orquestador no escribe ni juzga: lleva la cuenta. Todo lo que recuerda vive en archivos,
+        no en la conversación, y por eso una sesión nueva puede continuar una novela que empezó otra.
+        Las flechas discontinuas en rojo son los reintentos: son lo que explica el gasto.
+      </p>
+    </div>
+
+    <div class="lienzo">
+      <svg viewBox="0 0 980 470" role="img" aria-label="Diagrama del pipeline: el orquestador delega en el escritor, tres validadores auditan en paralelo, una puerta de aprobación decide entre reintentar y ensamblar.">
+        <defs>
+          <marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- estado en disco -->
+        <g>
+          <rect class="svg-caja-sec" x="20" y="28" width="196" height="58"/>
+          <text class="svg-rot" x="36" y="52">salida/estado.json</text>
+          <text class="svg-rot-min" x="36" y="72">el cuaderno: qué toca ahora</text>
+        </g>
+
+        <!-- orquestador -->
+        <g>
+          <rect class="svg-caja" x="20" y="124" width="196" height="86"/>
+          <text class="svg-rot" x="36" y="154">ORQUESTADOR</text>
+          <text class="svg-rot-min" x="36" y="175">la sesión de Claude Code</text>
+          <text class="svg-rot-min" x="36" y="192">delega; no razona la trama</text>
+        </g>
+        <g color="var(--tinta)">
+          <path class="svg-flecha" d="M 118 124 L 118 92" marker-end="url(#punta)"/>
+          <path class="svg-flecha" d="M 138 92 L 138 124" marker-end="url(#punta)"/>
+        </g>
+
+        <!-- escritor -->
+        <g>
+          <rect class="svg-caja" x="286" y="124" width="176" height="86"/>
+          <text class="svg-rot" x="302" y="154">ESCRITOR</text>
+          <text class="svg-rot-min" x="302" y="175">escalera de modelos:</text>
+          <text class="svg-rot-min" x="302" y="192">haiku → sonnet → opus</text>
+        </g>
+        <g color="var(--tinta)">
+          <path class="svg-flecha" d="M 216 167 L 282 167" marker-end="url(#punta)"/>
+        </g>
+
+        <!-- contador de longitud -->
+        <g>
+          <rect class="svg-caja-sec" x="286" y="240" width="176" height="52"/>
+          <text class="svg-rot-min" x="302" y="262">contador de palabras</text>
+          <text class="svg-rot-min" x="302" y="280">determinista · 0 delegaciones</text>
+        </g>
+        <g color="var(--tinta)">
+          <path class="svg-flecha" d="M 374 210 L 374 236" marker-end="url(#punta)"/>
+        </g>
+
+        <!-- validadores en paralelo -->
+        <text class="svg-rot-min" x="534" y="42">los tres a la vez, en un solo mensaje</text>
+        <path class="svg-llave" d="M 528 54 L 528 300"/>
+        <g>
+          <rect class="svg-caja" x="544" y="62" width="180" height="56"/>
+          <text class="svg-rot" x="560" y="86">CONTINUIDAD</text>
+          <text class="svg-rot-min" x="560" y="104">rasgos, cronología, hechos</text>
+        </g>
+        <g>
+          <rect class="svg-caja" x="544" y="140" width="180" height="56"/>
+          <text class="svg-rot" x="560" y="164">GÉNERO</text>
+          <text class="svg-rot-min" x="560" y="182">arco, registro, clichés</text>
+        </g>
+        <g>
+          <rect class="svg-caja" x="544" y="218" width="180" height="56"/>
+          <text class="svg-rot" x="560" y="242">ESTILO</text>
+          <text class="svg-rot-min" x="560" y="260">repetición, muletillas, ritmo</text>
+        </g>
+        <g color="var(--tinta)">
+          <path class="svg-flecha" d="M 462 160 L 500 160 L 500 90 L 540 90" marker-end="url(#punta)"/>
+          <path class="svg-flecha" d="M 462 167 L 500 167 L 500 168 L 540 168" marker-end="url(#punta)"/>
+          <path class="svg-flecha" d="M 462 175 L 500 175 L 500 246 L 540 246" marker-end="url(#punta)"/>
+          <path class="svg-flecha" d="M 462 266 L 500 266 L 500 252 L 540 252" marker-end="url(#punta)"/>
+        </g>
+
+        <!-- puerta -->
+        <g>
+          <path class="svg-caja" d="M 838 168 L 906 124 L 974 168 L 906 212 Z"/>
+          <text class="svg-rot" x="874" y="164">PUERTA</text>
+          <text class="svg-rot-min" x="852" y="182">¿los tres PASA?</text>
+        </g>
+        <g color="var(--tinta)">
+          <path class="svg-flecha" d="M 724 90 L 780 90 L 780 168 L 834 168" marker-end="url(#punta)"/>
+          <path class="svg-flecha" d="M 724 168 L 780 168"/>
+          <path class="svg-flecha" d="M 724 246 L 780 246 L 780 168"/>
+        </g>
+
+        <!-- rama reintento -->
+        <g color="var(--rojo)">
+          <path class="svg-flecha-rojo" d="M 906 212 L 906 336 L 374 336 L 374 214" marker-end="url(#punta)"/>
+        </g>
+        <text class="svg-rot-rojo" x="560" y="328" id="svg-rot-reintento">NO → reintento: sube un escalón de la escalera</text>
+        <text class="svg-rot-min" x="560" y="352">los problemas se acumulan y viajan con la reescritura</text>
+
+        <!-- rama aprobado -->
+        <g color="var(--verde)">
+          <path class="svg-flecha" style="stroke:var(--verde)" d="M 906 212 L 906 396 L 250 396" marker-end="url(#punta)"/>
+        </g>
+        <text class="svg-rot-verde" x="640" y="388">SÍ → aprobado</text>
+
+        <!-- resumidor + ensamblador -->
+        <g>
+          <rect class="svg-caja-sec" x="286" y="410" width="176" height="46"/>
+          <text class="svg-rot-min" x="302" y="430">RESUMIDOR</text>
+          <text class="svg-rot-min" x="302" y="447">2–3 frases para el siguiente</text>
+        </g>
+        <g>
+          <rect class="svg-caja" x="20" y="372" width="230" height="84"/>
+          <text class="svg-rot" x="36" y="398">ENSAMBLADOR</text>
+          <text class="svg-rot-min" x="36" y="418">manuscrito.md</text>
+          <text class="svg-rot-min" x="36" y="436">informe-validacion.md</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="notas-diagrama">
+      <div class="nota-dg">
+        <h4>Un validador ausente no aprueba</h4>
+        <p>Si un validador no devuelve JSON legible, cuenta como <em>FALLO</em>, no como silencio.
+        Un capítulo no se resuelve con validaciones a medias.</p>
+      </div>
+      <div class="nota-dg">
+        <h4>La escalera guarda la voz ganadora</h4>
+        <p>El capítulo siguiente arranca en el escalón que resolvió el anterior, no al principio.
+        Si un capítulo se acepta por puntuación, la escalera vuelve abajo.</p>
+      </div>
+      <div class="nota-dg">
+        <h4>Lo determinista no lo juzga un modelo</h4>
+        <p>La longitud se mide con un contador de palabras y se inyecta como un veredicto más.
+        No cuesta una delegación y no se equivoca.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. ESTRUCTURA ============ -->
+  <section id="v-estructura" role="tabpanel" aria-labelledby="tab-estructura" hidden>
+    <div class="seccion-cabeza">
+      <span class="eyebrow">Vista 3 · El repositorio</span>
+      <h2>Qué hay en el disco y para qué sirve cada pieza</h2>
+      <p class="bajada">
+        Árbol real del proyecto. Los subagentes son la capa de modelos; el Python es infraestructura
+        de apoyo que no sale a la red. Los prompts viven en archivos y se leen en tiempo de ejecución,
+        nunca dentro del código.
+      </p>
+    </div>
+    <div class="arbol" id="arbol"></div>
+  </section>
+
+  <!-- ============ 4. TOKENS ============ -->
+  <section id="v-tokens" role="tabpanel" aria-labelledby="tab-tokens" hidden>
+    <div class="seccion-cabeza">
+      <span class="eyebrow">Vista 4 · El gasto</span>
+      <h2>Dónde se fueron los tokens</h2>
+      <p class="bajada">
+        Cada delegación a un subagente deja una entrada en <code>estado.json</code> con su rol, su modelo,
+        su capítulo y sus tokens. Al cerrar un capítulo se marca cuáles produjeron manuscrito y cuáles
+        se pagaron para nada.
+      </p>
+    </div>
+    <div id="tokens-cuerpo"></div>
+  </section>
+
+  <!-- ============ 5. LIBRO ============ -->
+  <section id="v-libro" role="tabpanel" aria-labelledby="tab-libro" hidden>
+    <div id="libro-cuerpo"></div>
+  </section>
+
+  <footer class="pie">
+    <span>Panel de control del harness · los datos se leen en tu navegador y no se envían a ningún sitio</span>
+    <span id="pie-gen"></span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===================================================================
+   ÁRBOL DEL REPOSITORIO
+   Leído del disco al generar esta página. Es estático a propósito: la
+   vista 3 describe el proyecto, no la generación, así que no depende de
+   qué archivos arrastres.
+   =================================================================== */
+const ARBOL = [
+  {
+    ruta: ".claude/agents/",
+    papel: "Los seis subagentes. Son la capa de modelos: aquí no hay ningún SDK.",
+    archivos: [
+      ["arquitecto.md",  "Diseña la estructura completa: premisa, personajes, ambientación, outline y timeline. Corre una sola vez."],
+      ["escritor.md",    "Redacta el texto de un capítulo a partir de la biblia y del contexto que se le pase."],
+      ["continuidad.md", "Audita el capítulo contra la biblia y devuelve un veredicto en JSON."],
+      ["genero.md",      "Audita si el capítulo cumple las convenciones de su género."],
+      ["estilo.md",      "Audita la prosa: repetición léxica y sintáctica, muletillas, clichés, ritmo."],
+      ["resumidor.md",   "Comprime un capítulo aprobado en dos o tres frases para el siguiente escritor."]
+    ],
+    nota: "El cuerpo de cada uno solo apunta a su skill puente, y todos llevan omitClaudeMd: ese aislamiento es lo que da sentido a tener validadores separados."
+  },
+  {
+    ruta: ".claude/skills/",
+    papel: "Skills puente. Cada una inyecta tal cual el prompt de sistema de prompts/.",
+    archivos: [
+      ["novela-arquitecto/SKILL.md",  "Inyecta prompts/arquitecto.md."],
+      ["novela-escritor/SKILL.md",    "Inyecta prompts/escritor.md."],
+      ["novela-continuidad/SKILL.md", "Inyecta prompts/continuidad.md."],
+      ["novela-genero/SKILL.md",      "Inyecta prompts/genero.md."],
+      ["novela-estilo/SKILL.md",      "Inyecta prompts/estilo.md."],
+      ["novela-resumidor/SKILL.md",   "Inyecta prompts/resumidor.md."]
+    ],
+    nota: "Existen porque un subagente lanzado con --agent no precarga sus skills: solo la ruta de delegación le entrega su prompt de sistema."
+  },
+  {
+    ruta: "src/",
+    papel: "Infraestructura de apoyo. Ningún módulo sale a la red ni llama a un modelo.",
+    archivos: [
+      ["__init__.py",     "Paquete del harness.", 11],
+      ["config.py",       "Cargador de configuración: fusiona config.json, el perfil del género y las variables de entorno, y valida el resultado.", 464],
+      ["biblia.py",       "Contrato de la biblia: normaliza, valida contra el spec, guarda y compacta los hechos establecidos.", 437],
+      ["estado.py",       "Estado de progreso y reanudación. Escribe estado.json de forma atómica tras cada intento.", 244],
+      ["contexto.py",     "Monta las ventanas de contexto de cada rol y aplica el orden de recorte cuando no caben.", 353],
+      ["puntuacion.py",   "Parsea los veredictos, los puntúa por gravedad y elige la mejor versión cuando se agota la escalera.", 473],
+      ["delegaciones.py", "Registro local de delegaciones con sus tokens, y el reparto entre lo publicado y lo descartado.", 230],
+      ["ensamblador.py",  "Construye el manuscrito y el informe de validación. No corrige nada de lo que le pasan.", 468],
+      ["orquestacion.py", "Máquina de estados: dice qué toca hacer ahora, recoge lo que devuelve cada subagente y lo guarda.", 1654]
+    ],
+    nota: "El reparto es deliberado: el que razona no recuerda, y el que recuerda no razona."
+  },
+  {
+    ruta: "prompts/",
+    papel: "Prompts de sistema. Se leen en tiempo de ejecución; nunca van dentro del código.",
+    archivos: [
+      ["arquitecto.md",           "Cómo diseñar la biblia y con qué contrato de salida."],
+      ["escritor.md",             "Cómo redactar un capítulo y qué no puede inventarse."],
+      ["continuidad.md",          "Qué cuenta como ruptura de continuidad y cómo informarla."],
+      ["genero.md",               "Cómo auditar el género sin convertirlo en una lista de tópicos."],
+      ["estilo.md",               "Qué se considera repetición, muletilla o diálogo sin subtexto."],
+      ["resumidor.md",            "Cómo comprimir un capítulo sin perder lo que el siguiente necesita."],
+      ["referencias/terror.md",   "Convenciones del terror: tensión, revelación, clichés prohibidos."],
+      ["referencias/romance.md",  "Convenciones del romance."],
+      ["referencias/drama.md",    "Convenciones del drama."]
+    ],
+    nota: "Los valores concretos (género, número de capítulos, rango de palabras) llegan desde config.json al mensaje de delegación. Los prompts no llevan valores fijos."
+  },
+  {
+    ruta: "tests/",
+    papel: "183 tests. Ninguno toca la red ni delega en un subagente.",
+    archivos: [
+      ["conftest.py",            "Fixtures compartidas: configuración de juguete en carpetas temporales.", 39],
+      ["ayudas.py",              "Datos de juguete: biblia válida y veredictos sintéticos.", 152],
+      ["test_config.py",         "Precedencia de las cuatro capas de configuración y validación de rangos.", 401],
+      ["test_biblia.py",         "Contrato de la biblia y acumulación de todos los problemas de una vez.", 232],
+      ["test_estado.py",         "Escritura atómica, reanudación y capítulos pendientes.", 172],
+      ["test_contexto.py",       "Que la ventana no crezca con el número de capítulo.", 261],
+      ["test_puntuacion.py",     "Parseo de veredictos, JSON ilegible como FALLO y elección del mejor intento.", 290],
+      ["test_delegaciones.py",   "Que toda delegación emitida se cuente, incluidos los reintentos por formato.", 238],
+      ["test_ensamblador.py",    "Manuscrito, informe y la válvula de escape del resumen.", 332],
+      ["test_orquestacion.py",   "La máquina de estados: que el siguiente paso salga del disco y no de la memoria.", 745]
+    ]
+  },
+  {
+    ruta: "herramientas/",
+    papel: "Diagnóstico de la telemetría. Fuera del harness: nadie de src/ los importa.",
+    archivos: [
+      ["telemetria-langfuse.ps1",  "Arma la cabecera de autenticación de Langfuse desde una variable de entorno. La credencial no se escribe en ningún archivo."],
+      ["comprobar-langfuse.ps1",   "Manda una traza de prueba por OTLP y traduce el código de error que devuelva."]
+    ],
+    nota: "Es el único sitio del proyecto donde puede haber una llamada de red, y solo para comprobar que las trazas llegan."
+  },
+  {
+    ruta: "Documentación y configuración (raíz)",
+    papel: "Lo que manda sobre el comportamiento, y por qué es como es.",
+    archivos: [
+      ["EJECUCION.md",                 "Contrato de ejecución: el flujo paso a paso, las seis reglas inviolables y los comandos exactos. Manda sobre el runtime."],
+      ["CLAUDE.md",                    "Reglas para quien programa: la capa de modelos son los subagentes, el Python no sale a la red, una etapa por sesión."],
+      ["DECISIONES.md",                "Lo que se comprobó ejecutándolo. Cada entrada es un hallazgo con su consecuencia de diseño."],
+      ["SPEC-generador-novelas-v3.md", "Especificación principal y el porqué de cada decisión."],
+      ["ADENDA-openrouter-vscode.md",  "Deprecada. Arquitectura anterior sobre OpenRouter; se conserva como historia."],
+      ["config.json",                  "Toda la configuración ajustable: género, capítulos, rango de palabras, escalera de modelos, pesos de gravedad, límites."],
+      [".claude/settings.json",        "Telemetría OTEL del CLI hacia Langfuse. Sin secretos: la credencial va en una variable de entorno."],
+      ["pytest.ini",                   "Configuración de pytest."],
+      ["Harness_novela.drawio.png",    "Diagrama del flujo."]
+    ]
+  },
+  {
+    ruta: "archivo/",
+    papel: "Código de la arquitectura anterior, fuera de uso. Se conserva como historia.",
+    archivos: [
+      ["NOTA.md",                  "Qué se conserva y por qué no se sigue."],
+      ["agentes.py",               "Capa de modelos sobre OpenRouter. Sustituida por los subagentes."],
+      ["orquestador.py",           "Bucle de generación en Python. Sustituido por la sesión de Claude Code."],
+      ["tests/test_agentes.py",    "Tests de aquella capa."],
+      ["tests/test_orquestador.py","Tests de aquel bucle."]
+    ]
+  }
+];
+
+const VALIDADORES = ["continuidad", "genero", "estilo"];
+
+/* ===================================================================
+   ESTADO DE LA PÁGINA
+   =================================================================== */
+const D = {
+  config: null,      // config.json o config-efectiva.json
+  estado: null,      // estado.json
+  biblia: null,      // biblia.json
+  capitulos: new Map(),   // n -> {n, titulo, parrafos[]}
+  intentos: new Map(),    // n -> [{intento, modelo, veredictos{}, puntuacion, entregado}]
+  capEstado: new Map(),   // n -> "APROBADO" | "ACEPTADO_POR_PUNTUACION" | "SIN_GENERAR"
+  problemas: new Map(),   // n -> [{gravedad, validador, descripcion, evidencia}]
+  ventanas: new Map(),    // n -> {tokens, recortes}
+  fuentes: new Set(),     // nombres legibles de lo cargado
+  capActual: null
+};
+
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const miles = (n) => Number(n).toLocaleString("es-ES");
+
+/* De donde salen los datos depende de como se haya abierto la pagina, y es una
+   diferencia de fondo, no de adorno: por file:// el navegador prohibe leer el
+   disco y los archivos los tiene que traer el usuario; servida por http la
+   pagina los lee ella sola. Esta constante decide cual de los dos caminos se
+   usa, y se consulta en todos los sitios donde eso cambia algo. */
+const EN_RED = location.protocol === "http:" || location.protocol === "https:";
+
+const PISTA_VACIA = EN_RED
+  ? 'Esta página lee <code>salida/</code> por su cuenta'
+  : 'Arrastra la carpeta <code>salida/</code> para llenar esta página';
+
+/* ===================================================================
+   LECTURA DE ARCHIVOS
+   Desde file:// la página no puede leer el disco: el usuario trae los
+   archivos. Se clasifican por contenido antes que por nombre, porque
+   capitulos/cap-01.md y resumenes/cap-01.md comparten nombre.
+   =================================================================== */
+function leerTexto(file){
+  return new Promise((res) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result || ""));
+    fr.onerror = () => res("");
+    fr.readAsText(file, "utf-8");
+  });
+}
+
+async function ingerir(archivos){
+  for (const f of archivos){
+    const ruta = (f.webkitRelativePath || f.relPath || f.name || "").replace(/\\/g, "/");
+    const base = ruta.split("/").pop();
+    // Los archivos del harness se escriben en Windows y llegan con CRLF. Se
+    // normaliza aquí, una sola vez: si no, el troceo en párrafos (\n\n) no
+    // encuentra nada y cada capítulo se lee como un único bloque gigante.
+    const texto = (await leerTexto(f)).replace(/\r\n?/g, "\n");
+    if (!texto) continue;
+    clasificar(base, ruta, texto);
+  }
+  render();
+}
+
+function clasificar(base, ruta, texto){
+  // --- JSON ---
+  if (/\.json$/i.test(base)){
+    let j; try { j = JSON.parse(texto); } catch(e){ return; }
+    if (base === "estado.json" || ("capitulos_aprobados" in j && "delegaciones" in j)){
+      D.estado = j; D.fuentes.add("estado.json"); return;
+    }
+    if (base === "biblia.json" || ("premisa" in j && "outline" in j)){
+      D.biblia = j; D.fuentes.add("biblia.json"); return;
+    }
+    if (base === "config-efectiva.json" || base === "config.json" || ("estructura" in j && "modelos" in j)){
+      // config-efectiva manda sobre config.json: es la que se usó de verdad
+      if (!D.config || base === "config-efectiva.json"){ D.config = j; }
+      D.fuentes.add(base); return;
+    }
+    // intento suelto de .tmp/ — la fuente más fiel del recorrido
+    if ("intento" in j && "capitulo" in j && "veredictos" in j){
+      absorberIntentoJSON(j); D.fuentes.add(".tmp/ (intentos)"); return;
+    }
+    return;
+  }
+
+  // --- Markdown ---
+  if (!/\.md$/i.test(base)) return;
+
+  if (/^#\s*Informe de validacion/im.test(texto)){
+    parsearInforme(texto); D.fuentes.add("informe-validacion.md"); return;
+  }
+  if (/^#\s+.+\n\n\*.+\*\n\nGenerada el/m.test(texto) || base === "manuscrito.md"){
+    absorberManuscrito(texto); D.fuentes.add("manuscrito.md"); return;
+  }
+  const mCap = texto.match(/^#\s*Cap[ií]tulo\s+(\d+)\s*(?:[—–-]\s*(.+))?$/im);
+  if (mCap){
+    const n = parseInt(mCap[1], 10);
+    D.capitulos.set(n, { n, titulo: (mCap[2] || "").trim(), parrafos: parrafosDe(texto.replace(mCap[0], "")) });
+    D.fuentes.add("capitulos/"); return;
+  }
+  // resumenes/: sin encabezado y cortos. No se usan en ninguna vista; se ignoran a propósito.
+}
+
+function parrafosDe(texto){
+  return texto.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
+}
+
+function absorberManuscrito(texto){
+  const partes = texto.split(/^#\s*Cap[ií]tulo\s+/im);
+  for (let i = 1; i < partes.length; i++){
+    const trozo = partes[i];
+    const m = trozo.match(/^(\d+)\s*(?:[—–-]\s*(.*))?\n/);
+    if (!m) continue;
+    const n = parseInt(m[1], 10);
+    if (D.capitulos.has(n)) continue; // un cap-NN.md suelto es más fiel
+    const cuerpo = trozo.slice(m[0].length).replace(/\n---\s*$/, "");
+    D.capitulos.set(n, { n, titulo: (m[2] || "").trim(), parrafos: parrafosDe(cuerpo) });
+  }
+}
+
+// Un mismo intento puede llegar por dos caminos: el informe de validacion y el
+// JSON suelto de .tmp/. Antes cada camino anadia su fila por su cuenta, asi que
+// cargar los dos duplicaba el recorrido y, con el, cualquier recuento que se
+// haga sobre el. Ahora los dos pasan por aqui: el .tmp manda (es mas fiel y trae
+// las palabras), el informe solo rellena lo que no estuviera ya.
+function fusionarIntento(cap, fila, mandaEsta){
+  const lista = D.intentos.get(cap) || [];
+  const idx = lista.findIndex(x => x.intento === fila.intento);
+  if (idx >= 0){
+    if (mandaEsta) lista[idx] = fila;
+  } else {
+    lista.push(fila);
+  }
+  lista.sort((a,b) => a.intento - b.intento);
+  D.intentos.set(cap, lista);
+}
+
+function absorberIntentoJSON(j){
+  const veredictos = {};
+  (j.veredictos || []).forEach(v => { veredictos[v.validador] = v.veredicto; });
+  fusionarIntento(Number(j.capitulo), {
+    intento: Number(j.intento),
+    modelo: j.modelo || "?",
+    veredictos,
+    puntuacion: Number(j.puntuacion || 0),
+    entregado: !!j.elegido,
+    palabras: j.palabras || null
+  }, true);
+}
+
+/* --- parser del informe de validación --- */
+function parsearInforme(texto){
+  const lineas = texto.split(/\r?\n/);
+  let cap = null, enProblemas = false;
+
+  for (let i = 0; i < lineas.length; i++){
+    const L = lineas[i];
+
+    const mCap = L.match(/^###\s*Cap[ií]tulo\s+(\d+)\s*[—–-]\s*(\S+)/);
+    if (mCap){
+      cap = parseInt(mCap[1], 10);
+      D.capEstado.set(cap, mCap[2].trim());
+      enProblemas = false;
+      continue;
+    }
+    if (/^####\s*Problemas sin resolver/i.test(L)){ enProblemas = true; continue; }
+    if (/^####\s*Recorrido/i.test(L)){ enProblemas = false; continue; }
+    if (/^##\s/.test(L)) { cap = null; enProblemas = false; }
+
+    // tabla del presupuesto de contexto
+    const mVent = L.match(/^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*([^|]+)\|\s*$/);
+    if (mVent && !cap){
+      D.ventanas.set(parseInt(mVent[1],10), { tokens: parseInt(mVent[2],10), recortes: mVent[3].trim() });
+      continue;
+    }
+
+    // filas del recorrido de intentos
+    if (cap != null && /^\|/.test(L)){
+      const celdas = L.split("|").slice(1, -1).map(s => s.trim());
+      if (celdas.length >= 4 && /^\d+$/.test(celdas[0])){
+        const veredictos = {};
+        celdas[2].split(";").forEach(par => {
+          const kv = par.split(":");
+          if (kv.length === 2) veredictos[kv[0].trim()] = kv[1].trim();
+        });
+        fusionarIntento(cap, {
+          intento: parseInt(celdas[0], 10),
+          modelo: celdas[1],
+          veredictos,
+          puntuacion: parseInt(celdas[3], 10) || 0,
+          entregado: /entregado/i.test(celdas[4] || ""),
+          palabras: null
+        }, false);
+      }
+      continue;
+    }
+
+    // problemas sin resolver
+    if (enProblemas && cap != null){
+      const mP = L.match(/^-\s*\*\*\[(\w+)\]\*\*\s*\(([^)]+)\)\s*(.+)$/);
+      if (mP){
+        const lista = D.problemas.get(cap) || [];
+        lista.push({ gravedad: mP[1], validador: mP[2], descripcion: mP[3].trim(), evidencia: "" });
+        D.problemas.set(cap, lista);
+        continue;
+      }
+      const mE = L.match(/^\s+-\s*\*Evidencia:\*\s*(.+)$/);
+      if (mE){
+        const lista = D.problemas.get(cap);
+        if (lista && lista.length) lista[lista.length - 1].evidencia = mE[1].trim();
+      }
+    }
+  }
+}
+
+/* ===================================================================
+   AGREGADOS
+   =================================================================== */
+function resumenGeneral(){
+  let escritos = 0, entregados = 0;
+  D.intentos.forEach(lista => {
+    escritos += lista.length;
+    entregados += lista.filter(x => x.entregado).length;
+  });
+  return { escritos, entregados, descartados: escritos - entregados };
+}
+
+function hayRecorrido(){ return D.intentos.size > 0; }
+
+/* Cuantas veces aprobo cada validador, sobre los intentos que llego a juzgar.
+   El denominador NO es siempre el total de intentos: el auditor de longitud solo
+   emite veredicto cuando el capitulo se sale del rango, asi que juzga menos
+   intentos que los tres validadores, y compararlo con ellos por el total seria
+   mentir. Cada uno se mide contra lo que de verdad miro.
+
+   `solo` cuenta los intentos en los que ese validador fue el UNICO que dijo
+   FALLO. Es el numero que convierte la tasa en una consecuencia: como los tres
+   bloquean por igual, una reescritura que pidio uno solo la pago la novela
+   entera. */
+function aprobacionPorValidador(){
+  const cont = new Map();
+  const dame = (k) => {
+    if (!cont.has(k)) cont.set(k, { validador: k, pasa: 0, total: 0, solo: 0 });
+    return cont.get(k);
+  };
+  D.intentos.forEach(lista => lista.forEach(it => {
+    const v = it.veredictos || {};
+    const claves = Object.keys(v);
+    const fallan = claves.filter(k => String(v[k]).toUpperCase() !== "PASA");
+    claves.forEach(k => {
+      const c = dame(k);
+      c.total++;
+      if (String(v[k]).toUpperCase() === "PASA") c.pasa++;
+    });
+    if (fallan.length === 1) dame(fallan[0]).solo++;
+  }));
+  // Los tres validadores primero y en su orden de siempre; longitud, detras.
+  return VALIDADORES.filter(k => cont.has(k)).map(k => cont.get(k)).concat(
+    Array.from(cont.keys()).filter(k => !VALIDADORES.includes(k)).sort().map(k => cont.get(k))
+  );
+}
+function detalleTokens(){
+  const d = D.estado && D.estado.delegaciones_detalle;
+  return Array.isArray(d) && d.length ? d : null;
+}
+
+/* ===================================================================
+   RENDER
+   =================================================================== */
+function render(){
+  renderCabecera();
+  renderInventario();
+  renderRecorrido();
+  renderArbol();
+  renderTokens();
+  renderLibro();
+  renderReintentosEnDiagrama();
+  // Si los archivos llegan estando ya en la vista de lectura, el cargador
+  // tiene que apartarse sin esperar a que se cambie de pestaña.
+  $("#cargador").hidden = ($("#tab-libro").getAttribute("aria-selected") === "true" && D.capitulos.size > 0);
+}
+
+function renderCabecera(){
+  const titulo = (D.biblia && D.biblia.titulo) || (D.config && D.config.novela && D.config.novela.titulo);
+  $("#titulo-obra").textContent = titulo || "Sin manuscrito cargado";
+  const partes = [];
+  if (D.config && D.config.novela) partes.push(D.config.novela.genero);
+  if (D.config && D.config.estructura) partes.push(D.config.estructura.num_capitulos + " capítulos");
+  if (D.config && D.config.estructura) partes.push(D.config.estructura.palabras_min + "–" + D.config.estructura.palabras_max + " palabras");
+  if (D.estado && D.estado.iniciado) partes.push(String(D.estado.iniciado).slice(0, 10));
+  $("#subtitulo-obra").innerHTML = partes.length
+    ? partes.map(esc).join(" · ")
+    : PISTA_VACIA;
+  $("#pie-gen").textContent = D.estado && D.estado.iniciado ? "Generación iniciada el " + String(D.estado.iniciado).slice(0,10) : "";
+}
+
+function renderInventario(){
+  const quiero = [
+    ["estado.json",            !!D.estado],
+    ["informe-validacion.md",  hayRecorrido()],
+    ["config-efectiva.json",   !!D.config],
+    ["biblia.json",            !!D.biblia],
+    ["capítulos",              D.capitulos.size > 0]
+  ];
+  $("#inventario").innerHTML = quiero.map(([n, ok]) =>
+    '<span class="inv-item' + (ok ? "" : " falta") + '">' + esc(n) + "</span>"
+  ).join("");
+  const n = quiero.filter(x => x[1]).length;
+  $("#estado-carga").textContent = n === 0 ? "nada cargado" : n + " de " + quiero.length + " fuentes";
+}
+
+function vacio(titulo, texto, items){
+  return '<div class="vacio"><h3>' + esc(titulo) + "</h3><p>" + texto + "</p>" +
+    (items && items.length ? "<ul>" + items.map(i => "<li>" + i + "</li>").join("") + "</ul>" : "") +
+    "</div>";
+}
+
+/* ---------- 1. Recorrido ---------- */
+function renderRecorrido(){
+  const cont = $("#recorrido-cuerpo");
+  if (!hayRecorrido()){
+    cont.innerHTML = vacio(
+      "Todavía no hay recorrido que enseñar",
+      EN_RED
+        ? "El recorrido de los intentos vive en el informe de validación. Si esta vista está vacía estando la página servida, mira el informe de carga de arriba: dice qué ruta no se encontró."
+        : "El recorrido de los intentos vive en el informe de validación. Arrastra ese archivo, o la carpeta <code>salida/</code> entera, y esta vista se llena sola.",
+      [ "<code>salida/informe-validacion.md</code> — el recorrido completo de cada capítulo: intentos, modelo, veredictos y puntuación",
+        "<code>salida/.tmp/cap-NN-intento-M.json</code> — la misma información, más detallada, cuando <code>conservar_intentos</code> está en <code>true</code>",
+        "<code>salida/estado.json</code> — qué capítulos se aprobaron y cuántas delegaciones costó" ]);
+    return;
+  }
+
+  const r = resumenGeneral();
+  let html = '<p class="titular">Se escribieron <b>' + r.escritos + " intentos</b>. Sobrevivieron <b class=\"viv\">" +
+    r.entregados + "</b>; se descartaron <b class=\"desc\">" + r.descartados + "</b>.</p>";
+
+  html += tablaAprobacion();
+
+  const nums = Array.from(D.intentos.keys()).sort((a,b) => a-b);
+  for (const n of nums){
+    const lista = D.intentos.get(n);
+    const est = D.capEstado.get(n) || "";
+    const cap = D.capitulos.get(n);
+    const clase = est === "APROBADO" ? "ok" : (est === "SIN_GENERAR" ? "nada" : "avg");
+    const etiqueta = est === "ACEPTADO_POR_PUNTUACION" ? "aceptado por puntuación" : (est || "").toLowerCase().replace(/_/g," ");
+
+    html += '<article class="galerada">';
+    html += '<div class="gal-cabeza"><div style="flex:1 1 auto;min-width:0">' +
+      '<span class="cap-n">Capítulo ' + n + " · " + lista.length + (lista.length === 1 ? " intento" : " intentos") + "</span>" +
+      "<h3>" + esc(cap && cap.titulo ? cap.titulo : "Capítulo " + n) + "</h3></div>" +
+      (etiqueta ? '<span class="estado-pill ' + clase + '">' + esc(etiqueta) + "</span>" : "") +
+      "</div>";
+
+    html += '<table class="intentos"><thead><tr>' +
+      "<th>Nº</th><th>Modelo</th><th>Veredictos</th><th>Penalización</th><th>Destino</th>" +
+      "</tr></thead><tbody>";
+
+    for (const it of lista){
+      const filaClase = it.entregado ? "entregado" : "descartado";
+      html += '<tr class="' + filaClase + '">';
+      html += '<td class="n-intento">' + it.intento + "</td>";
+      html += '<td><span class="modelo">' + esc(it.modelo) + "</span></td>";
+      html += "<td>" + marcasHTML(it.veredictos) + "</td>";
+      html += "<td>" + penaHTML(it.puntuacion) + "</td>";
+      html += "<td>" + (it.entregado
+        ? '<span class="sello-entregado">en el manuscrito</span>'
+        : '<span class="sello-fuera">descartado</span>') + "</td>";
+      html += "</tr>";
+    }
+    html += "</tbody></table>";
+
+    const probs = D.problemas.get(n);
+    const vent = D.ventanas.get(n);
+    if ((probs && probs.length) || vent){
+      html += '<div class="gal-pie">';
+      if (vent){
+        html += "Ventana del escritor: <strong>" + miles(vent.tokens) + " tokens</strong> · recortes: " + esc(vent.recortes) + ".";
+      }
+      if (probs && probs.length){
+        html += (vent ? "<br>" : "") + "<strong>" + probs.length +
+          (probs.length === 1 ? " problema sigue" : " problemas siguen") + " en el texto que se entrega.</strong>";
+        html += '<ul class="problemas">';
+        for (const p of probs){
+          html += "<li><div class=\"prob-cabeza\"><span class=\"grav\">" + esc(p.gravedad) + "</span>" +
+            '<span class="prob-quien">' + esc(p.validador) + "</span></div>" +
+            '<div class="prob-desc">' + esc(p.descripcion) + "</div>" +
+            (p.evidencia ? '<div class="prob-ev">' + esc(p.evidencia) + "</div>" : "") + "</li>";
+        }
+        html += "</ul>";
+      }
+      html += "</div>";
+    }
+    html += "</article>";
+  }
+
+  // pie de contexto con lo que diga estado.json
+  if (D.estado){
+    html += '<div class="bloque-datos"><h3>Lo que costó</h3><div class="barras">';
+    html += filaSimple("Delegaciones", miles(D.estado.delegaciones || 0));
+    html += filaSimple("Capítulos aprobados limpios", (D.estado.capitulos_aprobados || []).length);
+    html += filaSimple("Capítulos aceptados por puntuación", (D.estado.capitulos_marcados || []).length);
+    html += "</div></div>";
+  }
+  cont.innerHTML = html;
+}
+
+/* La tabla que contesta "quien esta frenando la novela". Vive en Recorrido
+   porque es el resumen de todo lo que las galeradas de abajo cuentan capitulo a
+   capitulo: el contraste entre validadores no se ve mirandolos de uno en uno. */
+function tablaAprobacion(){
+  const filas = aprobacionPorValidador();
+  if (filas.length < 2) return "";
+
+  let html = '<div class="bloque-datos"><h3>Cuántas veces aprobó cada validador</h3>';
+  html += '<div style="overflow-x:auto"><table class="tabla-datos"><thead><tr>' +
+    '<th>Validador</th><th class="der">Aprobó</th><th class="der">Intentos juzgados</th>' +
+    '<th class="der">Tasa</th><th>Reparto</th><th class="der">Único que falló</th>' +
+    "</tr></thead><tbody>";
+  for (const f of filas){
+    const pct = f.total ? Math.round(100 * f.pasa / f.total) : 0;
+    html += "<tr><td><span class=\"modelo\">" + esc(f.validador) + "</span></td>" +
+      '<td class="der">' + f.pasa + "</td>" +
+      '<td class="der">' + f.total + "</td>" +
+      '<td class="der">' + pct + "%</td>" +
+      '<td style="min-width:140px"><span class="barra-pista" style="display:block;height:16px">' +
+        '<span style="position:absolute;inset:0 auto 0 0;width:' + pct + '%;background:var(--verde)"></span>' +
+      "</span></td>" +
+      '<td class="der">' + f.solo + "</td></tr>";
+  }
+  html += "</tbody></table></div>";
+
+  const ord = filas.slice().sort((a, b) => (a.pasa / (a.total || 1)) - (b.pasa / (b.total || 1)));
+  const severo = ord[0], laxo = ord[ord.length - 1];
+  if (severo && laxo && severo.validador !== laxo.validador){
+    html += '<p class="nota-hallazgo">El validador <strong>' + esc(severo.validador) + "</strong> aprobó <strong>" +
+      severo.pasa + " de " + severo.total + "</strong> intentos; <strong>" + esc(laxo.validador) +
+      "</strong>, <strong>" + laxo.pasa + " de " + laxo.total + "</strong>. " +
+      "Los tres bloquean por igual, así que el más severo es en la práctica quien decide cuántas veces se reescribe: " +
+      "en <strong>" + severo.solo + "</strong> " + (severo.solo === 1 ? "intento" : "intentos") +
+      " fue el único que dijo FALLO, y esa reescritura la pidió él solo.</p>";
+  }
+  html += "</div>";
+  return html;
+}
+
+function filaSimple(et, val){
+  return '<div class="barra-fila"><span class="barra-et">' + esc(et) + '</span>' +
+    '<span></span><span class="barra-val">' + esc(val) + "</span></div>";
+}
+
+function marcasHTML(v){
+  const claves = Object.keys(v || {});
+  if (!claves.length) return '<span class="sello-fuera">sin veredictos</span>';
+  // longitud primero si existe: es el contador, no un modelo
+  const orden = claves.filter(k => !VALIDADORES.includes(k)).concat(VALIDADORES.filter(k => claves.includes(k)));
+  return '<div class="marcas">' + orden.map(k => {
+    const falla = String(v[k]).toUpperCase() !== "PASA";
+    return '<span class="marca' + (falla ? " falla" : "") + '">' + esc(k) + "</span>";
+  }).join("") + "</div>";
+}
+
+// Una marca roja por punto de penalización. Cero puntos = ninguna marca.
+function penaHTML(p){
+  const n = Number(p) || 0;
+  if (n === 0){
+    return '<div class="pena limpia"><span class="pena-cifra">0</span><span class="pena-limpio">limpio</span></div>';
+  }
+  const tope = Math.min(n, 24);
+  let marcas = "";
+  for (let i = 0; i < tope; i++) marcas += '<span class="pena-marca"></span>';
+  return '<div class="pena"><span class="pena-cifra">' + n + "</span>" +
+    '<span class="pena-marcas" aria-hidden="true">' + marcas + "</span></div>";
+}
+
+function renderReintentosEnDiagrama(){
+  const el = $("#svg-rot-reintento");
+  if (!el) return;
+  const r = resumenGeneral();
+  el.textContent = r.descartados
+    ? "NO → reintento (" + r.descartados + " veces en esta novela)"
+    : "NO → reintento: sube un escalón de la escalera";
+}
+
+/* ---------- 3. Estructura ---------- */
+function renderArbol(){
+  const cont = $("#arbol");
+  if (cont.dataset.listo) return;
+  cont.dataset.listo = "1";
+  cont.innerHTML = ARBOL.map((g, i) => {
+    const filas = g.archivos.map(a =>
+      "<li><span class=\"f-nombre\"><span class=\"sangria\">└ </span>" + esc(a[0]) + "</span>" +
+      '<span class="f-desc">' + esc(a[1]) + "</span>" +
+      '<span class="f-lineas">' + (a[2] ? a[2] + " líneas" : "") + "</span></li>"
+    ).join("");
+    const nota = g.nota ? '<li><span class="f-nombre"></span><span class="f-desc"><em>' + esc(g.nota) + "</em></span><span></span></li>" : "";
+    return '<details class="arbol-grupo"' + (i < 3 ? " open" : "") + ">" +
+      '<summary><span class="arbol-ruta">' + esc(g.ruta) + "</span>" +
+      '<span class="arbol-papel">' + esc(g.papel) + "</span></summary>" +
+      '<ul class="arbol-lista">' + filas + nota + "</ul></details>";
+  }).join("");
+}
+
+/* ---------- 4. Tokens ---------- */
+function renderTokens(){
+  const cont = $("#tokens-cuerpo");
+  const det = detalleTokens();
+
+  if (!det){
+    if (D.estado){
+      // Hay estado, pero es de una generación anterior al registro por
+      // delegación. Se dice tal cual: una tabla de ceros se leería como una
+      // novela barata en vez de como una novela sin instrumentar.
+      cont.innerHTML =
+        '<div class="aviso"><strong>Esta generación no tiene desglose de tokens.</strong><br>' +
+        "El <code>estado.json</code> cargado registra <strong>" + miles(D.estado.delegaciones || 0) +
+        " delegaciones</strong>, pero no la lista <code>delegaciones_detalle</code>: se generó antes de que " +
+        "el harness empezara a guardar los tokens de cada una.</div>" +
+        vacio("Nada que repartir todavía",
+          "El reparto por rol, modelo y capítulo se construye entrada a entrada, según se registran las delegaciones. Esta vista se llenará con la próxima generación.",
+          [ "Los comandos <code>registrar-*</code> aceptan <code>--tokens-in</code> y <code>--tokens-out</code>, y la sesión los saca del <code>subagent_tokens</code> de cada delegación",
+            "Al cerrar cada capítulo se marca qué delegaciones acabaron en el manuscrito y cuáles se pagaron para nada" ]);
+      return;
+    }
+    cont.innerHTML = vacio(
+      "Todavía no hay tokens que repartir",
+      "El reparto por rol, modelo y capítulo se construye con la lista <code>delegaciones_detalle</code> de <code>estado.json</code>.",
+      [ "<code>salida/estado.json</code> — con <code>delegaciones_detalle</code> dentro" ]);
+    return;
+  }
+
+  const porRol = agrupar(det, d => d.rol || "?");
+  const porModelo = agrupar(det, d => d.modelo || "?");
+  const porCap = agrupar(det.filter(d => d.capitulo != null), d => "Capítulo " + d.capitulo);
+  const dentro = det.filter(d => d.en_manuscrito === true);
+  const fuera  = det.filter(d => d.en_manuscrito === false);
+  const naplica = det.filter(d => d.en_manuscrito == null);
+  const tot = sumar(det);
+  const totFuera = sumar(fuera);
+  const totDentro = sumar(dentro);
+  const atados = totDentro.tot + totFuera.tot;
+  const pct = atados ? Math.round(100 * totFuera.tot / atados) : 0;
+
+  let html = "";
+  html += '<div class="bloque-datos"><h3>Por rol</h3>' + barras(porRol) + "</div>";
+  html += '<div class="bloque-datos"><h3>Por modelo</h3>' + barras(porModelo) + "</div>";
+  if (porCap.length) html += '<div class="bloque-datos"><h3>Por capítulo</h3>' + barras(porCap) + "</div>";
+
+  html += '<div class="bloque-datos"><h3>Qué parte del gasto acabó en el manuscrito</h3>';
+  html += '<div style="overflow-x:auto"><table class="tabla-datos"><thead><tr>' +
+    "<th>Destino</th><th class=\"der\">Delegaciones</th><th class=\"der\">Entrada</th><th class=\"der\">Salida</th>" +
+    "</tr></thead><tbody>";
+  html += filaTabla("Intentos que se publican", dentro);
+  html += filaTabla("Intentos descartados", fuera);
+  html += filaTabla("Sin intento (arquitecto, resumidor)", naplica);
+  html += "</tbody></table></div>";
+  if (atados){
+    html += '<p style="margin-top:18px;font-size:15.5px;color:var(--tinta-media);max-width:70ch">El <strong style="color:var(--rojo)">' +
+      pct + "%</strong> de los tokens atados a un intento se gastó en versiones que nadie leerá. " +
+      "Eso no es desperdicio por sí solo: es lo que cuesta validar y reescribir.</p>";
+  }
+  html += "</div>";
+
+  const sinCifras = det.filter(d => d.tokens_in == null && d.tokens_out == null).length;
+  if (sinCifras){
+    html += '<div class="aviso"><strong>' + sinCifras + " de " + det.length +
+      " delegaciones se anotaron sin cifras de tokens.</strong> Los totales de arriba son un suelo, no una medida.</div>";
+  }
+  html += '<div class="bloque-datos"><h3>Total</h3><div class="barras">' +
+    filaSimple("Delegaciones anotadas", miles(det.length)) +
+    filaSimple("Tokens de entrada", miles(tot.in)) +
+    filaSimple("Tokens de salida", miles(tot.out)) + "</div></div>";
+
+  cont.innerHTML = html;
+}
+
+function sumar(lista){
+  let i = 0, o = 0;
+  lista.forEach(d => { i += Number(d.tokens_in || 0); o += Number(d.tokens_out || 0); });
+  return { in: i, out: o, tot: i + o, n: lista.length };
+}
+function agrupar(lista, clave){
+  const m = new Map();
+  lista.forEach(d => {
+    const k = clave(d);
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(d);
+  });
+  return Array.from(m.entries()).map(([k, v]) => ({ etiqueta: k, ...sumar(v) }))
+    .sort((a, b) => b.tot - a.tot);
+}
+function barras(filas){
+  const max = Math.max.apply(null, filas.map(f => f.tot).concat([1]));
+  return '<div class="barras">' + filas.map(f => {
+    const pIn = Math.max(1, Math.round(100 * f.in / max));
+    const pOut = Math.max(0, Math.round(100 * f.out / max));
+    return '<div class="barra-fila"><span class="barra-et">' + esc(f.etiqueta) + "</span>" +
+      '<span class="barra-pista"><span style="position:absolute;inset:0 auto 0 0;width:' + pIn +
+      '%;background:var(--azul)"></span>' +
+      '<span style="position:absolute;top:0;bottom:0;left:' + pIn + "%;width:" + pOut +
+      '%;background:var(--rojo)"></span></span>' +
+      '<span class="barra-val">' + miles(f.tot) + "</span></div>";
+  }).join("") +
+  '</div><p style="margin-top:14px;font-size:13px;color:var(--tinta-suave)">' +
+  '<span style="display:inline-block;width:11px;height:11px;background:var(--azul);vertical-align:baseline"></span> entrada · ' +
+  '<span style="display:inline-block;width:11px;height:11px;background:var(--rojo);vertical-align:baseline"></span> salida</p>';
+}
+function filaTabla(et, lista){
+  const s = sumar(lista);
+  return "<tr><td>" + esc(et) + '</td><td class="der">' + miles(s.n) +
+    '</td><td class="der">' + miles(s.in) + '</td><td class="der">' + miles(s.out) + "</td></tr>";
+}
+
+/* ---------- 5. Libro ---------- */
+function renderLibro(){
+  const cont = $("#libro-cuerpo");
+  if (!D.capitulos.size){
+    cont.innerHTML = vacio(
+      "Aquí se leerá la novela",
+      "Esta vista es para leer, no para analizar. Arrastra los capítulos y desaparece toda la instrumentación.",
+      [ "<code>salida/capitulos/cap-01.md</code>, <code>cap-02.md</code>… — un archivo por capítulo",
+        "o <code>salida/manuscrito.md</code> — el manuscrito entero, que se parte solo por capítulos" ]);
+    return;
+  }
+  const nums = Array.from(D.capitulos.keys()).sort((a,b) => a-b);
+  if (D.capActual == null || !D.capitulos.has(D.capActual)) D.capActual = nums[0];
+  const cap = D.capitulos.get(D.capActual);
+  const pos = nums.indexOf(D.capActual);
+
+  let html = '<div class="libro-marco"><nav class="libro-nav" aria-label="Capítulos">';
+  for (const n of nums){
+    html += '<button class="cap-link" type="button" data-cap="' + n + '"' +
+      (n === D.capActual ? ' aria-current="true"' : "") + ">Cap. " + n + "</button>";
+  }
+  html += '<span class="libro-hint">← → para pasar de capítulo</span></nav>';
+
+  html += '<div class="pagina"><div class="pagina-medida">';
+  html += '<h2><span class="cap-eyebrow">Capítulo ' + cap.n + "</span>" + esc(cap.titulo || "") + "</h2>";
+  html += '<div class="prosa">' + cap.parrafos.map(p => {
+    if (/^[\*\-—–\s]{3,}$/.test(p)) return '<p class="escena">···</p>';
+    return "<p>" + esc(p).replace(/\n/g, " ") + "</p>";
+  }).join("") + "</div>";
+  html += "</div></div>";
+
+  html += '<div class="libro-pie">';
+  html += pos > 0
+    ? '<button class="boton boton-sec" type="button" data-cap="' + nums[pos-1] + '">← Capítulo ' + nums[pos-1] + "</button>"
+    : "<span></span>";
+  html += '<span class="folio">' + (pos + 1) + " de " + nums.length + "</span>";
+  html += pos < nums.length - 1
+    ? '<button class="boton boton-sec" type="button" data-cap="' + nums[pos+1] + '">Capítulo ' + nums[pos+1] + " →</button>"
+    : "<span></span>";
+  html += "</div></div>";
+
+  cont.innerHTML = html;
+  $$("[data-cap]", cont).forEach(b => b.addEventListener("click", () => {
+    D.capActual = parseInt(b.dataset.cap, 10);
+    renderLibro();
+    $("#v-libro").scrollIntoView({ behavior: prefiereQuieto() ? "auto" : "smooth", block: "start" });
+  }));
+}
+
+function prefiereQuieto(){
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/* ===================================================================
+   NAVEGACIÓN
+   =================================================================== */
+const VISTAS = ["recorrido", "arquitectura", "estructura", "tokens", "libro"];
+
+function mostrar(vista){
+  if (!VISTAS.includes(vista)) vista = "recorrido";
+  VISTAS.forEach(v => {
+    const tab = $("#tab-" + v), panel = $("#v-" + v);
+    const activa = v === vista;
+    tab.setAttribute("aria-selected", activa ? "true" : "false");
+    tab.tabIndex = activa ? 0 : -1;
+    panel.hidden = !activa;
+  });
+  // el cargador estorba en la vista de lectura
+  $("#cargador").hidden = (vista === "libro" && D.capitulos.size > 0);
+  if (location.hash.slice(1) !== vista) history.replaceState(null, "", "#" + vista);
+}
+
+$$(".tab").forEach(t => {
+  t.addEventListener("click", () => mostrar(t.dataset.vista));
+  t.addEventListener("keydown", (e) => {
+    const i = VISTAS.indexOf(t.dataset.vista);
+    let j = null;
+    if (e.key === "ArrowRight") j = (i + 1) % VISTAS.length;
+    if (e.key === "ArrowLeft")  j = (i - 1 + VISTAS.length) % VISTAS.length;
+    if (e.key === "Home") j = 0;
+    if (e.key === "End")  j = VISTAS.length - 1;
+    if (j != null){ e.preventDefault(); mostrar(VISTAS[j]); $("#tab-" + VISTAS[j]).focus(); }
+  });
+});
+window.addEventListener("hashchange", () => mostrar(location.hash.slice(1)));
+
+// teclado del lector
+document.addEventListener("keydown", (e) => {
+  if ($("#v-libro").hidden) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  if (t && t.classList && t.classList.contains("tab")) return;
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  const nums = Array.from(D.capitulos.keys()).sort((a,b) => a-b);
+  if (!nums.length) return;
+  const pos = nums.indexOf(D.capActual);
+  const sig = e.key === "ArrowRight" ? pos + 1 : pos - 1;
+  if (sig < 0 || sig >= nums.length) return;
+  e.preventDefault();
+  D.capActual = nums[sig];
+  renderLibro();
+});
+
+/* ===================================================================
+   TEMA
+   =================================================================== */
+$("#btn-tema").addEventListener("click", () => {
+  const raiz = document.documentElement;
+  const actual = raiz.getAttribute("data-theme");
+  const oscuroSistema = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const siguiente = actual ? (actual === "dark" ? "light" : "dark") : (oscuroSistema ? "light" : "dark");
+  raiz.setAttribute("data-theme", siguiente);
+});
+
+/* ===================================================================
+   ENTRADA DE ARCHIVOS
+   =================================================================== */
+$("#in-carpeta").addEventListener("change", (e) => ingerir(Array.from(e.target.files || [])));
+$("#in-archivos").addEventListener("change", (e) => ingerir(Array.from(e.target.files || [])));
+$$('label[for^="in-"]').forEach(l => l.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " "){ e.preventDefault(); $("#" + l.htmlFor).click(); }
+}));
+
+const zona = $("#cargador");
+["dragenter", "dragover"].forEach(ev => zona.addEventListener(ev, (e) => {
+  if (EN_RED) return;   // servida por http no hay nada que arrastrar
+  e.preventDefault(); zona.classList.add("arrastrando");
+}));
+["dragleave", "drop"].forEach(ev => zona.addEventListener(ev, (e) => {
+  e.preventDefault();
+  if (ev === "dragleave" && zona.contains(e.relatedTarget)) return;
+  zona.classList.remove("arrastrando");
+}));
+document.addEventListener("dragover", (e) => e.preventDefault());
+document.addEventListener("drop", (e) => e.preventDefault());
+
+zona.addEventListener("drop", async (e) => {
+  if (EN_RED) return;
+  const dt = e.dataTransfer;
+  if (!dt) return;
+  const entradas = [];
+  if (dt.items && dt.items.length && dt.items[0].webkitGetAsEntry){
+    for (const item of Array.from(dt.items)){
+      const ent = item.webkitGetAsEntry && item.webkitGetAsEntry();
+      if (ent) entradas.push(ent);
+    }
+  }
+  if (entradas.length){
+    const archivos = [];
+    await Promise.all(entradas.map(en => recorrer(en, "", archivos)));
+    ingerir(archivos);
+  } else {
+    ingerir(Array.from(dt.files || []));
+  }
+});
+
+// Recorre carpetas arrastradas para conservar la ruta relativa.
+function recorrer(entrada, prefijo, salida){
+  return new Promise((res) => {
+    if (entrada.isFile){
+      entrada.file(f => { f.relPath = prefijo + entrada.name; salida.push(f); res(); }, () => res());
+    } else if (entrada.isDirectory){
+      const lector = entrada.createReader();
+      const todas = [];
+      const leerLote = () => lector.readEntries(async (lote) => {
+        if (!lote.length){
+          await Promise.all(todas.map(x => recorrer(x, prefijo + entrada.name + "/", salida)));
+          res(); return;
+        }
+        todas.push.apply(todas, lote);
+        leerLote();
+      }, () => res());
+      leerLote();
+    } else res();
+  });
+}
+
+/* ===================================================================
+   CARGA POR RED (http:// y https://)
+
+   Servida por un servidor estatico, la pagina si puede leer salida/ sola: la
+   pide con fetch al arrancar y el selector de archivos sobra. Desde file:// el
+   navegador prohibe ese fetch, y entonces el selector es la unica via. Por eso
+   se ensena uno de los dos y nunca los dos: un selector que no hace falta
+   invita a cargar a mano lo que ya esta cargado, y dos fuentes distintas para
+   los mismos datos es justo lo que este panel existe para evitar.
+
+   Lo que NO se hace aqui es caer en silencio al estado vacio. Una vista vacia
+   porque la novela no se ha generado y una vista vacia porque el servidor
+   devolvio 404 se ven exactamente igual en pantalla, y son dos problemas muy
+   distintos. Cada ruta que falla se dice, con su ruta y su motivo.
+   =================================================================== */
+
+// Donde puede estar salida/ respecto de esta pagina: al lado (panel.html en la
+// raiz del proyecto) o un nivel mas arriba (panel.html dentro de docs/).
+const BASES_POSIBLES = ["salida/", "../salida/"];
+
+// Archivos sin los que alguna vista se queda coja. Su ausencia SI se denuncia.
+const RED_OBLIGATORIOS = [
+  "estado.json",
+  "config-efectiva.json",
+  "biblia.json",
+  "informe-validacion.md",
+  "manuscrito.md"
+];
+
+let RED = { base: null, intentos: [], cargando: false };
+
+const dosCifras = (n) => String(n).padStart(2, "0");
+
+async function traer(ruta, reintentado){
+  let r;
+  try {
+    r = await fetch(ruta, { cache: "no-store" });
+  } catch (e){
+    // Una conexion caida no es lo mismo que un 404. El archivo puede estar ahi y
+    // haberse perdido la peticion, y darlo por ausente sin mas seria perder un
+    // capitulo en silencio: justo lo que esta pagina no puede permitirse. Se
+    // prueba una segunda vez; si vuelve a caerse, entonces si se denuncia.
+    if (!reintentado) return traer(ruta, true);
+    return { ok: false, motivo: "no se pudo pedir (" + ((e && e.message) || "error de red") + ")" };
+  }
+  if (!r.ok) return { ok: false, motivo: r.status + (r.statusText ? " " + r.statusText : "") };
+  return { ok: true, texto: (await r.text()).replace(/\r\n?/g, "\n") };
+}
+
+async function pedir(base, nombre, obligatorio){
+  const ruta = base + nombre;
+  const res = await traer(ruta);
+  // Un servidor mal configurado puede contestar 200 con una pagina de error en
+  // vez de un 404. Si lo que pedimos era JSON y no parsea, eso es un fallo de
+  // carga, no un archivo con contenido raro, y hay que decirlo como tal.
+  if (res.ok && /\.json$/i.test(nombre)){
+    try { JSON.parse(res.texto); }
+    catch (e){ res.ok = false; res.motivo = "contestó 200 pero el cuerpo no es JSON"; }
+  }
+  if (res.ok) clasificar(nombre.split("/").pop(), ruta, res.texto);
+  RED.intentos.push({ ruta, ok: res.ok, motivo: res.motivo || "", obligatorio: !!obligatorio });
+  return res.ok;
+}
+
+// Se prueban varias sondas porque cualquiera de ellas puede faltar de verdad en
+// una generacion a medias. Quedarse sin base por eso seria confundir "todavia no
+// hay estado" con "el panel esta en otra carpeta".
+async function elegirBase(){
+  for (const b of BASES_POSIBLES){
+    for (const sonda of ["estado.json", "manuscrito.md", "config-efectiva.json"]){
+      const r = await traer(b + sonda);
+      if (r.ok) return b;
+    }
+  }
+  return BASES_POSIBLES[0];
+}
+
+async function cargarPorRed(){
+  if (RED.cargando) return;
+  RED = { base: null, intentos: [], cargando: true };
+  pintarRed("leyendo…");
+
+  RED.base = await elegirBase();
+  const base = RED.base;
+  const elBase = $("#red-base");
+  if (elBase) elBase.textContent = base;
+
+  // En serie y en este orden a proposito: config-efectiva.json dice cuantos
+  // capitulos hay que buscar despues, y el informe tiene que entrar antes que
+  // los .tmp para que estos puedan pisarlo con su version, que es mas fiel.
+  for (const n of RED_OBLIGATORIOS) await pedir(base, n, true);
+
+  const est = (D.config && D.config.estructura) || {};
+  const mod = (D.config && D.config.modelos) || {};
+  const numCaps = Math.max(Number(est.num_capitulos) || 0, D.capitulos.size, 1);
+  const maxIntentos = Math.max(
+    (Array.isArray(mod.escalera_escritor) ? mod.escalera_escritor.length : 3) *
+      (Number(mod.intentos_por_modelo) || 2), 6);
+
+  // Opcionales: que falten es normal y no se denuncia. Un capitulo puede no
+  // estar generado todavia, y .tmp/ se borra al ensamblar salvo que
+  // conservar_intentos este en true.
+  const opcionales = [];
+  for (let n = 1; n <= numCaps; n++){
+    opcionales.push("capitulos/cap-" + dosCifras(n) + ".md");
+    for (let m = 1; m <= maxIntentos; m++){
+      opcionales.push(".tmp/cap-" + dosCifras(n) + "-intento-" + m + ".json");
+    }
+  }
+  // De cuatro en cuatro, no todas a la vez: treinta peticiones simultaneas contra
+  // un servidor estatico sencillo (python -m http.server) hacen que alguna se
+  // caiga, y aqui una peticion caida se leeria como un capitulo que no existe.
+  for (let i = 0; i < opcionales.length; i += 4){
+    await Promise.all(opcionales.slice(i, i + 4).map(n => pedir(base, n, false)));
+  }
+
+  RED.cargando = false;
+  render();
+  pintarRed();
+}
+
+function pintarRed(estadoTexto){
+  const cont = $("#red-informe");
+  if (!cont) return;
+  if (estadoTexto){
+    cont.innerHTML = '<p class="cargador-pista" style="margin-top:14px">' + esc(estadoTexto) + "</p>";
+    return;
+  }
+
+  const fallos   = RED.intentos.filter(x => !x.ok && x.obligatorio);
+  const ausentes = RED.intentos.filter(x => !x.ok && !x.obligatorio);
+  const buenos   = RED.intentos.filter(x => x.ok);
+
+  let html = "";
+  if (fallos.length){
+    html += '<div class="aviso" style="margin-top:16px"><strong>' + fallos.length +
+      (fallos.length === 1 ? " archivo esperado no se pudo leer" : " archivos esperados no se pudieron leer") +
+      ".</strong> Lo que falte en las vistas de abajo falta por esto, no porque la novela no se haya generado." +
+      "<ul>" + fallos.map(f => "<li><code>" + esc(f.ruta) + "</code> — " + esc(f.motivo) + "</li>").join("") +
+      "</ul></div>";
+  }
+  html += '<details class="red-lista"><summary>' + buenos.length + " leídos · " +
+    fallos.length + " esperados que faltan · " + ausentes.length + " opcionales ausentes</summary><ul>" +
+    RED.intentos.map(x =>
+      "<li><code>" + esc(x.ruta) + '</code><span class="' + (x.ok ? "red-bien" : "red-mal") + '">' +
+      (x.ok ? "leído" : esc(x.motivo) + (x.obligatorio ? "" : " · opcional")) + "</span></li>"
+    ).join("") + "</ul></details>";
+
+  cont.innerHTML = html;
+}
+
+// Ensena el modo que toca y esconde el otro. Se llama una sola vez, antes del
+// primer render, para que la pagina no parpadee entre los dos.
+function configurarModo(){
+  $("#modo-archivo").hidden = EN_RED;
+  $("#modo-red").hidden = !EN_RED;
+  const proto = $("#red-protocolo");
+  if (proto) proto.textContent = location.protocol.replace(":", "");
+  const btn = $("#btn-recargar");
+  if (btn) btn.addEventListener("click", () => cargarPorRed());
+}
+
+/* ===================================================================
+   ARRANQUE
+   =================================================================== */
+configurarModo();
+render();
+mostrar(location.hash.slice(1) || "recorrido");
+if (EN_RED) cargarPorRed();
+</script>
+</body>
+</html>

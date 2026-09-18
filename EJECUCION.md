@@ -35,6 +35,7 @@ dice qué puedes ejecutar hoy:
 | Resúmenes redactados por un modelo | subagente `resumidor` | ✅ implementado |
 | Ensamblador e informe | `src/ensamblador.py` | ✅ implementado |
 | Registro de delegaciones y tokens | `src/delegaciones.py` | ✅ implementado |
+| Panel de control de la generación | `panel.html` | ✅ implementado (ver sección 10) |
 | Telemetría OTEL hacia Langfuse | `.claude/settings.json`, `herramientas/` | ✅ implementado (requiere una variable de entorno con la credencial; ver la sección 9) |
 | Compactación de hechos | `src/biblia.py` (`compactar`) | ⬜ pendiente (hoy devuelve la biblia sin tocar) |
 | Hechos y timeline extraídos de cada capítulo | biblia | ⬜ pendiente (`hechos_establecidos` no se rellena) |
@@ -882,7 +883,82 @@ script y la cabecera de autenticación no llegó al proceso.
 
 ---
 
-## 10. Documentos relacionados
+## 10. El panel de control (`panel.html`)
+
+`panel.html` es una página de una sola pieza, sin dependencias y sin paso de
+compilación, que lee lo que el harness dejó en `salida/` y lo enseña en cinco
+vistas: **Recorrido**, **Arquitectura**, **Estructura**, **Tokens** y **Libro**.
+
+Vive en la raíz del proyecto y **se versiona**. No va dentro de `salida/`, que
+está en `.gitignore`: ahí se perdería en cada limpieza y no llegaría a nadie.
+
+### 10.1 Las dos formas de abrirlo
+
+La página detecta sola cómo se ha abierto y enseña **solo** los controles del
+modo en el que está. Nunca los dos a la vez: un selector de archivos que no hace
+falta invita a cargar a mano lo que ya está cargado, y dos fuentes distintas
+para los mismos datos es justo lo que el panel existe para evitar.
+
+**Servida por un servidor local.** Es la forma normal de usarlo. Desde la raíz:
+
+```powershell
+python -m http.server 8765 --bind 127.0.0.1
+```
+
+y abre <http://127.0.0.1:8765/panel.html>. Con `http://` la página lee `salida/`
+por su cuenta con `fetch`, al arrancar y cada vez que se pulsa «Volver a leer
+salida/». No hay nada que arrastrar. Para pararlo, `Ctrl+C`.
+
+**Abierta desde el disco (`file://`).** Doble clic en el archivo. El navegador
+prohíbe que una página abierta así lea el disco, de modo que aparece el selector:
+se arrastra la carpeta `salida/` entera, o se eligen los archivos a mano.
+
+La página busca `salida/` primero a su lado y después un nivel más arriba, así
+que funciona igual desde la raíz o desde una carpeta `docs/`.
+
+### 10.2 Qué archivos pide, y qué pasa si falta alguno
+
+| Archivo | Si falta |
+|---|---|
+| `salida/estado.json` | Se denuncia en pantalla |
+| `salida/config-efectiva.json` | Se denuncia en pantalla |
+| `salida/biblia.json` | Se denuncia en pantalla |
+| `salida/informe-validacion.md` | Se denuncia en pantalla |
+| `salida/manuscrito.md` | Se denuncia en pantalla |
+| `salida/capitulos/cap-NN.md` | Ausencia normal: el capítulo puede no estar generado |
+| `salida/.tmp/cap-NN-intento-M.json` | Ausencia normal: `.tmp/` se borra al ensamblar salvo que `conservar_intentos` sea `true` |
+
+Los cinco primeros son obligatorios en el sentido de que su ausencia deja vistas
+cojas, y **eso se dice con la ruta exacta y el código HTTP**. La regla es la
+misma que la del resto del proyecto: una vista vacía porque no hay novela y una
+vista vacía porque el servidor devolvió 404 se ven igual en pantalla y son
+problemas distintos, así que el panel no se calla nunca.
+
+Un fallo de conexión (no un 404) se reintenta una vez antes de darlo por
+ausente, y las peticiones opcionales van en tandas de cuatro: treinta a la vez
+contra un servidor estático sencillo hacen que alguna se caiga, y una petición
+caída aquí se leería como un capítulo que no existe.
+
+### 10.3 La tabla de aprobación por validador
+
+La vista **Recorrido** abre con una tabla que dice, de cada validador, cuántos
+intentos aprobó sobre los que llegó a juzgar, y en cuántos fue **el único que
+dijo `FALLO`**.
+
+Los denominadores no son todos iguales a propósito: el auditor de `longitud`
+solo emite veredicto cuando el capítulo se sale del rango (§3.5b), así que juzga
+menos intentos que los tres validadores y medirlo contra el total sería mentir.
+
+La columna «único que falló» es la que convierte la tasa en una consecuencia.
+Como los tres validadores bloquean por igual (§3.5d), una reescritura que pidió
+uno solo la pagó la novela entera. En la generación de tres capítulos del 17 de
+septiembre, sobre 14 intentos: continuidad aprobó 11, género 13 y **estilo 2**, y
+estilo fue el único que falló en **7** de esos 14. Ese contraste no se ve mirando
+los capítulos de uno en uno, que es exactamente por lo que la tabla existe.
+
+---
+
+## 11. Documentos relacionados
 
 | Documento | Para qué |
 |---|---|
@@ -896,3 +972,5 @@ script y la cabecera de autenticación no llegó al proceso.
 | `Harness_novela.drawio.png` | Diagrama del flujo |
 | `ADENDA-openrouter-vscode.md` | **Deprecada.** Arquitectura anterior sobre OpenRouter. Historia, no contrato |
 | `archivo/NOTA.md` | Qué código de la arquitectura anterior se conserva y por qué |
+| `panel.html` | Panel de control de la generación. Sección 10 |
+| `README.md` | Presentación del proyecto y las dos formas de abrir el panel |
