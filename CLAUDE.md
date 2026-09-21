@@ -1,0 +1,58 @@
+@AGENTS.md
+
+# CLAUDE.md
+
+La línea de arriba importa `AGENTS.md` entero: Claude Code la expande al arrancar la sesión y carga ese contenido como si estuviera escrito aquí. Se mantiene un solo mapa de contexto y lo leen todos los agentes. Todo lo que sigue es lo específico de este proyecto.
+
+## Requisitos técnicos
+
+| Área | Decisión | Restricción |
+| --- | --- | --- |
+| Backend | FastAPI | Único servicio HTTP. Nada de lógica de dominio en el frontend |
+| Frontend | React | Consume la API, no toca la base de datos |
+| Contexto del modelo | 100.000 tokens | Límite duro por llamada, incluida la salida |
+| Persistencia | SQLite con soporte vectorial | Una sola base. Sin servicio de vectores externo |
+
+### FastAPI
+
+- Los modelos Pydantic son la frontera de validación y replican las clases de `Docs/defintions`. Un campo que no está definido allí no entra en un esquema.
+- Los valores de los vocabularios controlados se implementan como `Enum`, no como cadenas libres. Un valor fuera de la enumeración es un error de validación, no un aviso.
+- Las llamadas al modelo son asíncronas. Generar una escena tarda, así que el endpoint arranca un trabajo y devuelve su identificador; no bloquea.
+
+### React
+
+- La interfaz muestra estado, no lo calcula. El cambio de valor de una escena, la curva de dread y el estado de las invariantes vienen resueltos de la API.
+- Una escena se muestra siempre con su estado (`planificada`…`consolidada`) y con los hallazgos abiertos que tenga. Un texto sin ese contexto induce a darlo por bueno.
+
+### Límite de contexto: 100.000 tokens
+
+El presupuesto se reparte por niveles de memoria y se comprueba antes de cada llamada. Si no cabe, se recorta por el nivel de menor prioridad, nunca truncando por el final.
+
+| Nivel | Presupuesto | Contenido |
+| --- | --- | --- |
+| Inmutable | 15.000 | Premisa, guía de estilo, reglas del mundo, anclas de estilo |
+| Estado actual | 10.000 | Instantánea del mundo en el momento de la escena |
+| Local | 25.000 | Escena anterior completa y resumen de las tres previas |
+| Recuperado | 20.000 | Fichas de entidades presentes, setups pendientes, registro de conocimiento aplicable |
+| Resúmenes | 10.000 | Condensaciones de capítulo y de parte |
+| Salida | 20.000 | Reserva para el texto generado y su delta |
+
+Nunca se manda el texto completo de la obra. Si una tarea parece necesitarlo, el fallo está en los resúmenes o en la recuperación, no en el presupuesto.
+
+### SQLite con soporte vectorial
+
+- Una sola base de datos guarda el estado estructurado y los embeddings. La búsqueda por similitud se hace con una extensión vectorial de SQLite; no se añade un servicio aparte.
+- Se indexan fichas de entidad, resúmenes de escena y presagios pendientes. El texto completo de las escenas se guarda pero no se recupera por similitud: para eso están los resúmenes.
+- El estado del mundo se reconstruye acumulando los deltas de escena en orden. No se relee el texto para averiguar qué pasó.
+- Las migraciones de esquema se versionan. Un cambio en `Docs/defintions` que altere un atributo obligatorio necesita su migración en el mismo commit.
+
+## Reglas de trabajo
+
+- No inventes campos, clases ni valores de enumeración. Si algo falta, se añade primero a `Docs/defintions`.
+- Una comprobación del harness cita siempre su invariante por identificador.
+- Las invariantes `bloqueante` detienen la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir. Esa diferencia se respeta en el código, no se resuelve caso por caso.
+- Antes de dar por buena una escena, su delta tiene que estar aplicado. Es lo que corta la propagación del error.
+
+## Comandos
+
+Todavía no hay build ni tests. Cuando los haya, van aquí con el comando exacto, no con una descripción.
