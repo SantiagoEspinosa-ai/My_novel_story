@@ -1,0 +1,35 @@
+# Enlaces a las skills, no su contenido.
+#
+# El contenido real de las skills se versiona en `.agents/skills/`. Esta carpeta
+# solo contiene enlaces, y git en Windows no los guarda como enlaces: los
+# convierte en ficheros de texto con la ruta dentro, que no sirven para nada.
+# Se recrean tras clonar con:  node scripts/link-skills.mjs
+.claude/skills/
+
+# Configuración local de Claude Code (por máquina, no por proyecto)
+.claude/settings.local.json
+
+# Secretos. Nunca entran al repositorio.
+.env
+.env.*
+!.env.example
+
+# Salidas de ejecución: no se conservan ni se versionan.
+salida/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Bases de datos locales
+*.db
+*.sqlite
+*.sqlite3
