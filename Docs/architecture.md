@@ -216,15 +216,15 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | Agente | ¿Llama al modelo? | Habilidades | Entrada → Salida | Invariantes que toca |
 | --- | --- | --- | --- | --- |
 | **Orquestador** | No | Aplicar la máquina de estados; decidir la siguiente transición legal; detener en puerta bloqueante | Estado de la escena → transición | `INV-05` (que el delta esté aplicado antes de seguir) |
-| **Escaletador** | Sí | Repartir el cambio de valor por escena; prever la curva de dread; asignar beats a arcos | `Brief` + `GuíaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
+| **Escaletador** | Sí | Repartir el cambio de valor por escena; prever la curva de dread; asignar beats a arcos | `Brief` + `GuiaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
 | **Ensamblador de contexto** | No | Recuperar por similitud; seleccionar fichas y setups pendientes; recortar por nivel de prioridad; contar tokens | Escena planificada → contexto dentro del presupuesto | Ninguna; hace cumplir el límite de `CLAUDE.md` |
 | **Escritor de escena** | Sí | Escribir la escena; sostener el POV; respetar las anclas de estilo; **devolver el delta estructurado en la misma llamada** | Contexto → `Borrador` + `DeltaDeEscena` | Produce el material de `INV-01`…`INV-04` |
-| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; setups huérfanos; repetición léxica; distribución de longitud de frase; distancia estilométrica; varianza de la curva | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-04`, `INV-05`, `INV-06`, `INV-07`, `INV-08`, `INV-09`, `INV-12`, `INV-13`, `INV-15`, `INV-16` |
-| **Juez de rúbrica** | Sí | Puntuar con `Rúbrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-03`, `INV-10`, `INV-11`, `INV-14` |
-| **Revisor** | Sí | Un `PaseDeRevisión` por tipo: continuidad, voz, ritmo, densidad, línea | Borrador + hallazgos → borrador nuevo | Las del hallazgo que corrige |
+| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; setups huérfanos; repetición léxica; distribución de longitud de frase; varianza de la curva | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-04`, `INV-05`, `INV-06`, `INV-07`, `INV-09`, `INV-12`, `INV-13`, `INV-16` |
+| **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-03`, `INV-10`, `INV-11`, `INV-14` |
+| **Revisor** | Sí | Un `PaseDeRevision` por tipo: continuidad, voz, ritmo, densidad, línea | Borrador + hallazgos → borrador nuevo | Las del hallazgo que corrige |
 | **Resumidor** | Sí | Condensar escena → capítulo → parte; extraer hechos clave; actualizar fichas de entidad | Escena consolidada → `Resumen`, `Ficha` | Ninguna; es lo que hace que el sistema escale |
 | **Consolidador** | No | Aplicar el delta al estado; detectar delta incompatible; reindexar embeddings | Delta aceptado → `EstadoDelMundo(t+1)` | `INV-05`, `INV-06` |
-| **Auditor de obra** | Mixto | Comprobaciones de nivel obra y capítulo, que no se pueden hacer escena a escena | Obra completa → `Hallazgo[]` | `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13`, `INV-16` |
+| **Auditor de obra** | Mixto | Comprobaciones de nivel obra y capítulo, que no se pueden hacer escena a escena | Obra completa → `Hallazgo[]` | Obra: `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13`, `INV-14`, `INV-16`. Capítulo: `INV-08`, `INV-15` |
 
 **Decisión: el Juez no comparte sesión con el Escritor.** Recibe el texto y la rúbrica, no
 el prompt ni el razonamiento que produjeron ese texto. Un modelo que juzga su propia
@@ -297,12 +297,12 @@ añade este documento es la columna de quién los mueve.
 | Transición | Quién la dispara | Condición |
 | --- | --- | --- |
 | `planificada` → `generada` | Worker | El Escritor devuelve borrador y delta |
-| `generada` → `en_verificación` | Orquestador | Automática |
-| `en_verificación` → `rechazada` | Verificador de reglas | Falla una invariante `bloqueante` |
-| `en_verificación` → `en_revisión` | Juez de rúbrica | Hallazgo `mayor` o `menor` |
-| `en_verificación` → `aceptada` | Orquestador | Pasa todas las puertas |
+| `generada` → `en_verificacion` | Orquestador | Automática |
+| `en_verificacion` → `rechazada` | Verificador de reglas | Falla una invariante `bloqueante` |
+| `en_verificacion` → `en_revision` | Juez de rúbrica | Hallazgo `mayor` o `menor` |
+| `en_verificacion` → `aceptada` | Orquestador | Pasa todas las puertas |
 | `rechazada` → `generada` | Persona desde el frontend | Regeneración |
-| `en_revisión` → `generada` | Revisor | Reescritura dirigida |
+| `en_revision` → `generada` | Revisor | Reescritura dirigida |
 | `aceptada` → `consolidada` | Consolidador | Delta aplicado sin conflicto |
 
 La transición que importa es `aceptada → consolidada`. Hasta que el delta no está

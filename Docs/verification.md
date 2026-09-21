@@ -92,7 +92,7 @@ cobertura de código aquí porque no se ha medido ninguno.
 | VER-25 | El Juez no recibe el prompt ni el razonamiento del Escritor | `Docs/architecture.md` § A-06 | T | unit testing | El contexto que llega al Juez contiene texto y rúbrica, y nada del prompt del Escritor | `features/verificacion/tests/` | pendiente |
 | VER-26 | El Juez no aprueba sistemáticamente lo que una persona rechaza | `Docs/architecture.md` § A-06 | T | evals | Existe una medición publicada de concordancia entre Juez y persona sobre un conjunto de escenas. **El umbral se fija después de la primera medición, no antes** | `harness/evals/` | pendiente |
 | VER-27 | La salida de cada agente valida contra su esquema tipado, o se rechaza | `Docs/architecture.md` § Agentes | T | guardrails | Una salida fuera de esquema no llega nunca a la capa siguiente; se rechaza y se registra | `commons/modelo/` | pendiente |
-| VER-28 | No existe ningún camino de `planificada` a `consolidada` que no pase por `en_verificación` | `Docs/domain-knowledge.md` § Ciclo de vida | A | model checking | Exploración exhaustiva de la máquina de estados: ningún camino alcanzable salta la puerta | `features/orquestacion/tests/` | pendiente |
+| VER-28 | No existe ningún camino de `planificada` a `consolidada` que no pase por `en_verificacion` | `Docs/domain-knowledge.md` § Ciclo de vida | A | model checking | Exploración exhaustiva de la máquina de estados: ningún camino alcanzable salta la puerta | `features/orquestacion/tests/` | pendiente |
 | VER-29 | La aceptación de una escena la ejecuta una persona, nunca el worker | `Docs/architecture.md` § A-04 | T | human-in-the-loop review | El worker no tiene ninguna ruta de código que lleve una escena a `aceptada` | `features/orquestacion/tests/` | pendiente |
 | VER-30 | El Escritor no viola las reglas de la amenaza cuando se le empuja a hacerlo | `Docs/definitions.md` § `INV-10` | I | red-teaming / adversarial testing | Una tanda de prompts adversarios documentada, con sus resultados, revisada por una persona | `harness/adversarial/` | pendiente |
 | VER-31 | Los cambios generados por agente pasan por la misma tubería que los escritos a mano | `Docs/architecture.md` § Pruebas | A | CI/CD integration | No hay ninguna ruta que publique cambios saltándose CI | CI | pendiente |
@@ -143,7 +143,7 @@ que nunca ha fallado en las pruebas no está verificada, solo declarada.
 
 | ID | Caso negativo | Qué debe cazarlo |
 | --- | --- | --- |
-| VER-02 | `rol_dramático = "narrador"`, que no está en la enumeración | Validación del esquema |
+| VER-02 | `rol_dramatico = "narrador"`, que no está en la enumeración | Validación del esquema |
 | VER-03 | Un generador que tarda mucho más que el tiempo de respuesta del endpoint | El test comprueba que la respuesta llega igualmente |
 | VER-04 | Matar el proceso con un trabajo a medias | El worker lo retoma al arrancar |
 | VER-05 | Un estado del mundo con cientos de entidades vivas | El ensamblador recorta en vez de desbordar |

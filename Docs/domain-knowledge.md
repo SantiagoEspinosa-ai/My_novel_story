@@ -28,13 +28,13 @@ flowchart TD
   P1 --> F["Clases de función"]
   C --> C1["Obra"]
   C --> C2["Parte"]
-  C --> C3["Capítulo"]
+  C --> C3["Capitulo"]
   U --> U1["Escena"]
   U1 --> U2["Beat"]
   F --> F1["ArcoNarrativo"]
   F --> F2["POV"]
   F --> F3["MomentoNarrativo"]
-  F --> F4["LíneaArgumental"]
+  F --> F4["LineaArgumental"]
 ```
 
 La Escena cuelga aparte a propósito: es la unidad que se genera, se verifica y se recupera, mientras que los contenedores solo la ordenan. Las clases de función no contienen texto, califican escenas.
@@ -50,10 +50,10 @@ flowchart TD
   E --> E1["Personaje"]
   E --> E2["Lugar"]
   E --> E3["Objeto"]
-  E --> E4["Facción"]
-  V --> V1["HechoCanónico"]
+  E --> E4["Faccion"]
+  V --> V1["HechoCanonico"]
   V --> V2["ReglaDelMundo"]
-  V --> V3["EventoCronológico"]
+  V --> V3["EventoCronologico"]
   S --> S1["EstadoDelMundo"]
   S --> S2["RegistroDeConocimiento"]
 ```
@@ -72,7 +72,7 @@ flowchart TD
   A --> A2["Tell"]
   A --> A3["Grado de explicación"]
   T --> T1["CurvaDeDread"]
-  T --> T2["Válvula"]
+  T --> T2["Valvula"]
   T --> T3["Presagio"]
   T --> T4["SetupYPago"]
   D --> D1["Deterioro"]
@@ -90,10 +90,10 @@ flowchart LR
   P4 --> PR["Producción"]
   P4 --> MM["Memoria"]
   PL --> PL1["Brief"]
-  PL --> PL2["GuíaDeEstilo"]
+  PL --> PL2["GuiaDeEstilo"]
   PL --> PL3["Escaleta"]
   PR --> PR1["Borrador"]
-  PR --> PR2["PaseDeRevisión"]
+  PR --> PR2["PaseDeRevision"]
   MM --> MM1["DeltaDeEscena"]
   MM --> MM2["Ficha"]
   MM --> MM3["Resumen"]
@@ -103,14 +103,14 @@ flowchart LR
 ```mermaid
 flowchart LR
   P5["Plano Calidad"]
-  P5 --> Q1["DimensiónDeCalidad"]
+  P5 --> Q1["DimensionDeCalidad"]
   P5 --> Q2["Verificador"]
   P5 --> Q3["Puerta"]
-  P5 --> Q4["AntiPatrón"]
+  P5 --> Q4["AntiPatron"]
   Q2 --> V1["Por regla"]
   Q2 --> V2["Juez LLM"]
   Q2 --> V3["Humano"]
-  Q2 --> V4["Rúbrica"]
+  Q2 --> V4["Rubrica"]
   Q3 --> G1["Hallazgo"]
 ```
 
@@ -126,7 +126,7 @@ flowchart LR
   BEAT["Beat"]
   ESC["Escena"]
   LUG["Lugar"]
-  HEC["HechoCanónico"]
+  HEC["HechoCanonico"]
   CON["Personaje / Narrador / Lector<br/>(RegistroDeConocimiento)"]
   EST["EstadoDelMundo"]
   PRE["Presagio"]
@@ -153,9 +153,9 @@ Los nombres de estado son los literales de la enumeración `estado_de_escena` de
 stateDiagram-v2
   state "planificada" as planificada
   state "generada" as generada
-  state "en_verificación" as en_verificacion
+  state "en_verificacion" as en_verificacion
   state "rechazada" as rechazada
-  state "en_revisión" as en_revision
+  state "en_revision" as en_revision
   state "aceptada" as aceptada
   state "consolidada" as consolidada
   [*] --> planificada

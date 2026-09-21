@@ -68,12 +68,17 @@ que la comprobación debe cazar.
 | --- | --- |
 | El registro de `INV-01`…`INV-16`, la severidad y el resultado tipado | `commons/invariantes/` |
 | Las comprobaciones de escena, de regla | `features/verificacion/` |
-| Las comprobaciones de juez, con su `Rúbrica` | `features/verificacion/` |
+| Las comprobaciones de juez, con su `Rubrica` | `features/verificacion/` |
 | Las comprobaciones de nivel obra y capítulo | `features/auditoria/` |
 | Los casos negativos | `tests/` de la feature que ejecuta la invariante |
 
-Las de nivel obra van aparte porque no se pueden hacer escena a escena: `INV-06`,
-`INV-09`, `INV-11`, `INV-12`, `INV-13` e `INV-16` necesitan la obra entera.
+Las de nivel obra y capítulo van aparte porque no se pueden hacer escena a
+escena. De **obra**: `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13`, `INV-14`
+e `INV-16`. De **capítulo**: `INV-08` e `INV-15`.
+
+`INV-14` faltaba en esta lista y no estaba asignada a ningún agente que pudiera
+ejecutarla; `INV-08` e `INV-15` son de capítulo y estaban colgando del
+verificador de escena. Las tres las ejecuta el Auditor de obra.
 
 ## Añadir una invariante nueva
 

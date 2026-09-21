@@ -158,12 +158,12 @@ Quién dispara cada transición, según `Docs/architecture.md`:
 | Transición | Quién la dispara | Condición | ¿En la v1? |
 | --- | --- | --- | --- |
 | `planificada` → `generada` | Worker | El Escritor devuelve borrador y delta | Sí |
-| `generada` → `en_verificación` | Orquestador | Automática | Sí |
-| `en_verificación` → `rechazada` | Verificador de reglas | Falla una invariante `bloqueante` | Sí |
-| `en_verificación` → `en_revisión` | Juez de rúbrica | Hallazgo `mayor` o `menor` | **No**, ver §2.2.3 |
-| `en_verificación` → `aceptada` | Orquestador | Pasa todas las puertas | Sí |
+| `generada` → `en_verificacion` | Orquestador | Automática | Sí |
+| `en_verificacion` → `rechazada` | Verificador de reglas | Falla una invariante `bloqueante` | Sí |
+| `en_verificacion` → `en_revision` | Juez de rúbrica | Hallazgo `mayor` o `menor` | **No**, ver §2.2.3 |
+| `en_verificacion` → `aceptada` | Orquestador | Pasa todas las puertas | Sí |
 | `rechazada` → `generada` | Cliente de la API | Regeneración | Sí |
-| `en_revisión` → `generada` | Revisor | Reescritura dirigida | **No**, con `revision/` |
+| `en_revision` → `generada` | Revisor | Reescritura dirigida | **No**, con `revision/` |
 | `aceptada` → `consolidada` | Consolidador | Delta aplicado sin conflicto | Sí |
 
 **La transición que importa es `aceptada` → `consolidada`.** Hasta que el delta no está
@@ -211,20 +211,20 @@ cierra alguien.
 ### 2.2.3 Qué parte del ciclo cubre la v1, y una inconsistencia que hay que resolver
 
 Como `revision/` queda fuera del alcance, el camino
-`en_verificación` → `en_revisión` → `generada` **no existe en esta versión**. Eso obliga a
+`en_verificacion` → `en_revision` → `generada` **no existe en esta versión**. Eso obliga a
 decidir qué pasa cuando el Juez levanta un hallazgo `mayor` o `menor`, y ahí los
 documentos no dicen lo mismo:
 
 | Documento | Qué dice |
 | --- | --- |
 | `CLAUDE.md` § Reglas de trabajo | *"`mayor` y `menor` generan hallazgo y dejan seguir"* |
-| `Docs/architecture.md` § transiciones | `en_verificación` → `en_revisión` disparada por un hallazgo `mayor` o `menor` |
+| `Docs/architecture.md` § transiciones | `en_verificacion` → `en_revision` disparada por un hallazgo `mayor` o `menor` |
 
-No pueden ser las dos: si va a `en_revisión`, no sigue.
+No pueden ser las dos: si va a `en_revision`, no sigue.
 
 **Suposición de la v1, a confirmar al aprobar esta spec:** se sigue `CLAUDE.md`, que manda
 en lo técnico. Un hallazgo `mayor` o `menor` **no** bloquea: la escena puede alcanzar
-`aceptada` con el hallazgo abierto y visible. `en_revisión` entra cuando entre `revision/`,
+`aceptada` con el hallazgo abierto y visible. `en_revision` entra cuando entre `revision/`,
 y entonces será una decisión del cliente mandar allí una escena, no un automatismo del
 Juez. Queda anotado en §5.3 para cerrarlo en `Docs/architecture.md`.
 
@@ -284,7 +284,7 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 | ID | Requisito | Verifica |
 | --- | --- | --- |
 | **RF-01** | Se puede crear una `Obra` a partir de un `Brief` con premisa, tono, guía de estilo y prohibiciones. Los campos obligatorios de `Docs/definitions.md` son obligatorios aquí | — |
-| **RF-02** | Se genera una `Escaleta`: lista ordenada de escenas planificadas, cada una con su `cambio_de_valor` previsto, su `pov`, su `lugar` y su `objetivo_dramático` | `INV-01` |
+| **RF-02** | Se genera una `Escaleta`: lista ordenada de escenas planificadas, cada una con su `cambio_de_valor` previsto, su `pov`, su `lugar` y su `objetivo_dramatico` | `INV-01` |
 | **RF-03** | Toda escena de la escaleta nace en estado `planificada` | — |
 | **RF-04** | La generación de la escaleta es asíncrona: devuelve un identificador de trabajo | — |
 
@@ -387,7 +387,7 @@ Cada agente es una llamada con contexto propio y salida tipada (`A-03`).
 | --- | --- | --- | --- |
 | Escaletador | Brief, guía de estilo, estado, recuperado, resúmenes | `Escaleta` | Esquema Pydantic; rechazo si falla |
 | Escritor | Los niveles que le tocan | Texto **y** `DeltaDeEscena` | Rechazo si falta el delta |
-| Juez | Texto y `Rúbrica`, sin el prompt del Escritor | Puntuación y `Hallazgo[]` | Rechazo si falla |
+| Juez | Texto y `Rubrica`, sin el prompt del Escritor | Puntuación y `Hallazgo[]` | Rechazo si falla |
 | Resumidor | La escena consolidada | `Resumen` y `Ficha` actualizadas | Rechazo si falla |
 
 ## 3.3 Requisitos no funcionales
@@ -527,7 +527,7 @@ distinguirse de uno medido.**
 
 ## 5.3 Decisiones abiertas que afectan a esta spec
 
-- **`mayor` y `menor`: ¿dejan seguir o van a `en_revisión`?** `CLAUDE.md` y
+- **`mayor` y `menor`: ¿dejan seguir o van a `en_revision`?** `CLAUDE.md` y
   `Docs/architecture.md` se contradicen (§2.2.3). La v1 asume lo primero. Al cerrarlo hay
   que corregir el documento que quede en falso.
 - **Desempate juez contra regla.** Cuando `INV-03` la marca el Juez y la regla de
