@@ -15,7 +15,8 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
 | Plan de verificación del sistema | `Docs/verification.md` | Cómo se prueba que el código hace lo que dice: 37 afirmaciones `VER-01`…`VER-37` con clase T/A/I/D/U, metodología, criterio de salida y caso negativo |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las tres skills instaladas. Ver la sección "Skills" más abajo |
-| Utilidades del repositorio | `scripts/` | `link-skills.mjs`, que recrea los enlaces de `.claude/skills/` tras clonar |
+| Specs | `specs/` | Un fichero por spec, sin carpetas anidadas. Hoy: `SRS.md` = `SPEC-01`, backend del harness |
+| Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada |
 
 > El archivo se llama `defintions`, sin la segunda `i` y sin extensión. La ruta de la tabla es la literal del repositorio. Si se corrige el nombre, hay que actualizar esta tabla y el enlace en `CLAUDE.md` en el mismo commit.
 
@@ -44,17 +45,70 @@ No cargues los cinco enteros por costumbre. Para una tarea de backend suele bast
 - Una entidad nueva se define primero en `Docs/defintions` y solo después se dibuja en `Docs/domain-knowledge`. Nunca al revés.
 - Los identificadores publicados no se reutilizan ni se renumeran. Lo que deja de aplicar se marca como obsoleto, no se borra.
 
+## Proceso de trabajo
+
+Tres puertas en cadena. Cada una se abre solo con la anterior cerrada, y ninguna se salta porque el cambio parezca pequeño.
+
+```
+Docs/  →  spec aprobada  →  plan aprobado  →  código (TDD)  →  spec y Docs/ al día
+```
+
+**Qué cuenta como aprobación.** El frontmatter del propio fichero: `id`, `estado` (`borrador | en_revision | aprobada | obsoleta`), `aprobada_por` y `fecha_aprobacion`. Los planes llevan el mismo.
+
+Sin `estado: aprobada` no se pasa, aunque el documento esté escrito entero y aunque se haya hablado. "Lo comentamos ayer" no es una aprobación; el campo sí. `SPEC-NN` es un identificador estable: no se reutiliza ni se renumera, y lo que deja de aplicar pasa a `obsoleta` en vez de borrarse. Los identificadores internos de una spec (`RF-xx`, `O-x`, `M-x`, `P-x`) tampoco se renumeran al reescribirla.
+
+### 1. Actualizar `Docs/`
+
+`Docs/` es lo normativo permanente. Hay dos clases de cambio y no se tratan igual:
+
+- **Cambio documental** —corregir un error, aclarar una frase, añadir un diagrama de algo ya decidido—: se hace directamente, sin spec.
+- **Cambio que decide algo nuevo** —una clase, una invariante, una decisión de arquitectura, un umbral—: **necesita spec aprobada primero**. El documento se actualiza después, no antes.
+
+Se mantienen las reglas que ya existen: una entidad se define primero en `Docs/defintions` y solo después se dibuja en `Docs/domain-knowledge`; un cambio de atributo obligatorio lleva su migración en el mismo commit; los identificadores publicados no se renumeran. Y este archivo se actualiza en el mismo commit que mueve un archivo de contexto.
+
+### 2. Crear o actualizar una spec
+
+Un fichero propio en `specs/`, con su `SPEC-NN` en el frontmatter. Responde a tres cosas y solo a tres: **qué problema resuelve**, **qué tiene que ser verdad al terminar** y **qué queda explícitamente fuera**.
+
+- **Antes de escribirla se pregunta.** Una spec con huecos rellenados por suposición es peor que no tener spec, porque parece acordada. Las dudas se preguntan al escribirla, no se descubren implementando.
+- **Una spec no dice cómo se hace.** Nada de ficheros, funciones ni orden de tareas: eso es el plan.
+- **Cita lo que la gobierna** por identificador: `INV-xx`, `A-xx`, `VER-xx`.
+- Termina en `estado: aprobada`, o no hay nada más que hacer con ella.
+
+### 3. Plan de implementación
+
+Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su propio estado.
+
+- **No se crea un plan si su spec no está aprobada.** Un plan sin spec aprobada está resolviendo un problema que nadie ha acordado.
+- Dice qué ficheros se tocan, en qué orden, **qué prueba cubre cada paso** y qué filas `VER-xx` de `Docs/verification.md` cierra.
+- Cada paso debe dejar el repositorio funcionando. Un paso que solo tiene sentido con el siguiente son un paso.
+- También se aprueba, y es la tercera puerta.
+
+### 4. Crear o modificar código
+
+- **No se escribe código si el plan no está aprobado.** Ni un fichero de andamiaje.
+- **TDD, en este orden:** primero la prueba que falla, después el código mínimo que la pasa, después el refactor. Ningún código de producción nace sin una prueba que haya fallado antes. Esto es la misma exigencia que el proyecto ya tiene para las invariantes: una regla que nunca ha fallado en las pruebas no está verificada, solo declarada.
+- **Al terminar, en el mismo commit:** la spec al día, `Docs/` al día y la fila `VER-xx` actualizada si se ha cerrado alguna.
+
+### Cuando el código descubre que la spec estaba mal
+
+Pasa, y es sano que pase. Lo que no vale es seguir.
+
+Se para, se corrige la spec, se vuelve a aprobar, y si el plan cambia de forma, se vuelve a aprobar también. El código nunca avanza por delante de la spec: en cuanto lo hace, la spec deja de gobernar lo que se va a hacer y pasa a describir mal lo que ya se hizo. A las tres semanas es ficción y nadie la lee.
+
 ## Skills
 
-El contenido real vive en `.agents/skills/` y **se versiona con el repositorio**. `.claude/skills/` solo contiene enlaces y está en `.gitignore`, porque git en Windows no guarda los enlaces como tales: los convierte en ficheros de texto con la ruta dentro. Tras clonar, se recrean con un comando:
+El contenido real vive en `.agents/skills/` y **se versiona con el repositorio**. Claude Code lee esa carpeta directamente, así que tras clonar no hay que hacer nada: las skills están disponibles. `.claude/skills/` sigue en `.gitignore` porque `npx skills add` crea allí enlaces que git en Windows no guarda como tales, y no hacen falta.
 
-```
-node scripts/link-skills.mjs
-```
+**Ninguna skill se actualiza sola, y no hay lockfile.** Las dos de upstream se actualizan a mano: se reinstalan con `npx skills add <repo> --skill <nombre>` y se revisa el diff antes de aceptarlo. Su origen y el hash con el que entraron están en la tabla de arriba, que es donde hay que mirar para saber qué se instaló y desde dónde.
 
 | Skill | Cuándo usarla | Procedencia |
 | --- | --- | --- |
-| `feature-sliced-design` | Decidir dónde va un fichero del frontend, resolver un cross-import o revisar la estructura de capas. Manda sobre las dudas de colocación en `frontend/` (decisión `A-09`) | Oficial de FSD v2.1, instalada con `npx skills add`. Anotada en `skills-lock.json` |
+| `spec-and-plan` | Empezar cualquier cambio que decida algo nuevo. Ejecuta las puertas de "Proceso de trabajo" y comprueba si están abiertas | Propia |
+| `fastapi` | Endpoints, dependencias, modelos Pydantic, streaming: los idiomas del framework | Oficial, de `github.com/fastapi/fastapi`, ruta `.agents/skills/fastapi/`. Instalada 2026-09-21, hash `187b2e06` |
+| `backend-feature` | Decidir dónde va un fichero de `backend/` y de qué puede depender. La contraparte de FSD en el servidor (`A-01`, `A-02`) | Propia |
+| `feature-sliced-design` | Decidir dónde va un fichero del frontend, resolver un cross-import o revisar la estructura de capas (`A-09`) | Oficial de FSD v2.1, de `github.com/feature-sliced/skills`. Instalada 2026-09-21, hash `e2b86275` |
+| `harness-invariantes` | Implementar o revisar una comprobación `INV-xx`: regla o juez, severidad, hallazgo y caso negativo | Propia |
 | `verification-plan` | Escribir o revisar un `verification.md` (también llamado `validation.md` o `evaluation.md`), decidir cómo se prueba una afirmación o clasificarla en T/A/I/D/U | Propia. Construida sobre una hoja de referencia de 19 metodologías; el flujo, la plantilla y los criterios de selección son nuestros |
 | `sqlite-vec` | Crear tablas `vec0`, hacer consultas KNN o serializar embeddings al implementar la persistencia | **Vendorizada y sin mantenimiento.** Su autor la borró del repositorio original; se recuperó del historial de git. Ver `.agents/skills/sqlite-vec/PROCEDENCIA.md` |
 
