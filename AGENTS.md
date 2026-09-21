@@ -10,39 +10,38 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Necesitas | Archivo | Qué contiene |
 | --- | --- | --- |
 | Requisitos técnicos y stack | `CLAUDE.md` | FastAPI, React, límite de contexto de 100.000 tokens, SQLite con soporte vectorial, y el presupuesto de contexto que se deriva de ellos |
-| Definiciones del dominio | `Docs/defintions` | Referencia normativa: los cinco planos, clases con atributos, tabla de relaciones, vocabularios controlados e invariantes `INV-01`…`INV-16` |
-| Árbol y diagramas | `Docs/domain-knowledge` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
+| Definiciones del dominio | `Docs/definitions.md` | Referencia normativa: los cinco planos, clases con atributos, tabla de relaciones, vocabularios controlados e invariantes `INV-01`…`INV-16` |
+| Árbol y diagramas | `Docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
 | Plan de verificación del sistema | `Docs/verification.md` | Cómo se prueba que el código hace lo que dice: 37 afirmaciones `VER-01`…`VER-37` con clase T/A/I/D/U, metodología, criterio de salida y caso negativo |
-| Skills del proyecto | `.agents/skills/` | Contenido real de las tres skills instaladas. Ver la sección "Skills" más abajo |
-| Specs | `specs/` | Un fichero por spec, sin carpetas anidadas. Hoy: `SRS.md` = `SPEC-01`, backend del harness |
-| Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada |
+| Skills del proyecto | `.agents/skills/` | Contenido real de las siete skills instaladas. Ver la sección "Skills" más abajo |
+| Specs | `specs/` | Un fichero por spec, sin carpetas anidadas. Hoy: `SPEC - Backend.md` = `SPEC-01`, backend del harness |
 
-> El archivo se llama `defintions`, sin la segunda `i` y sin extensión. La ruta de la tabla es la literal del repositorio. Si se corrige el nombre, hay que actualizar esta tabla y el enlace en `CLAUDE.md` en el mismo commit.
+> Las rutas de esta tabla son literales del repositorio: se copian tal cual, con su extensión. Si se renombra un documento, hay que actualizar esta tabla, el enlace en `CLAUDE.md` y todas las referencias en el mismo commit. Pasó lo contrario al renombrar `defintions` → `definitions.md` y `SRS.md` → `SPEC - Backend.md`: quedaron setenta referencias rotas.
 
 ## Orden de carga
 
 1. `CLAUDE.md` — restricciones técnicas. Condicionan todo lo demás, así que van primero.
-2. `Docs/defintions` — el modelo de dominio. Es la fuente de verdad.
+2. `Docs/definitions.md` — el modelo de dominio. Es la fuente de verdad.
 3. `Docs/architecture.md` — cómo se organiza el código y quién habla con quién. Antes de escribir nada en `backend/` o `frontend/`.
-4. `Docs/domain-knowledge` — solo cuando necesites ver la estructura de un vistazo o explicarla.
+4. `Docs/domain-knowledge.md` — solo cuando necesites ver la estructura de un vistazo o explicarla.
 5. `Docs/verification.md` — cuando vayas a escribir una prueba o a cerrar una fila `VER-xx`.
 
-No cargues los cinco enteros por costumbre. Para una tarea de backend suele bastar `CLAUDE.md`, la sección de invariantes de `Docs/defintions` y la de backend de `Docs/architecture.md`; para una discusión de arquitectura del dominio, el árbol de `Docs/domain-knowledge`.
+No cargues los cinco enteros por costumbre. Para una tarea de backend suele bastar `CLAUDE.md`, la sección de invariantes de `Docs/definitions.md` y la de backend de `Docs/architecture.md`; para una discusión de arquitectura del dominio, el árbol de `Docs/domain-knowledge.md`.
 
 ## Precedencia
 
-- En lo técnico manda `CLAUDE.md`. En lo de dominio manda `Docs/defintions`. En cómo se organiza el código manda `Docs/architecture.md`.
-- `Docs/architecture.md` no redefine ni el stack ni el dominio: los desarrolla. Si contradice a `CLAUDE.md`, gana `CLAUDE.md`; si usa un nombre de clase o de enumeración que no está en `Docs/defintions`, el error es suyo.
+- En lo técnico manda `CLAUDE.md`. En lo de dominio manda `Docs/definitions.md`. En cómo se organiza el código manda `Docs/architecture.md`.
+- `Docs/architecture.md` no redefine ni el stack ni el dominio: los desarrolla. Si contradice a `CLAUDE.md`, gana `CLAUDE.md`; si usa un nombre de clase o de enumeración que no está en `Docs/definitions.md`, el error es suyo.
 - `Docs/verification.md` no introduce requisitos nuevos. Cada fila `VER-xx` cita el documento del que sale; una fila sin origen sobra.
-- `Docs/domain-knowledge` es una vista, no una fuente. Si un diagrama contradice una definición, gana la definición y el diagrama se corrige.
+- `Docs/domain-knowledge.md` es una vista, no una fuente. Si un diagrama contradice una definición, gana la definición y el diagrama se corrige.
 - Nada de lo anterior sustituye al código: si el código contradice a los documentos, es un defecto de uno de los dos y hay que decidir cuál antes de seguir.
 
 ## Reglas de uso del modelo de dominio
 
-- Los nombres de clase, atributo y valor de enumeración de `Docs/defintions` son literales. No los traduzcas, no los abrevies, no uses sinónimos.
+- Los nombres de clase, atributo y valor de enumeración de `Docs/definitions.md` son literales. No los traduzcas, no los abrevies, no uses sinónimos.
 - Toda comprobación del harness referencia su invariante por identificador (`INV-07`, no "la regla de los beats").
-- Una entidad nueva se define primero en `Docs/defintions` y solo después se dibuja en `Docs/domain-knowledge`. Nunca al revés.
+- Una entidad nueva se define primero en `Docs/definitions.md` y solo después se dibuja en `Docs/domain-knowledge.md`. Nunca al revés.
 - Los identificadores publicados no se reutilizan ni se renumeran. Lo que deja de aplicar se marca como obsoleto, no se borra.
 
 ## Proceso de trabajo
@@ -64,7 +63,7 @@ Sin `estado: aprobada` no se pasa, aunque el documento esté escrito entero y au
 - **Cambio documental** —corregir un error, aclarar una frase, añadir un diagrama de algo ya decidido—: se hace directamente, sin spec.
 - **Cambio que decide algo nuevo** —una clase, una invariante, una decisión de arquitectura, un umbral—: **necesita spec aprobada primero**. El documento se actualiza después, no antes.
 
-Se mantienen las reglas que ya existen: una entidad se define primero en `Docs/defintions` y solo después se dibuja en `Docs/domain-knowledge`; un cambio de atributo obligatorio lleva su migración en el mismo commit; los identificadores publicados no se renumeran. Y este archivo se actualiza en el mismo commit que mueve un archivo de contexto.
+Se mantienen las reglas que ya existen: una entidad se define primero en `Docs/definitions.md` y solo después se dibuja en `Docs/domain-knowledge.md`; un cambio de atributo obligatorio lleva su migración en el mismo commit; los identificadores publicados no se renumeran. Y este archivo se actualiza en el mismo commit que mueve un archivo de contexto.
 
 ### 2. Crear o actualizar una spec
 
@@ -124,6 +123,7 @@ Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuent
 - `frontend/` — aplicación React.
 - `harness/` — ejecución de invariantes y fixtures.
 - `Docs/decisions/` — decisiones de arquitectura fechadas.
+- `specs/plans/` — un `PLAN-NN.md` por spec aprobada. Nace con el primer plan.
 
 ## Mantenimiento de este archivo
 

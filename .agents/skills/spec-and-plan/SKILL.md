@@ -35,8 +35,9 @@ pidas permiso para saltártela: termina lo que falta.
 ## Dónde vive todo
 
 **Un fichero por spec, plano en `specs/`.** Sin carpetas anidadas. Hoy existe
-`specs/SRS.md`, que es `SPEC-01`, la spec del backend del harness. Los planes
-van en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec.
+`specs/SPEC - Backend.md`, que es `SPEC-01`, la spec del backend del harness.
+Los planes van en `specs/plans/PLAN-NN.md`, con el mismo identificador que su
+spec.
 
 La aprobación es el frontmatter del propio fichero:
 
@@ -84,8 +85,8 @@ que manda en lo técnico.
 
 Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec.
 
-- **Comprueba primero que la spec está aprobada** en el registro de `SRS.md`. Si
-  no, para.
+- **Comprueba primero que la spec está aprobada**, en el frontmatter de su
+  propio fichero. Si no, para.
 - Dice qué ficheros se tocan, en qué orden, **qué prueba cubre cada paso** y qué
   filas `VER-xx` de `Docs/verification.md` cierra.
 - **Cada paso deja el repositorio funcionando.** Un paso que solo tiene sentido

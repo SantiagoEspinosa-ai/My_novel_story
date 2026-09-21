@@ -14,43 +14,43 @@ de decisiones que se toman en otro sitio.
 | Pregunta | Documento que manda | Papel de este documento |
 | --- | --- | --- |
 | Qué tecnología se usa y cuánto contexto cabe | `CLAUDE.md` | No repite sus tablas. Las referencia y explica cómo se implementan |
-| Qué clases, atributos, enumeraciones e invariantes existen | `Docs/defintions` | No define ninguna. Dice qué componente ejecuta cada `INV-xx` |
-| Cómo se ve el modelo de un vistazo | `Docs/domain-knowledge` | Es una vista del dominio; aquí los diagramas son del sistema |
+| Qué clases, atributos, enumeraciones e invariantes existen | `Docs/definitions.md` | No define ninguna. Dice qué componente ejecuta cada `INV-xx` |
+| Cómo se ve el modelo de un vistazo | `Docs/domain-knowledge.md` | Es una vista del dominio; aquí los diagramas son del sistema |
 | Cómo se organiza el código y quién habla con quién | **este documento** | Fuente |
 
 Si una tabla de aquí contradice a `CLAUDE.md`, gana `CLAUDE.md` y esta se corrige. Si un
-nombre de clase o de enumeración de aquí no está en `Docs/defintions`, es un error de
+nombre de clase o de enumeración de aquí no está en `Docs/definitions.md`, es un error de
 este documento, no una extensión del modelo.
 
 ## Qué se ha recogido de los documentos de dominio
 
-El encargo era separar de `Docs/defintions` y `Docs/domain-knowledge` lo que no es
+El encargo era separar de `Docs/definitions.md` y `Docs/domain-knowledge.md` lo que no es
 estrictamente definición ni conocimiento de dominio. Esto es lo que se ha identificado y
 se desarrolla aquí.
 
-**Decisión de esta sesión: los dos originales no se han modificado.** El contenido queda
-por ahora duplicado a propósito. La limpieza —borrar de los originales y dejar un
-puntero— es un cambio aparte que todavía no está hecho; mientras no se haga, la copia de
-referencia sigue siendo la del documento original.
+**La limpieza sigue pendiente (`A-08`).** El contenido queda por ahora duplicado a
+propósito: borrar de los originales y dejar un puntero es un cambio aparte que todavía no
+está hecho, y mientras no se haga, la copia de referencia sigue siendo la del documento
+original. Lo único que se ha tocado de los originales son correcciones documentales
+—rutas, literales de un diagrama y una arista mal nombrada—, que no mueven contenido.
 
 | Origen | Fragmento | Por qué no es definición ni dominio |
 | --- | --- | --- |
-| `defintions` | Tabla "Jerarquía de memoria" | Es el diseño del ensamblador de contexto. Las clases `Ficha`, `Resumen` y `AnclaDeEstilo` sí son dominio; repartirlas en niveles con presupuesto es arquitectura |
-| `defintions` | Párrafo de los "tres mecanismos" (delta, anclas de estilo, ventana de coherencia frente a ventana de continuidad) | Justificación de diseño: explica por qué el sistema está montado así, no qué es verdad en la ficción |
-| `defintions` | Sección "Verificadores por tipo" | Reparto de implementación: qué comprueba código, qué comprueba un modelo y qué comprueba una persona |
-| `defintions` | "Cada invariante debe tener al menos un caso de prueba negativo" | Política de pruebas del harness |
-| `defintions` | Sección "Decisiones abiertas" | Registro de decisiones. Su sitio natural es `Docs/decisions/`, que aún no existe |
-| `defintions` | Párrafos de justificación en negrita ("La curva de dread evita el fallo más común…", "El registro de conocimiento merece rango propio") | Argumentan la decisión de modelado; la definición es la fila de la tabla, no el párrafo |
-| `domain-knowledge` | Diagrama "Generación de una escena" | Arquitectura pura: `Orquestador`, `Memoria`, `Generador` y `Verificadores` no son clases de `Docs/defintions`. Ningún diagrama de dominio debería introducir participantes que el modelo no define |
-| `domain-knowledge` | Diagrama "Ciclo de vida de una escena" | Mitad y mitad: los estados **son** dominio (enumeración `estado_de_escena`), pero quién dispara cada transición es orquestación |
-| `domain-knowledge` | Nota "La rama de memoria es la que decide si el sistema escala" | Justificación de diseño |
+| `definitions.md` | Tabla "Jerarquía de memoria" | Es el diseño del ensamblador de contexto. Las clases `Ficha`, `Resumen` y `AnclaDeEstilo` sí son dominio; repartirlas en niveles con presupuesto es arquitectura |
+| `definitions.md` | Párrafo de los "tres mecanismos" (delta, anclas de estilo, ventana de coherencia frente a ventana de continuidad) | Justificación de diseño: explica por qué el sistema está montado así, no qué es verdad en la ficción |
+| `definitions.md` | Sección "Verificadores por tipo" | Reparto de implementación: qué comprueba código, qué comprueba un modelo y qué comprueba una persona |
+| `definitions.md` | "Cada invariante debe tener al menos un caso de prueba negativo" | Política de pruebas del harness |
+| `definitions.md` | Sección "Decisiones abiertas" | Registro de decisiones. Su sitio natural es `Docs/decisions/`, que aún no existe |
+| `definitions.md` | Párrafos de justificación en negrita ("La curva de dread evita el fallo más común…", "El registro de conocimiento merece rango propio") | Argumentan la decisión de modelado; la definición es la fila de la tabla, no el párrafo |
+| `domain-knowledge.md` | Diagrama "Generación de una escena" | Arquitectura pura: `Orquestador`, `Memoria`, `Generador` y `Verificadores` no son clases de `Docs/definitions.md`. Ningún diagrama de dominio debería introducir participantes que el modelo no define |
+| `domain-knowledge.md` | Diagrama "Ciclo de vida de una escena" | Mitad y mitad: los estados **son** dominio (enumeración `estado_de_escena`), pero quién dispara cada transición es orquestación |
+| `domain-knowledge.md` | Nota "La rama de memoria es la que decide si el sistema escala" | Justificación de diseño |
 
-**Defecto encontrado, no corregido.** `Docs/domain-knowledge` dice en su segundo párrafo
-que "las definiciones de cada clase están en `project/697dd43c-600e-4664-a8ce-d8e6c08b6b8f`".
-Ese identificador es de un proyecto externo, no una ruta del repositorio: el enlace está
-roto para cualquiera que lea el repositorio. Debería decir `Docs/defintions`. Se deja
-señalado aquí porque corregirlo entra dentro de la limpieza pendiente, que en esta sesión
-se ha decidido no hacer.
+**Defecto corregido.** `Docs/domain-knowledge.md` apuntaba en su segundo párrafo a
+`project/697dd43c-600e-4664-a8ce-d8e6c08b6b8f`, un identificador de proyecto externo que
+para cualquiera que leyera el repositorio era un enlace roto. Ahora apunta a
+`Docs/definitions.md` y dice explícitamente que los diagramas son una vista de ese
+documento.
 
 ## El sistema
 
@@ -194,7 +194,7 @@ trabajos. No hay servicio de vectores aparte ni cola externa.
   eso están los resúmenes. Nunca se manda la obra entera al modelo.
 - El estado del mundo se reconstruye acumulando los deltas de escena en orden. No se relee
   el texto para averiguar qué pasó.
-- Las migraciones se versionan. Un cambio en `Docs/defintions` que altere un atributo
+- Las migraciones se versionan. Un cambio en `Docs/definitions.md` que altere un atributo
   obligatorio necesita su migración en el mismo commit.
 
 **Decisión: la cola de trabajos es una tabla de esta misma base.** Generar una escena
@@ -291,7 +291,7 @@ worker: la puerta la cierra alguien.
 
 ### La máquina de estados y quién dispara cada transición
 
-Los estados son los de la enumeración `estado_de_escena` de `Docs/defintions`. Lo que
+Los estados son los de la enumeración `estado_de_escena` de `Docs/definitions.md`. Lo que
 añade este documento es la columna de quién los mueve.
 
 | Transición | Quién la dispara | Condición |
@@ -363,7 +363,7 @@ Sin cerrar. Afectan al código, así que conviene fijarlas antes de escribirlo.
   relativa entre escenas contiguas? La relativa es más estable entre modelos.
 - [ ] **Umbrales de `INV-15` e `INV-16`.** Sin números concretos el harness las salta en
   silencio. Los números salen de medir, no de estimar. Es la misma decisión "Umbrales" de
-  `Docs/defintions` y las filas `VER-32` y `VER-33` de `Docs/verification.md`: las tres se
+  `Docs/definitions.md` y las filas `VER-32` y `VER-33` de `Docs/verification.md`: las tres se
   cierran a la vez o ninguna.
 - [ ] **Reparto de tokens por agente.** Pendiente de medida real (`VER-34`).
 - [ ] **Coste por escena con la decisión `A-03`.** Una llamada por agente sale más caro que
@@ -376,4 +376,4 @@ Sin cerrar. Afectan al código, así que conviene fijarlas antes de escribirlo.
 - [ ] **Qué valida una persona y cuándo.** Con `A-04` el frontend lo permite; falta decidir
   en qué puertas es obligatorio.
 - [ ] **Limpieza de los documentos de dominio.** Mover lo listado arriba y arreglar el
-  enlace roto de `Docs/domain-knowledge`.
+  enlace roto de `Docs/domain-knowledge.md`.

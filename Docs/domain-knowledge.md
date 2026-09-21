@@ -2,7 +2,7 @@
 
 2026-09-21 · @Santiago Espinosa Domínguez
 
-El árbol de la ontología en diagramas Mermaid, partido en vistas de menos de quince nodos para que cada una se lea de un golpe. Las definiciones de cada clase están en project/697dd43c-600e-4664-a8ce-d8e6c08b6b8f.
+El árbol de la ontología en diagramas Mermaid, partido en vistas de menos de quince nodos para que cada una se lea de un golpe. Las definiciones de cada clase están en `Docs/definitions.md`, que es la fuente: estos diagramas son una vista suya y, ante cualquier discrepancia, manda la definición.
 
 ## Árbol raíz
 
@@ -127,7 +127,7 @@ flowchart LR
   ESC["Escena"]
   LUG["Lugar"]
   HEC["HechoCanónico"]
-  CON["Registro<br/>conoce"]
+  CON["Personaje / Narrador / Lector<br/>(RegistroDeConocimiento)"]
   EST["EstadoDelMundo"]
   PRE["Presagio"]
   DRE["CurvaDeDread"]
@@ -136,7 +136,7 @@ flowchart LR
   ESC -->|ocurre_en| LUG
   ESC -->|establece| HEC
   ESC -->|revela_a_lector| HEC
-  HEC -->|conocido_por| CON
+  CON -->|conoce| HEC
   ESC -->|modifica| EST
   PRE -->|se_paga_en| ESC
   ESC -->|escala| DRE
@@ -146,18 +146,28 @@ Fíjate en el par crítico: `establece` y `revela_a_lector` apuntan al mismo hec
 
 ## Ciclo de vida de una escena
 
+Los nombres de estado son los literales de la enumeración `estado_de_escena` de
+`Docs/definitions.md`, no una versión bonita de ellos.
+
 ```mermaid
 stateDiagram-v2
-  [*] --> Planificada
-  Planificada --> Generada: modelo escribe
-  Generada --> EnVerificacion: puerta
-  EnVerificacion --> Rechazada: falla regla
-  EnVerificacion --> EnRevision: juez marca
-  Rechazada --> Generada: regenera
-  EnRevision --> Generada: reescribe
-  EnVerificacion --> Aceptada: pasa todo
-  Aceptada --> Consolidada: aplica delta
-  Consolidada --> [*]
+  state "planificada" as planificada
+  state "generada" as generada
+  state "en_verificación" as en_verificacion
+  state "rechazada" as rechazada
+  state "en_revisión" as en_revision
+  state "aceptada" as aceptada
+  state "consolidada" as consolidada
+  [*] --> planificada
+  planificada --> generada: modelo escribe
+  generada --> en_verificacion: puerta
+  en_verificacion --> rechazada: falla regla
+  en_verificacion --> en_revision: juez marca
+  rechazada --> generada: regenera
+  en_revision --> generada: reescribe
+  en_verificacion --> aceptada: pasa todo
+  aceptada --> consolidada: aplica delta
+  consolidada --> [*]
 ```
 
 La transición que importa es `Aceptada → Consolidada`: hasta que el delta no se aplica, el estado del mundo no ha cambiado y la escena siguiente no puede generarse. Es ahí donde se corta la propagación del error.

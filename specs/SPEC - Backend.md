@@ -21,13 +21,13 @@ frontend, la interfaz de puertas y cualquier otra pieza tendrán su propia spec,
 propio fichero dentro de `specs/`.
 
 **No es** una redefinición del dominio ni del proceso. El dominio está en
-`Docs/defintions` y el proceso en `Docs/domain-knowledge` y `Docs/architecture.md`. Este
+`Docs/definitions.md` y el proceso en `Docs/domain-knowledge.md` y `Docs/architecture.md`. Este
 documento los toma como dados y especifica **qué tiene que hacer el backend para
 ejecutarlos**.
 
-**Precedencia.** Aquí se repiten cosas que ya están en `CLAUDE.md` y en `Docs/defintions`
+**Precedencia.** Aquí se repiten cosas que ya están en `CLAUDE.md` y en `Docs/definitions.md`
 para que el documento se pueda leer solo. Si alguna vez discrepan, **gana el original** y
-este se corrige: `CLAUDE.md` en lo técnico, `Docs/defintions` en lo de dominio,
+este se corrige: `CLAUDE.md` en lo técnico, `Docs/definitions.md` en lo de dominio,
 `Docs/architecture.md` en cómo se organiza el código.
 
 | ID | Estado | Aprobada por | Fecha |
@@ -78,7 +78,7 @@ mucho que genere texto.
 
 ## 1.3 Definiciones
 
-Literales de `Docs/defintions`. No admiten sinónimos ni traducción.
+Literales de `Docs/definitions.md`. No admiten sinónimos ni traducción.
 
 | Término | Qué es |
 | --- | --- |
@@ -91,7 +91,7 @@ Literales de `Docs/defintions`. No admiten sinónimos ni traducción.
 | **Hallazgo** | Defecto detectado, con su verificador, su escena y su severidad |
 | **Puerta** | Condición que un artefacto debe pasar para avanzar |
 | **Trabajo** | Unidad de trabajo asíncrono registrada en la base de datos |
-| `INV-xx` | Invariante verificable de `Docs/defintions` |
+| `INV-xx` | Invariante verificable de `Docs/definitions.md` |
 | `VER-xx` | Fila del plan de verificación de `Docs/verification.md` |
 | `A-xx` | Decisión de arquitectura de `Docs/architecture.md` |
 
@@ -100,8 +100,8 @@ Literales de `Docs/defintions`. No admiten sinónimos ni traducción.
 | Documento | Qué aporta |
 | --- | --- |
 | `CLAUDE.md` | Stack, límite de contexto y su reparto por niveles, reglas de Pydantic y enumeraciones, persistencia |
-| `Docs/defintions` | Clases, atributos, vocabularios controlados e invariantes `INV-01`…`INV-16` |
-| `Docs/domain-knowledge` | **El proceso**: ciclo de vida de la escena y secuencia de generación |
+| `Docs/definitions.md` | Clases, atributos, vocabularios controlados e invariantes `INV-01`…`INV-16` |
+| `Docs/domain-knowledge.md` | **El proceso**: ciclo de vida de la escena y secuencia de generación |
 | `Docs/architecture.md` | Decisiones `A-01`…`A-09`, estructura por feature, agentes y quién dispara cada transición |
 | `Docs/verification.md` | Afirmaciones `VER-01`…`VER-37` y sus criterios de salida |
 
@@ -137,7 +137,7 @@ existen para que este proceso se ejecute bien.
 
 ### 2.2.1 Ciclo de vida de una escena
 
-Los estados son la enumeración `estado_de_escena` de `Docs/defintions`:
+Los estados son la enumeración `estado_de_escena` de `Docs/definitions.md`:
 
 ```mermaid
 stateDiagram-v2
@@ -248,7 +248,7 @@ De `CLAUDE.md`, no negociables desde aquí:
 | Persistencia | SQLite con extensión vectorial. Una sola base. Sin servicio de vectores externo |
 | Contexto | 100.000 tokens, salida incluida. Ver `RNF-P` |
 | Asincronía | Las llamadas al modelo son asíncronas: el endpoint arranca un trabajo y devuelve su identificador |
-| Validación | Los modelos Pydantic son la frontera y replican las clases de `Docs/defintions`. Un campo que no está allí no entra en un esquema |
+| Validación | Los modelos Pydantic son la frontera y replican las clases de `Docs/definitions.md`. Un campo que no está allí no entra en un esquema |
 | Vocabularios | Los valores cerrados son `Enum`. Un valor fuera de la enumeración es un error de validación, no un aviso |
 
 Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
@@ -283,7 +283,7 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 
 | ID | Requisito | Verifica |
 | --- | --- | --- |
-| **RF-01** | Se puede crear una `Obra` a partir de un `Brief` con premisa, tono, guía de estilo y prohibiciones. Los campos obligatorios de `Docs/defintions` son obligatorios aquí | — |
+| **RF-01** | Se puede crear una `Obra` a partir de un `Brief` con premisa, tono, guía de estilo y prohibiciones. Los campos obligatorios de `Docs/definitions.md` son obligatorios aquí | — |
 | **RF-02** | Se genera una `Escaleta`: lista ordenada de escenas planificadas, cada una con su `cambio_de_valor` previsto, su `pov`, su `lugar` y su `objetivo_dramático` | `INV-01` |
 | **RF-03** | Toda escena de la escaleta nace en estado `planificada` | — |
 | **RF-04** | La generación de la escaleta es asíncrona: devuelve un identificador de trabajo | — |
@@ -309,7 +309,7 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 
 | ID | Requisito | Verifica |
 | --- | --- | --- |
-| **RF-12** | Las comprobaciones deterministas las ejecuta **código**, no un juez. El reparto entre regla y juez es el de la columna `Tipo` de `Docs/defintions` y no se reinterpreta caso por caso | — |
+| **RF-12** | Las comprobaciones deterministas las ejecuta **código**, no un juez. El reparto entre regla y juez es el de la columna `Tipo` de `Docs/definitions.md` y no se reinterpreta caso por caso | — |
 | **RF-13** | Se ejecutan las invariantes de nivel escena: `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-07`, `INV-10` | `VER-10`, `VER-11` |
 | **RF-14** | Un fallo `bloqueante` detiene la escena en la puerta: no puede pasar a `aceptada`. `mayor` y `menor` generan `Hallazgo`, dejan seguir y el hallazgo queda abierto (ver §2.2.3) | `VER-11` |
 | **RF-15** | Todo `Hallazgo` cita su invariante **por identificador** (`INV-07`), nunca por descripción | `VER-12` |
@@ -338,7 +338,7 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 
 ### 3.2.1 API HTTP
 
-Contratos, no implementación. Los nombres de campo replican `Docs/defintions`.
+Contratos, no implementación. Los nombres de campo replican `Docs/definitions.md`.
 
 | Método | Ruta | Entrada | Salida | Códigos |
 | --- | --- | --- | --- | --- |
@@ -459,7 +459,7 @@ De `Docs/architecture.md`. Condicionan el código, no solo su organización:
 - **D-3.** Los `Enum` de los vocabularios controlados viven **solo** en `commons/dominio/`.
 - **D-4.** La severidad de las invariantes se implementa una vez, en
   `commons/invariantes/`, y no se resuelve caso por caso en cada verificador.
-- **D-5.** Las migraciones se versionan. Un cambio en `Docs/defintions` que altere un
+- **D-5.** Las migraciones se versionan. Un cambio en `Docs/definitions.md` que altere un
   atributo obligatorio necesita su migración en el mismo commit.
 
 ---
@@ -519,7 +519,7 @@ distinguirse de uno medido.**
 
 | Qué falta | Bloquea | Cómo se obtiene |
 | --- | --- | --- |
-| Umbrales de `INV-15` e `INV-16` | `VER-32`, `VER-33` | Medir sobre un corpus y fijar con esa medición. Es la decisión "Umbrales" abierta en `Docs/defintions`: se cierran a la vez o ninguna |
+| Umbrales de `INV-15` e `INV-16` | `VER-32`, `VER-33` | Medir sobre un corpus y fijar con esa medición. Es la decisión "Umbrales" abierta en `Docs/definitions.md`: se cierran a la vez o ninguna |
 | Reparto de tokens por agente | `VER-34` | Instrumentar el consumo durante varias escenas |
 | Coste por escena | `VER-36` | Medir una escena completa con `A-03` |
 | Suficiencia del reparto por niveles | `VER-37` | Ensamblar el contexto de una escena real y ver si cabe |

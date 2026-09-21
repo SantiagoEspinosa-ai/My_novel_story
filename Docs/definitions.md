@@ -195,7 +195,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `severidad` | Hallazgo.severidad, Invariante.severidad | bloqueante, mayor, menor |
 | `tipo_de_pase` | PaseDeRevisión.tipo | continuidad, voz, ritmo, densidad, línea |
 
-La enumeración `estado_de_escena` es la misma máquina de estados del diagrama de ciclo de vida: el harness la usa para saber qué transiciones son legales y cuáles indican un fallo de orquestación.
+El harness usa `estado_de_escena` para saber qué transiciones son legales y cuáles indican un fallo de orquestación. El diagrama de ciclo de vida de `Docs/domain-knowledge.md` dibuja esa misma máquina de estados, pero es una vista: **los literales se copian de esta tabla, nunca del diagrama.**
 
 ## Invariantes verificables
 

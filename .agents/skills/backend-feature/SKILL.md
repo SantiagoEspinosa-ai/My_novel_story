@@ -39,7 +39,7 @@ backend/app/
 
 Recórrelo en orden y para en la primera que se cumpla:
 
-1. **¿Es un `Enum` de un vocabulario controlado de `Docs/defintions`?**
+1. **¿Es un `Enum` de un vocabulario controlado de `Docs/definitions.md`?**
    → `commons/dominio/`. En ningún otro sitio, nunca.
 2. **¿Lo van a usar dos o más features?** → `commons/`, en el subpaquete que le
    toque (`db/`, `modelo/`, `invariantes/`, `trabajos/`).
@@ -85,15 +85,15 @@ la rompe, la solución no es una excepción: es mover el código.
 ## Reglas de dominio que afectan al código
 
 - **Pydantic es la frontera de validación** y replica las clases de
-  `Docs/defintions`. **Un campo que no está definido allí no entra en un
-  esquema.** Si hace falta uno nuevo, primero se añade a `Docs/defintions`.
+  `Docs/definitions.md`. **Un campo que no está definido allí no entra en un
+  esquema.** Si hace falta uno nuevo, primero se añade a `Docs/definitions.md`.
 - **No inventes campos, clases ni valores de enumeración.** Ni "provisionales",
   ni "para probar".
 - **Las llamadas al modelo son asíncronas.** Un endpoint que dispara trabajo del
   modelo encola y devuelve un identificador de trabajo; no bloquea.
 - **Toda comprobación cita su invariante por identificador** (`INV-07`), nunca
   por descripción.
-- **Un cambio en `Docs/defintions` que altere un atributo obligatorio necesita
+- **Un cambio en `Docs/definitions.md` que altere un atributo obligatorio necesita
   su migración en el mismo commit.**
 
 ## Antes de escribir código
@@ -112,5 +112,5 @@ Dos puertas del proceso de `AGENTS.md`, que aquí no se saltan:
 | `Enum` duplicado en una feature | Prisa por no tocar `commons/` | Moverlo a `commons/dominio/` |
 | SQL en `service.py` | Saltarse el repositorio | Bajarlo a `repository.py` |
 | Lógica en `router.py` | Endpoint que "solo era un `if`" | Subirla a `service.py` |
-| Campo nuevo inventado en un esquema | Falta en `Docs/defintions` | Añadirlo allí primero |
+| Campo nuevo inventado en un esquema | Falta en `Docs/definitions.md` | Añadirlo allí primero |
 | Carpeta `utils/` dentro de una feature | Cajón de sastre | Nombrar lo que hace, o `commons/` |

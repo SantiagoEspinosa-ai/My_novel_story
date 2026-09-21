@@ -15,7 +15,7 @@ La línea de arriba importa `AGENTS.md` entero: Claude Code la expande al arranc
 
 ### FastAPI
 
-- Los modelos Pydantic son la frontera de validación y replican las clases de `Docs/defintions`. Un campo que no está definido allí no entra en un esquema.
+- Los modelos Pydantic son la frontera de validación y replican las clases de `Docs/definitions.md`. Un campo que no está definido allí no entra en un esquema.
 - Los valores de los vocabularios controlados se implementan como `Enum`, no como cadenas libres. Un valor fuera de la enumeración es un error de validación, no un aviso.
 - Las llamadas al modelo son asíncronas. Generar una escena tarda, así que el endpoint arranca un trabajo y devuelve su identificador; no bloquea.
 
@@ -44,11 +44,11 @@ Nunca se manda el texto completo de la obra. Si una tarea parece necesitarlo, el
 - Una sola base de datos guarda el estado estructurado y los embeddings. La búsqueda por similitud se hace con una extensión vectorial de SQLite; no se añade un servicio aparte.
 - Se indexan fichas de entidad, resúmenes de escena y presagios pendientes. El texto completo de las escenas se guarda pero no se recupera por similitud: para eso están los resúmenes.
 - El estado del mundo se reconstruye acumulando los deltas de escena en orden. No se relee el texto para averiguar qué pasó.
-- Las migraciones de esquema se versionan. Un cambio en `Docs/defintions` que altere un atributo obligatorio necesita su migración en el mismo commit.
+- Las migraciones de esquema se versionan. Un cambio en `Docs/definitions.md` que altere un atributo obligatorio necesita su migración en el mismo commit.
 
 ## Reglas de trabajo
 
-- No inventes campos, clases ni valores de enumeración. Si algo falta, se añade primero a `Docs/defintions`.
+- No inventes campos, clases ni valores de enumeración. Si algo falta, se añade primero a `Docs/definitions.md`.
 - Una comprobación del harness cita siempre su invariante por identificador.
 - Las invariantes `bloqueante` detienen la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir. Esa diferencia se respeta en el código, no se resuelve caso por caso.
 - Antes de dar por buena una escena, su delta tiene que estar aplicado. Es lo que corta la propagación del error.
