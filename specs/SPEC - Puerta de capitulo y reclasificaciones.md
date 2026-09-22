@@ -1,9 +1,11 @@
 ---
 id: SPEC-04
 titulo: La puerta de cierre de capítulo, y tres invariantes que eran comparaciones
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
+fecha_aplicacion: 2026-09-22
+commit_de_aplicacion: PENDIENTE
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
@@ -205,3 +207,40 @@ mover tres comprobaciones del cliente del modelo al verificador de reglas.
 | 3 | ¿El cierre de capítulo exige que **todas** sus escenas estén `consolidada`? | Sí. Un capítulo con escenas a medias no es un capítulo |
 | 4 | ¿Las tres reclasificaciones van juntas o por separado? | Juntas. Comparten argumento y tabla |
 | 5 | ¿`INV-03` conserva la severidad `bloqueante` al pasar a `regla`? | Sí. Lo que cambia es quién decide, no cuánto pesa |
+
+Las cinco se respondieron con la propuesta el 2026-09-22, al aprobar.
+
+# 5. Qué se tocó al aplicarla
+
+| Documento | Cambio |
+| --- | --- |
+| `Docs/definitions.md` | `Capitulo.estado` y la enumeración `estado_de_capitulo`; la columna `Tipo` de `INV-03`, `INV-11` e `INV-14`; dos notas bajo la tabla de invariantes —el escalado al juez y que `INV-03` conserva su severidad—; la decisión abierta del desempate, que deja de ser teórica |
+| `Docs/architecture.md` | La tabla de transiciones de capítulo; `INV-03` pasa del Juez de rúbrica al Verificador de reglas y el Juez queda con `INV-10` más los tres desempates; la sección de severidad explica ya cuál es la consecuencia de un `mayor` |
+| `Docs/verification.md` | `PC-3` encoge por segunda vez; `VER-06`, `VER-11` y `VER-35` cambian de criterio; `INV-03` entra en la tabla de juicio-que-era-comparación; se cierran dos decisiones abiertas |
+| `specs/SPEC - Backend.md` | `RF-26` y §2.4 dicen ya que el orden de recorte opera sobre **bloques** y no sobre niveles |
+| `.agents/skills/harness-invariantes/SKILL.md` | El recuento pasa de doce reglas y cuatro jueces a quince y uno |
+
+## Lo que la spec no previó
+
+**`tipo_de_verificador` no tiene un valor para "regla con desempate".** La spec escribe
+*"pasan a `regla` con el juez como desempate"*, pero la enumeración tiene tres valores
+—`regla`, `juez_llm`, `humano`— y ninguno significa eso. Se aplicó la lectura literal
+—`tipo = regla`— y el escalado quedó documentado en prosa bajo la tabla de invariantes:
+**el tipo dice quién decide primero**. Añadir un cuarto valor sería un cambio de
+vocabulario controlado, y eso es otra spec.
+
+**La tabla de transiciones de `Docs/architecture.md` es de `estado_de_escena`.** `C-3`
+pedía "una fila" en ella, pero `abierto` y `cerrado` no pertenecen a ese vocabulario, así
+que la fila fue a una tabla propia inmediatamente debajo. Mezclarlas invitaría a comparar
+valores de dos enumeraciones distintas.
+
+**`D4-9` se cierra a medias, y estaba previsto.** La tabla "Qué desbloquea" dice que era el
+último bloqueante de `SPEC-01`, y lo era **como decisión**: ya no falta acordar nada. Pero
+el enunciado de `D4-9` tenía dos mitades, y la segunda —*"`SPEC-01` no tiene ningún
+requisito de cierre de capítulo"*— sigue en pie, porque §3 la dejó fuera a propósito.
+`D4-9` baja de bloqueante a pendiente: ya no falta una decisión, falta escribir un `RF`.
+
+**`PC-3` encoge pero también se desplaza.** Al dar consecuencia al `mayor`, `INV-10` —la
+única invariante que sigue siendo del Juez— pasa a bloquear el cierre de capítulo. La
+fiabilidad no medida del Juez deja de poder detener una escena y empieza a poder detener
+una puerta humana. Es un punto ciego más pequeño, pero no el mismo.

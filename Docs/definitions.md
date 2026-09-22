@@ -38,7 +38,7 @@ La **Escena** es la unidad atómica: la unidad que se genera, se verifica y se r
 | --- | --- | --- |
 | Obra | La novela completa como unidad publicable. | **id**, **titulo**, **premisa**, genero, subgenero, extension\_objetivo, guia\_de\_estilo, contrato\_con\_el\_lector |
 | Parte | Agrupación de capítulos con unidad dramática (acto). | **id**, **orden**, funcion\_estructural, valor\_inicial, valor\_final |
-| Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, gancho\_de\_cierre, escenas\[\] |
+| Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, **estado** → `estado_de_capitulo`, gancho\_de\_cierre, escenas\[\] |
 | Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo |
 | Beat | Micro-unidad de cambio dentro de una escena. | **id**, tipo, valor\_antes, valor\_despues |
 | ArcoNarrativo | Trayectoria de cambio de un personaje o de una tensión a lo largo de la obra. | **id**, **sujeto**, estado\_inicial, estado\_final, hitos\[\] |
@@ -202,6 +202,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `tipo_de_valvula` | Valvula.tipo | humor, ternura, informacion, seguridad\_falsa |
 | `eje_de_deterioro` | Deterioro.eje | cordura, cuerpo, vinculos, recursos |
 | `estado_de_escena` | Escena.estado | planificada, generada, en\_verificacion, rechazada, en\_revision, aceptada, consolidada |
+| `estado_de_capitulo` | Capitulo.estado | abierto, cerrado |
 | `estado_de_hallazgo` | Hallazgo.estado | abierto, resuelto, descartado |
 | `tipo_de_verificador` | Verificador.tipo, Invariante.tipo | regla, juez\_llm, humano |
 | `nivel_de_evaluacion` | DimensionDeCalidad.nivel, Invariante.nivel, Resumen.nivel | escena, capitulo, obra |
@@ -263,7 +264,7 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | --- | --- | --- | --- | --- |
 | INV-01 | Toda escena tiene `cambio_de_valor` no nulo | escena | bloqueante | regla |
 | INV-02 | Todo personaje presente tiene `estado_vital = vivo` y es accesible en `EstadoDelMundo(t)` | escena | bloqueante | regla |
-| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | juez\_llm |
+| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla |
 | INV-04 | El POV no cambia dentro de una escena | escena | bloqueante | regla |
 | INV-05 | Toda escena aceptada tiene su delta aplicado antes de la siguiente | escena | bloqueante | regla |
 | INV-06 | Ningún `HechoCanonico` vigente contradice a otro | obra | bloqueante | regla |
@@ -271,12 +272,16 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-08 | `t_fabula` es monótono dentro de una línea argumental salvo analepsis declarada | capitulo | mayor | regla |
 | INV-09 | Todo presagio plantado se paga antes del final | obra | mayor | regla |
 | INV-10 | La amenaza no viola sus propias reglas sin pagar el coste declarado | escena | mayor | juez\_llm |
-| INV-11 | El grado de explicación acumulado no supera el fijado en el brief | obra | mayor | juez\_llm |
+| INV-11 | El grado de explicación acumulado no supera el fijado en el brief | obra | mayor | regla |
 | INV-12 | La presión máxima de la curva de dread cae en el clímax ±1 escena | obra | mayor | regla |
 | INV-13 | Ningún hecho se revela dos veces al lector como si fuera nuevo | obra | mayor | regla |
-| INV-14 | Cada deterioro es monótono, o su reversión está justificada en el texto | obra | menor | juez\_llm |
+| INV-14 | Cada deterioro es monótono, o su reversión está justificada en el texto | obra | menor | regla |
 | INV-15 | La distancia estilométrica a las anclas se mantiene bajo umbral | capitulo | menor | regla |
 | INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla |
+
+**Tres invariantes son de tipo `regla` y escalan al juez para desempatar.** `INV-03`, `INV-11` e `INV-14` eran de tipo `juez_llm` y su núcleo resultó ser una comparación: una resta sobre una serie numérica, un conteo, y un cruce de identificadores. La regla decide primero y el juez solo interviene en lo que la regla no puede ver: si una reversión está justificada en el texto (`INV-14`), si una revelación implícita cuenta (`INV-11`), y si un personaje **actúa sobre** un hecho que el delta no declaró (`INV-03`). El escalado se describe aquí y no en la columna `Tipo` porque `tipo_de_verificador` tiene tres valores y ninguno significa "regla con desempate": el tipo dice **quién decide primero**.
+
+**`INV-03` conserva su severidad `bloqueante`.** Reclasificarla es fácil de leer como un ablandamiento y no lo es: lo que cambia es **quién decide**, no **cuánto pesa**. Sigue deteniendo la escena en la puerta; lo que ya no hace es detenerla basándose en un modelo cuya fiabilidad no está medida.
 
 Cada invariante debe tener al menos un caso de prueba negativo en el harness: un fragmento que la viole deliberadamente. Una invariante que nunca ha fallado en las pruebas no está verificada, solo declarada.
 
@@ -314,4 +319,4 @@ Estas son las que conviene fijar antes de escribir esquema o código.
 
 * [ ] **Umbrales.** Las invariantes `menor` (INV-15, INV-16) necesitan números concretos antes de poder ejecutarse; sin ellos el harness las salta en silencio.
 * [ ] **Corpus de fixtures.** Qué obra o fragmento sirve de caso base para los tests negativos de cada invariante.
-* [ ] **Desempate juez vs. regla.** Cuando INV-03 la marca un juez LLM y la regla de continuidad no ve nada, qué gana.
+* [ ] **Desempate juez vs. regla.** Con INV-03 ya de tipo `regla` y el juez como desempate, la pregunta es operativa y no teórica: falta decidir qué gana cuando la regla no ve nada y el juez marca. Aplica igual a INV-11 y a INV-14.

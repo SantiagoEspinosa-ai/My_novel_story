@@ -271,8 +271,12 @@ Este es el orden, y **también modifica `CLAUDE.md`**, igual que `P-1`.
 
 El criterio no es cuánto ocupa cada nivel, sino **qué se pierde si falta**:
 
-El orden opera sobre **bloques**, no sobre niveles, porque `Recuperado` se parte en dos:
-sus fichas y setups se recortan pronto y su registro de conocimiento no.
+**El orden opera sobre bloques, no sobre niveles**, y la diferencia no es de vocabulario:
+el nivel `Recuperado` de `CLAUDE.md` se parte en dos bloques que caen a distinto lado de la
+frontera de `RF-26` —fichas y setups en el 2.º, registro de conocimiento en el 4.º—. La
+columna "Nivel del que sale" está ahí para trazar el origen, no para recorrerla: quien
+implemente el recortador itera sobre las filas de esta tabla, nunca sobre los seis niveles
+del presupuesto.
 
 | Orden | Bloque | Nivel del que sale | Qué se pierde |
 | --- | --- | --- | --- |
@@ -286,7 +290,7 @@ sus fichas y setups se recortan pronto y su registro de conocimiento no.
 **Por qué el registro de conocimiento sube a la cuarta posición y no se queda con el resto
 de `Recuperado`.** `INV-03` es `bloqueante` y **depende de ese dato**. Si se recorta en
 segunda posición, el recorte se lo lleva antes de que la regla de fallar por debajo del
-nivel 3 llegue a activarse, y la puerta queda en pie pero sin la información con la que
+bloque 3 llegue a activarse, y la puerta queda en pie pero sin la información con la que
 juzgar: sigue ahí, y ya no puede decidir. El criterio es el mismo que para el estado del
 mundo —sin él la comprobación no es peor, es imposible—, así que va en el mismo bloque.
 
@@ -327,7 +331,7 @@ niveles 4, 5 y 6 no se toquen nunca: el ensamblador se detiene antes de llegar a
 | **RF-06** | Si no cabe, se recorta siguiendo el **orden de recorte de §2.4**: condensaciones, después fichas y setups, después la escena anterior. Nunca truncando por el final ni partiendo un bloque | `VER-06` |
 | **RF-07** | El contexto nunca incluye el texto completo de la obra. Solo la escena anterior entra en texto completo | `VER-07` |
 | **RF-08** | Cada agente recibe únicamente los niveles que le corresponden según `Docs/architecture.md` | — |
-| **RF-26** | **Si tras recortar los tres primeros bloques el contexto sigue sin caber, el trabajo falla en vez de generar.** No se tocan el estado del mundo, el registro de conocimiento, la reserva de salida ni el nivel inmutable | `VER-06` |
+| **RF-26** | **Si tras recortar los tres primeros bloques de §2.4 el contexto sigue sin caber, el trabajo falla en vez de generar.** El límite son **bloques, no niveles de `CLAUDE.md`**: el nivel `Recuperado` se parte en dos y sus dos mitades están a distinto lado de la frontera —fichas y setups en el bloque 2, que sí se recorta; registro de conocimiento en el bloque 4, que no—. Un recortador que itere por niveles se lleva el registro de conocimiento y deja `INV-03` sin datos. No se tocan los bloques 4.º, 5.º ni 6.º | `VER-06` |
 
 ### Generación
 
@@ -578,7 +582,7 @@ distinguirse de uno medido.**
 **Cerradas el 2026-09-22**, y por eso ya no aparecen abajo:
 
 - ~~El orden de recorte de los niveles de memoria~~ — fijado en §2.4, con la regla de
-  fallar antes que generar por debajo del nivel 3 (`RF-26`).
+  fallar antes que generar por debajo del **bloque** 3 (`RF-26`).
 - ~~Si `Beat` y `ArcoNarrativo` entran en la v1~~ — entran, con su coste reconocido en
   §3.2.2.
 
@@ -587,11 +591,12 @@ Siguen abiertas:
 - **`mayor` y `menor`: ¿dejan seguir o van a `en_revision`?** `CLAUDE.md` y
   `Docs/architecture.md` se contradicen (§2.2.3). La v1 asume lo primero. Al cerrarlo hay
   que corregir el documento que quede en falso.
-- **La puerta de cierre de capítulo.** La salvaguarda de esa misma decisión —un hallazgo
-  `mayor` abierto impide cerrar el capítulo— necesita una puerta que hoy no existe en
-  ningún documento.
-- **Desempate juez contra regla.** Cuando `INV-03` la marca el Juez y la regla de
-  continuidad no ve nada, qué gana.
+- **El requisito y el endpoint de cierre de capítulo.** Ya no es una decisión: `SPEC-04`
+  definió el dominio —`Capitulo.estado`, la enumeración `estado_de_capitulo` y la
+  transición `abierto` → `cerrado` con firma humana— y la condición de cierre. Lo que
+  falta es escribirlo aquí como `RF` y como endpoint. Es la mitad que queda de `D4-9`.
+- **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla` (`SPEC-04` C-6) y el
+  Juez como desempate, falta decidir qué gana cuando la regla no ve nada y el Juez marca.
 - **Persistencia del estado.** Si los deltas son la única fuente de verdad o se materializa
   `EstadoDelMundo` en cada `t`. El modelo de datos de §3.2.2 admite las dos; la decisión
   cambia qué se lee en caliente.

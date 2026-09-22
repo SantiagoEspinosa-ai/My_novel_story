@@ -26,8 +26,10 @@ función dramática, credibilidad del diálogo, eficacia del presagio, adecuaci�
 al POV, calidad del cambio de valor.
 
 **El reparto ya está decidido en `Docs/definitions.md`**, en la columna `Tipo` de la
-tabla de invariantes. No lo reinterpretes caso por caso: doce son de regla,
-cuatro son de juez. Si crees que una está mal clasificada, eso es un cambio en
+tabla de invariantes. No lo reinterpretes caso por caso: quince son de regla,
+una es de juez. Tres de las quince —`INV-03`, `INV-11` e `INV-14`— escalan al
+juez solo para desempatar lo que la regla no puede ver; el tipo dice quién
+decide primero. Si crees que una está mal clasificada, eso es un cambio en
 `Docs/definitions.md` y necesita su spec, no un apaño en el código.
 
 ## Severidad: se implementa una vez, no caso por caso

@@ -219,8 +219,8 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | **Escaletador** | Sí | Repartir el cambio de valor por escena; prever la curva de dread; asignar beats a arcos | `Brief` + `GuiaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
 | **Ensamblador de contexto** | No | Recuperar por similitud; seleccionar fichas y setups pendientes; recortar por nivel de prioridad; contar tokens | Escena planificada → contexto dentro del presupuesto | Ninguna; hace cumplir el límite de `CLAUDE.md` |
 | **Escritor de escena** | Sí | Escribir la escena; sostener el POV; respetar las anclas de estilo; **devolver el delta estructurado en la misma llamada** | Contexto → `Borrador` + `DeltaDeEscena` | Produce el material de `INV-01`…`INV-04` |
-| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; setups huérfanos; repetición léxica; distribución de longitud de frase; varianza de la curva | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-04`, `INV-05`, `INV-06`, `INV-07`, `INV-09`, `INV-12`, `INV-13`, `INV-16` |
-| **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-03`, `INV-10`, `INV-11`, `INV-14` |
+| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; setups huérfanos; repetición léxica; distribución de longitud de frase; varianza de la curva | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-06`, `INV-07`, `INV-09`, `INV-12`, `INV-13`, `INV-16` |
+| **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-10`. Como desempate: `INV-03`, `INV-11`, `INV-14` |
 | **Revisor** | Sí | Un `PaseDeRevision` por tipo: continuidad, voz, ritmo, densidad, línea | Borrador + hallazgos → borrador nuevo | Las del hallazgo que corrige |
 | **Resumidor** | Sí | Condensar escena → capítulo → parte; extraer hechos clave; actualizar fichas de entidad | Escena consolidada → `Resumen`, `Ficha` | Ninguna; es lo que hace que el sistema escale |
 | **Consolidador** | No | Aplicar el delta al estado; detectar delta incompatible; reindexar embeddings | Delta aceptado → `EstadoDelMundo(t+1)` | `INV-05`, `INV-06` |
@@ -309,6 +309,26 @@ La transición que importa es `aceptada → consolidada`. Hasta que el delta no 
 aplicado, el estado del mundo no ha cambiado y la escena siguiente **no puede generarse**:
 es ahí donde se corta la propagación del error.
 
+#### El capítulo tiene su propia transición
+
+Los estados de capítulo son los de `estado_de_capitulo`, no los de `estado_de_escena`, así
+que van en su propia tabla: mezclar las dos escalas en una sola invita a comparar valores
+que no pertenecen al mismo vocabulario.
+
+| Transición | Quién la dispara | Condición |
+| --- | --- | --- |
+| `abierto` → `cerrado` | **Cliente de la API** | Todas las escenas del capítulo están `consolidada` y ninguna tiene un hallazgo `mayor` abierto |
+
+Los hallazgos `menor` abiertos **no bloquean el cierre**: se listan al firmar, para que
+quien cierra sepa qué deja pasar. Los `resuelto` y los `descartado` tampoco cuentan; para
+eso existe `descartado`.
+
+Es la **segunda puerta con firma humana** del sistema, junto con la aceptación de escena de
+`A-04`, y es la que da sentido a la primera. Al decidir que un hallazgo `mayor` no detiene
+la escena, el control no desapareció: se movió aquí, que es donde una persona puede juzgar
+si el conjunto se sostiene. Sin esta puerta, un hallazgo `mayor` se quedaba sin ninguna
+consecuencia.
+
 ### Severidad: bloqueante frente a mayor y menor
 
 La diferencia se implementa una vez, en `commons/invariantes/`, y no se resuelve caso por
@@ -317,6 +337,10 @@ caso en cada verificador:
 - **`bloqueante`** detiene la escena en la puerta. No pasa a `aceptada`.
 - **`mayor`** y **`menor`** generan `Hallazgo` y dejan seguir, pero el hallazgo queda
   abierto y el frontend lo muestra junto al texto.
+- La diferencia entre `mayor` y `menor` está **una puerta más arriba**: un `mayor` abierto
+  impide cerrar el capítulo, un `menor` solo se lista al firmar. Sin esa puerta las dos
+  severidades producirían exactamente el mismo comportamiento, y una escala cuyos valores
+  no se distinguen en nada es una etiqueta, no un control.
 
 Todo hallazgo cita su invariante por identificador (`INV-07`), nunca por descripción.
 
@@ -371,8 +395,9 @@ Sin cerrar. Afectan al código, así que conviene fijarlas antes de escribirlo.
   la decisión que habría que revisar (`VER-36`).
 - [ ] **Suficiencia del reparto por niveles de `CLAUDE.md`.** Nunca se ha ensamblado el
   contexto de una escena real para ver si los niveles caben (`VER-37`).
-- [ ] **Desempate juez contra regla.** Cuando `INV-03` la marca el Juez y la regla de
-  continuidad no ve nada, qué gana.
+- [ ] **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla`, la pregunta deja
+  de ser teórica: hay dos resultados que comparar en cada escena. Falta decidir qué gana
+  cuando la regla no ve nada y el Juez marca. Lo mismo para `INV-11` e `INV-14`.
 - [ ] **Qué valida una persona y cuándo.** Con `A-04` el frontend lo permite; falta decidir
   en qué puertas es obligatorio.
 - [ ] **Limpieza de los documentos de dominio.** Mover lo listado arriba y arreglar el

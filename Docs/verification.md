@@ -354,12 +354,12 @@ implantación".
 | VER-03 | El endpoint de generación no bloquea: devuelve un identificador de trabajo | T | integration testing | La respuesta llega antes de que termine la generación y trae un identificador consultable | No comprueba que el trabajo **llegue a ejecutarse**: un worker parado deja `202` y trabajos eternos | `features/generacion/tests/` |
 | VER-04 | Un trabajo encolado sobrevive a un reinicio del servidor | T | integration testing | Se encola, se mata el proceso, se levanta, y el trabajo sigue ahí y se completa | **No comprueba unicidad**: el trabajo puede completarse habiendo llamado al modelo dos veces | `commons/trabajos/tests/` |
 | VER-05 | Ninguna llamada al modelo supera los 100.000 tokens, salida incluida, **medido con un contador independiente del ensamblador** | T | property-based testing | El contexto ensamblado más la reserva de salida cabe en el límite **según el `usage` que devuelve el modelo o un segundo tokenizador**, no según el contador de producción (Regla 3) | Mide el **techo**, no el **contenido**: un contexto de 3.000 tokens que dejó fuera al protagonista pasa | `features/contexto/tests/` |
-| VER-06 | Cuando no cabe, se recorta en el orden declarado, y por debajo del tercer nivel se falla en vez de generar | T | property-based testing | Ningún recorte parte un bloque; el orden es el de `SPEC-01` §2.4 —Resúmenes, Recuperado, Local— y si aún no cabe, el trabajo falla sin tocar `Estado actual`, `Salida` ni `Inmutable` | Comprueba que el **orden** se respeta, no que lo que queda **baste**: un contexto recortado correctamente, que conserva el estado y el registro de conocimiento pero se quedó sin la ficha del protagonista, pasa. Eso es `PC-9` | `features/contexto/tests/` |
+| VER-06 | Cuando no cabe, se recorta en el orden declarado, y por debajo del **tercer bloque** se falla en vez de generar | T | property-based testing | Ningún recorte parte un bloque; el orden es el de las filas de `SPEC-01` §2.4 —condensaciones, fichas y setups, escena anterior— y si aún no cabe, el trabajo falla sin tocar el bloque 4.º (**estado del mundo y registro de conocimiento**), la reserva de salida ni el nivel inmutable. **El caso negativo obligatorio es el recortador que itera por niveles de `CLAUDE.md` en vez de por bloques**: se lleva el registro de conocimiento con las fichas y deja `INV-03` sin datos | Comprueba que el **orden** se respeta, no que lo que queda **baste**: un contexto recortado correctamente, que conserva el estado y el registro de conocimiento pero se quedó sin la ficha del protagonista, pasa. Eso es `PC-9` | `features/contexto/tests/` |
 | VER-07 | Nunca se manda el texto completo de la obra al modelo | T | unit testing | Con una obra de muchas escenas, el contexto no contiene el texto de ninguna escena salvo la anterior | Mira **texto de escena**, no **volumen equivalente**: resúmenes que crecen hasta reconstruir la obra pasan | `features/contexto/tests/` |
 | VER-08 | El texto completo de una escena se guarda pero no se recupera por similitud | T | integration testing | La búsqueda vectorial solo devuelve fichas, resúmenes y presagios | Comprueba el **índice**, no el **camino de lectura**: leer el texto por clave primaria lo esquiva *(lo cubre `VER-07`)* | `commons/db/tests/` |
 | VER-09 | El estado del mundo se reconstruye acumulando deltas en orden, **contrastado con una implementación de referencia** | T | property-based testing | Reconstruir con el aplicador de producción y con un **aplicador de referencia ingenuo escrito solo para la prueba** da el mismo estado (Regla 3) | Comprueba que el estado **se construye bien desde el delta**, no que el **delta sea cierto** *(lo cubre parcialmente `VER-39`)* | `features/consolidacion/tests/` |
 | VER-10 | Ninguna escena pasa a `consolidada` sin su delta aplicado (`INV-05`) | T | unit testing | Intentar consolidar sin delta aplicado falla; la escena siguiente no se puede generar | Comprueba que el delta **se aplicó**, no que se aplicara **entero** *(lo cubre `VER-42`)* | `features/consolidacion/tests/` |
-| VER-11 | `bloqueante` detiene la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir | T | unit testing | Un hallazgo de cada severidad produce exactamente el comportamiento declarado | Comprueba el comportamiento **dada** una severidad, no que la **asignada sea la correcta** *(lo cubre `VER-38`)* | `commons/invariantes/tests/` |
+| VER-11 | `bloqueante` detiene la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir, y un `mayor` abierto impide cerrar el capítulo | T | unit testing | Un hallazgo de cada severidad produce exactamente el comportamiento declarado, **incluida la diferencia entre `mayor` y `menor` en la puerta de cierre de capítulo** (`SPEC-04` C-2) | Comprueba el comportamiento **dada** una severidad, no que la **asignada sea la correcta** *(lo cubre `VER-38`)* | `commons/invariantes/tests/` |
 | VER-12 | Todo hallazgo cita su invariante por identificador, nunca por descripción | A | static analysis | Todo `Hallazgo` construido lleva un identificador del registro `INV-xx` | Comprueba que el id **existe**, no que sea el **correcto**: un verificador copiado que no cambió el id pasa | `commons/invariantes/` |
 | VER-13 | Una feature nunca importa de otra feature, salvo `orquestacion/` | A | static analysis | El comprobador de importaciones falla el build ante cualquier import cruzado no autorizado | Estático: no ve importación dinámica ni acoplamiento por datos compartidos | CI |
 | VER-14 | `commons/` nunca importa de una feature | A | static analysis | Mismo comprobador; la flecha va en un solo sentido | El mismo que `VER-13` | CI |
@@ -434,7 +434,7 @@ no lo verifica nadie, y eso está anotado en "Puntos ciegos asumidos".
 | VER-32 | La distancia estilométrica a las anclas se mantiene bajo umbral (`INV-15`) | Medir la distancia sobre un corpus y fijar el número con esa medición | `Docs/definitions.md` § Decisiones abiertas → **"Umbrales"** |
 | VER-33 | La varianza de la curva de dread supera el mínimo fijado (`INV-16`) | Lo mismo: primero medir, después fijar | `Docs/definitions.md` § Decisiones abiertas → **"Umbrales"** |
 | VER-34 | Cada agente cabe en su parte del presupuesto de contexto | Instrumentar el consumo por agente durante varias escenas. **Depende de `VER-41`**: sin reconciliar, mediría sobre un dato sin validar | `Docs/architecture.md` § Decisiones abiertas → "Reparto de tokens por agente" |
-| VER-35 | Cuando el Juez marca `INV-03` y la regla de continuidad no ve nada, gana el correcto | La decisión de quién gana. **La parte medible —cuántas veces discrepan y en qué dirección— no necesita la decisión y se puede instrumentar ya** | `Docs/definitions.md` → "Desempate juez vs. regla" |
+| VER-35 | Cuando el Juez marca `INV-03` y la regla de continuidad no ve nada, gana el correcto | Solo la decisión de quién gana. **Ya no es hipotética**: con `SPEC-04`, `INV-03` es de tipo `regla` y el Juez es su desempate, así que las dos comprobaciones se ejecutan sobre la misma escena y la discrepancia se puede contar desde el primer día | `Docs/definitions.md` → "Desempate juez vs. regla" |
 | VER-36 | El coste por escena es sostenible para una obra completa | Coste real de una escena con `A-03`. **Depende de `VER-41`** | Ninguna. Nace aquí |
 | VER-37 | El reparto por niveles de `CLAUDE.md` basta para una escena real | Ensamblar el contexto de una escena real y ver si cabe. **Depende de `VER-41`** | Ninguna. Nace aquí |
 
@@ -458,7 +458,7 @@ dejaría pasar.
 | --- | --- | --- | --- |
 | **PC-1** | **El análisis estático no ve la ejecución.** Once validadores lo comparten: `VER-01`, `VER-12`, `VER-13`, `VER-14`, `VER-15`, `VER-16`, `VER-17`, `VER-21`, `VER-23`, `VER-28`, `VER-31`, `VER-38` | Un script de mantenimiento hace `UPDATE escena SET estado='consolidada'` y salta la máquina de estados entera | Taparlo pide auditoría en tiempo de ejecución sobre la base. No es caro, pero no hay base todavía |
 | **PC-2** | **Nadie comprueba que quien acepta una escena sea una persona.** `VER-29` solo comprueba que el worker no puede | Un script llama a `POST /escenas/{id}/aceptar` en bucle y consolida la obra entera sin que nadie la lea | `SPEC-01` §2.5 excluye la autenticación de la v1. Sin identidad no hay nada que comprobar |
-| **PC-3** | **La fiabilidad del Juez no está medida**, y `VER-26` en verde significa "se midió", no "es fiable" | `INV-03` es `bloqueante` y de tipo `juez_llm`: es la única puerta que detiene una escena basándose en un modelo cuya fiabilidad se desconoce | **Encogido por `SPEC-03`**, no cerrado. `RegistroDeConocimiento.fuente` pasó a ser una referencia a `Escena` o `Personaje`, así que la parte determinista de `INV-03` —comparar identificadores de hechos contra el registro en `t`, y ahora también su origen— ya se puede escribir. Lo que queda para el juez es decidir que el personaje **actúa sobre** el hecho, que solo se ve leyendo. Reclasificar `INV-03` es una decisión de dominio que `SPEC-03` dejó fuera |
+| **PC-3** | **La fiabilidad del Juez no está medida**, y `VER-26` en verde significa "se midió", no "es fiable" | Tras `SPEC-04` **ninguna invariante `bloqueante` es de tipo `juez_llm`**: la única que queda del Juez es `INV-10`, de severidad `mayor`. El Juez ya no detiene una escena por sí solo | **Encogido dos veces, no cerrado.** `SPEC-03` hizo escribible la parte determinista de `INV-03`; `SPEC-04` la reclasificó a `regla` y dejó al Juez como desempate. Siguen abiertas dos vías por las que un modelo sin fiabilidad medida decide: **(a)** el desempate de `INV-03` es una decisión abierta, y si el veredicto del Juez cuenta, sigue deteniendo escenas `bloqueante`; **(b)** `SPEC-04` le dio una consecuencia nueva a `mayor`, así que `INV-10` —del Juez— ahora **bloquea el cierre de capítulo**, que es una puerta humana. Esta segunda vía no existía antes: parte del punto ciego encogió y otra parte se movió una puerta más arriba. Cierra cuando `VER-26` y la medida de estabilidad den un número |
 | **PC-4** | **Los resúmenes pueden crecer hasta reconstruir la obra.** Se propuso un validador de ratio de compresión —al que `REV-02` llegó a dar el número **`VER-44`**— y **se rechazó por la Regla 2**: su punto ciego, mide longitud y no calidad, ya lo tienen seis validadores. **`VER-44` queda quemado**: el identificador está publicado y no se reutiliza | El Resumidor devuelve resúmenes casi tan largos como la escena. `VER-07` está en verde porque no hay texto de escena en el contexto, y el contexto lleva la obra entera de todos modos | Se asume hasta encontrar una comprobación con un punto ciego propio |
 | **PC-5** | **`VER-39` compara léxico, no sentido.** Estrecha `BC-4` —que nada contrasta el delta con el texto— pero **no lo cierra**, y es fácil darlo por resuelto | El delta dice que Marta coge el cuchillo y en el texto lo coge Luis. Los dos nombres están mencionados, así que `VER-39` pasa. El hueco de `BC-4` sigue abierto para todo delta que se equivoque sobre alguien **sí** mencionado | La comprobación semántica exige un juez, y un juez sin fiabilidad medida no mejora esto |
 | **PC-6** | **`VER-12` comprueba que el identificador existe, no que sea el correcto** | Se copia un verificador y no se cambia el id: todos los hallazgos salen como `INV-01` y el recuento por invariante miente | `VER-38` valida el registro, no qué id usa cada verificador al construir el hallazgo |
@@ -474,22 +474,31 @@ dejaría pasar.
 
 ## Juicio que en realidad es una comparación
 
-`Docs/definitions.md` clasifica cuatro invariantes como `juez_llm` y este
+`Docs/definitions.md` clasificaba cuatro invariantes como `juez_llm` y este
 documento tenía dos validadores etiquetados como juicio. Al revisarlos, varios
-resultaron ser aritmética disfrazada.
+resultaron ser aritmética disfrazada. **`SPEC-04` reclasificó tres de las cuatro
+invariantes**, así que hoy solo queda `INV-10` de tipo `juez_llm`.
 
 | Caso | Qué dice que es | Qué es en realidad | Estado |
 | --- | --- | --- | --- |
 | **`VER-29`** | `human-in-the-loop review` | Análisis estático: *"el worker no tiene ninguna ruta de código"* | **Corregido en este documento** |
 | **`VER-30`** | Inspección (clase `I`) | Regresión sobre un corpus, que es un test | **Corregido en este documento** |
-| **`INV-14`** — *"cada deterioro es monótono, o su reversión está justificada"* | `juez_llm` | `Deterioro.serie_por_escena` es una serie numérica: la monotonía es una comparación. Solo la cláusula de la justificación necesita criterio | **Pendiente**: cambiarlo toca `Docs/definitions.md`, que es dominio y necesita spec |
-| **`INV-11`** — *"el grado de explicación acumulado no supera el fijado"* | `juez_llm` | Un conteo: cuántos `HechoCanonico` sobre la amenaza están revelados al lector frente a `grado_de_explicacion_permitido`. Solo lo implícito necesita juez | **Pendiente**, mismo motivo |
+| **`INV-14`** — *"cada deterioro es monótono, o su reversión está justificada"* | `juez_llm` | `Deterioro.serie_por_escena` es una serie numérica: la monotonía es una comparación. Solo la cláusula de la justificación necesita criterio | **Aplicado por `SPEC-04` C-4**: `tipo = regla`, con juez de desempate solo ante una reversión |
+| **`INV-11`** — *"el grado de explicación acumulado no supera el fijado"* | `juez_llm` | Un conteo: cuántos `HechoCanonico` sobre la amenaza están revelados al lector frente a `grado_de_explicacion_permitido`. Solo lo implícito necesita juez | **Aplicado por `SPEC-04` C-5**: `tipo = regla`, con juez de desempate para las revelaciones implícitas |
+| **`INV-03`** — *"ningún personaje actúa sobre un hecho que no conoce en `t`"* | `juez_llm` | Comparación de identificadores contra el registro de conocimiento en `t`, más el orden de `t_fabula` frente a `escena_de_establecimiento`. Solo decidir que el personaje **actúa sobre** el hecho se ve leyendo | **Aplicado por `SPEC-04` C-6**: `tipo = regla`, **severidad `bloqueante` intacta**, con juez de desempate |
 | **`VER-26`** | `evals` con persona | La **estabilidad** del Juez se mide sin nadie: misma escena N veces, varianza del veredicto. Un juez que se contradice consigo mismo se descarta sin corpus | **Pendiente**: no cambia la fila, añade un paso previo |
 
-`INV-03` e `INV-10` admiten un filtro determinista previo —comparar ids del
-registro de conocimiento, comprobar si el delta registra el coste de
-invocación— pero conservan una parte que solo el juez puede resolver, así que
-siguen siendo `juez_llm` con razón.
+`INV-10` admite un filtro determinista previo —comprobar si el delta registra
+el coste de invocación cuando la escena invoca la amenaza— pero conserva una
+parte central que solo el juez resuelve, así que sigue siendo `juez_llm` con
+razón. `SPEC-04` la dejó fuera a propósito: no es una comparación disfrazada.
+
+**Reclasificar no es ablandar.** `INV-03` conserva su severidad `bloqueante`.
+Lo que cambió es **quién decide**, no **cuánto pesa**: sigue deteniendo la
+escena en la puerta, y lo que ya no hace es detenerla apoyándose en un modelo
+cuya fiabilidad nadie ha medido. Leer la reclasificación como una rebaja es el
+error fácil, y sería el camino corto al anti-patrón de bajar una `bloqueante`
+para desatascar.
 
 ---
 
@@ -505,6 +514,7 @@ que nunca ha fallado en las pruebas no está verificada, solo declarada.
 | VER-04 | Matar el proceso con un trabajo a medias | El worker lo retoma al arrancar |
 | VER-05 | Un contexto que el contador de producción da por bueno y el `usage` real desmiente | La reconciliación falla |
 | VER-06 | Un contexto que excede por poco, con el nivel inmutable al máximo | Se recorta por prioridad y ningún bloque queda partido |
+| VER-06 | Un recortador que recorre los seis niveles del presupuesto en vez de los bloques de §2.4 | Falla: el registro de conocimiento desaparece junto a las fichas, y con él la entrada de `INV-03` |
 | VER-07 | Una obra con cuarenta escenas consolidadas | El contexto no contiene el texto de la escena 3 |
 | VER-08 | Una consulta de similitud cuyo vecino más próximo sea un texto completo | La consulta no puede devolverlo: no está indexado |
 | VER-09 | Una secuencia de deltas con un movimiento y una muerte en el mismo `t` | El aplicador de producción y el de referencia coinciden |
@@ -647,11 +657,9 @@ tapa nada nuevo no va primero por ser barato.
       correspondencia lo contrasta.
 - [x] ~~Si `hechos_clave` de un `Resumen` son identificadores o texto libre~~
       — **cerrada por `SPEC-03`**: son identificadores.
-- [ ] **Reclasificar `INV-03` de `juez_llm` a `regla` con juez de desempate.**
-      `SPEC-03` hizo escribible su parte determinista al convertir
-      `RegistroDeConocimiento.fuente` en referencia. Cambiar el tipo es de
-      dominio y necesita su propia spec. Es lo que más encogería `PC-3`.
+- [x] ~~Reclasificar `INV-03` de `juez_llm` a `regla` con juez de desempate~~
+      — **cerrada por `SPEC-04` C-6**. Conserva la severidad `bloqueante`.
 - [ ] **Los umbrales de `VER-48` y `VER-51`.** Las dos series se registran desde
       el primer día; los números salen de mirarlas, como en `VER-32`.
-- [ ] **Bajar `INV-14` a `regla` y `INV-11` a `regla` con juez de desempate.**
-      Toca `Docs/definitions.md`, que es dominio: necesita spec aprobada.
+- [x] ~~Bajar `INV-14` a `regla` y `INV-11` a `regla` con juez de desempate~~
+      — **cerradas por `SPEC-04` C-4 y C-5**.
