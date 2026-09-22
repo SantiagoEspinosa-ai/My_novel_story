@@ -1,9 +1,11 @@
 ---
 id: SPEC-10
 titulo: Cinco huecos del dominio que la rama main ya sufrió
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
+fecha_aplicacion: 2026-09-22
+commit_de_aplicacion: f71ee6c
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
@@ -196,3 +198,31 @@ hallazgo 11; `src/puntuacion.py`; y de esta línea, `PC-3`, la Regla 2 de
 | 4 | `C-3`: ¿`INV-17` es `mayor` o `menor`? | `menor`, siguiendo a `main`: un capítulo fuera de rango es utilizable. Pero con `SPEC-04`, un `menor` ya no bloquea el cierre de capítulo, así que un capítulo corto entraría firmado. Merece mirarse |
 | 5 | `C-4`: ¿los pesos son `alta` 5 / `media` 2 / `baja` 1? | Sin propuesta: son números de `main` que funcionaron ahí, y copiarlos sin medir es heredar una calibración de otro sistema |
 | 6 | ¿`SPEC-11` se escribe ya, o después de aprobar esta? | Después. Si `C-1` se resuelve como «no hay rendición», el hueco 7 —tope global de llamadas— cambia de forma |
+
+
+# Qué se tocó al aplicarla
+
+| Documento | Cambio |
+| --- | --- |
+| `Docs/definitions.md` | `INV-17`; `sin_veredicto` en `estado_de_hallazgo`; `aceptada_por_rendicion` en `estado_de_escena`; `Escena.intentos` y `Escena.borrador_aceptado`; la clase `FraseRecurrente`; cuatro notas de justificación; dos decisiones abiertas |
+| `Docs/architecture.md` | Dos transiciones nuevas, la nota de que no hay rendición desde `rechazada`, e `INV-17` al Verificador de reglas |
+| `Docs/domain-knowledge.md` | `FraseRecurrente` en el plano Proceso y el estado nuevo en el ciclo de vida |
+| `Docs/verification.md` | `VER-58` con su caso negativo; `MF-16` actualizado; recuentos |
+
+## Lo que la spec no previó
+
+**Dos de los cinco cambios necesitaban una decisión que ninguna de las seis preguntas
+cubría**, y se aplicaron en una segunda vuelta: cómo se marca una escena aceptada por
+rendición —resultó ser un valor de enumeración y no un campo— y dónde vive la memoria de
+frases recurrentes —resultó ser una clase propia y no un atributo de `GuiaDeEstilo`—. Las
+dos se decidieron con el mismo argumento que ya había servido antes en esta línea: dos
+hechos distintos no comparten representación, y mezclar lo declarado con lo observado borra
+el origen.
+
+**`INV-17` cambió de severidad respecto a `main`.** Allí el equivalente pesa `media`; aquí
+es `mayor`, porque `SPEC-04` creó una puerta de capítulo que `main` no tiene y un `menor` no
+la bloquea. Es un ejemplo de que la calibración de otro sistema no se hereda sin mirar qué
+la sostenía.
+
+**`FraseRecurrente` queda sin invariante**, a propósito: la clase guarda la señal y nadie la
+comprueba todavía. Está anotado como decisión abierta en `Docs/definitions.md`.
