@@ -5,7 +5,7 @@ estado: aplicada
 aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-22
 fecha_aplicacion: 2026-09-22
-commit_de_aplicacion: PENDIENTE
+commit_de_aplicacion: 2df8e7e
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
