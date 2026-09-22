@@ -37,7 +37,7 @@ El presupuesto se reparte por niveles de memoria y se comprueba antes de cada ll
 | Resúmenes | 10.000 | Condensaciones de capítulo y de parte |
 | Salida | 20.000 | Reserva para el texto generado y su delta |
 
-Nunca se manda el texto completo de la obra. Si una tarea parece necesitarlo, el fallo está en los resúmenes o en la recuperación, no en el presupuesto.
+Nunca se manda el texto completo de la obra **al modelo**. El límite de 100.000 tokens es sobre **lo que se envía en una llamada**, no sobre lo que el código lee de la base: una comprobación determinista puede leer el texto de un capítulo para medirlo —`INV-15` calcula así la distancia estilométrica— sin tocar el presupuesto. Si una **llamada al modelo** parece necesitar la obra entera, el fallo está en los resúmenes o en la recuperación, no en el presupuesto.
 
 ### SQLite con soporte vectorial
 
