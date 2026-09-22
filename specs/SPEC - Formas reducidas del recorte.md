@@ -55,7 +55,7 @@ escenas.
 distinta durabilidad?"*. Donde la haya, la forma reducida del bloque es quedarse con la
 duradera.
 
-### C-3 · Estimar para decidir y medir para verificar son dos números con dos nombres
+### C-3 · Estimar, reservar y registrar son tres números con tres nombres
 
 §2.4 dice hoy cuándo recortar y no dice con qué cuenta. `main` lo resolvió y escribió el
 motivo: `CARACTERES_POR_TOKEN = 4`, porque *"sin el tokenizador del proveedor no hay cuenta
@@ -67,8 +67,21 @@ estimación conservadora"*.
 | **¿Recorto ya?** | Rápido y conservador. Una estimación con margen declarado | El ensamblador, en cada vuelta del bucle |
 | **¿Me he pasado del límite?** | Exacto y **con segunda fuente** | `VER-05` y `VER-41`, después |
 
-Los dos números **tienen nombres distintos** o alguien los reconciliará creyendo que son el
-mismo. Un ensamblador que cuenta exacto para decidir si recorta paga el tokenizador en cada
+**No son dos números: son tres, y mezclar dos cualesquiera rompe la Regla 3.**
+
+| Número | Quién lo calcula | Para qué | Cuándo |
+| --- | --- | --- | --- |
+| `tokens_para_recortar` | El ensamblador | Decidir si hay que recortar otra vuelta | En cada iteración del bucle |
+| `tokens_reservados` | El control de presupuesto | Apartar el techo por `P-2` | Una vez, antes de salir |
+| `tokens_estimados` | El contador propio | Reconciliar contra el `usage` del proveedor (`SPEC-08`) | Una vez, al registrar la traza |
+
+**Esto es exactamente lo que alguien unifica al refactorizar creyendo que simplifica**, y
+por eso se escribe con los tres nombres. Si el ensamblador y la reserva comparten número, la
+reserva hereda el margen de una estimación barata. Si la reserva y la traza lo comparten,
+`VER-41` compara un número consigo mismo y vuelve a ser el eco que `SPEC-08` cerró. Tres
+fuentes, tres nombres, y ningún atajo.
+
+Un ensamblador que cuenta exacto para decidir si recorta paga el tokenizador en cada
 iteración y no gana nada: lo que decide es *"me paso o no"*, no *"por cuánto"*.
 
 ### C-4 · Los problemas del intento anterior entran en la ventana
@@ -117,11 +130,11 @@ spec, con su razonamiento, no un parámetro que se ajusta sin revisarse.
 
 | # | Pregunta | Propuesta |
 | --- | --- | --- |
-| 1 | ¿Cuál es la forma reducida de cada bloque? | Ver la tabla de abajo. Es la pregunta gorda y la respuesta define la spec |
-| 2 | `RF-26` falla hoy *"tras recortar los tres primeros bloques"*. Con dos vueltas, ¿dónde está ahora el límite? | Tras agotar **todas** las formas reducidas y eliminar los tres primeros bloques. Es más tarde que antes, y a propósito: con degradación se llega más lejos perdiendo menos |
-| 3 | ¿El número que estima el ensamblador es el mismo que reserva el presupuesto por `P-2`? | **No.** Si la reserva usara la estimación barata, reservaría mal; si el ensamblador contara exacto, pagaría el tokenizador en cada vuelta. Son dos números y el segundo se calcula una vez, al final |
-| 4 | `C-4`: ¿los problemas del intento anterior son un bloque nuevo o entran en uno existente? | Bloque nuevo, y **de los últimos en recortarse**: si se van, la reescritura repite el error que la motivó. Meterlos en `Local` los haría caer con la escena anterior |
-| 5 | `C-2`: ¿se parte `Estado actual` en permanente y efímero ahora, o se declara la pregunta y se responde al implementar? | Ahora. `main` lo sufrió y nosotros tenemos `HechoCanonico.certeza` —`establecido`, `implicito`, `disputado`—, que **no es lo mismo que durabilidad**. Hace falta decidir cuál manda |
+| 1 | ¿Cuál es la forma reducida de cada bloque? | **Contestada**: la tabla de abajo, con el 4.º corregido. Su reducción **conserva el registro de conocimiento entero**; si no cabe, el bloque es irreducible. Reducirlo «a los hechos duraderos» sin más se lo habría llevado, y eso es rehacer `MF-05` por otra puerta: `INV-03` sin registro no es peor, es imposible |
+| 2 | **Contestada.** `RF-26` falla hoy *"tras recortar los tres primeros bloques"*. Con dos vueltas, ¿dónde está ahora el límite? | Tras agotar **todas** las formas reducidas y eliminar los tres primeros bloques. Es más tarde que antes, y a propósito: con degradación se llega más lejos perdiendo menos |
+| 3 | **Contestada.** ¿El número que estima el ensamblador es el mismo que reserva el presupuesto? | **No, y son tres, no dos.** Ver `C-3`. Si la reserva usara la estimación barata, reservaría mal; si el ensamblador contara exacto, pagaría el tokenizador en cada vuelta; y si la reserva y la traza compartieran número, `VER-41` volvería a ser el eco que `SPEC-08` cerró |
+| 4 | **Contestada.** ¿Los problemas del intento anterior son un bloque nuevo? | Sí, bloque nuevo, y **de los últimos en recortarse**: si se van, la reescritura repite el error que la motivó. Meterlos en `Local` los haría caer con la escena anterior |
+| 5 | **Contestada.** ¿Se parte `Estado actual` ahora? | **Ahora, y `HechoCanonico` gana un atributo de durabilidad**, que va por `SPEC-13` porque toca `Docs/definitions.md`. Certeza y durabilidad son ejes independientes: un hecho `establecido` puede ser efímero y uno `implicito` puede ser permanente, así que derivar una de la otra confundiría cuánto sabemos de algo con cuánto dura. `main` lo sufrió y nosotros tenemos `HechoCanonico.certeza` —`establecido`, `implicito`, `disputado`—, que **no es lo mismo que durabilidad**. Hace falta decidir cuál manda |
 
 ### Propuesta para la pregunta 1
 
@@ -130,10 +143,13 @@ spec, con su razonamiento, no un parámetro que se ajusta sin revisarse.
 | 1.º | Condensaciones de capítulo y de parte | Solo las de capítulo; se van las de parte | No |
 | 2.º | Fichas de entidad y setups pendientes | Solo las entidades **presentes** en la escena; se van las mencionadas | No |
 | 3.º | Escena anterior completa y resumen de las tres previas | **La escena anterior baja a su `Resumen`** | No |
-| 4.º | Estado del mundo en `t` **y registro de conocimiento aplicable** | Solo los hechos duraderos (`C-2`) | No |
+| 4.º | Estado del mundo en `t` **y registro de conocimiento aplicable** | **El registro de conocimiento entero**, más solo los hechos duraderos del mundo (`C-2`). Si eso no cabe, el bloque es **irreducible** | Condicional |
 | 5.º | Reserva de salida | — | **Sí.** Reducirla no es recortar contexto, es truncar la escena |
 | 6.º | Premisa, guía de estilo, reglas del mundo, anclas | — | **Sí.** Sin esto no estás generando esta novela, estás generando otra |
 | **Nuevo** | **Problemas del intento anterior** | Solo los de severidad `bloqueante` y `mayor` | No |
+
+**Las cinco están contestadas el 2026-09-22.** `SPEC-12` **no se puede aplicar todavía**:
+su `C-2` depende de que `HechoCanonico` tenga durabilidad, y eso es `SPEC-13`.
 
 La del 3.º es la que copia directamente a `main` y la que más recupera: el bloque que más
 ocupa deja de desaparecer y baja un escalón.
