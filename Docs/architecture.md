@@ -253,9 +253,15 @@ necesitan todos:
 | Resumidor | no | no | la escena que resume | no | los del nivel inferior |
 
 El reparto numérico de tokens entre agentes **no está fijado y no se inventa aquí**. Se
-fija cuando haya medidas reales de cuánto consume cada uno; hasta entonces cada agente
-usa el presupuesto por nivel de `CLAUDE.md` y el ensamblador recorta por el nivel de menor
-prioridad, nunca truncando por el final.
+fija cuando haya medidas reales de cuánto consume cada uno; hasta entonces cada agente usa
+el presupuesto por nivel de `CLAUDE.md`.
+
+**La regla de recorte no se reenuncia aquí: vive en `CLAUDE.md` § "Límite de contexto" y
+este documento la usa, no la redefine.** La precedencia de `AGENTS.md` ya dice que en lo
+técnico manda `CLAUDE.md`, así que repetirla era una copia sin autoridad. Y era una copia
+con consecuencia: `SPEC-01` §2.4 va a corregir esa regla y declara que modifica
+`CLAUDE.md`, sin mencionar este documento, de modo que la corrección habría entrado a
+medias y habría dejado los dos textos diciendo lo contrario.
 
 ## El proceso
 
