@@ -14,7 +14,7 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Árbol y diagramas | `Docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
 | Plan de verificación del sistema | `Docs/verification.md` | Primero **qué puede salir mal**: 24 modos de fallo `MF-01`…`MF-24` sobre las rejillas de MAST, ConStory-Bench y los fallos silenciosos, **ninguno sin estado**. Después **cómo se detecta**: 54 validadores `VER-01`…`VER-55`, cada uno con su punto ciego, más los 11 asumidos y lo que se aprendió al escribir cinco. Ninguno implementado hoy |
-| Skills del proyecto | `.agents/skills/` | Contenido real de las siete skills instaladas. Ver la sección "Skills" más abajo |
+| Skills del proyecto | `.agents/skills/` | Contenido real de las ocho skills instaladas. Ver la sección "Skills" más abajo |
 | Specs en curso | `specs/` | Un fichero por spec. Hoy solo `SPEC-01`, el backend del harness (`en_revision`) |
 | Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio y `SPEC-04` puerta de capítulo y reclasificaciones. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
 | Revisiones de documentos | `Docs/revisiones/` | Un `REV-NN.md` por documento revisado. Evalúa un documento **existente**; una spec dice qué va a cambiar. Por eso cuelga de `Docs/` y no de `specs/` |
@@ -109,6 +109,7 @@ El contenido real vive en `.agents/skills/` y **se versiona con el repositorio**
 | --- | --- | --- |
 | `spec-and-plan` | Empezar cualquier cambio que decida algo nuevo. Ejecuta las puertas de "Proceso de trabajo" y comprueba si están abiertas | Propia |
 | `fastapi` | Endpoints, dependencias, modelos Pydantic, streaming: los idiomas del framework | Oficial, de `github.com/fastapi/fastapi`, ruta `.agents/skills/fastapi/`. Instalada 2026-09-21, hash `187b2e06` |
+| `coherencia-docs` | Revisar la coherencia entre los documentos de contexto: citas rotas por identificador, contradicciones, deriva de literales y afirmaciones que caducan en silencio. Antes de un merge que toque `Docs/` | Propia. Escrita sobre un borrador del usuario y adaptada al repositorio; ver su § "Procedencia" |
 | `backend-feature` | Decidir dónde va un fichero de `backend/` y de qué puede depender. La contraparte de FSD en el servidor (`A-01`, `A-02`) | Propia |
 | `feature-sliced-design` | Decidir dónde va un fichero del frontend, resolver un cross-import o revisar la estructura de capas (`A-09`) | Oficial de FSD v2.1, de `github.com/feature-sliced/skills`. Instalada 2026-09-21, hash `e2b86275` |
 | `harness-invariantes` | Implementar o revisar una comprobación `INV-xx`: regla o juez, severidad, hallazgo y caso negativo | Propia |
