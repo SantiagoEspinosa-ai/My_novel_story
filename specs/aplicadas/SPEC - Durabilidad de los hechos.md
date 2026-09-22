@@ -1,9 +1,11 @@
 ---
 id: SPEC-13
 titulo: Un hecho dura o no dura, y eso no es lo mismo que saber cuánto se sabe de él
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
+fecha_aplicacion: 2026-09-22
+commit_de_aplicacion: 5bcb39f
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
@@ -130,3 +132,25 @@ Lo que **sí** se puede reducir del 4.º: `posesiones`, `relaciones` y los hecho
 | 2 | ¿`durabilidad` es obligatorio? | Sí. Un hecho sin durabilidad obliga al recorte a adivinar, y adivinar ahí es `MF-05` |
 | 3 | `C-3` generaliza tu corrección a una regla: *"la forma reducida nunca se lleva lo que lee una `bloqueante` de escena"*. ¿Vive aquí o en `SPEC-12`? | En `SPEC-12`, que es la spec del recorte. Aquí se descubrió; allí es donde gobierna |
 | 4 | ¿`INV-02` necesita decir explícitamente que lee `ubicaciones`? | Sí, y es lo que hace comprobable la regla de `C-3`: sin saber qué lee cada `bloqueante`, "no te lleves lo que lee" no se puede verificar. Puede ser una columna nueva en la tabla de invariantes |
+
+
+# Qué se tocó al aplicarla
+
+`Docs/definitions.md`: `HechoCanonico.durabilidad`, la enumeración `durabilidad_del_hecho`,
+la columna «Qué lee» con las diecisiete filas rellenas, y dos notas de justificación.
+`specs/SPEC - Formas reducidas del recorte.md`: la regla `C-3 bis` con su referencia
+cruzada. `Docs/verification.md`: `VER-59` con su caso negativo.
+
+## Lo que la spec no previó
+
+**La columna «Qué lee» destapó un conflicto dentro de `SPEC-12`.** La forma reducida del
+bloque 2.º dice *"solo las entidades presentes; se van las mencionadas"*, y `INV-02` lee
+`Lugar.accesos_y_salidas`: **un lugar que está en el camino entre dos lugares no es una
+entidad presente**, así que esa reducción viola la regla que esta spec acaba de hacer
+verificable. Queda anotado en `SPEC-12` y hay que resolverlo antes de aplicarla.
+
+**La regla suena más amplia de lo que ata.** De las cinco invariantes `bloqueante` de nivel
+escena, solo dos leen bloques del contexto: `INV-02` y `INV-03`. `INV-01` lee un campo de la
+propia `Escena`, `INV-04` compara la escena con su borrador e `INV-05` mira el delta y el
+estado después de generar. Saberlo importa: el coste de la regla es mucho menor de lo que
+parecía, y **se concentra justo donde está el conflicto**.
