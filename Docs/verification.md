@@ -677,7 +677,7 @@ documento, no sobre el código.
 | F-12 | **`VER-44` estaba quemado y casi se reutiliza.** `REV-02` se lo asignó al validador de ratio de compresión que luego se rechazó. **`VER-23` no lo habría cazado**: su punto ciego es que ve el conjunto de identificadores, no su significado | Cerrado por el número elegido |
 | F-13 | **La columna "Dónde vive" es un plan, no una referencia**, y el documento no lo dice en ninguna parte. Un lector razonable toma esas rutas por existentes | Abierto |
 | F-14 | **`VER-46` no ve los valores que son palabras comunes.** Si alguien escribe la severidad con mayúscula inicial en un documento, no lo detecta | Abierto, y consta como punto ciego de la fila |
-| F-15 | **Los validadores prohíben citar el defecto** (ver arriba) | Cerrado por convención |
+| F-15 | **Un validador que no distingue una cita de un uso marca el texto que explica el defecto.** Vale para los dos soportes, y se descubrió en cada uno por separado: en documentos son los **acentos graves** —un literal equivocado citado entre ellos lo marcan `VER-45` y `VER-46`, así que se cita en cursiva—; en código son los **docstrings** —la prueba que impide el eco de `VER-41` buscaba la cadena `tokens_declarados` y falló contra el docstring que explica por qué ese módulo no la escribe, así que busca **escrituras**—. Era un patrón, no una curiosidad del markdown | Cerrado por convención en los dos |
 | F-16 | **`MF-24` se materializó en `VER-45`, y lo hizo al revés de como lo esperábamos.** No fue un criterio que remitiera a algo inexistente, sino una **exención** que lo era: *"se eximen las de la columna «Dónde vive», que son planes por construcción"*. La exención era cierta —`features/` y `commons/` no existen en la raíz— y la conclusión no: acabó tapando diecisiete rutas mal escritas que el validador existe para cazar, incluidas las nueve de `F-2`. Un criterio que no puede marcar nada está verde por construcción, y eso no se distingue de estar verde por mérito | Cerrado: la exención se eliminó y `VER-45` resuelve contra la raíz declarada en `Docs/architecture.md` |
 
 ---
@@ -726,6 +726,12 @@ tapa nada nuevo no va primero por ser barato.
       — **cerrada por `SPEC-03`**: son identificadores.
 - [x] ~~Reclasificar `INV-03` de `juez_llm` a `regla` con juez de desempate~~
       — **cerrada por `SPEC-04` C-6**. Conserva la severidad `bloqueante`.
+- [ ] **Si la condición de una marca `Caduca con:` puede dejar de ser una ruta.** Una ruta
+      no puede expresar *"existe el dato"*, y siempre hay una carpeta antes que la primera
+      medida: las marcas de medidas caducaron dos veces antes de tiempo, en `PLAN-01` A1 y
+      B2. La salida sería una condición sobre datos —*"cuando exista una traza con
+      `tokens_declarados`"*— y reapuntar solo acerca el proxy. **Se decide cuando haya
+      dato**, que es dentro de poco.
 - [ ] **Los umbrales de `VER-48` y `VER-51`.** Las dos series se registran desde
       el primer día; los números salen de mirarlas, como en `VER-32`.
 - [x] ~~Bajar `INV-14` a `regla` y `INV-11` a `regla` con juez de desempate~~
