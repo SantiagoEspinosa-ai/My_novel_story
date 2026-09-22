@@ -542,7 +542,15 @@ Un trabajo que un worker tomó y no terminó solo se distingue de uno en curso *
 tiempo**, así que la tabla registra cuándo se tomó y a partir de cierto margen se considera
 abandonado. Ese margen es un número sin medir, como el tope, y se fija igual.
 
-**Un trabajo abandonado se marca fallido y no se reintenta solo.** Pudo haber llamado al
+**El worker comprueba su propio estado antes de escribir.** Si al volver se encuentra
+`abandonado`, **no escribe su resultado y no se relanza**: deja constancia de que volvió, en
+la traza, y lo que traía se descarta. Es lo que convierte el margen de abandono en un
+parámetro de **latencia** y no de **corrección**: si se elige corto, cuesta repetir trabajo;
+si no existiera esta comprobación, un margen mal elegido corrompería el estado escribiendo
+el resultado de un trabajo que alguien ya dio por perdido. **Ningún número sin medir debería
+poder corromper el estado.**
+
+**Un trabajo abandonado no se reintenta solo.** Pudo haber llamado al
 modelo y haber cobrado antes de morir, y relanzarlo a ciegas paga dos veces sin saberlo.
 Lo relanza una persona, viendo qué pasó. Por eso tampoco cuenta contra el tope de
 reintentos: no es un intento que falló, es un intento cuyo resultado no se conoce.
@@ -555,6 +563,19 @@ escena siguiente, y un delta a medias es un estado que la invariante **no sabe
 clasificar** —lo dará por aplicado o por no aplicado según qué parte se mire—. La puerta
 que corta la propagación del error dejaría de cortarla justo en el caso en que más falta
 hace.
+
+#### El interbloqueo del presupuesto
+
+**Un solo trabajo abandonado del Escritor deja el sistema entero parado hasta que expire el
+margen**, y no es consecuencia del número elegido: sale de cruzar dos decisiones que por
+separado son correctas. `P-2` de `SPEC-01` dice que una llamada reserva su presupuesto antes
+de salir y lo libera **al volver**; un worker que muere no vuelve nunca, así que no libera
+nada. Y `P-5` dice que una llamada del Escritor a tamaño completo agota el techo global y es
+**exclusiva**. Juntas: el techo se queda retenido por un trabajo que ya no existe.
+
+El margen de abandono **acota** ese bloqueo, no lo arregla: es el tiempo de recuperación del
+interbloqueo, no su prevención. Quien suba el margen está alargando esa parada, y conviene
+que lo sepa antes de subirlo. Está catalogado como `MF-25` en `Docs/verification.md`.
 
 Es además la única categoría de fallo de la que no se sale reintentando. Los otros tres
 detienen el trabajo y dejan el estado intacto; este lo corrompe, y a partir de ahí todo lo

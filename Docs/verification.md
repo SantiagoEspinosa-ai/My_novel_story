@@ -126,6 +126,7 @@ Lo que los une: **todos dejan los detectores en verde**.
 | **MF-22** | Desbordamiento de contexto | El contador del ensamblador dice 98.000 y el del proveedor 102.000; la llamada se rechaza, o peor, se trunca por el final sin avisar | `VER-05` con referencia externa (Regla 3) y `VER-41` |
 | **MF-23** | **Falso positivo del validador** | `VER-46` marca como defecto la prosa de este documento que explica el defecto, porque no distingue una cita de una demostración | — Es el validador el que falla, y **ningún validador vigila a los validadores**. Ya ocurrió: ver "Lo que se aprendió al implementar", F-15 |
 | **MF-24** | **Criterio de salida colgante**: un validador cuyo criterio remite a algo que no está escrito en ninguna parte. No falla, no avisa, y **cuenta como cobertura** | `VER-06` decía *"el orden de recorte respeta la prioridad declarada"* y esa prioridad no estaba declarada en ningún documento. `VER-23` dice *"el conjunto de identificadores solo crece"* sin decir **respecto a qué**, así que el criterio lo eligió quien lo implementó | — Ver `PC-13`. Es hermano de `MF-23` y su contrario exacto: aquel es el validador que marca lo correcto, este es el que **no puede marcar nada** |
+| **MF-25** | **Interbloqueo del presupuesto por un trabajo que no vuelve.** No sale de un fallo: sale de cruzar dos decisiones correctas por separado | El worker muere con una llamada del Escritor en vuelo. Por `P-2` el presupuesto se libera **al volver** y nunca vuelve; por `P-5` esa llamada agota el techo global y es exclusiva. El sistema queda parado hasta que expire el margen de abandono, sin que nada falle ni avise | `VER-57` |
 
 ## Estado de los nueve modos que no tenían cobertura
 
@@ -295,12 +296,12 @@ ver la nota bajo la tabla de nivel artefacto.
 
 | | |
 | --- | --- |
-| **Modos de fallo catalogados** | **24** (`MF-01`…`MF-24`), ninguno sin estado y dos sin validador por construcción |
-| **Validadores definidos** | **55** (`VER-01`…`VER-56`, con `VER-44` quemado: ver `PC-4`) |
+| **Modos de fallo catalogados** | **25** (`MF-01`…`MF-25`), ninguno sin estado y dos sin validador por construcción |
+| **Validadores definidos** | **56** (`VER-01`…`VER-57`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 43 |
+| **Bloqueados por falta de código de producción** | 44 |
 | **Implementables hoy y sin implementar** | 1 — `VER-56`, que solo necesita los documentos y el repositorio |
 | **Puntos ciegos asumidos** | **11 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` |
 
@@ -308,8 +309,8 @@ ver la nota bajo la tabla de nivel artefacto.
 dejan de ser ciertos el día que exista esa carpeta.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
-más cobertura.** Este documento ha pasado de 37 filas a 55 y la cifra que mide
-fiabilidad sigue siendo cero. Cuarenta y tres esperan a `backend/`, `frontend/` o
+más cobertura.** Este documento ha pasado de 37 filas a 56 y la cifra que mide
+fiabilidad sigue siendo cero. Cuarenta y cuatro esperan a `backend/`, `frontend/` o
 CI, seis esperan una medición o una decisión, y **una —`VER-56`— no espera a nada**: solo
 necesita los documentos y el repositorio, que ya existen.
 
@@ -381,6 +382,7 @@ implantación".
 | **VER-38** | La severidad, el nivel y el tipo declarados en el código para cada invariante coinciden con la tabla de `Docs/definitions.md` | A | static analysis | Se parsea la tabla de invariantes y se compara con el registro de `commons/invariantes/`: identificador, nivel, severidad y tipo, los cuatro iguales | Compara **declaración contra declaración**: no comprueba que el verificador respete la severidad que declara *(lo cubre `VER-11`)* | `commons/invariantes/tests/` |
 | **VER-39** | Toda entidad que el delta declara aparece mencionada en el texto de la escena, y todo personaje mencionado está en `personajes_presentes[]` | T | contract testing | Por cada entrada del delta, su `nombre_canonico` o algún `alias` aparece en el texto; y ningún nombre del texto queda fuera de `personajes_presentes[]` | **Compara superficie léxica, no sentido**: un delta equivocado sobre alguien que **sí** está mencionado pasa | `features/consolidacion/tests/` |
 | **VER-42** | Aplicar un delta es atómico: o entran todas sus entradas o ninguna | T | integration testing | Se fuerza un fallo a mitad de la aplicación y el estado queda exactamente como antes; el número de cambios aplicados coincide con el de entradas del delta | Cuenta **entradas aplicadas**, no la **corrección de cada una** *(lo cubre parcialmente `VER-39`)* | `features/consolidacion/tests/` |
+| **VER-57** | El presupuesto que reservó un trabajo que no vuelve se libera al expirar el margen de abandono, y **no antes** | T | integration testing | Se simula un worker que muere con la reserva tomada: el techo sigue retenido hasta el margen y se libera al cumplirse. Un segundo trabajo encolado arranca solo después | Comprueba que el techo **se recupera**, no **cuánto tiempo estuvo el sistema parado**: un margen mal elegido pasa igual. Y no ve la causa —`P-2` liberando al volver— sino su síntoma | `commons/trabajos/tests/` |
 | **VER-43** | Una escena no supera un número acotado de ciclos de regeneración | T | unit testing | Con un tope configurado, la escena número `tope+1` se detiene y se marca en vez de volver a generarse. **El valor del tope sale de medir, no se fija aquí** | Cuenta **ciclos**, no **diagnostica la causa**: detecta que gira, no por qué | `features/orquestacion/tests/` |
 | **VER-45** | Toda ruta citada en un documento **existe tal cual está escrita, o encaja en la estructura declarada de `Docs/architecture.md`** | A | static analysis | Se recorren las rutas entre acentos graves de todos los documentos del proyecto. Cada una existe en disco **o** corresponde a una carpeta del árbol de `Docs/architecture.md`, resuelta contra su raíz declarada `backend/app/`. Cero rutas que no cumplan ninguna de las dos. Se eximen solo las ignoradas por git | Ve **existencia y forma**, no **corrección**: una ruta que existe, o que encaja en el árbol, pero que no es donde vive de verdad ese test, pasa igual. Y sigue sin comprobar que el documento citado diga lo que el citante cree | `harness/documentos/` |
 | **VER-46** | Todo literal de enumeración citado en un documento se escribe como en la tabla de `Docs/definitions.md` | A | static analysis | Se normalizan los tokens con forma de identificador —minúsculas, sin tildes, sin guiones bajos— y se comparan con los valores de la tabla: si dos normalizan igual y se escriben distinto, es una variante | No ve los valores que son **palabras sueltas y comunes** (`obra`, `escena`, `regla`, `vivo`): comprobarlas daría ruido sin señal, así que `nivel_de_evaluacion`, `severidad` y `tipo_de_verificador` quedan fuera de alcance | `harness/documentos/` |
@@ -600,6 +602,7 @@ repositorio. Encontraron dos el primer día:
 | `VER-45` | Una ruta de la columna "Dónde vive" que no corresponde a ninguna carpeta del árbol de `Docs/architecture.md` | Falla: no existe en disco y tampoco encaja en la estructura, que es justo el hueco por el que pasaban las rutas mal escritas |
 | `VER-46` | El diagrama de §2.2.1 de `SPEC-01`, que sigue escribiendo los estados en PascalCase | **Abierto**: es `D1-2` de `REV-01` y su corrección va junto con la decisión `C-1`, así que no tocaba arreglarlo |
 | `VER-56` | Se crea `backend/` con una afirmación marcada `Caduca con:` `backend/` todavía en pie | Falla: la condición que sostenía la afirmación ya se cumplió |
+| `VER-57` | Un worker muere con la reserva del Escritor tomada y otro trabajo esperando | El segundo no arranca hasta el margen; si arranca antes, el techo se repartió mal |
 
 ### Lo que el documento no aguantó al llevarlo a código
 
