@@ -1,9 +1,11 @@
 ---
 id: SPEC-08
 titulo: Los estados de un trabajo, y la traza que VER-41 necesita para no ser un eco
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
+fecha_aplicacion: 2026-09-22
+commit_de_aplicacion: e7f0bee
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
@@ -146,4 +148,30 @@ que es una cosa distinta y mucho peor.
 | 2 | `C-1`: ¿la enumeración de estados de trabajo sigue las reglas de nombres de `Docs/definitions.md` —ASCII, `snake_case`— aunque no viva ahí? | Sí. Es el mismo código leyendo el mismo tipo de valor; dos convenciones de nombres para lo mismo es lo que hizo divergir `juez LLM` de `juez_llm` |
 | 3 | `C-1`: ¿deja esto un precedente incómodo, con vocabularios controlados en dos documentos? | Sí, y se asume: el criterio de pertenencia manda sobre la comodidad de tenerlos juntos. `Docs/architecture.md` dice de dónde sale cada uno |
 | 4 | `C-4`: ¿la regla 2 necesita su propio validador, o basta con que `VER-41` cite los dos campos? | Necesita validador. Una regla que nadie comprueba es una intención, y esta es precisamente la que impide que otro validador se vuelva un eco |
-| 5 | `C-3`: ¿la traza de una llamada fallida registra también la entrada que la produjo? | Sí. Sin ella, `T-2` deja constancia de que algo falló y no de qué falló, y un fallo de contrato no se puede diagnosticar sin ver qué se mandó |
+| 5 | `C-3`: ¿la traza de una llamada fallida registra también la entrada que la produjo? | **Sí, pero acotada.** `prompt_hash`, los identificadores que entraron con su `version_en_t`, los niveles y la salida que falló — no el contexto entero, que se reconstruye. La salida de un fallo de contrato sí va entera: es pequeña y no se reconstruye.
+
+*(Nota de la aplicación: la propuesta original decía «Sí» a secas.)* Sí. Sin ella, `T-2` deja constancia de que algo falló y no de qué falló, y un fallo de contrato no se puede diagnosticar sin ver qué se mandó |
+
+
+# 5. Qué se tocó al aplicarla
+
+`Docs/architecture.md` gana "Los estados de un trabajo" —con su tabla de transiciones, junto
+a las de escena y capítulo— y "La traza de una llamada al modelo". `Docs/definitions.md`
+avisa en su sección de vocabularios de que hay uno fuera y dónde. `VER-41` cita los dos
+campos por nombre.
+
+## Lo que la spec no previó
+
+**El contexto no era reconstruible desde el estado en `t`, como la respuesta 5 suponía.**
+Al comprobarlo salió que `EstadoDelMundo` tiene `t` y `Ficha` tiene `version_en_t`, pero
+que **la selección** no es reproducible —el índice vectorial crece al consolidar y los
+empates KNN no tienen orden definido— y que **`Resumen` no tiene versión**. La respuesta 5
+se aplicó con la selección guardada como identificadores, que cierra lo primero; lo segundo
+necesita `SPEC-09` y queda anotado como decisión abierta.
+
+**El `prompt_hash` detecta, no reconstruye**, y solo vivía en `Borrador`, que una llamada
+fallida nunca produce. Pasa a vivir también en la traza.
+
+**Quién detecta un trabajo abandonado no lo decidió ninguna respuesta.** `SPEC-07` fijó qué
+se hace con él y no quién lo encuentra. La celda de esa transición queda vacía a propósito
+y la pregunta, en las decisiones abiertas de `Docs/architecture.md`.
