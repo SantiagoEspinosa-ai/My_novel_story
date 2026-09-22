@@ -1,9 +1,9 @@
 ---
 id: SPEC-01
 titulo: Backend del harness — primera versión
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-21
 version: 4
