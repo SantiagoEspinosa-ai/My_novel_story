@@ -7,7 +7,7 @@ evalúa la novela que el sistema escribe: de eso se ocupan las invariantes
 `INV-01`…`INV-16`, que aquí son el objeto verificado, no el sujeto.
 
 Generado con la skill `verification-plan` (`.agents/skills/verification-plan/`) y
-reorganizado según `specs/revisiones/REV-02 - Verification.md`, que añadió el eje
+reorganizado según `Docs/revisiones/REV-02 - Verification.md`, que añadió el eje
 que faltaba: **el punto ciego de cada validador**.
 
 ## Qué se verifica aquí

@@ -55,4 +55,8 @@ Nunca se manda el texto completo de la obra. Si una tarea parece necesitarlo, el
 
 ## Comandos
 
-Todavía no hay build ni tests. Cuando los haya, van aquí con el comando exacto, no con una descripción.
+```
+python -m pytest harness -q
+```
+
+Ejecuta el harness de verificación. Hoy solo contiene los validadores que leen documentos (`harness/documentos/`); los de dominio esperan a que exista `backend/`. Todavía no hay build ni comando de arranque: cuando los haya, van aquí con el comando exacto, no con una descripción.
