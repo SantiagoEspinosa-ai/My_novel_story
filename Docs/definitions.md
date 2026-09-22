@@ -329,6 +329,14 @@ Es `mayor` y no `menor` porque un `menor` no bloquea el cierre de capítulo desd
 así que una escena corta entraría firmada y nadie la vería, que es exactamente el fallo que
 la motivó.
 
+**`sin_veredicto` pesa el máximo de la escala, no más que la escala.** La frase "pesa lo
+máximo posible" invita a leerlo como un peso que gana a cualquier combinación, y **no es
+eso**. Un validador mudo es un agujero en la validación, y por eso pesa lo máximo; pero no
+es **peor** que un fallo confirmado: uno dice que algo está mal, el otro que no sabemos. Si
+el mudo ganara siempre, un intento con un juez caído sería automáticamente peor que otro con
+tres fallos reales, y eso no es cierto. Toma el mayor valor de los pesos por severidad, sea
+cual sea ese valor cuando se fije.
+
 **`sin_veredicto` no es un hallazgo más.** Significa que el verificador no llegó a emitir
 juicio: su salida no se pudo interpretar. **Pesa lo máximo posible**, porque si no
 auditarse saliera barato la auditoría sería decorativa, y un intento que no se dejó

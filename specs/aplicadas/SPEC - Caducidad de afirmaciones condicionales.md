@@ -114,6 +114,30 @@ lea, así que las dos marcas que más importan habrían sido las únicas sin vig
 mismo argumento que la regla de independencia de `SPEC-08`: no dejar sin vigilar el
 mecanismo de vigilancia.
 
+## Lo que enseñó ejecutar la Fase A de `PLAN-01`
+
+**La condición apunta a lo que hace falsa la afirmación, no a lo que la precede.** Siete de
+las ocho marcas decían `backend/`, y al crear esa carpeta con unas enumeraciones dentro,
+**seis afirmaciones seguían siendo ciertas**: "no hay sistema que medir" no deja de serlo
+porque exista una carpeta, sino cuando hay llamadas al modelo. `backend/` era un **proxy**
+de "hay sistema" y disparó tres pasos antes que el hecho. Se reapuntaron a
+`backend/app/commons/modelo/`, `backend/app/features/contexto/` y
+`backend/app/features/consolidacion/`, cada una a lo que de verdad la falsifica.
+
+**Lo que deja de ser cierto cada vez que aterriza código no lleva marca.** El bloque de
+recuentos de `Docs/verification.md` tenía una, y una marca **avisa una vez** mientras que
+una tabla de recuentos caduca **en cada commit**. Se le quitó: se revisa al cerrar cada fase
+de `PLAN-01`. Una condición que se cumple continuamente deja de significar nada, que es
+justo el fallo que las marcas existen para evitar.
+
+**Una marca dentro de un bloque de código de un `.md` es una demostración, no una
+afirmación**, y `VER-56` la exceptúa. Sin eso, esta spec haría fallar el build por contener
+el ejemplo de su propia convención. **La excepción no se generaliza a otros validadores**:
+`VER-45` resuelve rutas contra los árboles de carpetas de `Docs/architecture.md`, que están
+**dentro** de bloques de código, y `VER-46` caza literales en los diagramas Mermaid de
+`Docs/domain-knowledge.md` —así fue como se encontró *Juez LLM* escrito a mano—. Excluir los
+bloques de código en los tres los dejaría ciegos justo donde miran.
+
 ## Preguntas que hay que responder al aprobar
 
 | # | Pregunta | Propuesta |
