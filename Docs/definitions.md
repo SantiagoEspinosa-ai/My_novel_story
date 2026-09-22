@@ -39,7 +39,7 @@ La **Escena** es la unidad atómica: la unidad que se genera, se verifica y se r
 | Obra | La novela completa como unidad publicable. | **id**, **titulo**, **premisa**, genero, subgenero, extension\_objetivo, guia\_de\_estilo, contrato\_con\_el\_lector |
 | Parte | Agrupación de capítulos con unidad dramática (acto). | **id**, **orden**, funcion\_estructural, valor\_inicial, valor\_final |
 | Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, **estado** → `estado_de_capitulo`, gancho\_de\_cierre, escenas\[\] |
-| Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo |
+| Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo, intentos, borrador\_aceptado → Borrador |
 | Beat | Micro-unidad de cambio dentro de una escena. | **id**, tipo, valor\_antes, valor\_despues |
 | ArcoNarrativo | Trayectoria de cambio de un personaje o de una tensión a lo largo de la obra. | **id**, **sujeto**, estado\_inicial, estado\_final, hitos\[\] |
 | POV | Punto de vista y distancia narrativa de una escena. | **personaje**, **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, distancia, fiabilidad |
@@ -211,9 +211,19 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `eje_de_deterioro` | Deterioro.eje | cordura, cuerpo, vinculos, recursos |
 | `estado_de_escena` | Escena.estado | planificada, generada, en\_verificacion, rechazada, en\_revision, aceptada, consolidada |
 | `estado_de_capitulo` | Capitulo.estado | abierto, cerrado |
-| `estado_de_hallazgo` | Hallazgo.estado | abierto, resuelto, descartado |
+| `estado_de_hallazgo` | Hallazgo.estado | abierto, resuelto, descartado, sin\_veredicto |
 | `tipo_de_verificador` | Verificador.tipo, Invariante.tipo | regla, juez\_llm, humano |
 | `nivel_de_evaluacion` | DimensionDeCalidad.nivel, Invariante.nivel, Resumen.nivel | escena, capitulo, obra |
+**La severidad podrá pesar, y todavía no pesa.** Para elegir el menos malo entre dos
+borradores hace falta agregar hallazgos en un número, y eso exige un peso por severidad.
+Los pesos **no se fijan aquí**: la calibración de otro sistema no se hereda —`main` usó
+tres jueces y nosotros tenemos quince reglas y uno—. Lo que sí se hereda es la advertencia
+que allí costó descubrir: **una puntuación así solo se puede comparar dentro de una misma
+obra y entre intentos de la misma escena.** Dos obras distintas no son comparables porque
+el muestreo del modelo no se puede fijar, así que la puntuación no es una medida estable
+sino una comparación local. Copiar los pesos sin copiar esta frase es lo que haría que
+alguien comparase dos novelas y creyera el número. **Caduca con:** `backend/`.
+
 | `severidad` | Hallazgo.severidad, Invariante.severidad | bloqueante, mayor, menor |
 | `tipo_de_pase` | PaseDeRevision.tipo | continuidad, voz, ritmo, densidad, linea |
 
@@ -286,6 +296,33 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-14 | Cada deterioro es monótono, o su reversión está justificada en el texto | obra | menor | regla |
 | INV-15 | La distancia estilométrica a las anclas se mantiene bajo umbral | capitulo | menor | regla |
 | INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla |
+| INV-17 | La longitud de la escena cae dentro de su `longitud_objetivo` | escena | mayor | regla |
+
+**`INV-17` existe porque un juez no debe contar palabras.** Una escena fuera de su
+`longitud_objetivo` no la caza ninguna invariante de juicio: repartir toda la auditoría
+entre jueces deja fuera lo que ninguno mira. El caso que lo demostró —un capítulo de 944
+palabras, 256 por debajo del mínimo, aprobado por el mismo validador que en el intento
+anterior había pedido acortarlo— está escrito junto a la Regla 2 de `Docs/verification.md`.
+Es `mayor` y no `menor` porque un `menor` no bloquea el cierre de capítulo desde `SPEC-04`,
+así que una escena corta entraría firmada y nadie la vería, que es exactamente el fallo que
+la motivó.
+
+**`sin_veredicto` no es un hallazgo más.** Significa que el verificador no llegó a emitir
+juicio: su salida no se pudo interpretar. **Pesa lo máximo posible**, porque si no
+auditarse saliera barato la auditoría sería decorativa, y un intento que no se dejó
+auditar nunca debe ganar por defecto a uno que sí. Los campos obligatorios de `Hallazgo`
+**no se relajan**: `descripcion` y la localización se rellenan con **qué se intentó
+comprobar y dónde**, que es información que sí existe. Lo que falta es el juicio, no el
+contexto.
+
+**Una `bloqueante` no admite rendición; `mayor` y `menor` sí.** La asimetría no es
+arbitraria: una escena aceptada **aplica su delta al estado del mundo**, así que rendirse
+ante una `bloqueante` mete una falsedad en el canon y todas las escenas siguientes se
+generan encima. Degradar la prosa y corromper el estado no son el mismo riesgo, y del
+segundo no se sale: no hay forma de deshacer un delta que ya heredaron treinta escenas.
+Para las `bloqueante`, `Escena.intentos` cuenta y se enseña, y la salida es humana —editar
+la escaleta, cambiar la escena, corregir el canon—. Para el resto, se elige el menos malo
+y `borrador_aceptado` dice cuál.
 
 **Tres invariantes son de tipo `regla` y escalan al juez para desempatar.** `INV-03`, `INV-11` e `INV-14` eran de tipo `juez_llm` y su núcleo resultó ser una comparación: una resta sobre una serie numérica, un conteo, y un cruce de identificadores. La regla decide primero y el juez solo interviene en lo que la regla no puede ver: si una reversión está justificada en el texto (`INV-14`), si una revelación implícita cuenta (`INV-11`), y si un personaje **actúa sobre** un hecho que el delta no declaró (`INV-03`). El escalado se describe aquí y no en la columna `Tipo` porque `tipo_de_verificador` tiene tres valores y ninguno significa "regla con desempate": el tipo dice **quién decide primero**.
 
@@ -327,4 +364,5 @@ Estas son las que conviene fijar antes de escribir esquema o código.
 
 * [ ] **Umbrales.** Las invariantes `menor` (INV-15, INV-16) necesitan números concretos antes de poder ejecutarse; sin ellos el harness las salta en silencio.
 * [ ] **Corpus de fixtures.** Qué obra o fragmento sirve de caso base para los tests negativos de cada invariante.
+* [ ] **Los pesos por severidad.** Hacen falta para `Escena.borrador_aceptado`: sin un número no se puede elegir el menos malo. Salen de medir sobre esta implementación, no de copiar los de `main`.
 * [ ] **Desempate juez vs. regla.** Con INV-03 ya de tipo `regla` y el juez como desempate, la pregunta es operativa y no teórica: falta decidir qué gana cuando la regla no ve nada y el juez marca. Aplica igual a INV-11 y a INV-14.

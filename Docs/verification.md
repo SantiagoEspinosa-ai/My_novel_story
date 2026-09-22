@@ -326,11 +326,11 @@ ver la nota bajo la tabla de nivel artefacto.
 | | |
 | --- | --- |
 | **Modos de fallo catalogados** | **25** (`MF-01`…`MF-25`), ninguno sin estado y dos sin validador por construcción |
-| **Validadores definidos** | **56** (`VER-01`…`VER-57`, con `VER-44` quemado: ver `PC-4`) |
+| **Validadores definidos** | **57** (`VER-01`…`VER-58`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 44 |
+| **Bloqueados por falta de código de producción** | 45 |
 | **Implementables hoy y sin implementar** | 1 — `VER-56`, que solo necesita los documentos y el repositorio |
 | **Puntos ciegos asumidos** | **11 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` |
 
@@ -338,8 +338,8 @@ ver la nota bajo la tabla de nivel artefacto.
 dejan de ser ciertos el día que exista esa carpeta.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
-más cobertura.** Este documento ha pasado de 37 filas a 56 y la cifra que mide
-fiabilidad sigue siendo cero. Cuarenta y cuatro esperan a `backend/`, `frontend/` o
+más cobertura.** Este documento ha pasado de 37 filas a 57 y la cifra que mide
+fiabilidad sigue siendo cero. Cuarenta y cinco esperan a `backend/`, `frontend/` o
 CI, seis esperan una medición o una decisión, y **una —`VER-56`— no espera a nada**: solo
 necesita los documentos y el repositorio, que ya existen.
 
@@ -387,6 +387,7 @@ implantación".
 | --- | --- | --- | --- | --- | --- | --- |
 | VER-01 | Los esquemas Pydantic y las fichas de clase de `Docs/definitions.md` tienen exactamente los mismos campos, **en los dos sentidos** | A | static analysis | El comprobador recorre los esquemas contra las fichas y las fichas contra los esquemas: cero campos de más y cero campos de menos | Ve **nombres**, no tipos ni valores: un campo `severidad: str` donde debería haber un `Enum` pasa | `commons/dominio/tests/` |
 | VER-02 | Un valor fuera de un vocabulario controlado es error de validación, y **cada `Enum` tiene exactamente los valores de su tabla** | T | unit testing | Cada enumeración rechaza un valor inventado, **y** su número de miembros coincide con el de la tabla de vocabularios | Compara cardinalidad y pertenencia, no **uso**: un campo tipado `str` que nunca toca el `Enum` pasa | `commons/dominio/tests/` |
+| **VER-58** | La longitud de la escena cae dentro de su `longitud_objetivo` (`INV-17`) | T | unit testing | Se cuentan las palabras del borrador y se comparan con el rango. Fuera de rango produce `Hallazgo` de severidad `mayor`, y por tanto impide cerrar el capítulo | Cuenta **palabras**, no **densidad**: una escena dentro de rango rellena de paja pasa. Y compara contra el rango **configurado**, no contra lo que el género pide |
 | VER-03 | El endpoint de generación no bloquea: devuelve un identificador de trabajo | T | integration testing | La respuesta llega antes de que termine la generación y trae un identificador consultable | No comprueba que el trabajo **llegue a ejecutarse**: un worker parado deja `202` y trabajos eternos | `features/generacion/tests/` |
 | VER-04 | Un trabajo encolado sobrevive a un reinicio del servidor | T | integration testing | Se encola, se mata el proceso, se levanta, y el trabajo sigue ahí y se completa | **No comprueba unicidad**: el trabajo puede completarse habiendo llamado al modelo dos veces | `commons/trabajos/tests/` |
 | VER-05 | Ninguna llamada al modelo supera los 100.000 tokens, salida incluida, **medido con un contador independiente del ensamblador** | T | property-based testing | El contexto ensamblado más la reserva de salida cabe en el límite **según el `usage` que devuelve el modelo o un segundo tokenizador**, no según el contador de producción (Regla 3) | Mide el **techo**, no el **contenido**: un contexto de 3.000 tokens que dejó fuera al protagonista pasa | `features/contexto/tests/` |
@@ -632,6 +633,7 @@ repositorio. Encontraron dos el primer día:
 | `VER-46` | El diagrama de §2.2.1 de `SPEC-01`, que sigue escribiendo los estados en PascalCase | **Abierto**: es `D1-2` de `REV-01` y su corrección va junto con la decisión `C-1`, así que no tocaba arreglarlo |
 | `VER-56` | Se crea `backend/` con una afirmación marcada `Caduca con:` `backend/` todavía en pie | Falla: la condición que sostenía la afirmación ya se cumplió |
 | `VER-57` | Un worker muere con la reserva del Escritor tomada y otro trabajo esperando | El segundo no arranca hasta el margen; si arranca antes, el techo se repartió mal |
+| `VER-58` | Una escena de 944 palabras con `longitud_objetivo` de 1.200 a 2.200 | Falla, aunque los jueces la aprueben: es el caso de la Regla 2 |
 
 ### Lo que el documento no aguantó al llevarlo a código
 
