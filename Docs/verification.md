@@ -23,6 +23,188 @@ verdad, y que falle cuando debe fallar, es lo que se planifica aquí.
 
 ---
 
+# Modos de fallo
+
+Este documento respondía a *cómo se verifica* y no a *qué puede salir mal*. Sin
+esa lista, cada validador parece una buena idea suelta y no hay forma de saber si
+el conjunto cubre algo. Aquí está el problema; después vienen los detectores.
+
+## Las tres rejillas y qué aporta cada una
+
+| Fuente | Qué aporta | Qué no |
+| --- | --- | --- |
+| **MAST** — *Why Do Multi-Agent LLM Systems Fail?*, arXiv 2503.13657. Catorce modos en tres categorías: diseño del sistema, desalineación entre agentes, verificación de tareas | La estructura de la sección y **prevalencias medidas**. Su crítica central —*los agentes verificadores hacen comprobaciones superficiales y hace falta verificación por capas*— es exactamente el eje de puntos ciegos de este documento | No sabe nada de narrativa. Ninguno de sus modos habla de continuidad ni de voz |
+| **ConStory-Bench** — arXiv 2603.05890. Cinco categorías de error de consistencia narrativa con diecinueve subtipos: cronología y trama, caracterización, construcción de mundo, factual, estilo narrativo | El único inventario de fallos **del producto**, no del sistema. Y cuatro observaciones metodológicas que valen más que la taxonomía: los errores factuales y temporales dominan, se concentran **hacia la mitad** de la narración, aparecen en segmentos de **mayor entropía por token**, y ciertos tipos **co-ocurren** | No distingue si el error lo causó el modelo, el contexto o la orquestación, que es justo lo que a nosotros nos dice dónde poner el validador |
+| **Fallos silenciosos de producción** — completado parcial, completado alucinado, aplicación errónea de acción, desbordamiento de contexto, desconexión entre razonamiento y acción, bucles infinitos | La propiedad que los une y que las otras dos no subrayan: **todos dejan los detectores en verde**. Es la clase de fallo contra la que un plan de verificación sirve de menos | No es una taxonomía publicada ni tiene prevalencias. Se usa como lista de comprobación, no como rejilla |
+
+**Las prevalencias de MAST son de otros sistemas, no del nuestro.** Repetición de
+pasos 15,7 %, no reconocer condiciones de terminación 12,4 %, desobedecer la
+especificación 11,8 %, pérdida de historial 2,8 %, actuar fuera de rol 1,5 %.
+Sirven para ordenar por dónde empezar a mirar, no para afirmar nada sobre esta
+implementación: **aquí no se ha medido ninguna**, y no las hay porque no hay
+sistema que medir.
+
+ConStory-Bench mide **densidad de errores por diez mil palabras**. Es una métrica
+que no tenemos y que conviene adoptar cuando haya texto: sin denominador, contar
+hallazgos no dice si la obra mejora o solo se alarga.
+
+## Cómo leer la tabla
+
+Un modo entra **solo si se puede escribir cómo se manifestaría en una novela de
+terror generada por este sistema**. *Alucinación* no es un modo de fallo, es una
+categoría; *el delta declara un movimiento que el texto no narra* sí lo es.
+
+La columna de validador se deja **vacía cuando no hay ninguno**. Un hueco marcado
+vale más que una fila rellenada por compromiso, y los huecos son el resultado
+útil de esta sección.
+
+### A · Diseño del sistema
+
+| ID | En qué consiste | Cómo se manifestaría aquí | Detecta |
+| --- | --- | --- | --- |
+| **MF-01** | Desobedecer la especificación de la tarea (11,8 % en MAST) | La escaleta asigna a la escena 7 un `pov` en tercera limitada y `tiempo_verbal` pasado; el Escritor devuelve la escena en presente y con narrador omnisciente | `INV-04` solo comprueba que el POV **no cambie dentro** de la escena. **Nadie compara el POV y el tiempo verbal generados con los que la escaleta asignó** |
+| **MF-02** | Actuar fuera del rol asignado (1,5 %) | El Juez, en vez de devolver puntuación y hallazgos, devuelve la escena reescrita "mejorada" | `VER-27` |
+| **MF-03** | Repetición de pasos (15,7 %, el más prevalente) | La escena 3 gira entre `rechazada` y `generada` sin converger: el Escritor insiste en devolverla sin `cambio_de_valor` y nadie para el bucle | `VER-43` |
+| **MF-04** | El mismo paso se ejecuta dos veces por reanudación | El worker muere después de llamar al modelo y antes de registrar el resultado; al reanudar vuelve a llamar, se paga dos veces y sale una escena distinta de la que ya existía | — `VER-04` comprueba que el trabajo **sobrevive**, no que se ejecute **una sola vez** |
+| **MF-05** | Pérdida de historial (2,8 %) | El contexto no cabe, el ensamblador recorta el nivel `Recuperado` y con él el registro de conocimiento; el Escritor no sabe quién sabe qué y Marta actúa sobre un hecho que aún ignora | `INV-03` lo caza **después**, con la llamada ya pagada. `VER-06` no puede prevenirlo porque **el orden de recorte no está fijado** |
+| **MF-06** | No reconocer las condiciones de terminación (12,4 %) | El Escaletador sigue planificando escenas después del clímax, o el Auditor no detecta que la obra ya cerró sus arcos | `INV-12` es de nivel obra y queda fuera de la v1 |
+
+### B · Desalineación entre agentes
+
+| ID | En qué consiste | Cómo se manifestaría aquí | Detecta |
+| --- | --- | --- | --- |
+| **MF-07** | Rellenar el hueco en vez de pedir aclaración | El recorte deja fuera la ficha de Marta; el Escritor le inventa unos rasgos físicos y se los atribuye. En el capítulo siete tendrá otros | — Nada falla en el momento. `INV-06` lo vería al final, y es de nivel obra |
+| **MF-08** | Descarrilamiento de la tarea | Se pide una escena de transición con un `cambio_de_valor` previsto de conocimiento; el Escritor entrega el clímax, con un cambio de valor en el eje de vida | — **Nadie compara el cambio de valor previsto en la escaleta con el que declara el delta.** `INV-01` solo comprueba que no sea nulo |
+| **MF-09** | Retención de información entre agentes | El Juez detecta un problema, lo menciona en su puntuación y no emite el `Hallazgo` correspondiente; la escena avanza sin rastro | — Una puntuación con la lista de hallazgos vacía es esquema válido. `VER-40` detecta que el Juez **no funciona**, no que se calle algo |
+| **MF-10** | Ignorar la aportación de otro agente | El Consolidador aplica el delta con un hallazgo `bloqueante` abierto de la puerta anterior | `VER-10`, `VER-11` |
+| **MF-11** | Desconexión entre razonamiento y acción | El texto narra que Marta sale de la casa por la ventana; el delta que acompaña no registra el movimiento. El estado del mundo la deja dentro y la escena siguiente la hace hablar en la cocina | `VER-39` **parcialmente**: caza el delta que habla de quien no aparece, no el que se calla lo que sí ocurre |
+
+### C · Verificación de tareas
+
+Es la categoría donde MAST más insiste, y la que este documento ya tenía como
+eje: *"los agentes verificadores hacen comprobaciones superficiales"*.
+
+| ID | En qué consiste | Cómo se manifestaría aquí | Detecta |
+| --- | --- | --- | --- |
+| **MF-12** | Terminación prematura | El trabajo se marca completado con la escena en `generada`, sin haber pasado la puerta | `VER-28` sobre el modelo declarado. Una ruta que escriba el estado directamente en la base no la ve nadie: es `PC-1` |
+| **MF-13** | Verificación nula por clasificación errónea de la propia regla | `INV-01` está implementada como `mayor` en vez de `bloqueante`; la escena sin cambio de valor avanza y tres validadores están en verde | `VER-38` |
+| **MF-14** | Verificación incorrecta por salida válida y vacía | El Juez devuelve una lista de hallazgos vacía por un timeout mal capturado, y se lee como "todo bien" | `VER-40` |
+
+### D · Consistencia narrativa (ConStory-Bench)
+
+Aquí el fallo es **del producto**, no del sistema, así que quien detecta es casi
+siempre una invariante de `Docs/definitions.md` y no una fila `VER`.
+
+| ID | Categoría | Cómo se manifestaría aquí | Detecta |
+| --- | --- | --- | --- |
+| **MF-15** | Cronología y trama | La escena 12 narra el hallazgo del cuerpo; la escena 9, anterior en discurso y posterior en fábula, describe a la víctima viva sin que la analepsis esté declarada | `INV-08`, de nivel capítulo y fuera de la v1 |
+| **MF-16** | Caracterización | Marta pierde sus muletillas y su sintaxis y pasa a hablar como los demás personajes a partir del capítulo cinco | — `INV-15` mide la deriva **global** frente a las anclas de estilo. **No hay ninguna invariante de voz por personaje** |
+| **MF-17** | Construcción de mundo | La casa tenía una sola salida en la escena 4 y en la 11 aparece una puerta trasera que nadie plantó | — `EstadoDelMundo` guarda ubicaciones y posesiones, **no la topología de un lugar**. `INV-06` solo actúa si alguien lo declaró como `HechoCanonico` |
+| **MF-18** | Factual | El texto dice que Marta coge el cuchillo y el delta registra que lo coge Luis | — `VER-39` no lo ve: los dos nombres aparecen en el texto. Es exactamente `PC-5` |
+| **MF-19** | Estilo narrativo | La prosa se aplana hacia la media del modelo: frases de longitud uniforme, menos densidad sensorial, el registro de terror se diluye | `INV-15`, **cuando tenga umbral**. Hoy es `VER-32`, no verificable |
+
+**Las cuatro observaciones metodológicas de ConStory-Bench son más útiles que su
+taxonomía**, y ninguna está aprovechada todavía:
+
+- **Los errores se concentran hacia la mitad de la narración.** Si hay que
+  muestrear para una revisión cara, el centro rinde más que los extremos.
+- **Aparecen en segmentos de mayor entropía por token.** Es una **señal lateral
+  barata**: se puede calcular sin juez y sin leer, y apunta dónde mirar.
+- **Ciertos tipos co-ocurren.** Encontrar uno es razón para buscar su pareja, no
+  para dar la escena por revisada.
+- **Los factuales y temporales dominan.** Son también los dos que más se prestan
+  a comprobación determinista, que es una coincidencia afortunada.
+
+### E · Fallos silenciosos de producción
+
+Lo que los une: **todos dejan los detectores en verde**.
+
+| ID | En qué consiste | Cómo se manifestaría aquí | Detecta |
+| --- | --- | --- | --- |
+| **MF-20** | Completado parcial | El Consolidador aplica tres de las cinco entradas del delta, falla en la cuarta sin transacción, y la escena queda `consolidada` con el estado a medias | `VER-42` |
+| **MF-21** | Completado alucinado | El Resumidor devuelve un resumen bien formado que menciona un hecho que la escena no contiene. Ese resumen entra en el contexto de las escenas siguientes como si fuera canon | — `VER-39` compara el **delta** con el texto, no el **resumen** con la escena |
+| **MF-22** | Desbordamiento de contexto | El contador del ensamblador dice 98.000 y el del proveedor 102.000; la llamada se rechaza, o peor, se trunca por el final sin avisar | `VER-05` con referencia externa (Regla 3) y `VER-41` |
+| **MF-23** | **Falso positivo del validador** | `VER-46` marca como defecto la prosa de este documento que explica el defecto, porque no distingue una cita de una demostración | — Es el validador el que falla, y **ningún validador vigila a los validadores**. Ya ocurrió: ver "Lo que se aprendió al implementar", F-15 |
+
+## Modos sin ningún validador
+
+Nueve de veintitrés. Es el resultado útil de la sección.
+
+| Modo | Qué se cuela | Por qué no hay validador |
+| --- | --- | --- |
+| **MF-01** | Una escena con el POV o el tiempo verbal que no se le pidió | Exigiría comparar la escaleta con el borrador, y nada lo hace |
+| **MF-04** | Una llamada duplicada tras un reinicio | Falta idempotencia; `VER-04` mira supervivencia, no unicidad |
+| **MF-07** | Rasgos de personaje inventados al vuelo tras un recorte | No hay forma de distinguir "lo sabía" de "se lo inventó" sin la ficha delante |
+| **MF-08** | La escena entregada no es la que se planificó | Nada compara el cambio de valor previsto con el declarado |
+| **MF-09** | Un problema que el Juez vio y no registró | Una lista de hallazgos vacía es esquema válido |
+| **MF-16** | La voz de un personaje concreto derivando | Solo hay medida de deriva global, no por personaje |
+| **MF-17** | La topología de un lugar cambiando entre escenas | `EstadoDelMundo` no la modela |
+| **MF-21** | Un resumen que introduce hechos que no estaban | Nada contrasta el resumen con su escena |
+| **MF-23** | Un validador marcando lo correcto | Nadie vigila a los validadores |
+
+Dos parciales que conviene no dar por cubiertos: **MF-05** se detecta tarde y con
+la llamada pagada, y **MF-11** y **MF-18** los estrecha `VER-39` sin cerrarlos.
+
+## Lo que tenemos y las taxonomías publicadas no
+
+Cuatro modos que ninguna de las tres rejillas recoge, y salen de decisiones de
+arquitectura propias:
+
+1. **El delta como fuente de verdad divergiendo del texto** (`MF-11`, `MF-18`).
+   MAST tiene *desconexión entre razonamiento y acción*, pero ahí el desajuste
+   muere con el turno. Aquí el delta **se consolida en el estado del mundo** y
+   contamina todas las escenas siguientes. Es la diferencia entre un error y un
+   error que hereda.
+2. **El recorte de contexto como causa de un fallo de dominio** (`MF-05`). MAST
+   tiene *pérdida de historial*, pero como accidente. Aquí el recorte es una
+   **decisión de diseño con un orden de prioridad declarado**, así que el fallo
+   es predecible y atribuible a una regla concreta.
+3. **La clasificación de la propia regla como modo de fallo** (`MF-13`). MAST
+   habla de verificación incorrecta; esto es anterior: la regla está bien
+   ejecutada y **mal etiquetada**.
+4. **El falso positivo del validador** (`MF-23`). Las tres rejillas miran fallos
+   del sistema que genera. Ninguna mira fallos de la capa que verifica, y esa
+   capa también falla: aquí ya lo hizo.
+
+## Relación con los puntos ciegos
+
+**Un punto ciego es un modo de fallo que sabemos que no vemos.** Las dos listas
+no se duplican: `MF-xx` dice **qué puede salir mal**; `PC-xx` dice **qué parte de
+eso hemos decidido no mirar, y por qué**. Se apuntan entre sí:
+
+| Punto ciego | Modo de fallo al que corresponde |
+| --- | --- |
+| `PC-1` — el análisis estático no ve la ejecución | `MF-12`: la terminación prematura por una ruta que escribe el estado a mano |
+| `PC-2` — nadie comprueba que quien acepta sea una persona | No tiene `MF` propio porque no es un fallo del sistema sino de su uso. **Es el único `PC` sin modo asociado** |
+| `PC-3` — la fiabilidad del Juez no está medida | `MF-09` y `MF-14`: lo que el Juez calla y lo que devuelve vacío |
+| `PC-4` — los resúmenes pueden crecer hasta reconstruir la obra | Adyacente a `MF-21`: el mismo agente, un fallo de tamaño en vez de contenido |
+| `PC-5` — la comprobación de menciones es léxica, no semántica | `MF-11` y `MF-18`, que son su enunciado en positivo |
+| `PC-6` — el identificador del hallazgo existe pero puede ser el equivocado | Adyacente a `MF-13`: los dos son metadatos de la regla, no su ejecución |
+| `PC-7` — la migración existe pero puede estar vacía | Sin `MF`: es un fallo del proceso de cambio, no de la ejecución del sistema |
+| `PC-8` — el contador se valida contra el proveedor, no contra la verdad | `MF-22` |
+
+Dos lecturas útiles de esa tabla. **`PC-2` y `PC-7` no tienen modo de fallo
+asociado** porque no son fallos del sistema en marcha: uno es de uso y otro de
+proceso. Y **nueve modos no tienen validador ni punto ciego**, lo que significa
+que no están cubiertos *ni reconocidos*: esos son los que conviene convertir en
+`PC` o en fila `VER` antes de escribir código.
+
+## Relación con lo que se aprendió al implementar
+
+Varios de los quince hallazgos son **instancias concretas de modos genéricos**, y
+conviene que se apunten entre sí en vez de leerse como anécdotas:
+
+| Hallazgo | Modo del que es un caso |
+| --- | --- |
+| `F-15` — los validadores prohíben citar el defecto | `MF-23`, y es su única instancia observada |
+| `F-1` — `VER-38` no puede contrastar la severidad | `MF-13`: la clasificación de la regla es verificable a medias |
+| `F-8` — `VER-23` se salta en vez de fallar cuando no hay historial | `MF-14`: un validador que aparece en verde sin haber comprobado nada es verificación incorrecta, y aquí el que la sufre es el propio harness |
+| `F-12` — `VER-44` estaba quemado y `VER-23` no lo habría cazado | `MF-14` otra vez, en su forma más incómoda: el validador declaró su punto ciego y el punto ciego se materializó |
+| `F-9` — no se pudo comprobar que el nivel del agente cuadre con el de la invariante | `MF-06`: el Auditor no sabe cuándo le toca, porque nadie declara su nivel |
+| `F-13` — la columna "Dónde vive" es un plan y el documento no lo dice | `MF-01` aplicado a la documentación: el documento incumple su propia especificación implícita |
+
+---
+
 ## Cómo se lee este documento
 
 El modelo no garantiza que sus resultados sean correctos, así que la fiabilidad
