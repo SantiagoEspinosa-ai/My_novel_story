@@ -82,14 +82,14 @@ Lo que **no** está forzado: el orden entre `features/lectura/`, `features/revis
 
 **Los dos números provisionales entran en A4**, y la sección de abajo dice cómo.
 
-## Fase B — La primera vertical
+## Fase B — La primera vertical · **terminada el 2026-09-22**
 
 | # | Paso | Ficheros | La prueba que falla primero | Pasa a implementable | Por qué va aquí | Queda funcionando |
 | --- | --- | --- | --- | --- | --- | --- |
 | **B1** | Alta de obra | `features/brief/` + `tests/` | `POST /obras` con un `Brief` sin premisa devuelve `422` | `VER-13`, `VER-14` | Es la feature más pequeña con router, schemas, service y repository. Prueba la forma antes de repetirla nueve veces | `POST /obras` y `GET /obras/{id}` de verdad |
 | **B2** | Cliente del modelo y traza | `commons/modelo/` + `tests/` | `tokens_declarados` **no lo escribe** el código que calcula `tokens_estimados` | **`VER-41`**, `VER-24` | `VER-41` es el puesto 4 y **desbloquea `VER-34`, `VER-36` y `VER-37`**, que sin él medirían sobre un dato sin validar. Es lo que más rinde por lo que cuesta | Se puede llamar al modelo y queda traza, también si falla |
 
-## Fase C — El camino de una escena
+## Fase C — El camino de una escena · **terminada el 2026-09-22**
 
 | # | Paso | Ficheros | La prueba que falla primero | Pasa a implementable | Por qué va aquí | Queda funcionando |
 | --- | --- | --- | --- | --- | --- | --- |

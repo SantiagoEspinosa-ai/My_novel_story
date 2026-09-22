@@ -329,10 +329,10 @@ ver la nota bajo la tabla de nivel artefacto.
 | **Validadores definidos** | **59** (`VER-01`…`VER-60`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
-| **Con parte de su caso negativo escrito** | 3 — `VER-38`, `VER-21` y `VER-11`, en la Fase A de `PLAN-01` |
-| **Desbloqueados por la Fase A** | 7 — `VER-01`, `VER-15`, `VER-21`, `VER-38`, `VER-03`, `VER-04`, `VER-11` |
+| **Con su caso negativo escrito** | 11 — en las fases A, B y C de `PLAN-01` |
+| **Desbloqueados por las fases A, B y C** | 20 |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 39 |
+| **Bloqueados por falta de código de producción** | 26 |
 | **Implementables hoy y sin implementar** | 2 — `VER-56` y `VER-59`, que solo necesitan los documentos |
 | **Puntos ciegos asumidos** | **14 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` y `PC-14` quemado |
 
@@ -344,7 +344,7 @@ evitar.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
 más cobertura.** Este documento ha pasado de 37 filas a 59 y la cifra que mide
-fiabilidad sigue siendo cero. Treinta y nueve esperan a `backend/`, `frontend/` o
+fiabilidad sigue siendo cero. Veintiséis esperan a `backend/`, `frontend/` o
 CI, seis esperan una medición o una decisión, y **dos —`VER-56` y `VER-59`— no esperan a nada**: solo
 necesitan los documentos, que ya existen.
 
@@ -509,7 +509,7 @@ dejaría pasar.
 
 | # | Punto ciego asumido | Fallo concreto que se cuela | Por qué se asume |
 | --- | --- | --- | --- |
-| **PC-1** | **Ninguna comprobación que no ejecute el sistema ve la ejecución.** Doce validadores lo comparten —nueve de análisis estático, `VER-28` de *model checking* y `VER-21` y `VER-31` de integración en CI—: `VER-01`, `VER-12`, `VER-13`, `VER-14`, `VER-15`, `VER-16`, `VER-17`, `VER-21`, `VER-23`, `VER-28`, `VER-31`, `VER-38` | Un script de mantenimiento hace `UPDATE escena SET estado='consolidada'` y salta la máquina de estados entera | Taparlo pide auditoría en tiempo de ejecución sobre la base. No es caro, pero **no hay estado del mundo que auditar todavía**: `commons/db/` existe desde `PLAN-01` A3, y su única migración crea el registro de versiones. **Caduca con:** `backend/app/features/consolidacion/`, que es lo que empieza a escribir estado |
+| **PC-1** | **Ninguna comprobación que no ejecute el sistema ve la ejecución.** Doce validadores lo comparten —nueve de análisis estático, `VER-28` de *model checking* y `VER-21` y `VER-31` de integración en CI—: `VER-01`, `VER-12`, `VER-13`, `VER-14`, `VER-15`, `VER-16`, `VER-17`, `VER-21`, `VER-23`, `VER-28`, `VER-31`, `VER-38` | Un script de mantenimiento hace `UPDATE escena SET estado='consolidada'` y salta la máquina de estados entera | Taparlo pide auditoría en tiempo de ejecución sobre la base. No es caro, pero **no hay estado del mundo que auditar todavía**: `commons/db/` existe desde `PLAN-01` A3, y su única migración crea el registro de versiones. **Caducó en `PLAN-01` C5**: `features/consolidacion/` escribe ya estado del mundo, así que **hay base que auditar y nadie la audita**. El punto ciego deja de ser condicional y pasa a ser un hueco activo |
 | **PC-2** | **Nadie comprueba que quien acepta una escena sea una persona.** `VER-29` solo comprueba que el worker no puede | Un script llama a `POST /escenas/{id}/aceptar` en bucle y consolida la obra entera sin que nadie la lea | `SPEC-01` §2.5 excluye la autenticación de la v1. Sin identidad no hay nada que comprobar. **Caduca con:** `SPEC-01` §2.5 |
 | **PC-3** | **La fiabilidad del Juez no está medida**, y `VER-26` en verde significa "se midió", no "es fiable" | Tras `SPEC-04` **ninguna invariante `bloqueante` es de tipo `juez_llm`**: la única que queda del Juez es `INV-10`, de severidad `mayor`. El Juez ya no detiene una escena por sí solo | **Encogido dos veces, no cerrado.** `SPEC-03` hizo escribible la parte determinista de `INV-03`; `SPEC-04` la reclasificó a `regla` y dejó al Juez como desempate. Siguen abiertas dos vías por las que un modelo sin fiabilidad medida decide: **(a)** el desempate de `INV-03` es una decisión abierta, y si el veredicto del Juez cuenta, sigue deteniendo escenas `bloqueante`; **(b)** `SPEC-04` le dio una consecuencia nueva a `mayor`, así que `INV-10` —del Juez— ahora **bloquea el cierre de capítulo**, que es una puerta humana. Esta segunda vía no existía antes: parte del punto ciego encogió y otra parte se movió una puerta más arriba. Cierra cuando `VER-26` y la medida de estabilidad den un número |
 | **PC-4** | **Los resúmenes pueden crecer hasta reconstruir la obra.** Se propuso un validador de ratio de compresión —al que `REV-02` llegó a dar el número **`VER-44`**— y **se rechazó por la Regla 2**: su punto ciego, mide longitud y no calidad, ya lo tienen seis validadores. **`VER-44` queda quemado**: el identificador está publicado y no se reutiliza | El Resumidor devuelve resúmenes casi tan largos como la escena. `VER-07` está en verde porque no hay texto de escena en el contexto, y el contexto lleva la obra entera de todos modos | Se asume hasta encontrar una comprobación con un punto ciego propio |
