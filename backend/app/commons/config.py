@@ -1,0 +1,31 @@
+"""Configuracion y numeros del harness.
+
+Los numeros de aqui no estan medidos, y el fichero lo dice con esas palabras.
+`SPEC-05` fija la convencion: una afirmacion que es cierta porque algo no
+existe lleva su condicion de caducidad **pegada**, en forma de ruta y no de
+frase. `VER-56` recorre estas marcas tambien en el codigo desde `PLAN-01`,
+asi que el dia que exista lo que la ruta nombra, el build falla y hay que
+volver a mirarlas.
+
+LA REGLA QUE NO SE PUEDE ROMPER AL REFACTORIZAR
+-----------------------------------------------
+El numero y su marca son **una sola cosa**. Si alguien mueve el valor a una
+variable de entorno o a un fichero de configuracion y deja el comentario aqui,
+queda un numero sin procedencia y nadie sabra que no esta medido. Un numero
+inventado que se presenta como medido es peor que no tener el dato.
+"""
+
+# Provisional: elegido por razonamiento, no medido. `O-3` de `SPEC-01` lo hace
+# depender de observar la tasa real de fallos transitorios, y todavia no hay
+# sistema que observar. Tres intentos con espera creciente: lo que sobrevive a
+# eso no es transitorio, es el proveedor caido. Seguir insistiendo cuesta
+# llamadas pagadas y, si es el Escritor, bloquea el sistema entero.
+# Caduca con: backend/app/commons/modelo/
+TOPE_REINTENTOS_TRANSPORTE = 3
+
+# Provisional: elegido por razonamiento, no medido. Acota `MF-25` -el techo de
+# contexto retenido por un trabajo que no vuelve- pero no lo previene: subirlo
+# alarga esa parada. Corto cuesta latencia y no correccion, porque el worker
+# comprueba su estado antes de escribir.
+# Caduca con: backend/app/commons/modelo/
+MARGEN_ABANDONO_SEGUNDOS = 15 * 60
