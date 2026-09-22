@@ -98,6 +98,7 @@ flowchart LR
   MM --> MM2["Ficha"]
   MM --> MM3["Resumen"]
   MM --> MM4["AnclaDeEstilo"]
+  MM --> MM5["FraseRecurrente"]
 ```
 
 ```mermaid
@@ -164,6 +165,7 @@ stateDiagram-v2
   state "rechazada" as rechazada
   state "en_revision" as en_revision
   state "aceptada" as aceptada
+  state "aceptada_por_rendicion" as aceptada_por_rendicion
   state "consolidada" as consolidada
   [*] --> planificada
   planificada --> generada: modelo escribe
@@ -173,7 +175,9 @@ stateDiagram-v2
   rechazada --> generada: regenera
   en_revision --> generada: reescribe
   en_verificacion --> aceptada: pasa todo
+  en_revision --> aceptada_por_rendicion: agota intentos
   aceptada --> consolidada: aplica delta
+  aceptada_por_rendicion --> consolidada: aplica delta
   consolidada --> [*]
 ```
 

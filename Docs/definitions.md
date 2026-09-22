@@ -20,6 +20,14 @@ La ontología separa cinco planos porque mezclarlos es el error habitual: lo que
 
 **Fichas de clase.** Cada clase se define con nombre, definición en una frase y atributos clave. Los atributos en **negrita** son obligatorios: sin ellos la instancia no puede entrar en el estado. El resto son opcionales o derivados.
 
+**`FraseRecurrente` no es un tic prohibido, y por eso es una clase aparte.**
+`GuiaDeEstilo.tics_prohibidos[]` es lo que el **autor** prohibió: una regla, que no caduca.
+Una `FraseRecurrente` es lo que el **sistema** observó: puede ser falsa, y sí caduca. Una
+frase que apareció dos veces en el capítulo tres y no volvió a salir no era una muletilla,
+y por eso la clase guarda `apariciones` y `desde_capitulo` —para poder decidirlo— y
+`ultima_aparicion` —para poder descartarla—. Alimentar `tics_prohibidos` con lo detectado
+borraría el origen, y sin origen no se puede revisar.
+
 **Las fichas no enumeran valores.** Cuando un atributo está gobernado por un vocabulario controlado, la ficha escribe `atributo → nombre_de_la_enumeracion` y nada más. Los valores viven en un solo sitio, la tabla "Vocabularios controlados". Enumerarlos también aquí es lo que hizo que las dos copias divergieran en el pasado: la ficha decía `juez LLM` donde la tabla decía `juez_llm`.
 
 **Referencias, no prosa.** Un atributo cuyo contenido es un *puntero a otra cosa* se escribe como identificador o lista de identificadores, nunca en lenguaje natural. La ficha lo marca con `atributo[] → Clase` o `atributo → Clase`. El motivo no es de estilo: un dato en prosa solo se puede comprobar buscando palabras dentro de palabras, y todos los validadores léxicos comparten el mismo punto ciego, así que el segundo ya no cubre nada que no cubriera el primero. Escribir referencias es lo que permite que dos validadores tengan puntos ciegos distintos. **No todo debe dejar de ser prosa**: ver "Lo que debe seguir siendo prosa" al final de este documento.
@@ -102,6 +110,7 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | Ficha | Resumen recuperable de una entidad, para inyectar en contexto. | **entidad**, resumen, version\_en\_t |
 | Resumen | Condensación jerárquica: escena → capítulo → parte. | **nivel** → `nivel_de_evaluacion`, **ambito**, texto, hechos\_clave\[\] → HechoCanonico |
 | AnclaDeEstilo | Pasaje ejemplar que fija la voz. | **texto**, que\_ejemplifica |
+| FraseRecurrente | Frase que el sistema ha visto repetirse y que puede acabar siendo una muletilla. | **texto**, **desde\_capitulo**, **apariciones**, ultima\_aparicion |
 | PaseDeRevision | Pasada específica sobre el texto ya generado. | **tipo** → `tipo_de_pase`, ambito, hallazgos\[\] |
 
 ### Jerarquía de memoria
@@ -209,7 +218,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `estado_de_presagio` | Presagio.estado, SetupYPago.estado | plantado, pagado, huerfano |
 | `tipo_de_valvula` | Valvula.tipo | humor, ternura, informacion, seguridad\_falsa |
 | `eje_de_deterioro` | Deterioro.eje | cordura, cuerpo, vinculos, recursos |
-| `estado_de_escena` | Escena.estado | planificada, generada, en\_verificacion, rechazada, en\_revision, aceptada, consolidada |
+| `estado_de_escena` | Escena.estado | planificada, generada, en\_verificacion, rechazada, en\_revision, aceptada, aceptada\_por\_rendicion, consolidada |
 | `estado_de_capitulo` | Capitulo.estado | abierto, cerrado |
 | `estado_de_hallazgo` | Hallazgo.estado | abierto, resuelto, descartado, sin\_veredicto |
 | `tipo_de_verificador` | Verificador.tipo, Invariante.tipo | regla, juez\_llm, humano |
@@ -321,8 +330,17 @@ ante una `bloqueante` mete una falsedad en el canon y todas las escenas siguient
 generan encima. Degradar la prosa y corromper el estado no son el mismo riesgo, y del
 segundo no se sale: no hay forma de deshacer un delta que ya heredaron treinta escenas.
 Para las `bloqueante`, `Escena.intentos` cuenta y se enseña, y la salida es humana —editar
-la escaleta, cambiar la escena, corregir el canon—. Para el resto, se elige el menos malo
-y `borrador_aceptado` dice cuál.
+la escaleta, cambiar la escena, corregir el canon—. Para el resto, se agotan los intentos,
+se elige el menos malo, `borrador_aceptado` dice cuál y la escena queda en
+**`aceptada_por_rendicion`**.
+
+**Es un estado y no un campo**, por el mismo motivo por el que `abandonado` no es un campo
+sobre `fallido`: una escena que pasó sus comprobaciones y otra que agotó los intentos no
+son el mismo hecho, y cualquier interfaz que mire solo el estado las confundiría. Aquí pesa
+más que en un trabajo, porque **el delta de una escena rendida entra igual al canon** y
+quien lea el manuscrito después necesita saber cuáles fueron. Y permite contar cuántas
+escenas de una obra se aceptaron rindiéndose, que es una medida de salud del sistema y con
+un campo se pierde.
 
 **Tres invariantes son de tipo `regla` y escalan al juez para desempatar.** `INV-03`, `INV-11` e `INV-14` eran de tipo `juez_llm` y su núcleo resultó ser una comparación: una resta sobre una serie numérica, un conteo, y un cruce de identificadores. La regla decide primero y el juez solo interviene en lo que la regla no puede ver: si una reversión está justificada en el texto (`INV-14`), si una revelación implícita cuenta (`INV-11`), y si un personaje **actúa sobre** un hecho que el delta no declaró (`INV-03`). El escalado se describe aquí y no en la columna `Tipo` porque `tipo_de_verificador` tiene tres valores y ninguno significa "regla con desempate": el tipo dice **quién decide primero**.
 
@@ -364,5 +382,6 @@ Estas son las que conviene fijar antes de escribir esquema o código.
 
 * [ ] **Umbrales.** Las invariantes `menor` (INV-15, INV-16) necesitan números concretos antes de poder ejecutarse; sin ellos el harness las salta en silencio.
 * [ ] **Corpus de fixtures.** Qué obra o fragmento sirve de caso base para los tests negativos de cada invariante.
+* [ ] **Si `FraseRecurrente` se convierte en invariante.** La clase guarda la señal; nadie la comprueba todavía. Puede quedarse como material para el Revisor o pasar a ser `INV-18`.
 * [ ] **Los pesos por severidad.** Hacen falta para `Escena.borrador_aceptado`: sin un número no se puede elegir el menos malo. Salen de medir sobre esta implementación, no de copiar los de `main`.
 * [ ] **Desempate juez vs. regla.** Con INV-03 ya de tipo `regla` y el juez como desempate, la pregunta es operativa y no teórica: falta decidir qué gana cuando la regla no ve nada y el juez marca. Aplica igual a INV-11 y a INV-14.

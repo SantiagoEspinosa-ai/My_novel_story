@@ -371,7 +371,14 @@ añade este documento es la columna de quién los mueve.
 | `en_verificacion` → `aceptada` | Orquestador | Pasa todas las puertas |
 | `rechazada` → `generada` | Persona desde el frontend | Regeneración |
 | `en_revision` → `generada` | Revisor | Reescritura dirigida |
+| `en_revision` → `aceptada_por_rendicion` | Orquestador | Se agotaron los intentos y ninguna invariante `bloqueante` sigue abierta. Se elige el menos malo |
 | `aceptada` → `consolidada` | Consolidador | Delta aplicado sin conflicto |
+| `aceptada_por_rendicion` → `consolidada` | Consolidador | Delta aplicado sin conflicto |
+
+**No hay rendición desde `rechazada`.** Una invariante `bloqueante` abierta no se rinde
+nunca: el delta de una escena rendida entra al canon igual que el de una limpia, y una
+falsedad en el canon la heredan todas las escenas siguientes. `Escena.intentos` cuenta y se
+enseña, y la salida es humana.
 
 La transición que importa es `aceptada → consolidada`. Hasta que el delta no está
 aplicado, el estado del mundo no ha cambiado y la escena siguiente **no puede generarse**:
