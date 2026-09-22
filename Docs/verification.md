@@ -329,9 +329,10 @@ ver la nota bajo la tabla de nivel artefacto.
 | **Validadores definidos** | **59** (`VER-01`…`VER-60`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
-| **Desbloqueados por la Fase A de `PLAN-01`** | 2 — `VER-01` y `VER-15`, desde que existe `backend/app/commons/dominio/` |
+| **Con parte de su caso negativo escrito** | 3 — `VER-38`, `VER-21` y `VER-11`, en la Fase A de `PLAN-01` |
+| **Desbloqueados por la Fase A** | 7 — `VER-01`, `VER-15`, `VER-21`, `VER-38`, `VER-03`, `VER-04`, `VER-11` |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 44 |
+| **Bloqueados por falta de código de producción** | 39 |
 | **Implementables hoy y sin implementar** | 2 — `VER-56` y `VER-59`, que solo necesitan los documentos |
 | **Puntos ciegos asumidos** | **14 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` y `PC-14` quemado |
 
@@ -343,9 +344,16 @@ evitar.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
 más cobertura.** Este documento ha pasado de 37 filas a 59 y la cifra que mide
-fiabilidad sigue siendo cero. Cuarenta y cuatro esperan a `backend/`, `frontend/` o
+fiabilidad sigue siendo cero. Treinta y nueve esperan a `backend/`, `frontend/` o
 CI, seis esperan una medición o una decisión, y **dos —`VER-56` y `VER-59`— no esperan a nada**: solo
 necesitan los documentos, que ya existen.
+
+**Cero sigue siendo cero, y conviene no redondearlo hacia arriba.** La Fase A de `PLAN-01`
+escribió veintiún tests que pasan, y **ninguno es un validador completo**. Tres escriben
+*parte* de un caso negativo —`VER-38` tiene su gancho pero nadie parsea todavía la tabla del
+documento; `VER-21` caza una versión repetida y un hueco, pero no cruza commits; `VER-11`
+prueba los predicados de severidad, no la puerta—. Contarlos como implementados sería
+exactamente la cobertura falsa que la Regla 2 persigue.
 
 Lo que sí ha cambiado son dos cosas. **Ya no hay ningún modo de fallo sin
 estado**: antes había nueve que no estaban ni cubiertos ni reconocidos, que es el

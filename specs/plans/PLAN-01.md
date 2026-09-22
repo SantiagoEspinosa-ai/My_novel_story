@@ -71,7 +71,7 @@ Lo que **no** está forzado: el orden entre `features/lectura/`, `features/revis
 
 ---
 
-## Fase A — Cimientos
+## Fase A — Cimientos · **terminada el 2026-09-22**
 
 | # | Paso | Ficheros | La prueba que falla primero | Pasa a implementable | Por qué va aquí | Queda funcionando |
 | --- | --- | --- | --- | --- | --- | --- |
