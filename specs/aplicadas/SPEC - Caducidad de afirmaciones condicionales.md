@@ -1,9 +1,11 @@
 ---
 id: SPEC-05
 titulo: Caducidad de las afirmaciones que son ciertas porque algo no existe
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
+fecha_aplicacion: 2026-09-22
+commit_de_aplicacion: 7b04aa7
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
