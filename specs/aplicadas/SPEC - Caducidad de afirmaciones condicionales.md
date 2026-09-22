@@ -147,6 +147,24 @@ una generación entera, y es el proxy más ajustado que la convención admite �
 Queda dicho para que nadie lo tome por exacto: **la marca avisa cuando el instrumento puede
 existir, no cuando el dato existe.**
 
+**El primer acierto, y la diferencia entre los tres casos es la lección.** `PC-1` decía
+*"taparlo pide auditoría en tiempo de ejecución sobre la base, pero no hay base todavía"*, con
+la marca en `backend/app/features/consolidacion/`. Al crear esa feature en `PLAN-01` C5 la
+marca disparó **y la afirmación era falsa**: hay estado del mundo escribiéndose y nadie lo
+audita. Pasó de punto ciego condicional a hueco activo.
+
+Los tres casos juntos enseñan a apuntar una marca:
+
+| Caso | Condición | Qué pasó |
+| --- | --- | --- |
+| Las medidas | `backend/` | **Disparó pronto.** La carpeta precede al dato por varios pasos |
+| La reserva del orden de recorte | `features/contexto/` | **Disparó pronto.** El instrumento existe, el dato no |
+| `PC-1` | `features/consolidacion/` | **Disparó bien.** Crear esa feature **es** empezar a escribir estado |
+
+La diferencia no es la distancia: es si crear lo que la ruta nombra **es** el hecho, o solo
+lo hace posible. `consolidacion/` escribe estado en cuanto existe; `modelo/` puede existir
+sin que nadie llame.
+
 ## Preguntas que hay que responder al aprobar
 
 | # | Pregunta | Propuesta |

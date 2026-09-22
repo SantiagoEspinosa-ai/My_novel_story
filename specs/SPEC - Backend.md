@@ -287,9 +287,9 @@ cambia el orden.
 | Orden | Bloque | Nivel del que sale | Forma reducida | Qué se pierde |
 | --- | --- | --- | --- | --- |
 | 1.º | Condensaciones de capítulo y de parte | Resúmenes | Solo las de capítulo; se van las de parte | Son condensaciones de condensaciones. Degradan el contexto lejano, que es el que menos afecta a la escena en curso |
-| 2.º | Fichas de entidad y setups pendientes | Recuperado | **El grafo de accesos entre lugares** (`Lugar.accesos_y_salidas`) y nada más | Duele, pero es recuperable después. El grafo se queda porque `INV-02` lo lee |
+| 2.º | Fichas de entidad y setups pendientes | Recuperado | Solo las entidades **presentes** en la escena | Duele, pero es recuperable después y no rompe ninguna puerta |
 | 3.º | Escena anterior completa y resumen de las tres previas | Local | **La escena anterior baja a su `Resumen`** | Aquí ya se nota: el texto pierde continuidad de tono y de ritmo |
-| 4.º | Estado del mundo en `t` **y registro de conocimiento aplicable** | Estado actual + Recuperado | **El registro de conocimiento entero**, `entidades_vivas`, `ubicaciones` y solo los hechos `permanente` | Sin el estado el modelo inventa dónde está la gente. Sin el registro, `INV-03` no es peor: es **imposible** |
+| 4.º | Estado del mundo en `t`, **registro de conocimiento** y **grafo de accesos entre lugares** | Estado actual + Recuperado | **El registro entero**, el **grafo de accesos entero**, `entidades_vivas`, `ubicaciones`, los hechos `permanente` **y cualquier hecho que el delta referencie**, sea cual sea su durabilidad | Sin el estado el modelo inventa dónde está la gente. Sin el registro, `INV-03` no es peor: es **imposible** |
 | 5.º | Problemas del intento anterior | Local | Solo los de severidad `bloqueante` y `mayor` | La reescritura repite el error que la motivó |
 | 6.º | Reserva de salida | Salida | **Irreducible** | Recortar aquí no es recortar contexto: es **truncar la escena** |
 | 7.º | Premisa, guía de estilo, reglas del mundo, anclas | Inmutable | **Irreducible** | **Nunca.** Sin esto no estás generando esta novela, estás generando otra |
@@ -308,8 +308,20 @@ en el intento siguiente el escritor no sabía nada de él. Está contado junto a
 
 #### Ninguna forma reducida se lleva lo que lee una `bloqueante` de escena
 
-> **La forma reducida de un bloque nunca puede llevarse lo que lee una invariante
-> `bloqueante` de nivel escena.** Si lo hace, la puerta sigue en pie y ya no puede decidir.
+> **Lo que lee una invariante `bloqueante` de nivel escena no se reduce ni se elimina. Si
+> eso obliga a moverlo a otro bloque, se mueve.**
+
+La primera versión de esta regla solo hablaba de la **forma reducida**, y se implementó en
+`PLAN-01` C1: el bloque 2.º se reducía al grafo de accesos precisamente porque `INV-02` lo
+lee, y después se eliminaba entero porque estaba entre los tres primeros. **Se partía
+`Lugar` para proteger el grafo y luego se tiraba.** Proteger la reducción y olvidar la
+eliminación es proteger lo menos y no lo más.
+
+**Y la salida no es blindar el bloque, es mover el dato.** Declarar el 2.º no eliminable
+sería proteger un bloque entero por culpa de un campo, y el 2.º existe para adelgazar. Es la
+consecuencia que `SPEC-12` no llevó hasta el final: si la partición por procedencia y la
+partición por necesidad no coinciden, **el sitio de un dato que lee una `bloqueante` es el
+bloque que no se elimina, no el bloque del que vino**.
 
 Es comprobable porque la tabla de invariantes de `Docs/definitions.md` declara, por fila,
 **qué lee** cada una. Lo cruza `VER-59`.
@@ -317,6 +329,18 @@ Es comprobable porque la tabla de invariantes de `Docs/definitions.md` declara, 
 **Ata a dos invariantes, no a cinco.** De las cinco `bloqueante` de nivel escena, solo
 `INV-02` e `INV-03` leen bloques del contexto: `INV-01` mira un campo de la propia escena,
 `INV-04` compara la escena con su borrador e `INV-05` mira el delta después de generar.
+
+**Cruzar esta regla con la columna «Qué lee» encontró dos datos mal colocados, no uno:**
+
+| Dato | Lo lee | Dónde estaba | Dónde va |
+| --- | --- | --- | --- |
+| `Lugar.accesos_y_salidas` | `INV-02` | Bloque 2.º, **eliminable** | Bloque 4.º |
+| `HechoCanonico.escena_de_establecimiento` de un hecho que el delta referencia | `INV-03` | Bloque 4.º, pero la reducción dejaba **solo los permanentes** | Bloque 4.º, exento de la reducción |
+
+El segundo es más sutil y no se ve mirando bloques: un hecho `efimero` que el delta revela
+tiene su `escena_de_establecimiento` igual que uno permanente, y sin ella `INV-03` no puede
+comprobar que revelar no precede a establecer. La durabilidad decide qué se puede recortar
+**del estado**, no qué necesita una puerta.
 **Se escribe medido para que nadie relaje la regla por miedo a un coste que no existe**: una
 regla que parece cara y no se ha medido se ablanda sola.
 

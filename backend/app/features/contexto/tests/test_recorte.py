@@ -92,26 +92,38 @@ def test_los_problemas_del_intento_anterior_se_recortan_de_los_ultimos():
     assert posiciones["problemas_del_intento_anterior"] > posiciones["estado_y_conocimiento"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="CONTRADICCION EN 2.4, NO FALLO DE ESTE CODIGO. La regla C-3 bis "
-           "dice que ninguna forma REDUCIDA se lleva lo que lee una bloqueante "
-           "de escena, y no dice nada de la ELIMINACION, que quita mas. El "
-           "bloque 2 se reduce al grafo de accesos precisamente porque INV-02 "
-           "lo lee, y despues se elimina entero porque esta entre los tres "
-           "primeros. Se parte `Lugar` para proteger el grafo y luego se tira. "
-           "Hace falta decidir: o el bloque 2 deja de ser eliminable, o el "
-           "grafo se muda al bloque 4, que nunca se elimina.",
-)
-def test_la_eliminacion_respeta_la_misma_regla_que_la_reduccion():
-    """Lo que la regla protege al reducir, lo pierde al eliminar."""
+def test_ningun_bloque_con_dato_protegido_se_elimina():
+    """La regla protege **el dato**, no el bloque.
+
+    Un bloque con datos protegidos puede reducirse -su forma reducida esta
+    definida para conservarlos- pero no puede eliminarse, porque eliminar no
+    conserva nada. Esta prueba fallaba como `xfail` hasta que el grafo de
+    accesos se movio del bloque 2 al 4: se partia `Lugar` para protegerlo de la
+    reduccion y luego se tiraba en la eliminacion.
+    """
     try:
         plan = recorte.planificar(_contexto({b.nombre: 100 for b in BLOQUES}), techo=1)
     except recorte.NoCabe as e:
         plan = e.plan
     eliminados = {p.bloque for p in plan if p.clase is Clase.ELIMINACION}
-    con_bloqueante = {b.nombre for b in BLOQUES if b.lee_una_bloqueante}
-    assert not (eliminados & con_bloqueante), (
-        "se eliminaron bloques que leen una invariante bloqueante de escena: "
-        "{0}".format(sorted(eliminados & con_bloqueante))
+    protegidos = {b.nombre for b in BLOQUES if b.lee_una_bloqueante}
+    assert not (eliminados & protegidos), (
+        "se elimino un bloque con datos que lee una bloqueante de escena: "
+        "{0}".format(sorted(eliminados & protegidos))
     )
+
+
+def test_un_bloque_protegido_no_es_eliminable_por_declaracion():
+    """Y no por casualidad de que el recorte no llegue a el."""
+    for b in BLOQUES:
+        if b.lee_una_bloqueante:
+            assert b.eliminable is False, (
+                "{0} lleva datos protegidos y esta declarado eliminable".format(b.nombre)
+            )
+
+
+def test_la_forma_reducida_de_un_bloque_protegido_nombra_lo_que_conserva():
+    """Si no lo nombra, nadie puede comprobar que lo conserve."""
+    b = next(x for x in BLOQUES if x.nombre == "estado_y_conocimiento")
+    for debe in ("registro", "grafo de accesos", "ubicaciones", "delta referencie"):
+        assert debe in b.forma_reducida, "la forma reducida no nombra {0!r}".format(debe)
