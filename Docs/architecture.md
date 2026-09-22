@@ -31,8 +31,11 @@ se desarrolla aquí.
 **La limpieza sigue pendiente (`A-08`).** El contenido queda por ahora duplicado a
 propósito: borrar de los originales y dejar un puntero es un cambio aparte que todavía no
 está hecho, y mientras no se haga, la copia de referencia sigue siendo la del documento
-original. Lo único que se ha tocado de los originales son correcciones documentales
-—rutas, literales de un diagrama y una arista mal nombrada—, que no mueven contenido.
+original. De los originales se han tocado dos cosas, y ninguna mueve el
+contenido duplicado: correcciones documentales —rutas, literales de un diagrama, una
+arista mal nombrada— y los cambios de dominio que aplicaron `SPEC-02`, `SPEC-03` y
+`SPEC-04`, que pasaron por su propia puerta. La duplicación que describe `A-08` sigue
+intacta.
 
 | Origen | Fragmento | Por qué no es definición ni dominio |
 | --- | --- | --- |
@@ -260,15 +263,19 @@ criterio implícito no impide que alguien añada una fila que no le corresponde.
 | Resumidor | no | no | la escena que resume | no | los del nivel inferior |
 | Auditor de obra | anclas de estilo | sí | la escena que se desempata | setups pendientes | sí, todos |
 
-**El Auditor de obra vive de los resúmenes, y esa es su única entrada posible.** Comprueba
-invariantes de nivel obra y capítulo, y `CLAUDE.md` prohíbe mandarle el texto completo, así
-que las condensaciones son todo lo que tiene: si una condensación pierde un presagio, el
-Auditor no lo ve y `INV-09` pasa. Recibe `Estado actual` por `INV-06`, que compara hechos
-vigentes entre sí; `Recuperado` por los setups pendientes de `INV-09`; y del nivel
-inmutable solo las anclas de estilo, que es contra lo que `INV-15` mide la distancia. De `Local` recibe **solo la escena que se desempata**: es `Mixto` porque `INV-11` e
-`INV-14` son suyas y escalan al juez, y los dos desempates preguntan por el texto —si una
-reversión está justificada, si una revelación implícita cuenta—, así que necesita esa
-escena y no la obra entera.
+**El Auditor recibe resúmenes porque es lo que cabe en un prompt, no porque sea lo único
+que puede leer.** Esta tabla reparte lo que se **envía** al modelo; sus comprobaciones son
+de tipo `regla`, y una regla consulta la base. `INV-15` mide la distancia estilométrica
+sobre la prosa real del capítulo sin tocar el presupuesto, y `INV-09` compara filas de
+`Presagio` —que tienen `escena_de_plantado` y `escena_de_pago` propios—, no líneas de un
+resumen: una condensación que se deje un presagio no esconde nada.
+
+Recibe `Estado actual` por `INV-06`, que compara hechos vigentes entre sí; `Recuperado`
+por los setups pendientes de `INV-09`; y del nivel inmutable solo las anclas de estilo,
+que es contra lo que `INV-15` mide la distancia. De `Local` recibe **solo la escena que se
+desempata**: es `Mixto` porque `INV-11` e `INV-14` son suyas y escalan al juez, y los dos
+desempates preguntan por el texto —si una reversión está justificada, si una revelación
+implícita cuenta—, así que necesita esa escena y no la obra entera.
 
 El reparto numérico de tokens entre agentes **no está fijado y no se inventa aquí**. Se
 fija cuando haya medidas reales de cuánto consume cada uno; hasta entonces cada agente usa
