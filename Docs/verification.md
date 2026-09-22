@@ -42,11 +42,11 @@ pasos 15,7 %, no reconocer condiciones de terminación 12,4 %, desobedecer la
 especificación 11,8 %, pérdida de historial 2,8 %, actuar fuera de rol 1,5 %.
 Sirven para ordenar por dónde empezar a mirar, no para afirmar nada sobre esta
 implementación: **aquí no se ha medido ninguna**, y no las hay porque no hay
-sistema que medir. **Caduca con:** `backend/`.
+sistema que medir. **Caduca con:** `backend/app/commons/modelo/`.
 
 ConStory-Bench mide **densidad de errores por diez mil palabras**. Es una métrica
 que no tenemos y que conviene adoptar cuando haya texto: sin denominador, contar
-hallazgos no dice si la obra mejora o solo se alarga. **Caduca con:** `backend/`.
+hallazgos no dice si la obra mejora o solo se alarga. **Caduca con:** `backend/app/commons/modelo/`, que es lo que produce texto.
 
 ## Cómo leer la tabla
 
@@ -329,17 +329,21 @@ ver la nota bajo la tabla de nivel artefacto.
 | **Validadores definidos** | **59** (`VER-01`…`VER-60`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
+| **Desbloqueados por la Fase A de `PLAN-01`** | 2 — `VER-01` y `VER-15`, desde que existe `backend/app/commons/dominio/` |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 46 |
+| **Bloqueados por falta de código de producción** | 44 |
 | **Implementables hoy y sin implementar** | 2 — `VER-56` y `VER-59`, que solo necesitan los documentos |
 | **Puntos ciegos asumidos** | **14 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` y `PC-14` quemado |
 
-**Caduca con:** `backend/` — los recuentos de esta tabla y los dos párrafos siguientes
-dejan de ser ciertos el día que exista esa carpeta.
+**Estos recuentos se revisan al cerrar cada fase de `PLAN-01`.** No llevan marca
+`Caduca con:` a propósito: una marca avisa **una vez**, y una tabla de recuentos deja de ser
+cierta **cada vez** que aterriza código. Ponerle una condición de caducidad la haría fallar
+continuamente y dejaría de significar nada, que es el fallo que las marcas existen para
+evitar.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
 más cobertura.** Este documento ha pasado de 37 filas a 59 y la cifra que mide
-fiabilidad sigue siendo cero. Cuarenta y seis esperan a `backend/`, `frontend/` o
+fiabilidad sigue siendo cero. Cuarenta y cuatro esperan a `backend/`, `frontend/` o
 CI, seis esperan una medición o una decisión, y **dos —`VER-56` y `VER-59`— no esperan a nada**: solo
 necesitan los documentos, que ya existen.
 

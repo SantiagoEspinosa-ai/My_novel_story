@@ -232,7 +232,7 @@ que allí costó descubrir: **una puntuación así solo se puede comparar dentro
 obra y entre intentos de la misma escena.** Dos obras distintas no son comparables porque
 el muestreo del modelo no se puede fijar, así que la puntuación no es una medida estable
 sino una comparación local. Copiar los pesos sin copiar esta frase es lo que haría que
-alguien comparase dos novelas y creyera el número. **Caduca con:** `backend/`.
+alguien comparase dos novelas y creyera el número. **Caduca con:** `backend/app/commons/modelo/`.
 
 | `severidad` | Hallazgo.severidad, Invariante.severidad | bloqueante, mayor, menor |
 | `tipo_de_pase` | PaseDeRevision.tipo | continuidad, voz, ritmo, densidad, linea |

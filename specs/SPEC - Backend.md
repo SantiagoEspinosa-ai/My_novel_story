@@ -372,7 +372,8 @@ que dirá si es el bueno es **la tendencia de los recortes**: si en la escena 40
 recortes que no había en la 3, la compactación no está funcionando y el orden es lo de
 menos. Ese registro no existe todavía: `SPEC-11` lo diseñó —la traza
 guarda los recortes, distinguiendo reducciones de eliminaciones— pero diseñarlo no es
-tenerlo. **Caduca con:** `backend/`.
+tenerlo. **Caduca con:** `backend/app/features/contexto/`, que es el ensamblador que los
+produce.
 
 ## 2.5 Suposiciones y dependencias
 
