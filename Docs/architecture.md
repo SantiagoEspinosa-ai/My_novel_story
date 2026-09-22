@@ -229,7 +229,7 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | **Escaletador** | Sí | Repartir el cambio de valor por escena; prever la curva de dread; asignar beats a arcos | `Brief` + `GuiaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
 | **Ensamblador de contexto** | No | Recuperar por similitud; seleccionar fichas y setups pendientes; recortar por nivel de prioridad; contar tokens | Escena planificada → contexto dentro del presupuesto | Ninguna; hace cumplir el límite de `CLAUDE.md` |
 | **Escritor de escena** | Sí | Escribir la escena; sostener el POV; respetar las anclas de estilo; **devolver el delta estructurado en la misma llamada** | Contexto → `Borrador` + `DeltaDeEscena` | Produce el material de `INV-01`…`INV-04` |
-| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; **comparación contra el registro de conocimiento en `t`**; repetición léxica; distribución de longitud de frase | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-07`, `INV-13` |
+| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; **comparación contra el registro de conocimiento en `t`**; repetición léxica; distribución de longitud de frase | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-07`, `INV-13` (incremental) |
 | **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-10`. Como desempate: `INV-03`, `INV-11`, `INV-14` |
 | **Revisor** | Sí | Un `PaseDeRevision` por tipo: continuidad, voz, ritmo, densidad, línea | Borrador + hallazgos → borrador nuevo | Las del hallazgo que corrige |
 | **Resumidor** | Sí | Condensar escena → capítulo → parte; extraer hechos clave; actualizar fichas de entidad | Escena consolidada → `Resumen`, `Ficha` | Ninguna; es lo que hace que el sistema escale |
@@ -250,6 +250,21 @@ contestar desde ahí: un presagio es huérfano solo cuando la obra termina sin p
 máximo y la varianza de la curva necesitan la serie entera. `INV-06` tampoco es suya: su
 forma incremental —que el delta no contradiga el estado en `t`— es del Consolidador, y así
 lo dice `RF-20` de `SPEC-01`. Las cuatro son del Auditor de obra.
+
+**`INV-13` es la excepción, y a propósito: se comprueba dos veces.** El Verificador hace la
+forma **incremental** —si esta escena revela un hecho que ya estaba revelado, lo dice en la
+escena donde ocurre, que es cuando todavía se puede corregir sin rehacer nada— y el Auditor
+hace el **barrido** sobre la obra, que es la red por si el incremental falló. No es
+duplicación: son dos momentos distintos con dos costes de corrección distintos.
+
+Como los dos pueden levantar un `Hallazgo` de `INV-13`, **hay que poder distinguir cuál
+fue**. El dominio ya lo permite: `Hallazgo.verificador` es un atributo obligatorio. Lo que
+faltaba era comprobarlo, y eso es la fila `VER-12` de `Docs/verification.md`.
+
+**`INV-05` no es del Verificador.** La tiene el Orquestador —que no deja pasar a la escena
+siguiente sin delta aplicado— y el Consolidador, que es quien lo aplica. La del Verificador
+estaba a pelo, sin razón escrita, y era duplicación sin función. Si alguien la quiere de
+vuelta, que la escriba con su motivo.
 
 **Decisión: el Juez no comparte sesión con el Escritor.** Recibe el texto y la rúbrica, no
 el prompt ni el razonamiento que produjeron ese texto. Un modelo que juzga su propia
