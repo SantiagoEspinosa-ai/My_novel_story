@@ -13,7 +13,7 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Definiciones del dominio | `Docs/definitions.md` | Referencia normativa: los cinco planos, clases con atributos, tabla de relaciones, vocabularios controlados e invariantes `INV-01`…`INV-16` |
 | Árbol y diagramas | `Docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
-| Plan de verificación del sistema | `Docs/verification.md` | Cómo se prueba que el código hace lo que dice: 37 afirmaciones `VER-01`…`VER-37` con clase T/A/I/D/U, metodología, criterio de salida y caso negativo |
+| Plan de verificación del sistema | `Docs/verification.md` | Cómo se prueba que el código hace lo que dice: 43 validadores `VER-01`…`VER-43`, cada uno con su **punto ciego** declarado, más los 8 puntos ciegos asumidos a sabiendas. Ninguno implementado todavía |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las siete skills instaladas. Ver la sección "Skills" más abajo |
 | Specs | `specs/` | Un fichero por spec, sin carpetas anidadas. Hoy: `SPEC - Backend.md` = `SPEC-01`, backend del harness |
 | Revisiones de specs | `specs/revisiones/` | Un `REV-NN.md` por spec revisada, numerado por la spec que evalúa. Evalúa el **documento** mientras está en `en_revision` y propone cómo llevarlo a `aprobada`. No es un plan de implementación |
