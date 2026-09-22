@@ -412,6 +412,90 @@ caso en cada verificador:
 
 Todo hallazgo cita su invariante por identificador (`INV-07`), nunca por descripción.
 
+### Los estados de un trabajo
+
+La tabla de trabajos **no es dominio**: no existiría si la novela se escribiera a mano, y
+por eso vive en `commons/trabajos/` y su vocabulario se declara aquí y no en
+`Docs/definitions.md`. Sigue las mismas reglas de nombres —ASCII, `snake_case`— porque es
+el mismo código leyendo el mismo tipo de valor, y dos convenciones para lo mismo es como
+`juez LLM` acabó divergiendo de `juez_llm`.
+
+| Estado | Qué significa |
+| --- | --- |
+| `en_cola` | Encolado y sin tomar |
+| `esperando_presupuesto` | Tomado, pero no hay techo de contexto disponible (`P-3`) |
+| `en_curso` | Con presupuesto reservado y llamada en vuelo |
+| `terminado` | Acabó y dejó su resultado |
+| `fallido` | Acabó mal, y **se sabe cómo**: fallo de contrato, o tope de reintentos agotado |
+| `abandonado` | Un worker lo tomó y no se supo más de él. **No se sabe si llegó a pasar** |
+
+**`fallido` y `abandonado` no son el mismo hecho**, y por eso son dos estados y no un
+estado con un campo. Uno significa que sabemos qué pasó; el otro, que no sabemos si llegó
+a pasar. La consecuencia práctica está en el tope: un `abandonado` no cuenta contra él,
+porque no es un intento que falló sino uno cuyo resultado se desconoce. Con un campo en
+lugar de un estado, una interfaz que solo mire el estado los confunde y alguien lo relanza
+a mano creyendo que falló, que es pagar dos veces por otra puerta.
+
+| Transición | Quién la dispara | Condición |
+| --- | --- | --- |
+| `[*]` → `en_cola` | Cliente de la API | Se encola el trabajo |
+| `en_cola` → `en_curso` | Worker | Lo toma y hay techo disponible |
+| `en_cola` → `esperando_presupuesto` | Worker | Lo toma y **no** hay techo (`P-3`) |
+| `esperando_presupuesto` → `en_curso` | Worker | Se libera techo |
+| `en_curso` → `terminado` | Worker | La llamada devuelve algo válido |
+| `en_curso` → `en_cola` | Worker | Fallo **de transporte** y tope no agotado: reintenta desde el ensamblado |
+| `en_curso` → `fallido` | Worker | Fallo **de contrato**, o tope agotado |
+| `en_curso` → `abandonado` | *(sin decidir: ver Decisiones abiertas)* | Se excedió el margen desde que se tomó |
+| `abandonado` → `en_cola` | Persona | Relanzamiento manual, viendo qué pasó |
+
+Se vuelve a `en_cola` y no a `en_curso` al reintentar porque se reintenta **el trabajo
+entero desde el ensamblado del contexto**: entre un intento y el siguiente el estado del
+mundo pudo cambiar.
+
+### La traza de una llamada al modelo
+
+`T-1` y `T-2` de `SPEC-01` piden traza de cada llamada, incluidas las que fallan. Qué
+registra:
+
+- El agente, la escena y el trabajo.
+- El **`prompt_hash`**. Vive también aquí y no solo en `Borrador`, porque una llamada
+  fallida no produce ningún `Borrador` y es justo la que hay que diagnosticar.
+- **Los identificadores que entraron en el contexto**, no su texto: qué fichas con su
+  `version_en_t`, qué presagios, qué resúmenes y qué niveles. Guardar el contexto entero
+  sería duplicar hasta 80.000 tokens que se reconstruyen desde el estado; guardar los ids
+  cuesta nada y es lo que hace la reconstrucción **posible**, porque el índice vectorial
+  crece al consolidar y los empates de una consulta KNN no tienen orden definido: sin los
+  ids no se sabe cuáles entraron, aunque su contenido siga ahí.
+- Los tokens, en los dos campos de abajo.
+- El resultado. Si fue un fallo de contrato, **la salida entera**: es pequeña, no se
+  reconstruye, y es lo único que permite diagnosticar un delta fuera de esquema.
+
+**El `prompt_hash` detecta, no reconstruye.** Sirve para saber si una reconstrucción es
+fiel, no para recuperar lo que se mandó. Por eso no sustituye a los identificadores.
+
+#### Por qué la traza lleva los tokens en dos campos
+
+`VER-41` reconcilia lo que registra la traza contra lo que declara el modelo, y es **la
+segunda fuente independiente que exige la Regla 3** de `Docs/verification.md`. Si los dos
+números salen del mismo sitio, `VER-41` compara un número consigo mismo: pasa siempre y es
+un eco. `PC-8` dejaría de ser *"los dos podrían equivocarse igual"* y pasaría a ser *"no
+hay segunda fuente"*, que es peor y que además nadie vería, porque el validador estaría en
+verde. Y de `VER-41` depende `VER-34`.
+
+| Campo | De dónde sale | Quién lo escribe |
+| --- | --- | --- |
+| `tokens_estimados` | El contador propio, **antes** de la llamada, el que reserva presupuesto por `P-2` | `commons/modelo/`, control de presupuesto |
+| `tokens_declarados` | El `usage` de la respuesta del proveedor, **copiado literal** | El límite de transporte, al deserializar |
+
+Tres reglas que hacen la independencia estructural en vez de una buena intención:
+
+1. **`tokens_declarados` no se calcula nunca.** Se copia. Si no viene, queda **ausente**,
+   no en cero: un cero se lee como un dato y un hueco no.
+2. **El código que calcula `tokens_estimados` no escribe `tokens_declarados`.** Es la
+   condición que impide el eco, y es comprobable de forma estática.
+3. `VER-41` compara los dos campos y los cita por nombre, para que en su propia fila se vea
+   que son dos y no uno.
+
 ### Cuando algo falla
 
 Hasta aquí el camino feliz. Esto es lo que pasa cuando no lo es, y es tan arquitectura como
@@ -561,6 +645,13 @@ Sin cerrar. Afectan al código, así que conviene fijarlas antes de escribirlo.
 - [ ] **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla`, la pregunta deja
   de ser teórica: hay dos resultados que comparar en cada escena. Falta decidir qué gana
   cuando la regla no ve nada y el Juez marca. Lo mismo para `INV-11` e `INV-14`.
+- [ ] **Quién detecta un trabajo abandonado.** `SPEC-07` decidió qué se hace con él —se
+  marca `abandonado`, no cuenta contra el tope y lo relanza una persona— pero no quién lo
+  detecta: el worker al arrancar, un barrido aparte, o una persona. La transición
+  `en_curso` → `abandonado` tiene la celda vacía a propósito.
+- [ ] **El nivel `Resúmenes` de una traza no es reconstruible todavía.** `Ficha` tiene
+  `version_en_t` y `Resumen` no, así que una condensación de capítulo consumida en la
+  escena 5 no se distingue de la de la escena 40. Lo cierra `SPEC-09`.
 - [ ] **Qué valida una persona y cuándo.** Con `A-04` el frontend lo permite; falta decidir
   en qué puertas es obligatorio.
 - [ ] **Limpieza de los documentos de dominio.** Mover lo listado arriba y arreglar el

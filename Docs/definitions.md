@@ -184,6 +184,14 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 
 ## Vocabularios controlados
 
+**No todos los del proyecto están aquí, y conviene saberlo antes de buscar.** Este
+documento define los del **dominio**: lo que es verdad en la ficción o lo que el harness
+comprueba sobre ella. Un vocabulario que describe infraestructura —algo que no existiría si
+la novela se escribiera a mano— se declara donde vive esa infraestructura. Hoy hay uno
+así: **los estados de un trabajo**, en `Docs/architecture.md` § "Los estados de un
+trabajo". Sigue las mismas reglas de nombres que estos, porque es el mismo código leyendo
+el mismo tipo de valor.
+
 Todo atributo con valores cerrados usa exactamente estos literales. Un valor fuera de la lista es un fallo de esquema, no una variante estilística.
 
 | Enumeración | Atributos que la usan | Valores |
