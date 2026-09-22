@@ -371,11 +371,13 @@ El plan completo —qué afirmación se prueba con qué metodología, con qué c
 y dónde vive cada prueba— está en `Docs/verification.md`. Aquí solo quedan las tres reglas
 que condicionan cómo se escribe el código.
 
-- Cada invariante tiene al menos un caso negativo en `harness/`: un fragmento que la viole
-  a propósito. Una invariante que nunca ha fallado en las pruebas no está verificada, solo
-  declarada.
-- El caso negativo vive en la feature que ejecuta esa invariante, no en un directorio de
-  tests aparte.
+- Cada invariante tiene al menos un caso negativo: un fragmento que la viole a propósito.
+  Una invariante que nunca ha fallado en las pruebas no está verificada, solo declarada.
+- El caso negativo vive **en la feature que ejecuta esa invariante**, en su `tests/`, no en
+  un directorio de tests aparte. Este documento llegó a decir las dos cosas: que vivían en
+  `harness/` y que no vivían en un directorio aparte. Manda esta segunda, que es la que
+  coinciden en decir la tabla de ficheros de feature de más arriba y la skill
+  `harness-invariantes`.
 - Un doble de prueba tiene la misma forma que lo real. Si el modelo devuelve texto y delta
   en la misma respuesta, el doble también.
 
