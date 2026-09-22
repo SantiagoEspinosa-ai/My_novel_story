@@ -470,8 +470,12 @@ Los identificadores `O-`, `M-`, `P-` y `T-` se conservan de la versión 1. No se
 
 - **O-1.** Cada transición de la máquina de estados es un trabajo registrado en la tabla
   de trabajos. El Orquestador **no guarda estado en memoria del proceso**.
-- **O-2.** Un reinicio del servidor a mitad de una escena no pierde el progreso: al
-  arrancar, el trabajo pendiente se retoma desde la última transición registrada.
+- **O-2.** Un reinicio del servidor no pierde el progreso **registrado**: las transiciones
+  ya escritas en la tabla siguen ahí, que es para lo que `A-05` eligió una tabla frente a
+  `BackgroundTasks`. Lo que **no** ocurre es el relanzamiento automático: el trabajo que
+  estaba en vuelo no se retoma solo, porque pudo haber llamado al modelo antes de morir y
+  relanzarlo a ciegas paga dos veces. Lo relanza una persona, viendo qué pasó
+  (`Docs/architecture.md` § "El trabajo que nadie terminó").
 - **O-3.** Los fallos **transitorios** (red, timeout) se reintentan con espera creciente y
   un tope acotado de intentos. Los fallos **de contrato** (salida fuera de esquema) **no**
   se reintentan: el trabajo queda marcado como fallido y visible. Reintentar a ciegas un
@@ -631,5 +635,5 @@ Siguen abiertas:
 | --- | --- | --- |
 | 1 | 2026-09-21 | Primera versión. Absorbe la spec de orquestación, memoria y presupuesto conservando los identificadores `O-`, `M-`, `P-` |
 | 2 | 2026-09-21 | Pasa a ser **solo** la spec del backend: fuera el registro multi-spec. Se añade §2.2 con el proceso tomado de `Docs/`, y se documenta en §2.2.3 la contradicción entre `CLAUDE.md` y `Docs/architecture.md` sobre `mayor` y `menor` |
-| 4 | 2026-09-22 | **Se cierra `D4-9` entero**: `RF-27`…`RF-30` y el endpoint `POST /capitulos/{id}/cerrar` escriben la puerta de cierre de capítulo que `SPEC-04` había decidido. `RF-26` y §2.4 dicen ya que el orden de recorte opera sobre **bloques**, no sobre niveles. No quedan bloqueantes |
 | 3 | 2026-09-22 | Se cierran dos bloqueantes. **§2.4 fija el orden de recorte** por qué se pierde si falta, y `RF-26` añade que por debajo del nivel 3 se falla en vez de generar. **`Beat` y `ArcoNarrativo` entran en la v1** con su coste reconocido: el Escaletador pasa a tener que rellenarlos. `D4-6` ya lo había cerrado `SPEC-03` al poner `cambios_de_estado_vital` en el delta |
+| 4 | 2026-09-22 | **Se cierra `D4-9` entero**: `RF-27`…`RF-30` y el endpoint `POST /capitulos/{id}/cerrar` escriben la puerta de cierre de capítulo que `SPEC-04` había decidido. `RF-26` y §2.4 dicen ya que el orden de recorte opera sobre **bloques**, no sobre niveles. No quedan bloqueantes |
