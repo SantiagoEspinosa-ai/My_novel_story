@@ -107,6 +107,13 @@ prosa en documentos, y el validador es código en CI.
 existe), `F-16` (la materialización en `VER-45`), y la Regla 2 y la Regla 3 de
 `Docs/verification.md`.
 
+**Alcance ampliado el 2026-09-22.** `C-2` decía que `VER-56` recorre las marcas de los
+documentos. Al aprobar `PLAN-01` se extendió **al código**: los dos números provisionales de
+`SPEC-07` llevan su marca en `commons/config.py`, y un refactor las mueve sin que nadie las
+lea, así que las dos marcas que más importan habrían sido las únicas sin vigilancia. Es el
+mismo argumento que la regla de independencia de `SPEC-08`: no dejar sin vigilar el
+mecanismo de vigilancia.
+
 ## Preguntas que hay que responder al aprobar
 
 | # | Pregunta | Propuesta |

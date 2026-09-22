@@ -144,6 +144,13 @@ que menos se relee. Van en la aprobación de este plan, donde se ven.
 
 ---
 
+## Cómo se aprueba
+
+**Fase a fase, no el plan entero de golpe.** Catorce pasos es demasiado para una sola
+aprobación, y la Fase A son tres: si el formato está mal, se ve en tres pasos en vez de en
+catorce. Cada fase se aprueba cuando la anterior está terminada, y aprobar una fase es
+autorización para escribir su código y solo el suyo.
+
 ## Lo que este plan no hace
 
 - **No escribe frontend.** `SPEC-01` es solo el backend.

@@ -532,7 +532,10 @@ De `Docs/architecture.md`. Condicionan el código, no solo su organización:
   compartido (`A-01`, `A-02`).
 - **D-2.** Una feature **nunca** importa de otra feature. `commons/` **nunca** importa de
   una feature. `features/orquestacion/` es la única excepción, porque existe para componer.
-- **D-3.** Los `Enum` de los vocabularios controlados viven **solo** en `commons/dominio/`.
+- **D-3.** Los `Enum` de los vocabularios controlados **del dominio** viven **solo** en
+  `commons/dominio/`. Los de infraestructura viven con su infraestructura: el de estados de
+  un trabajo, en `commons/trabajos/`. Se escribió "los vocabularios controlados" cuando
+  todos eran de dominio, y `SPEC-08` creó el primero que no lo es.
 - **D-4.** La severidad de las invariantes se implementa una vez, en
   `commons/invariantes/`, y no se resuelve caso por caso en cada verificador.
 - **D-5.** Las migraciones se versionan. Un cambio en `Docs/definitions.md` que altere un
