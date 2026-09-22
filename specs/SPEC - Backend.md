@@ -6,7 +6,7 @@ aprobada_por:
 fecha_aprobacion:
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-21
-version: 2
+version: 3
 ---
 
 # SRS — Backend del harness de novelas
@@ -103,7 +103,7 @@ Literales de `Docs/definitions.md`. No admiten sinónimos ni traducción.
 | `Docs/definitions.md` | Clases, atributos, vocabularios controlados e invariantes `INV-01`…`INV-16` |
 | `Docs/domain-knowledge.md` | **El proceso**: ciclo de vida de la escena y secuencia de generación |
 | `Docs/architecture.md` | Decisiones `A-01`…`A-09`, estructura por feature, agentes y quién dispara cada transición |
-| `Docs/verification.md` | Afirmaciones `VER-01`…`VER-37` y sus criterios de salida |
+| `Docs/verification.md` | Modos de fallo `MF-01`…`MF-23` y validadores `VER-01`…`VER-55`, cada uno con su punto ciego |
 
 ---
 
@@ -264,6 +264,27 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 
 **Suma exactamente 100.000.** Esa igualdad tiene consecuencias en `P-5`.
 
+### Orden de recorte
+
+`CLAUDE.md` dice que se recorta *"por el nivel de menor prioridad"* y no dice cuál es.
+Este es el orden, y **también modifica `CLAUDE.md`**, igual que `P-1`.
+
+El criterio no es cuánto ocupa cada nivel, sino **qué se pierde si falta**:
+
+| Orden | Nivel | Qué se pierde |
+| --- | --- | --- |
+| 1.º | Resúmenes | Son condensaciones de condensaciones. Perderlas degrada el contexto lejano, que es el que menos afecta a la escena en curso |
+| 2.º | Recuperado | Fichas y setups pendientes. Duele, pero es recuperable después y no rompe nada de inmediato |
+| 3.º | Local | La escena anterior completa. Aquí ya se nota: el texto pierde continuidad de tono y de ritmo |
+| 4.º | Estado actual | Sin esto el modelo inventa dónde está la gente |
+| 5.º | Salida | Recortar aquí no es recortar contexto: es **truncar la escena** |
+| 6.º | Inmutable | **Nunca.** Sin premisa, reglas del mundo ni anclas de voz no estás generando esta novela, estás generando otra |
+
+**Por debajo del nivel 3 no se recorta: se falla.** Una escena escrita sin la anterior y
+sin el estado del mundo va a salir mal y va a consumir una regeneración igualmente, así
+que fallar antes es más barato que generar y tirar. En la práctica eso hace que los
+niveles 4, 5 y 6 no se toquen nunca: el ensamblador se detiene antes de llegar a ellos.
+
 ## 2.5 Suposiciones y dependencias
 
 - Una sola obra y un solo usuario. Sin multi-tenencia ni autenticación.
@@ -284,7 +305,7 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 | ID | Requisito | Verifica |
 | --- | --- | --- |
 | **RF-01** | Se puede crear una `Obra` a partir de un `Brief` con premisa, tono, guía de estilo y prohibiciones. Los campos obligatorios de `Docs/definitions.md` son obligatorios aquí | — |
-| **RF-02** | Se genera una `Escaleta`: lista ordenada de escenas planificadas, cada una con su `cambio_de_valor` previsto, su `pov`, su `lugar` y su `objetivo_dramatico` | `INV-01` |
+| **RF-02** | Se genera una `Escaleta`: lista ordenada de escenas planificadas, cada una con su `cambio_de_valor` previsto, su `pov`, su `lugar`, su `objetivo_dramatico` **y los `Beat` que realiza, cada uno ligado al `ArcoNarrativo` al que sirve** | `INV-01`, `INV-07` |
 | **RF-03** | Toda escena de la escaleta nace en estado `planificada` | — |
 | **RF-04** | La generación de la escaleta es asíncrona: devuelve un identificador de trabajo | — |
 
@@ -293,9 +314,10 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 | ID | Requisito | Verifica |
 | --- | --- | --- |
 | **RF-05** | Antes de cada llamada al modelo se ensambla el contexto por niveles y **se comprueba que cabe en el presupuesto** | `VER-05` |
-| **RF-06** | Si no cabe, se recorta **por el nivel de menor prioridad**, nunca truncando por el final ni partiendo un bloque | `VER-06` |
+| **RF-06** | Si no cabe, se recorta siguiendo el **orden de recorte de §2.4**: primero Resúmenes, después Recuperado, después Local. Nunca truncando por el final ni partiendo un bloque | `VER-06` |
 | **RF-07** | El contexto nunca incluye el texto completo de la obra. Solo la escena anterior entra en texto completo | `VER-07` |
 | **RF-08** | Cada agente recibe únicamente los niveles que le corresponden según `Docs/architecture.md` | — |
+| **RF-26** | **Si tras recortar Resúmenes, Recuperado y Local el contexto sigue sin caber, el trabajo falla en vez de generar.** No se toca `Estado actual`, ni `Salida`, ni `Inmutable` | `VER-06` |
 
 ### Generación
 
@@ -367,7 +389,9 @@ Qué tablas existen y para qué. La DDL, los índices y las migraciones son del 
 | Tabla | Contiene | Notas |
 | --- | --- | --- |
 | `obra`, `parte`, `capitulo` | Jerarquía estructural | `contiene` como clave foránea |
-| `escena` | Atributos obligatorios de `Escena` más su `estado` | `estado` es la enumeración `estado_de_escena` |
+| `escena` | Los atributos obligatorios de `Escena`, con `POV` y `MomentoNarrativo` **embebidos como columnas** | Las dos son objetos de valor 1:1 (`narrada_desde` y `situada_en` son `1:1`), así que no necesitan tabla propia: 8 columnas |
+| `beat`, `arco_narrativo` | Las dos entidades que `INV-07` necesita | Son `N:M` con `Escena` y entre sí, así que sí necesitan tabla |
+| `escena_realiza_beat`, `beat_sirve_a_arco` | Las dos uniones | Materializan las relaciones `realiza` y `sirve_a` |
 | `borrador` | Texto por versión, modelo y `prompt_hash` | Varios por escena |
 | `delta_de_escena` | El diff estructurado por escena | Fuente de verdad del estado |
 | `estado_del_mundo` | Instantánea materializada en `t` | Derivada: reconstruible desde los deltas |
@@ -379,13 +403,27 @@ Qué tablas existen y para qué. La DDL, los índices y las migraciones son del 
 | `trabajo` | Cola y estado de los trabajos asíncronos | Soporte de `O-1` y `O-2` |
 | Tablas `vec0` | Embeddings de fichas, resúmenes y presagios | **No** del texto de escena |
 
+**El coste de `beat` y `arco_narrativo` no son dos tablas.** Alguien tiene que
+**rellenarlas**, y ese alguien es el Escaletador: su salida pasa de una lista de escenas
+con sus campos a una lista de escenas **con sus beats, y cada beat ligado al arco al que
+sirve**. Eso hace su prompt más largo, su salida más grande y su validación más estricta,
+y es trabajo que hoy no hace nadie. Reconocerlo aquí es parte de la decisión, no una nota
+al pie.
+
+Entran en la v1 no por completitud, sino por **el tipo de defecto que detectan**. `INV-07`
+es lo único que distingue una escena necesaria de una de relleno, y ese fallo **no se ve
+escena a escena**: se ve al leer la novela entera y notar que no avanza. Es el más caro de
+descubrir tarde, porque cuando se nota ya hay treinta mil palabras escritas. Y sacarlo del
+alcance tampoco habría cerrado el hueco: `pov` y `momento_narrativo` son atributos
+obligatorios de `Escena` y seguirían sin tener dónde vivir.
+
 ### 3.2.3 Interfaz con el modelo de lenguaje
 
 Cada agente es una llamada con contexto propio y salida tipada (`A-03`).
 
 | Agente | Recibe | Devuelve | Validación |
 | --- | --- | --- | --- |
-| Escaletador | Brief, guía de estilo, estado, recuperado, resúmenes | `Escaleta` | Esquema Pydantic; rechazo si falla |
+| Escaletador | Brief, guía de estilo, estado, recuperado, resúmenes | `Escaleta`, **con sus `Beat` y los `ArcoNarrativo` a los que sirven** | Esquema Pydantic; rechazo si falla |
 | Escritor | Los niveles que le tocan | Texto **y** `DeltaDeEscena` | Rechazo si falta el delta |
 | Juez | Texto y `Rubrica`, sin el prompt del Escritor | Puntuación y `Hallazgo[]` | Rechazo si falla |
 | Resumidor | La escena consolidada | `Resumen` y `Ficha` actualizadas | Rechazo si falla |
@@ -485,7 +523,7 @@ El backend v1 está terminado cuando **todo** esto es cierto:
 
 | Requisito | Invariante | Fila de verificación |
 | --- | --- | --- |
-| RF-05, RF-06, RF-07, P-1 | — | `VER-05`, `VER-06`, `VER-07` |
+| RF-05, RF-06, RF-07, RF-26, P-1 | — | `VER-05`, `VER-06`, `VER-07` |
 | RF-09 | — | `VER-20` |
 | RF-13, RF-14, RF-15 | `INV-01`…`INV-04`, `INV-07`, `INV-10` | `VER-02`, `VER-11`, `VER-12` |
 | RF-16 | — | `VER-25` |
@@ -527,9 +565,21 @@ distinguirse de uno medido.**
 
 ## 5.3 Decisiones abiertas que afectan a esta spec
 
+**Cerradas el 2026-09-22**, y por eso ya no aparecen abajo:
+
+- ~~El orden de recorte de los niveles de memoria~~ — fijado en §2.4, con la regla de
+  fallar antes que generar por debajo del nivel 3 (`RF-26`).
+- ~~Si `Beat` y `ArcoNarrativo` entran en la v1~~ — entran, con su coste reconocido en
+  §3.2.2.
+
+Siguen abiertas:
+
 - **`mayor` y `menor`: ¿dejan seguir o van a `en_revision`?** `CLAUDE.md` y
   `Docs/architecture.md` se contradicen (§2.2.3). La v1 asume lo primero. Al cerrarlo hay
   que corregir el documento que quede en falso.
+- **La puerta de cierre de capítulo.** La salvaguarda de esa misma decisión —un hallazgo
+  `mayor` abierto impide cerrar el capítulo— necesita una puerta que hoy no existe en
+  ningún documento.
 - **Desempate juez contra regla.** Cuando `INV-03` la marca el Juez y la regla de
   continuidad no ve nada, qué gana.
 - **Persistencia del estado.** Si los deltas son la única fuente de verdad o se materializa
@@ -546,3 +596,4 @@ distinguirse de uno medido.**
 | --- | --- | --- |
 | 1 | 2026-09-21 | Primera versión. Absorbe la spec de orquestación, memoria y presupuesto conservando los identificadores `O-`, `M-`, `P-` |
 | 2 | 2026-09-21 | Pasa a ser **solo** la spec del backend: fuera el registro multi-spec. Se añade §2.2 con el proceso tomado de `Docs/`, y se documenta en §2.2.3 la contradicción entre `CLAUDE.md` y `Docs/architecture.md` sobre `mayor` y `menor` |
+| 3 | 2026-09-22 | Se cierran dos bloqueantes. **§2.4 fija el orden de recorte** por qué se pierde si falta, y `RF-26` añade que por debajo del nivel 3 se falla en vez de generar. **`Beat` y `ArcoNarrativo` entran en la v1** con su coste reconocido: el Escaletador pasa a tener que rellenarlos. `D4-6` ya lo había cerrado `SPEC-03` al poner `cambios_de_estado_vital` en el delta |
