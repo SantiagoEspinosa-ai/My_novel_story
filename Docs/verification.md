@@ -135,38 +135,39 @@ validador; si solo se puede mirar con un juez caro, es punto ciego.
 
 | Modo | Estado | Con qué |
 | --- | --- | --- |
-| **MF-01** | **Validador** | `VER-47` para los campos asignados, `VER-48` para que el texto honre persona y tiempo verbal |
+| **MF-01** | **Validador** | `VER-47` compara el `pov_usado` declarado con el asignado; `VER-48` comprueba que el texto lo honre |
 | **MF-04** | **Validador** | `VER-49`, idempotencia por intento registrado |
 | **MF-07** | **Punto ciego** | `PC-9`: distinguir "lo sabía" de "se lo inventó" exige un juez. La traza registra qué fichas se recortaron, que acota el daño |
-| **MF-08** | **Validador, parcial** | `VER-47` cubre el alcance de entidades. **El resto está bloqueado por el dominio**: ver abajo |
+| **MF-08** | **Validador** | `VER-47` (b), desde que `SPEC-03` puso `cambio_de_valor` en el delta. Ver abajo |
 | **MF-09** | **Validador** | `VER-50`, coherencia entre puntuación y hallazgos |
 | **MF-16** | **Validador** | `VER-51`, deriva de voz por personaje |
-| **MF-17** | **Punto ciego** | `PC-10`: el delta no tiene campo para la topología de un lugar |
-| **MF-21** | **Punto ciego** | `PC-11`: la comprobación obvia compartiría punto ciego con `VER-39` |
+| **MF-17** | **Validador** | `VER-54`, desde que `SPEC-03` convirtió los accesos de un `Lugar` en referencias. `PC-10` queda cerrado |
+| **MF-21** | **Validador** | `VER-53`, desde que `SPEC-03` convirtió `hechos_clave` en identificadores. `PC-11` queda cerrado |
 | **MF-23** | **Punto ciego** | `PC-12`, y no se resuelve con una capa que vigile validadores |
 
-### `MF-08` es el único que resistió a las dos cosas
+### `MF-08` resistió, y lo que lo destrabó fue cambiar el dominio
 
-Y el motivo es un hueco del dominio, no de la verificación. La idea era comparar
-lo que la escaleta pidió con lo que el delta devuelve, en un solo validador.
-**No se puede: `DeltaDeEscena` declara muertes, movimientos, revelaciones, setups
-pagados, cambios de posesión y deterioros, y nada más.** No lleva
-`cambio_de_valor`, ni `pov`, ni `tiempo_verbal`.
+Durante un tiempo fue el único modo que no cabía ni en validador ni en punto
+ciego, y el motivo no estaba en la verificación: **`DeltaDeEscena` declaraba
+muertes, movimientos, revelaciones, setups pagados, cambios de posesión y
+deterioros, y nada más.** Sin `cambio_de_valor` en el delta no había contra qué
+comparar lo que la escaleta pidió.
 
-De ahí que sean **dos validadores y no uno**, y partidos por *qué se compara* en
-vez de por qué campo:
+`SPEC-03` lo resolvió por la raíz, y de paso dejó tres cosas que conviene
+retener:
 
-- **`VER-47`** compara artefactos declarados: las entidades que el delta toca
-  contra los `personajes_presentes` planificados. Es exacto y no necesita leer.
-- **`VER-48`** mira el texto con una señal morfológica, porque la persona y el
-  tiempo verbal solo existen en la prosa.
-
-Lo que queda fuera de los dos es el núcleo de `MF-08`: **comprobar que el cambio
-de valor entregado es el que se planificó**. Haría falta o que el delta lo
-declarara, o una correspondencia entre ejes de valor y campos del delta —una
-muerte implica el eje `vida`, una revelación el eje `conocimiento`—, y **esa
-correspondencia no está escrita en ningún sitio**. Escribirla es una decisión de
-dominio y queda anotada en las decisiones abiertas.
+- **La persona narrativa y el tiempo verbal no fueron al delta.** El delta es el
+  diff del mundo y la superficie del texto no cambia el mundo: `pov_usado` vive
+  en `Borrador`, junto a `modelo` y `prompt_hash`.
+- **La correspondencia entre ejes y campos del delta contrasta, no deriva.**
+  Ningún campo del delta lleva signo y cuatro de los seis ejes solo tienen campo
+  para uno, así que el eje se declara y la tabla lo comprueba. Si se pudiera
+  derivar, la comprobación sería el propio dato mirándose al espejo: la Regla 3
+  otra vez.
+- **Quedaron dos huecos del modelo escritos en `Docs/definitions.md`**:
+  sobrevivir no deja rastro, y olvidar o descubrir que lo que sabías era falso no
+  tiene campo. Son cosas que la novela puede hacer y el sistema no puede
+  representar.
 
 ### Los tres parciales que conviene no dar por cubiertos
 
@@ -211,8 +212,8 @@ eso hemos decidido no mirar, y por qué**. Se apuntan entre sí:
 | `PC-7` — la migración existe pero puede estar vacía | Sin `MF`: es un fallo del proceso de cambio, no de la ejecución del sistema |
 | `PC-8` — el contador se valida contra el proveedor, no contra la verdad | `MF-22` |
 | `PC-9` — nadie ve la invención que rellena un recorte | `MF-07` |
-| `PC-10` — el delta no puede expresar un cambio de topología | `MF-17` |
-| `PC-11` — nada contrasta un resumen con su escena | `MF-21` |
+| ~~`PC-10`~~ — cerrado por `SPEC-03` | `MF-17`, ahora cubierto por `VER-54` |
+| ~~`PC-11`~~ — cerrado por `SPEC-03` | `MF-21`, ahora cubierto por `VER-53` |
 | `PC-12` — nadie vigila a los validadores | `MF-23` |
 
 Tres lecturas útiles de esa tabla. **`PC-2` y `PC-7` no tienen modo de fallo
@@ -292,22 +293,26 @@ ver la nota bajo la tabla de nivel artefacto.
 
 | | |
 | --- | --- |
-| **Modos de fallo catalogados** | **23** (`MF-01`…`MF-23`), ninguno sin estado |
-| **Validadores definidos** | **51** (`VER-01`…`VER-52`, con `VER-44` quemado: ver `PC-4`) |
+| **Modos de fallo catalogados** | **23** (`MF-01`…`MF-23`), ninguno sin estado y **solo uno sin validador** |
+| **Validadores definidos** | **54** (`VER-01`…`VER-55`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 40 |
-| **Puntos ciegos asumidos a sabiendas** | 12 |
+| **Bloqueados por falta de código de producción** | 43 |
+| **Puntos ciegos asumidos** | **10 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` |
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
-más cobertura.** Este documento ha pasado de 37 filas a 51 y la cifra que mide
-fiabilidad sigue siendo cero. Cuarenta esperan a `backend/`, `frontend/` o CI, y
-seis esperan una medición o una decisión.
+más cobertura.** Este documento ha pasado de 37 filas a 54 y la cifra que mide
+fiabilidad sigue siendo cero. Cuarenta y tres esperan a `backend/`, `frontend/` o
+CI, y seis esperan una medición o una decisión.
 
-Lo que sí ha cambiado es otra cosa: **ya no hay ningún modo de fallo sin
-estado**. Antes había nueve que no estaban ni cubiertos ni reconocidos, que es el
-peor de los tres estados posibles porque no aparece en ninguna lista.
+Lo que sí ha cambiado son dos cosas. **Ya no hay ningún modo de fallo sin
+estado**: antes había nueve que no estaban ni cubiertos ni reconocidos, que es el
+peor de los tres porque no aparece en ninguna lista. Y **`SPEC-03` cerró dos
+puntos ciegos cambiando el dominio en vez de añadir validadores**: cuando el dato
+deja de ser prosa y pasa a ser una referencia, la comprobación deja de ser léxica
+y empieza a tener punto ciego propio, que es lo que la Regla 2 exige para
+admitirla.
 
 Cinco se escribieron de verdad, con su caso negativo, para comprobar si el
 documento aguantaba al llevarlo a código, y se retiraron después: la entrega de
@@ -371,7 +376,9 @@ implantación".
 | **VER-43** | Una escena no supera un número acotado de ciclos de regeneración | T | unit testing | Con un tope configurado, la escena número `tope+1` se detiene y se marca en vez de volver a generarse. **El valor del tope sale de medir, no se fija aquí** | Cuenta **ciclos**, no **diagnostica la causa**: detecta que gira, no por qué | `features/orquestacion/tests/` |
 | **VER-45** | Toda ruta citada en un documento existe tal cual está escrita | A | static analysis | Se recorren las rutas entre acentos graves de todos los documentos del proyecto; cero rutas inexistentes. Se eximen las reservadas en `AGENTS.md` § "Todavía no existe", las ignoradas por git y las de la columna "Dónde vive", que son planes por construcción | Solo ve rutas **cuyo primer segmento existe en la raíz**: una ruta de código planificado (`backend/…`, `features/…`) no la mira. Y comprueba **existencia**, no que el documento citado diga lo que el citante cree | `harness/documentos/` |
 | **VER-46** | Todo literal de enumeración citado en un documento se escribe como en la tabla de `Docs/definitions.md` | A | static analysis | Se normalizan los tokens con forma de identificador —minúsculas, sin tildes, sin guiones bajos— y se comparan con los valores de la tabla: si dos normalizan igual y se escriben distinto, es una variante | No ve los valores que son **palabras sueltas y comunes** (`obra`, `escena`, `regla`, `vivo`): comprobarlas daría ruido sin señal, así que `nivel_de_evaluacion`, `severidad` y `tipo_de_verificador` quedan fuera de alcance | `harness/documentos/` |
-| **VER-47** | La escena entregada respeta el alcance que la escaleta le asignó | T | contract testing | Dos comparaciones: **(a)** toda entidad que el delta toca está entre los `personajes_presentes` que la escaleta declaró, y **(b)** los campos que la escaleta asignó —`pov`, `lugar`, `momento_narrativo`, `objetivo_dramatico`, `cambio_de_valor`— son los mismos cuando la escena llega a `generada` que cuando estaba `planificada` | **La comparación (b) es vacía si el Escritor no escribe esos campos**: no detecta que el texto ignore la asignación, solo que alguien la sobrescriba. La (a) sí es sustantiva | `features/generacion/tests/` |
+| **VER-47** | La escena entregada es la que la escaleta pidió | T | contract testing | Tres comparaciones, las tres exactas: **(a)** toda entidad que el delta toca está entre los `personajes_presentes` declarados; **(b)** el `cambio_de_valor` del delta es el que la escaleta previó, par `{eje, signo}` contra par; **(c)** el `pov_usado` del borrador coincide en `persona` y `tiempo_verbal` con el `pov` asignado | Compara **lo que el agente declara**, no lo que el texto hace. Un Escritor que declare el POV correcto y escriba otro pasa: para eso está `VER-48` | `features/generacion/tests/` |
+| **VER-53** | Todo hecho que un resumen cita fue establecido o revelado en la escena que resume | T | contract testing | `Resumen.hechos_clave` es una lista de identificadores de `HechoCanonico`: la intersección con los que la escena estableció o reveló tiene que ser total | Ve **identificadores citados**, no un resumen que **parafrasee** un hecho sin citarlo. Ese punto ciego es distinto del léxico de `VER-39`, que es lo que permitió admitirlo | `features/consolidacion/tests/` |
+| **VER-54** | Los accesos de un `Lugar` no cambian sin que un `HechoCanonico` lo establezca | T | integration testing | `Lugar.accesos_y_salidas` es una lista de referencias: cualquier diferencia entre dos momentos `t` exige un `HechoCanonico` con su `escena_de_establecimiento` | Ve el **conjunto declarado**, no el texto: una puerta que la prosa describe y que nadie declaró sigue sin verse | `features/consolidacion/tests/` |
 | **VER-49** | Un trabajo produce como máximo una llamada al modelo por intento registrado | T | integration testing | El intento se registra **antes** de llamar; al reanudar tras un reinicio, un intento ya registrado no vuelve a llamar. Se cuenta llamadas por `(trabajo, intento)` y nunca hay dos | Depende de que el registro **preceda** a la llamada. Si alguien invierte el orden, el validador deja de ver justo el caso que existe para cazar | `commons/trabajos/tests/` |
 | **VER-52** | Todo recuento de hallazgos se expresa también como densidad por diez mil palabras | T | unit testing | Ningún informe da un recuento absoluto sin su densidad normalizada al lado | Normaliza por **longitud**, no por **dificultad**: un capítulo de acción y uno de transición no son comparables aunque tengan la misma densidad | `features/lectura/tests/` |
 
@@ -405,7 +412,8 @@ compartían implementación con lo que validaban.
 | VER-31 | Los cambios generados por agente pasan por la misma tubería que los escritos a mano | A | CI/CD integration | No hay ninguna ruta que publique cambios saltándose CI | Comprueba que **se pasa** por CI, no que CI **compruebe algo útil** | CI |
 | **VER-40** | El Juez caza el defecto conocido del canario en cada lote de verificación | T | guardrails | Cada lote incluye una escena con un defecto plantado; si el Juez no lo señala, el lote se marca como no fiable | Detecta que el Juez **funciona**, no que **acierte**. Y un canario fijo puede acabar acertándose por memorización | `harness/evals/` |
 | **VER-41** | Los tokens que registra la traza coinciden con los que declara la respuesta del modelo | T | runtime observability / tracing | La diferencia entre lo trazado y el `usage` de la respuesta es cero para toda llamada | Valida el contador **contra el proveedor**, no contra la verdad: si el `usage` del proveedor es incorrecto, los dos coinciden en el error | `commons/modelo/` |
-| **VER-48** | El texto generado usa la persona narrativa y el tiempo verbal que se le asignaron | T | property-based testing | Señal morfológica sobre el texto: proporción de terminaciones de pasado frente a presente, y de marcas de primera frente a tercera persona. **La serie se registra desde el primer día; el umbral sale de medirla, no se fija aquí** | Es una **heurística, no un análisis gramatical**: una escena con mucho diálogo en presente dentro de una narración en pasado puede dar falso positivo, y un narrador que cita mucho lo diluye | `features/verificacion/tests/` |
+| **VER-48** | El texto generado usa de hecho la persona y el tiempo verbal que el borrador declara | T | property-based testing | Señal morfológica sobre el texto —proporción de terminaciones de pasado frente a presente, marcas de primera frente a tercera— **contrastada contra el `pov_usado` que declara el `Borrador`**. Las dos fuentes son independientes: una es el texto, otra la declaración del agente (Regla 3). **La serie se registra desde el primer día; el umbral sale de medirla** | Sigue siendo una **heurística, no un análisis gramatical**: una escena con mucho diálogo en presente dentro de una narración en pasado puede dar falso positivo, y un narrador que cita mucho lo diluye | `features/verificacion/tests/` |
+| **VER-55** | Ningún tic prohibido por la `GuiaDeEstilo` aparece en el texto generado | T | unit testing | `tics_prohibidos` es una lista de cadenas literales: ninguna aparece en el texto de ningún borrador | Busca **cadenas exactas**: una variante morfológica del tic —el mismo giro en otro tiempo verbal— no la ve. Es el precio de que la comprobación cueste una línea | `features/verificacion/tests/` |
 | **VER-50** | La puntuación del Juez y su lista de hallazgos son coherentes entre sí | T | guardrails | Si la puntuación no es el nivel máximo de su `Rubrica`, la lista de hallazgos no puede estar vacía | **Confía en que la puntuación sea honesta.** Un Juez que puntúa alto y se calla el problema pasa: detecta la incoherencia, no la connivencia | `features/verificacion/tests/` |
 | **VER-51** | La deriva de voz se mide **por personaje**, no solo globalmente | T | evals | Las mismas cuatro métricas de estilo —longitud media de frase, ratio de diálogo, densidad de adverbios, riqueza léxica— se calculan agrupadas por hablante, y la **distancia entre personajes** se registra por escena. **El mínimo sale de medir la serie, no se fija aquí** | Depende de **atribuir el diálogo** a su hablante. Un narrador que parafrasea en vez de citar no deja diálogo que medir, y ahí la voz puede derivar sin que nadie la vea | `harness/evals/` |
 
@@ -448,15 +456,15 @@ dejaría pasar.
 | --- | --- | --- | --- |
 | **PC-1** | **El análisis estático no ve la ejecución.** Once validadores lo comparten: `VER-01`, `VER-12`, `VER-13`, `VER-14`, `VER-15`, `VER-16`, `VER-17`, `VER-21`, `VER-23`, `VER-28`, `VER-31`, `VER-38` | Un script de mantenimiento hace `UPDATE escena SET estado='consolidada'` y salta la máquina de estados entera | Taparlo pide auditoría en tiempo de ejecución sobre la base. No es caro, pero no hay base todavía |
 | **PC-2** | **Nadie comprueba que quien acepta una escena sea una persona.** `VER-29` solo comprueba que el worker no puede | Un script llama a `POST /escenas/{id}/aceptar` en bucle y consolida la obra entera sin que nadie la lea | `SPEC-01` §2.5 excluye la autenticación de la v1. Sin identidad no hay nada que comprobar |
-| **PC-3** | **La fiabilidad del Juez no está medida**, y `VER-26` en verde significa "se midió", no "es fiable" | `INV-03` es `bloqueante` y de tipo `juez_llm`: es la única puerta que detiene una escena basándose en un modelo cuya fiabilidad se desconoce | El corpus de `VER-26` es una decisión abierta. Hasta entonces, `VER-40` detecta al menos que el Juez funciona |
+| **PC-3** | **La fiabilidad del Juez no está medida**, y `VER-26` en verde significa "se midió", no "es fiable" | `INV-03` es `bloqueante` y de tipo `juez_llm`: es la única puerta que detiene una escena basándose en un modelo cuya fiabilidad se desconoce | **Encogido por `SPEC-03`**, no cerrado. `RegistroDeConocimiento.fuente` pasó a ser una referencia a `Escena` o `Personaje`, así que la parte determinista de `INV-03` —comparar identificadores de hechos contra el registro en `t`, y ahora también su origen— ya se puede escribir. Lo que queda para el juez es decidir que el personaje **actúa sobre** el hecho, que solo se ve leyendo. Reclasificar `INV-03` es una decisión de dominio que `SPEC-03` dejó fuera |
 | **PC-4** | **Los resúmenes pueden crecer hasta reconstruir la obra.** Se propuso un validador de ratio de compresión —al que `REV-02` llegó a dar el número **`VER-44`**— y **se rechazó por la Regla 2**: su punto ciego, mide longitud y no calidad, ya lo tienen seis validadores. **`VER-44` queda quemado**: el identificador está publicado y no se reutiliza | El Resumidor devuelve resúmenes casi tan largos como la escena. `VER-07` está en verde porque no hay texto de escena en el contexto, y el contexto lleva la obra entera de todos modos | Se asume hasta encontrar una comprobación con un punto ciego propio |
 | **PC-5** | **`VER-39` compara léxico, no sentido.** Estrecha `BC-4` —que nada contrasta el delta con el texto— pero **no lo cierra**, y es fácil darlo por resuelto | El delta dice que Marta coge el cuchillo y en el texto lo coge Luis. Los dos nombres están mencionados, así que `VER-39` pasa. El hueco de `BC-4` sigue abierto para todo delta que se equivoque sobre alguien **sí** mencionado | La comprobación semántica exige un juez, y un juez sin fiabilidad medida no mejora esto |
 | **PC-6** | **`VER-12` comprueba que el identificador existe, no que sea el correcto** | Se copia un verificador y no se cambia el id: todos los hallazgos salen como `INV-01` y el recuento por invariante miente | `VER-38` valida el registro, no qué id usa cada verificador al construir el hallazgo |
 | **PC-7** | **`VER-21` comprueba que la migración existe, no que sea correcta** | Se añade un atributo obligatorio y se commitea una migración vacía. CI verde y la columna no existe | Validar que una migración hace lo que dice exige ejecutarla contra un esquema de referencia |
 | **PC-8** | **`VER-41` valida el contador contra el proveedor, no contra la verdad** | El `usage` del proveedor es incorrecto: el contador propio y el del proveedor coinciden en el mismo error | Se acota, no se cierra: **la factura mensual del proveedor es una tercera fuente independiente y es gratis**. No prueba que el `usage` por llamada sea correcto, pero si el total facturado se aleja del total trazado, algo miente. Cuadrar los dos totales una vez al mes cuesta una resta |
 | **PC-9** | **Nadie detecta que un agente rellene con invención lo que el recorte dejó fuera** (`MF-07`) | El ensamblador recorta la ficha de Marta; el Escritor le atribuye unos rasgos físicos que nunca estuvieron en el canon. En el capítulo siete tendrá otros | Distinguir *"lo sabía"* de *"se lo inventó"* exige comparar la prosa con la ficha, y eso es un juez. **Lo que sí se hace y acota el daño: la traza de `VER-24` registra qué fichas quedaron fuera**, así que el fallo pasa de invisible a atribuible |
-| **PC-10** | **El delta no puede expresar un cambio de topología, así que nadie lo ve** (`MF-17`) | La casa tenía una sola salida en la escena 4 y en la 11 aparece una puerta trasera que nadie plantó | `DeltaDeEscena` declara muertes, movimientos, revelaciones, setups pagados, cambios de posesión y deterioros. **No hay campo para los accesos de un `Lugar`**, así que el cambio solo existe en la prosa. Cerrarlo es una decisión de dominio, no de verificación |
-| **PC-11** | **Nada contrasta un resumen con la escena que resume** (`MF-21`) | El Resumidor devuelve un resumen bien formado que menciona un hecho que la escena no contiene; ese resumen entra en el contexto de las escenas siguientes como si fuera canon | Se valoró aplicar al resumen la comprobación de menciones de `VER-39`, y **se rechazó por la Regla 2**: tendría su mismo punto ciego —léxico, no sentido— y sería cobertura falsa. Una comprobación por identificadores sí tendría punto ciego propio, pero exige que `hechos_clave` sean ids de `HechoCanonico`, y el dominio no lo especifica |
+| ~~**PC-10**~~ | ~~El delta no puede expresar un cambio de topología~~ | ~~La casa tenía una sola salida en la escena 4 y en la 11 aparece una puerta trasera que nadie plantó~~ | **CERRADO por `SPEC-03`.** `Lugar.accesos_y_salidas` pasó a ser una lista de referencias, así que el cambio de topología es una diferencia de conjuntos. Lo comprueba `VER-54`. El identificador no se reutiliza |
+| ~~**PC-11**~~ | ~~Nada contrasta un resumen con la escena que resume~~ | ~~Un resumen bien formado menciona un hecho que la escena no contiene y entra en el contexto como si fuera canon~~ | **CERRADO por `SPEC-03`.** `Resumen.hechos_clave` pasó a ser una lista de identificadores, así que la comprobación es una intersección de conjuntos y tiene punto ciego propio —no ve la paráfrasis sin cita—, que es lo que la Regla 2 exigía. Lo comprueba `VER-53` |
 | **PC-12** | **Un validador puede marcar como defecto lo que es correcto, y ningún validador vigila a los validadores** (`MF-23`) | `VER-46` marcó como defecto la prosa de este documento que explicaba el defecto, porque no puede distinguir una cita de una demostración | **No se resuelve con una capa que vigile a los validadores, y conviene dejarlo escrito antes de que alguien lo intente: esa capa también fallaría, y la siguiente, y no hay torre que aguante.** Lo que lo contiene es el **caso negativo obligatorio**: si cada validador demuestra que falla cuando debe, su comportamiento está acotado por abajo sin necesidad de ninguna capa encima. Un validador sin caso negativo es el que de verdad deja `MF-23` suelto |
 
 ---
@@ -521,6 +529,9 @@ que nunca ha fallado en las pruebas no está verificada, solo declarada.
 | **VER-50** | Una respuesta del Juez con puntuación intermedia y la lista de hallazgos vacía | La incoherencia se detecta y el lote se marca |
 | **VER-51** | Dos personajes cuyas cuatro métricas de estilo convergen escena a escena | La distancia entre hablantes cae en la serie, aunque la deriva global de `INV-15` no se mueva |
 | **VER-52** | Un informe que da un recuento de hallazgos sin su densidad al lado | El informe se rechaza |
+| **VER-53** | Un resumen que cita un `HechoCanonico` que su escena ni estableció ni reveló | La intersección no es total |
+| **VER-54** | Un `Lugar` que gana un acceso entre dos momentos `t` sin `HechoCanonico` que lo establezca | La diferencia de conjuntos se detecta |
+| **VER-55** | Un texto que contiene una de las cadenas de `tics_prohibidos` | La búsqueda literal la encuentra |
 
 > **Convención que imponen `VER-45` y `VER-46`, y que conviene conocer antes de
 > editar este documento:** los acentos graves significan *"este es el literal"*.
@@ -628,13 +639,15 @@ tapa nada nuevo no va primero por ser barato.
       decisión "Umbrales" de `Docs/definitions.md`: se cierran las tres a la vez.
 - [ ] **Coste por escena** (`VER-36`) y **suficiencia del reparto por niveles**
       (`VER-37`). Nacen aquí y hay que abrirlas en `Docs/architecture.md`.
-- [ ] **Cómo se comprueba que el cambio de valor entregado es el planificado**
-      (`MF-08`). Hoy no se puede: el delta no lo declara. Hace falta o que
-      `DeltaDeEscena` lo lleve, o una correspondencia escrita entre ejes de valor
-      y campos del delta. **Es una decisión de dominio**, así que va por spec.
-- [ ] **Si `hechos_clave` de un `Resumen` son identificadores de `HechoCanonico`
-      o texto libre** (`PC-11`). Si fueran identificadores, contrastar un resumen
-      con su escena tendría punto ciego propio y dejaría de ser cobertura falsa.
+- [x] ~~Cómo se comprueba que el cambio de valor entregado es el planificado~~
+      — **cerrada por `SPEC-03`**: el delta lo declara y la tabla de
+      correspondencia lo contrasta.
+- [x] ~~Si `hechos_clave` de un `Resumen` son identificadores o texto libre~~
+      — **cerrada por `SPEC-03`**: son identificadores.
+- [ ] **Reclasificar `INV-03` de `juez_llm` a `regla` con juez de desempate.**
+      `SPEC-03` hizo escribible su parte determinista al convertir
+      `RegistroDeConocimiento.fuente` en referencia. Cambiar el tipo es de
+      dominio y necesita su propia spec. Es lo que más encogería `PC-3`.
 - [ ] **Los umbrales de `VER-48` y `VER-51`.** Las dos series se registran desde
       el primer día; los números salen de mirarlas, como en `VER-32`.
 - [ ] **Bajar `INV-14` a `regla` y `INV-11` a `regla` con juez de desempate.**

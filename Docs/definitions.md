@@ -22,6 +22,10 @@ La ontología separa cinco planos porque mezclarlos es el error habitual: lo que
 
 **Las fichas no enumeran valores.** Cuando un atributo está gobernado por un vocabulario controlado, la ficha escribe `atributo → nombre_de_la_enumeracion` y nada más. Los valores viven en un solo sitio, la tabla "Vocabularios controlados". Enumerarlos también aquí es lo que hizo que las dos copias divergieran en el pasado: la ficha decía `juez LLM` donde la tabla decía `juez_llm`.
 
+**Referencias, no prosa.** Un atributo cuyo contenido es un *puntero a otra cosa* se escribe como identificador o lista de identificadores, nunca en lenguaje natural. La ficha lo marca con `atributo[] → Clase` o `atributo → Clase`. El motivo no es de estilo: un dato en prosa solo se puede comprobar buscando palabras dentro de palabras, y todos los validadores léxicos comparten el mismo punto ciego, así que el segundo ya no cubre nada que no cubriera el primero. Escribir referencias es lo que permite que dos validadores tengan puntos ciegos distintos. **No todo debe dejar de ser prosa**: ver "Lo que debe seguir siendo prosa" al final de este documento.
+
+**Atributos obsoletos.** Lo que deja de aplicar no se borra: se escribe ~~tachado~~ seguido de `(obsoleto)` y de qué lo sustituye. Así el nombre sigue siendo localizable por quien lea código antiguo y nadie lo reutiliza para otra cosa.
+
 **Convención de nombres.** Clases en `PascalCase`, atributos en `snake_case`, relaciones como verbo en minúscula (`ocurre_en`, `revela`). **Todo identificador es ASCII, sin tildes ni eñes**: nombres de clase, de atributo, de enumeración, de miembro y valores. La prosa y las definiciones sí llevan tildes; lo que se escribe en código, no. El motivo es que una cadena acentuada admite dos representaciones Unicode equivalentes a la vista y distintas byte a byte, así que dos valores que se leen igual dejan de compararse iguales, y fallan en silencio. Los identificadores son estables y opacos: el nombre de un personaje puede cambiar dentro de la ficción, su `id` no.
 
 **Uso como esquema.** El harness consume este documento como contrato, así que los nombres de clase, atributo y valor de enumeración son literales: no admiten sinónimos ni traducción. Un identificador de clase o de invariante no se reutiliza ni se renumera una vez publicado; si algo deja de aplicar, se marca como obsoleto pero no se borra. Todo lo que el harness deba comprobar aparece como invariante numerada, no como afirmación en prosa.
@@ -53,14 +57,14 @@ El canon es lo que es verdad dentro de la ficción, con independencia de cómo s
 | Clase | Definición | Atributos clave |
 | --- | --- | --- |
 | Personaje | Agente con voluntad dentro de la ficción. | **id**, **nombre\_canonico**, alias\[\], rol\_dramatico → `rol_dramatico`, deseo, necesidad, miedo, herida, voz (léxico, sintaxis, muletillas), rasgos\_fisicos, estado\_vital → `estado_vital` |
-| Lugar | Espacio donde puede ocurrir una escena. | **id**, **nombre**, tipo, atmosfera, accesos\_y\_salidas, reglas\_locales, contiene\[\] |
+| Lugar | Espacio donde puede ocurrir una escena. | **id**, **nombre**, tipo, atmosfera, accesos\_y\_salidas\[\] → Lugar, reglas\_locales, contiene\[\] |
 | Objeto | Cosa con relevancia dramática. | **id**, **nombre**, propiedades, poseedor\_actual, ubicacion\_actual |
 | Faccion | Grupo con intereses propios. | **id**, **nombre**, objetivo, miembros\[\], relacion\_con\[\] |
 | HechoCanonico | Proposición verdadera en la ficción. | **id**, **enunciado**, **escena\_de\_establecimiento**, certeza → `certeza_canonica`, contradice\[\] |
 | ReglaDelMundo | Restricción estable que gobierna lo que puede pasar. | **id**, **enunciado**, ambito, coste, excepciones\[\] |
 | EventoCronologico | Suceso situado en la fábula, se narre o no. | **id**, **t\_fabula**, participantes\[\], consecuencias\[\] |
 | EstadoDelMundo | Instantánea del canon en un momento `t`. | **t**, entidades\_vivas\[\], ubicaciones, posesiones, relaciones, hechos\_vigentes\[\] |
-| RegistroDeConocimiento | Quién sabe qué y desde cuándo. | **sujeto**, **hecho**, **desde\_escena**, tipo\_de\_sujeto → `tipo_de_sujeto`, grado → `grado_de_conocimiento`, fuente |
+| RegistroDeConocimiento | Quién sabe qué y desde cuándo. | **sujeto**, **hecho**, **desde\_escena**, tipo\_de\_sujeto → `tipo_de_sujeto`, grado → `grado_de_conocimiento`, **fuente** → Escena \| Personaje |
 
 **El registro de conocimiento merece rango propio.** Tiene tres tipos de sujeto —personaje, narrador y lector— y casi todos los fallos de tensión, así como los agujeros de trama, son incoherencias en esa tabla: un personaje que actúa sabiendo algo que aún no ha descubierto, o una revelación que el lector ya tenía.
 
@@ -91,12 +95,12 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | Clase | Definición | Atributos clave |
 | --- | --- | --- |
 | Brief | Contrato inicial de la obra: qué se va a escribir y bajo qué reglas. | **premisa**, **tono**, extension, referentes, prohibiciones, contrato\_con\_el\_lector |
-| GuiaDeEstilo | Reglas de superficie que no deben derivar. | **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, registro, densidad\_sensorial, tics\_prohibidos |
+| GuiaDeEstilo | Reglas de superficie que no deben derivar. | **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, registro, densidad\_sensorial, tics\_prohibidos\[\] (cadenas literales) |
 | Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, cambios\_de\_valor, curva\_de\_dread\_prevista |
-| Borrador | Texto generado de una escena, con versión. | **escena**, **version**, texto, modelo, prompt\_hash |
-| DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, muertes, movimientos, revelaciones, setups\_pagados, cambios\_de\_posesion, deterioros |
+| Borrador | Texto generado de una escena, con versión. | **escena**, **version**, **pov\_usado** (`persona` → `persona_narrativa`, `tiempo_verbal` → `tiempo_verbal`), texto, modelo, prompt\_hash |
+| DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, **cambio\_de\_valor** (`{eje, signo}`), cambios\_de\_estado\_vital\[\] (`{personaje, de, a}`, con `de` y `a` → `estado_vital`), ~~muertes~~ (obsoleto: lo sustituye cambios\_de\_estado\_vital), movimientos, revelaciones, setups\_pagados, cambios\_de\_posesion, deterioros |
 | Ficha | Resumen recuperable de una entidad, para inyectar en contexto. | **entidad**, resumen, version\_en\_t |
-| Resumen | Condensación jerárquica: escena → capítulo → parte. | **nivel** → `nivel_de_evaluacion`, **ambito**, texto, hechos\_clave\[\] |
+| Resumen | Condensación jerárquica: escena → capítulo → parte. | **nivel** → `nivel_de_evaluacion`, **ambito**, texto, hechos\_clave\[\] → HechoCanonico |
 | AnclaDeEstilo | Pasaje ejemplar que fija la voz. | **texto**, que\_ejemplifica |
 | PaseDeRevision | Pasada específica sobre el texto ya generado. | **tipo** → `tipo_de_pase`, ambito, hallazgos\[\] |
 
@@ -204,6 +208,47 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `severidad` | Hallazgo.severidad, Invariante.severidad | bloqueante, mayor, menor |
 | `tipo_de_pase` | PaseDeRevision.tipo | continuidad, voz, ritmo, densidad, linea |
 
+### Correspondencia entre ejes de valor y campos del delta
+
+`Escena.cambio_de_valor` y `DeltaDeEscena.cambio_de_valor` declaran el eje; esta
+tabla dice **qué campo del delta lo evidencia**. Sirve para contrastar, no para
+derivar.
+
+**No se puede deducir el eje a partir del delta, y conviene saber por qué:**
+ningún campo del delta lleva signo —`movimientos` dice que alguien se movió, no
+si eso le hizo más o menos seguro—, y cuatro de los seis ejes solo tienen campo
+para uno de los dos signos. Por eso el delta **declara** el eje y la tabla lo
+**comprueba**: son dos fuentes independientes, y si el delta pudiera derivarlo,
+la comprobación sería el propio dato mirándose al espejo.
+
+| Eje | Campo del delta que lo evidencia | Ambigüedad |
+| --- | --- | --- |
+| `vida` | `cambios_de_estado_vital` | Solo el signo negativo |
+| `conocimiento` | `revelaciones` | Solo el signo positivo |
+| `cordura` | `deterioros` con `eje = cordura` | Sin ambigüedad relevante: `INV-14` ya contempla la reversión justificada |
+| `vinculo` | `deterioros` con `eje = vinculos` | Solo el signo negativo |
+| `control` | `cambios_de_posesion` | Ambiguo: el control también se pierde por coacción, y eso el delta no lo registra |
+| `seguridad` | `movimientos` | El más ambiguo: un movimiento puede subir o bajar la seguridad, y una escena puede volverse insegura sin que nadie se mueva |
+
+**`setups_pagados` no corresponde a ningún eje.** Pagar un setup es un suceso
+estructural, no un movimiento de valor dramático. Queda escrito para que nadie
+intente forzarlo dentro de la tabla.
+
+### Huecos conocidos del modelo
+
+Dos cosas que la novela puede hacer y el sistema **no puede representar**.
+Aparecieron al escribir la correspondencia completa. No se resuelven aquí; se
+dejan escritas para que nadie las descubra con una escena delante.
+
+| Hueco | Qué no se puede representar |
+| --- | --- |
+| **El eje `vida` en positivo** | Sobrevivir a algo no deja rastro en el delta. Una escena cuyo cambio de valor es *amenazado → a salvo* declara el eje y no tiene ningún campo que lo evidencie |
+| **El eje `conocimiento` en negativo** | Olvidar, dudar, o descubrir que lo que se sabía era falso no tiene campo. `revelaciones` solo suma; el registro de conocimiento solo crece |
+
+El segundo es el más incómodo en terror, donde desaprender es material narrativo:
+un personaje que descubre que su recuerdo era falso mueve el eje `conocimiento`
+en negativo y el canon no sabe escribirlo.
+
 **Por qué `estado_vital` tiene `desaparecido`.** En terror, "no se sabe si sigue vivo" es material narrativo, no un hueco de datos: colapsarlo en `vivo` o en `muerto` obliga a afirmar en el canon algo que la ficción mantiene en suspenso, y `INV-02` empezaría a dar por buenas presencias que el texto no sostiene.
 
 **Por qué `estado_de_hallazgo` tiene `descartado`.** Separa el hallazgo que se arregló del que se revisó y se decidió que no era un problema. Sin ese tercer valor, la única forma de cerrar un falso positivo es marcarlo como `resuelto`, es decir, fingir que se corrigió algo que nunca estuvo mal, y el recuento de hallazgos deja de significar nada.
@@ -234,6 +279,27 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla |
 
 Cada invariante debe tener al menos un caso de prueba negativo en el harness: un fragmento que la viole deliberadamente. Una invariante que nunca ha fallado en las pruebas no está verificada, solo declarada.
+
+## Lo que debe seguir siendo prosa
+
+**Léase antes de convertir ningún atributo más en referencia.** El principio de
+"referencias, no prosa" tiene un límite, y aplicarlo en bloque empobrece el
+modelo en vez de hacerlo comprobable.
+
+Estos atributos son prosa **porque su contenido es prosa**, y convertirlos en
+identificadores no los haría verificables: los haría más pobres.
+
+| Atributo | Por qué se queda |
+| --- | --- |
+| `HechoCanonico.enunciado` | Es una proposición sobre la ficción. Un identificador no dice qué es verdad, solo que algo lo es |
+| `ReglaDelMundo.enunciado` | Igual: la restricción **es** su redacción |
+| `Personaje.deseo`, `necesidad`, `miedo`, `herida` | Son la interioridad del personaje. Enumerarlos produciría un catálogo de arquetipos, que es justo lo que el sistema intenta no escribir |
+| `Escena.conflicto` | El conflicto concreto de una escena no se repite lo bastante como para tener catálogo |
+| `AnclaDeEstilo.texto` | Es un pasaje ejemplar. Su valor está en la prosa literal |
+
+La pregunta que decide, y que conviene hacerse siempre antes de convertir algo:
+**¿el atributo apunta a otra cosa, o la contiene?** Si apunta, es una referencia.
+Si la contiene, es prosa y se queda.
 
 ## Decisiones abiertas
 
