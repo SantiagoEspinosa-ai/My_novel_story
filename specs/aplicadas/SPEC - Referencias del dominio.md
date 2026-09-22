@@ -77,7 +77,7 @@ sola llamada: texto y delta. Lo único que cambia es dónde se guarda cada dato.
 
 ### Migración
 
-**Caduca con:** `backend/app/commons/db/`.
+**Ya no es gratis.** Desde `PLAN-01` A3 existe `backend/app/commons/db/` con migraciones versionadas y validación de secuencia, así que un atributo obligatorio nuevo necesita **su migración numerada en el mismo commit**. Las versiones no admiten huecos ni repeticiones: una publicada no se borra ni se renumera.
 
 Ninguna hoy: no hay esquema ni base de datos. Cuando la haya, `cambio_de_valor`
 es una columna obligatoria en `delta_de_escena` y `pov_usado` dos columnas en

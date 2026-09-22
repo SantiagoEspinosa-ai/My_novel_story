@@ -115,8 +115,7 @@ Lo que **sí** se puede reducir del 4.º: `posesiones`, `relaciones` y los hecho
 
 ### Migración
 
-`hecho_canonico` gana una columna obligatoria. Ninguna hoy: no hay base de datos.
-**Caduca con:** `backend/app/commons/db/`.
+`hecho_canonico` gana una columna obligatoria. **Ya no es gratis.** Desde `PLAN-01` A3 existe `backend/app/commons/db/` con migraciones versionadas y validación de secuencia, así que un atributo obligatorio nuevo necesita **su migración numerada en el mismo commit**. Las versiones no admiten huecos ni repeticiones: una publicada no se borra ni se renumera.
 
 ## Qué gobierna esto
 

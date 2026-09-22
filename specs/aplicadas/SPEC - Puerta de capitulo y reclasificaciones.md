@@ -97,7 +97,7 @@ se sostiene.
 ## Migración
 
 Ninguna hoy. Con datos, `capitulo` gana una columna con valor por defecto `abierto`, que
-es la migración más barata que existe. **Caduca con:** `backend/app/commons/db/`.
+es la migración más barata que existe. **Ya no es gratis.** Desde `PLAN-01` A3 existe `backend/app/commons/db/` con migraciones versionadas y validación de secuencia, así que un atributo obligatorio nuevo necesita **su migración numerada en el mismo commit**. Las versiones no admiten huecos ni repeticiones: una publicada no se borra ni se renumera.
 
 ---
 

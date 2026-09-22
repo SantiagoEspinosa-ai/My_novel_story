@@ -50,8 +50,7 @@ decision abierta *"El nivel Resumenes de una traza no es reconstruible todavia"*
 
 ### C-3 - Migracion
 
-Ninguna hoy: no hay base de datos. Con datos, `resumen` gana una columna. **Caduca con:**
-`backend/app/commons/db/`.
+`resumen` gana una columna. **Ya no es gratis.** Desde `PLAN-01` A3 existe `backend/app/commons/db/` con migraciones versionadas y validación de secuencia, así que un atributo obligatorio nuevo necesita **su migración numerada en el mismo commit**. Las versiones no admiten huecos ni repeticiones: una publicada no se borra ni se renumera.
 
 ## Que queda explicitamente fuera
 
