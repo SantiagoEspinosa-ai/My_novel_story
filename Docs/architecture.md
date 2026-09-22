@@ -113,6 +113,13 @@ backend/
       lectura/               # consultas de solo lectura que alimentan el frontend
 ```
 
+**La raíz de estas rutas es `backend/app/`, y se escriben relativas a ella.** Cuando
+cualquier documento del proyecto cita `commons/invariantes/` o `features/contexto/tests/`,
+se refiere a `backend/app/commons/invariantes/` y a `backend/app/features/contexto/tests/`.
+El prefijo se declara aquí y no se repite: escribirlo en cada cita serían decenas de
+copias del mismo dato, y la próxima vez que `app/` se mueva divergirían una a una. `VER-45`
+resuelve las rutas contra esta raíz.
+
 Cada feature tiene la misma forma, y siempre los mismos ficheros:
 
 | Fichero | Contiene |
