@@ -16,6 +16,7 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Plan de verificación del sistema | `Docs/verification.md` | Cómo se prueba que el código hace lo que dice: 37 afirmaciones `VER-01`…`VER-37` con clase T/A/I/D/U, metodología, criterio de salida y caso negativo |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las siete skills instaladas. Ver la sección "Skills" más abajo |
 | Specs | `specs/` | Un fichero por spec, sin carpetas anidadas. Hoy: `SPEC - Backend.md` = `SPEC-01`, backend del harness |
+| Revisiones de specs | `specs/revisiones/` | Un `REV-NN.md` por spec revisada, numerado por la spec que evalúa. Evalúa el **documento** mientras está en `en_revision` y propone cómo llevarlo a `aprobada`. No es un plan de implementación |
 
 > Las rutas de esta tabla son literales del repositorio: se copian tal cual, con su extensión. Si se renombra un documento, hay que actualizar esta tabla, el enlace en `CLAUDE.md` y todas las referencias en el mismo commit. Pasó lo contrario al renombrar `defintions` → `definitions.md` y `SRS.md` → `SPEC - Backend.md`: quedaron setenta referencias rotas.
 
@@ -76,7 +77,7 @@ Un fichero propio en `specs/`, con su `SPEC-NN` en el frontmatter. Responde a tr
 
 ### 3. Plan de implementación
 
-Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su propio estado.
+Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su propio estado. **No se confunde con `specs/revisiones/REV-NN.md`**, que revisa el documento antes de aprobarlo: el plan dice cómo se construye el código y nace después de la aprobación.
 
 - **No se crea un plan si su spec no está aprobada.** Un plan sin spec aprobada está resolviendo un problema que nadie ha acordado.
 - Dice qué ficheros se tocan, en qué orden, **qué prueba cubre cada paso** y qué filas `VER-xx` de `Docs/verification.md` cierra.
