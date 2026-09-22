@@ -78,7 +78,7 @@ Lo que **no** está forzado: el orden entre `features/lectura/`, `features/revis
 | **A1** | Esqueleto y dominio | `backend/app/main.py`, `commons/dominio/`, `commons/errores.py`, `pyproject` | Un modelo Pydantic con un valor fuera de una enumeración **levanta error de validación, no un aviso** (`CLAUDE.md`) | `VER-15`, `VER-01` | Todo lo demás lo importa. Y `VER-01` compara esquemas contra las fichas de `Docs/definitions.md`, así que la comparación empieza a tener sentido desde el primer fichero | Un `main.py` que arranca y no sirve nada |
 | **A2** | Registro de invariantes | `commons/invariantes/` + `tests/` | Un registro cuya severidad de `INV-01` no coincide con `Docs/definitions.md` **falla** | **`VER-38`**, `VER-11`, `VER-12` | `VER-38` es el puesto 1 de `Docs/verification.md` porque valida a otros tres. Es lo primero construible de esa lista | El registro y el comportamiento de severidad, sin nadie que los use todavía |
 | **A3** | Persistencia | `commons/db/` + migraciones versionadas | Una migración que cambia un atributo obligatorio y no viene en el mismo commit **falla** (`VER-21`) | `VER-21`, `VER-08` | `A-05` pone la cola en la misma base, así que la base va antes que la cola | Base creada y migrable, vacía |
-| **A4** | Cola y worker | `commons/trabajos/` + `tests/` | Un trabajo que un worker toma y no termina **no vuelve a `en_cola` por su cuenta** (`O-2`) | `VER-03`, `VER-04`, `VER-29` | Todo endpoint que llama al modelo devuelve `202` y un identificador. Sin cola no hay endpoint asíncrono | Se puede encolar, tomar y fallar un trabajo de mentira |
+| **A4** | Cola y worker | `commons/trabajos/` + `tests/` | Un worker que vuelve y se encuentra `abandonado` **no escribe su resultado** | `VER-03`, `VER-04`, `VER-29`, `VER-57` | Todo endpoint que llama al modelo devuelve `202` y un identificador. Sin cola no hay endpoint asíncrono | Se puede encolar, tomar y fallar un trabajo de mentira |
 
 **Los dos números provisionales entran en A4**, y la sección de abajo dice cómo.
 
@@ -116,19 +116,33 @@ plan los fija, y el riesgo es exactamente el que hay que evitar: **que por el ca
 de ir acompañados de su declaración y se conviertan en números a secas con aspecto de
 medidos.**
 
-| Número | Dónde vive | Valor |
-| --- | --- | --- |
-| Tope de reintentos de fallo de transporte (`O-3`) | `commons/config.py` | **Sin fijar en este plan.** Se propone al aprobarlo, no se decide aquí |
-| Margen tras el cual un trabajo se considera `abandonado` | `commons/config.py` | Igual |
+| Número | Dónde vive | Valor | Por qué ese, y no medido |
+| --- | --- | --- | --- |
+| Tope de reintentos de fallo de transporte (`O-3`) | `commons/config.py` | **3** | Un fallo de transporte que sobrevive a tres intentos con espera creciente no es transitorio: es el proveedor caído. Seguir insistiendo cuesta llamadas pagadas y, si es el Escritor, bloquea el sistema entero mientras dura |
+| Margen tras el cual un trabajo se considera `abandonado` | `commons/config.py` | **15 minutos** | Elegido **por el techo y no por el suelo**: con la comprobación del worker sobre su propio estado, quedarse corto cuesta latencia y no pérdida de trabajo pagado. Quince minutos es holgado para cualquier llamada legítima y es una parada tolerable si se materializa `MF-25` |
+
+**Los dos son elegidos por razonamiento, no medidos**, y el código tiene que dejarlo ver.
 
 Los dos entran en el paso **A4** y van con su marca, literalmente:
 
 ```python
-# Provisional: no está medido. O-3 lo hace depender de observar la tasa real de
-# fallos transitorios, y todavía no hay sistema que observar.
+# Provisional: elegido por razonamiento, no medido. O-3 lo hace depender de
+# observar la tasa real de fallos transitorios, y todavía no hay sistema que
+# observar. Tres intentos con espera creciente: lo que sobrevive a eso no es
+# transitorio, es el proveedor caído.
 # Caduca con: backend/
-TOPE_REINTENTOS_TRANSPORTE = ...
+TOPE_REINTENTOS_TRANSPORTE = 3
+
+# Provisional: elegido por razonamiento, no medido. Acota MF-25 —el techo de
+# contexto retenido por un trabajo que no vuelve—, no lo previene: subirlo
+# alarga esa parada. Corto cuesta latencia, no corrección, porque el worker
+# comprueba su estado antes de escribir.
+# Caduca con: backend/
+MARGEN_ABANDONO_SEGUNDOS = 15 * 60
 ```
+
+`VER-56` recorre estas marcas también en el código desde la aprobación de este plan, así
+que el día que exista `backend/` los dos fallan el build y hay que volver a mirarlos.
 
 **Dos reglas para que la declaración no se pierda:**
 
