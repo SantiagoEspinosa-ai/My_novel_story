@@ -1,9 +1,11 @@
 ---
 id: SPEC-12
 titulo: El recorte deja de elegir qué se pierde y pasa a elegir cuánto se conserva
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
+fecha_aplicacion: 2026-09-22
+commit_de_aplicacion: 46d7bc8
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
@@ -223,3 +225,17 @@ su `C-2` depende de que `HechoCanonico` tenga durabilidad, y eso es `SPEC-13`.
 
 La del 3.º es la que copia directamente a `main` y la que más recupera: el bloque que más
 ocupa deja de desaparecer y baja un escalón.
+
+
+# Qué se tocó al aplicarla
+
+§2.4 de `SPEC-01` reescrita entera, con siete bloques en vez de seis y su columna de forma
+reducida; `RF-06` y `RF-26` al día; `VER-06` con el criterio de las dos vueltas; `SPEC-01`
+sube a versión 5.
+
+## La reserva, escrita en la propia §2.4
+
+Este orden **se eligió razonando, no midiendo**, igual que la primera versión. Lo que dirá
+si es el bueno es la tendencia de los recortes, y ese registro no existe todavía: la sección
+lleva su marca **`Caduca con:`** apuntando a `SPEC-11`, así que `VER-56` hará fallar el
+build el día que esa spec se aplique y haya que releer el orden con datos delante.
