@@ -15,7 +15,8 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
 | Plan de verificación del sistema | `Docs/verification.md` | Primero **qué puede salir mal**: 24 modos de fallo `MF-01`…`MF-24` sobre las rejillas de MAST, ConStory-Bench y los fallos silenciosos, **ninguno sin estado**. Después **cómo se detecta**: 54 validadores `VER-01`…`VER-55`, cada uno con su punto ciego, más los 11 asumidos y lo que se aprendió al escribir cinco. Ninguno implementado hoy |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las siete skills instaladas. Ver la sección "Skills" más abajo |
-| Specs | `specs/` | Un fichero por spec, sin carpetas anidadas. Hoy: `SPEC-01` backend (`en_revision`), `SPEC-03` referencias del dominio (`aplicada`) y `SPEC-04` puerta de capítulo y reclasificaciones (`aplicada`). `SPEC-02`, vocabularios, se aplicó y su fichero se retiró |
+| Specs en curso | `specs/` | Un fichero por spec. Hoy solo `SPEC-01`, el backend del harness (`en_revision`) |
+| Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio y `SPEC-04` puerta de capítulo y reclasificaciones. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
 | Revisiones de documentos | `Docs/revisiones/` | Un `REV-NN.md` por documento revisado. Evalúa un documento **existente**; una spec dice qué va a cambiar. Por eso cuelga de `Docs/` y no de `specs/` |
 
 > Las rutas de esta tabla son literales del repositorio: se copian tal cual, con su extensión. Si se renombra un documento, hay que actualizar esta tabla, el enlace en `CLAUDE.md` y todas las referencias en el mismo commit. Pasó lo contrario al renombrar `defintions` → `definitions.md` y `SRS.md` → `SPEC - Backend.md`: quedaron setenta referencias rotas.
@@ -53,7 +54,9 @@ Tres puertas en cadena. Cada una se abre solo con la anterior cerrada, y ninguna
 Docs/  →  spec aprobada  →  plan aprobado  →  código (TDD)  →  spec y Docs/ al día
 ```
 
-**Qué cuenta como aprobación.** El frontmatter del propio fichero: `id`, `estado` (`borrador | en_revision | aprobada | obsoleta`), `aprobada_por` y `fecha_aprobacion`. Los planes llevan el mismo.
+**Qué cuenta como aprobación.** El frontmatter del propio fichero: `id`, `estado` (`borrador | en_revision | aprobada | aplicada | obsoleta`), `aprobada_por` y `fecha_aprobacion`. Los planes llevan el mismo.
+
+**Una spec aplicada se mueve, no se borra.** Cuando su contenido ya está en `Docs/`, pasa a `estado: aplicada`, se anota `fecha_aplicacion` y `commit_de_aplicacion` —que necesita un commit propio, porque el hash no existe hasta después— y el fichero se mueve con `git mv` a `specs/aplicadas/`. Así `specs/` contiene lo que está en curso y nada más, y sigue siendo posible leer por qué se decidió cada cosa. Las referencias son siempre por identificador (`SPEC-03`), nunca por ruta, así que mover el fichero no rompe nada.
 
 Sin `estado: aprobada` no se pasa, aunque el documento esté escrito entero y aunque se haya hablado. "Lo comentamos ayer" no es una aprobación; el campo sí. `SPEC-NN` es un identificador estable: no se reutiliza ni se renumera, y lo que deja de aplicar pasa a `obsoleta` en vez de borrarse. Los identificadores internos de una spec (`RF-xx`, `O-x`, `M-x`, `P-x`) tampoco se renumeran al reescribirla.
 
@@ -123,8 +126,8 @@ Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuent
 - `backend/` — servicio FastAPI.
 - `frontend/` — aplicación React.
 - `harness/` — ejecución de los validadores de `Docs/verification.md` y sus fixtures. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `Docs/verification.md` § "Lo que se aprendió al implementar".
-- `Docs/decisions/` — decisiones de arquitectura fechadas.
 - `specs/plans/` — un `PLAN-NN.md` por spec aprobada. Nace con el primer plan.
+- `Docs/decisions/` — decisiones de arquitectura fechadas.
 
 ## Mantenimiento de este archivo
 

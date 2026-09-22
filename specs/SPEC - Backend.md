@@ -6,7 +6,7 @@ aprobada_por:
 fecha_aprobacion:
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-21
-version: 3
+version: 4
 ---
 
 # SRS — Backend del harness de novelas
@@ -362,6 +362,23 @@ niveles 4, 5 y 6 no se toquen nunca: el ensamblador se detiene antes de llegar a
 | **RF-21** | Al consolidar se produce el `Resumen` de la escena y se actualizan las `Ficha` de las entidades afectadas | — |
 | **RF-22** | Al consolidar se indexan por similitud las fichas, el resumen y los presagios pendientes. **El texto completo se guarda pero no se indexa** | `VER-08` |
 
+### Cierre de capítulo
+
+El dominio lo fijó `SPEC-04`: `Capitulo.estado` con la enumeración `estado_de_capitulo`,
+la condición de cierre y el disparador humano. Aquí solo se escribe como requisito.
+
+Es la **segunda puerta con firma humana** del backend, junto con la aceptación de escena de
+`RF-17`, y es la que da sentido a la primera. Al decidir que un hallazgo `mayor` no detiene
+la escena, el control no desapareció: se movió aquí. Sin estos requisitos, un `mayor` no
+tiene ninguna consecuencia en ninguna parte del sistema.
+
+| ID | Requisito | Verifica |
+| --- | --- | --- |
+| **RF-27** | El cierre de capítulo lo dispara un cliente, **nunca el worker por su cuenta**, igual que la aceptación de escena | `VER-29` |
+| **RF-28** | Un capítulo pasa a `cerrado` solo si **todas** sus escenas están `consolidada` y **ninguna tiene un hallazgo `mayor` con `estado = abierto`**. Un hallazgo `resuelto` o `descartado` no bloquea: `descartado` existe precisamente para cerrar un falso positivo sin fingir que se corrigió | `INV-05`, `VER-11` |
+| **RF-29** | Los hallazgos `menor` abiertos **no bloquean el cierre, pero la respuesta los lista**. Quien firma tiene que ver qué deja pasar, o la diferencia entre `mayor` y `menor` vuelve a no existir | `VER-11` |
+| **RF-30** | Un capítulo `cerrado` no se reabre. `estado_de_capitulo` tiene dos valores y una sola transición; no hay camino de vuelta | `VER-29` |
+
 ### Estado y trabajos
 
 | ID | Requisito | Verifica |
@@ -379,12 +396,13 @@ Contratos, no implementación. Los nombres de campo replican `Docs/definitions.m
 | Método | Ruta | Entrada | Salida | Códigos |
 | --- | --- | --- | --- | --- |
 | `POST` | `/obras` | `Brief` | `Obra` con su `id` | 201, 422 |
-| `GET` | `/obras/{id}` | — | `Obra` con partes, capítulos y escenas con su estado | 200, 404 |
+| `GET` | `/obras/{id}` | — | `Obra` con partes, capítulos con su `estado_de_capitulo` y escenas con su `estado_de_escena` | 200, 404 |
 | `POST` | `/obras/{id}/escaleta` | parámetros de planificación | `{id_trabajo}` | 202, 404, 409 |
 | `GET` | `/escenas/{id}` | — | texto, `estado`, `cambio_de_valor`, delta propuesto, hallazgos abiertos | 200, 404 |
 | `POST` | `/escenas/{id}/generar` | — | `{id_trabajo}` | 202, 404, 409 |
 | `POST` | `/escenas/{id}/aceptar` | — | `Escena` consolidada | 200, 404, 409 |
 | `POST` | `/escenas/{id}/rechazar` | motivo | `Escena` en `rechazada` | 200, 404, 409 |
+| `POST` | `/capitulos/{id}/cerrar` | — | `Capitulo` en `cerrado`, **con la lista de hallazgos `menor` abiertos que se dejan pasar** (`RF-29`) | 200, 404, 409 |
 | `GET` | `/trabajos/{id}` | — | estado, intentos, motivo del último fallo | 200, 404 |
 | `GET` | `/trabajos` | filtro por estado | lista de trabajos | 200 |
 
@@ -392,8 +410,10 @@ Reglas transversales:
 
 - **Ningún endpoint que llame al modelo responde de forma síncrona.** Devuelve `202` con
   un identificador de trabajo.
-- **`409`** cuando la transición pedida no es legal en el estado actual de la escena; el
-  cuerpo dice qué estado tiene y cuál se esperaba.
+- **`409`** cuando la transición pedida no es legal en el estado actual. El cuerpo dice qué
+  estado tiene y cuál se esperaba. En `/capitulos/{id}/cerrar` dice además **qué lo
+  bloquea**: qué escenas no están `consolidada` y qué hallazgos `mayor` siguen abiertos.
+  Sin eso, el cliente sabe que no puede cerrar y no sabe qué arreglar.
 - **`422`** es la validación de Pydantic, incluidos los valores fuera de una enumeración.
 
 ### 3.2.2 Modelo de datos
@@ -544,6 +564,7 @@ El backend v1 está terminado cuando **todo** esto es cierto:
 | RF-18, RF-19, RF-20 | `INV-05`, `INV-06` | `VER-10` |
 | RF-22 | — | `VER-08` |
 | RF-23, RF-25 | — | `VER-18`, `VER-19` |
+| RF-27, RF-28, RF-29, RF-30 | `INV-05` | `VER-11`, `VER-29` |
 | O-2, O-3, O-4 | — | `VER-04`, y filas nuevas pendientes |
 | M-2, M-3 | `INV-05` | filas nuevas pendientes |
 | T-1, T-2 | — | `VER-24` |
@@ -581,6 +602,9 @@ distinguirse de uno medido.**
 
 **Cerradas el 2026-09-22**, y por eso ya no aparecen abajo:
 
+- ~~La puerta de cierre de capítulo~~ — `SPEC-04` decidió el dominio y `RF-27`…`RF-30`
+  con `/capitulos/{id}/cerrar` lo escriben aquí. Con esto **`D4-9` queda cerrado entero**.
+
 - ~~El orden de recorte de los niveles de memoria~~ — fijado en §2.4, con la regla de
   fallar antes que generar por debajo del **bloque** 3 (`RF-26`).
 - ~~Si `Beat` y `ArcoNarrativo` entran en la v1~~ — entran, con su coste reconocido en
@@ -591,10 +615,6 @@ Siguen abiertas:
 - **`mayor` y `menor`: ¿dejan seguir o van a `en_revision`?** `CLAUDE.md` y
   `Docs/architecture.md` se contradicen (§2.2.3). La v1 asume lo primero. Al cerrarlo hay
   que corregir el documento que quede en falso.
-- **El requisito y el endpoint de cierre de capítulo.** Ya no es una decisión: `SPEC-04`
-  definió el dominio —`Capitulo.estado`, la enumeración `estado_de_capitulo` y la
-  transición `abierto` → `cerrado` con firma humana— y la condición de cierre. Lo que
-  falta es escribirlo aquí como `RF` y como endpoint. Es la mitad que queda de `D4-9`.
 - **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla` (`SPEC-04` C-6) y el
   Juez como desempate, falta decidir qué gana cuando la regla no ve nada y el Juez marca.
 - **Persistencia del estado.** Si los deltas son la única fuente de verdad o se materializa
@@ -611,4 +631,5 @@ Siguen abiertas:
 | --- | --- | --- |
 | 1 | 2026-09-21 | Primera versión. Absorbe la spec de orquestación, memoria y presupuesto conservando los identificadores `O-`, `M-`, `P-` |
 | 2 | 2026-09-21 | Pasa a ser **solo** la spec del backend: fuera el registro multi-spec. Se añade §2.2 con el proceso tomado de `Docs/`, y se documenta en §2.2.3 la contradicción entre `CLAUDE.md` y `Docs/architecture.md` sobre `mayor` y `menor` |
+| 4 | 2026-09-22 | **Se cierra `D4-9` entero**: `RF-27`…`RF-30` y el endpoint `POST /capitulos/{id}/cerrar` escriben la puerta de cierre de capítulo que `SPEC-04` había decidido. `RF-26` y §2.4 dicen ya que el orden de recorte opera sobre **bloques**, no sobre niveles. No quedan bloqueantes |
 | 3 | 2026-09-22 | Se cierran dos bloqueantes. **§2.4 fija el orden de recorte** por qué se pierde si falta, y `RF-26` añade que por debajo del nivel 3 se falla en vez de generar. **`Beat` y `ArcoNarrativo` entran en la v1** con su coste reconocido: el Escaletador pasa a tener que rellenarlos. `D4-6` ya lo había cerrado `SPEC-03` al poner `cambios_de_estado_vital` en el delta |
