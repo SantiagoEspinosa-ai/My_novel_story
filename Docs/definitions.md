@@ -68,7 +68,7 @@ El canon es lo que es verdad dentro de la ficción, con independencia de cómo s
 | Lugar | Espacio donde puede ocurrir una escena. | **id**, **nombre**, tipo, atmosfera, accesos\_y\_salidas\[\] → Lugar, reglas\_locales, contiene\[\] |
 | Objeto | Cosa con relevancia dramática. | **id**, **nombre**, propiedades, poseedor\_actual, ubicacion\_actual |
 | Faccion | Grupo con intereses propios. | **id**, **nombre**, objetivo, miembros\[\], relacion\_con\[\] |
-| HechoCanonico | Proposición verdadera en la ficción. | **id**, **enunciado**, **escena\_de\_establecimiento**, certeza → `certeza_canonica`, contradice\[\] |
+| HechoCanonico | Proposición verdadera en la ficción. | **id**, **enunciado**, **escena\_de\_establecimiento**, **durabilidad** → `durabilidad_del_hecho`, certeza → `certeza_canonica`, contradice\[\] |
 | ReglaDelMundo | Restricción estable que gobierna lo que puede pasar. | **id**, **enunciado**, ambito, coste, excepciones\[\] |
 | EventoCronologico | Suceso situado en la fábula, se narre o no. | **id**, **t\_fabula**, participantes\[\], consecuencias\[\] |
 | EstadoDelMundo | Instantánea del canon en un momento `t`. | **t**, entidades\_vivas\[\], ubicaciones, posesiones, relaciones, hechos\_vigentes\[\] |
@@ -214,6 +214,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `grado_de_conocimiento` | RegistroDeConocimiento.grado | ignora, sospecha, cree, sabe |
 | `estado_vital` | Personaje.estado\_vital | vivo, muerto, desaparecido |
 | `certeza_canonica` | HechoCanonico.certeza | establecido, implicito, disputado |
+| `durabilidad_del_hecho` | HechoCanonico.durabilidad | permanente, efimero |
 | `fuente_del_miedo` | FuenteDelMiedo.tipo | desconocido, perdida\_de\_control, contaminacion, paranoia, culpa, aislamiento |
 | `estado_de_presagio` | Presagio.estado, SetupYPago.estado | plantado, pagado, huerfano |
 | `tipo_de_valvula` | Valvula.tipo | humor, ternura, informacion, seguridad\_falsa |
@@ -287,25 +288,37 @@ El harness usa `estado_de_escena` para saber qué transiciones son legales y cu�
 
 Cada invariante es un assert que el harness ejecuta contra el estado y el texto generado. `Bloqueante` detiene la escena en la puerta; `mayor` y `menor` generan hallazgo y siguen.
 
-| ID | Invariante | Nivel | Severidad | Tipo |
-| --- | --- | --- | --- | --- |
-| INV-01 | Toda escena tiene `cambio_de_valor` no nulo | escena | bloqueante | regla |
-| INV-02 | Todo personaje presente tiene `estado_vital = vivo` y es accesible en `EstadoDelMundo(t)` | escena | bloqueante | regla |
-| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla |
-| INV-04 | El POV no cambia dentro de una escena | escena | bloqueante | regla |
-| INV-05 | Toda escena aceptada tiene su delta aplicado antes de la siguiente | escena | bloqueante | regla |
-| INV-06 | Ningún `HechoCanonico` vigente contradice a otro | obra | bloqueante | regla |
-| INV-07 | Toda escena realiza al menos un beat que sirve a un arco | escena | mayor | regla |
-| INV-08 | `t_fabula` es monótono dentro de una línea argumental salvo analepsis declarada | capitulo | mayor | regla |
-| INV-09 | Todo presagio plantado se paga antes del final | obra | mayor | regla |
-| INV-10 | La amenaza no viola sus propias reglas sin pagar el coste declarado | escena | mayor | juez\_llm |
-| INV-11 | El grado de explicación acumulado no supera el fijado en el brief | obra | mayor | regla |
-| INV-12 | La presión máxima de la curva de dread cae en el clímax ±1 escena | obra | mayor | regla |
-| INV-13 | Ningún hecho se revela dos veces al lector como si fuera nuevo | obra | mayor | regla |
-| INV-14 | Cada deterioro es monótono, o su reversión está justificada en el texto | obra | menor | regla |
-| INV-15 | La distancia estilométrica a las anclas se mantiene bajo umbral | capitulo | menor | regla |
-| INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla |
-| INV-17 | La longitud de la escena cae dentro de su `longitud_objetivo` | escena | mayor | regla |
+| ID | Invariante | Nivel | Severidad | Tipo | Qué lee |
+| --- | --- | --- | --- | --- | --- |
+| INV-01 | Toda escena tiene `cambio_de_valor` no nulo | escena | bloqueante | regla | `Escena.cambio_de_valor` |
+| INV-02 | Todo personaje presente tiene `estado_vital = vivo` y es accesible en `EstadoDelMundo(t)` | escena | bloqueante | regla | `Escena.personajes_presentes`, `EstadoDelMundo.entidades_vivas`, `EstadoDelMundo.ubicaciones`, `Lugar.accesos_y_salidas` |
+| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla | `RegistroDeConocimiento`, `HechoCanonico.escena_de_establecimiento`, `MomentoNarrativo.t_fabula`, revelaciones del delta |
+| INV-04 | El POV no cambia dentro de una escena | escena | bloqueante | regla | `Escena.pov`, `Borrador.pov_usado` |
+| INV-05 | Toda escena aceptada tiene su delta aplicado antes de la siguiente | escena | bloqueante | regla | `DeltaDeEscena`, `EstadoDelMundo` |
+| INV-06 | Ningún `HechoCanonico` vigente contradice a otro | obra | bloqueante | regla | `HechoCanonico.contradice`, `EstadoDelMundo.hechos_vigentes` |
+| INV-07 | Toda escena realiza al menos un beat que sirve a un arco | escena | mayor | regla | `Beat.sirve_a`, `ArcoNarrativo` |
+| INV-08 | `t_fabula` es monótono dentro de una línea argumental salvo analepsis declarada | capitulo | mayor | regla | `MomentoNarrativo.t_fabula`, `LineaArgumental` |
+| INV-09 | Todo presagio plantado se paga antes del final | obra | mayor | regla | `Presagio.estado` |
+| INV-10 | La amenaza no viola sus propias reglas sin pagar el coste declarado | escena | mayor | juez\_llm | `ReglaDelMundo`, `Amenaza`, deterioros del delta |
+| INV-11 | El grado de explicación acumulado no supera el fijado en el brief | obra | mayor | regla | `HechoCanonico` revelados, `Amenaza.grado_de_explicacion_permitido` |
+| INV-12 | La presión máxima de la curva de dread cae en el clímax ±1 escena | obra | mayor | regla | `CurvaDeDread.serie` |
+| INV-13 | Ningún hecho se revela dos veces al lector como si fuera nuevo | obra | mayor | regla | revelaciones del delta acumuladas |
+| INV-14 | Cada deterioro es monótono, o su reversión está justificada en el texto | obra | menor | regla | `Deterioro.serie_por_escena` |
+| INV-15 | La distancia estilométrica a las anclas se mantiene bajo umbral | capitulo | menor | regla | `Borrador.texto`, `AnclaDeEstilo.texto` |
+| INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla | `CurvaDeDread.serie` |
+| INV-17 | La longitud de la escena cae dentro de su `longitud_objetivo` | escena | mayor | regla | `Borrador.texto`, `Escena.longitud_objetivo` |
+
+**La columna «Qué lee» existe para hacer verificable una regla del recorte.** `SPEC-12`
+fija que la forma reducida de un bloque de contexto **nunca puede llevarse lo que lee una
+invariante `bloqueante` de nivel escena**: si lo hace, la puerta sigue en pie y ya no puede
+decidir. Sin esta columna esa regla es una intención, porque nadie sabe qué lee cada una.
+Es la misma exigencia que el proyecto aplica a todo lo demás: una regla que nadie puede
+comprobar no está verificada, solo declarada.
+
+**Y `durabilidad` no se deriva de `certeza`.** Son ejes independientes: *"la puerta está
+abierta"* es `establecido` y `efimero`; *"la casa no quiere que se vayan"* es `implicito` y
+`permanente`. Derivar una de la otra confundiría cuánto sabemos de algo con cuánto dura, y
+el recorte se llevaría hechos estructurales por implícitos.
 
 **`INV-17` existe porque un juez no debe contar palabras.** Una escena fuera de su
 `longitud_objetivo` no la caza ninguna invariante de juicio: repartir toda la auditoría

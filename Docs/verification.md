@@ -326,22 +326,22 @@ ver la nota bajo la tabla de nivel artefacto.
 | | |
 | --- | --- |
 | **Modos de fallo catalogados** | **25** (`MF-01`…`MF-25`), ninguno sin estado y dos sin validador por construcción |
-| **Validadores definidos** | **57** (`VER-01`…`VER-58`, con `VER-44` quemado: ver `PC-4`) |
+| **Validadores definidos** | **58** (`VER-01`…`VER-59`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
 | **Bloqueados por falta de código de producción** | 45 |
-| **Implementables hoy y sin implementar** | 1 — `VER-56`, que solo necesita los documentos y el repositorio |
+| **Implementables hoy y sin implementar** | 2 — `VER-56` y `VER-59`, que solo necesitan los documentos |
 | **Puntos ciegos asumidos** | **11 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` |
 
 **Caduca con:** `backend/` — los recuentos de esta tabla y los dos párrafos siguientes
 dejan de ser ciertos el día que exista esa carpeta.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
-más cobertura.** Este documento ha pasado de 37 filas a 57 y la cifra que mide
+más cobertura.** Este documento ha pasado de 37 filas a 58 y la cifra que mide
 fiabilidad sigue siendo cero. Cuarenta y cinco esperan a `backend/`, `frontend/` o
-CI, seis esperan una medición o una decisión, y **una —`VER-56`— no espera a nada**: solo
-necesita los documentos y el repositorio, que ya existen.
+CI, seis esperan una medición o una decisión, y **dos —`VER-56` y `VER-59`— no esperan a nada**: solo
+necesitan los documentos, que ya existen.
 
 Lo que sí ha cambiado son dos cosas. **Ya no hay ningún modo de fallo sin
 estado**: antes había nueve que no estaban ni cubiertos ni reconocidos, que es el
@@ -392,6 +392,7 @@ implantación".
 | VER-04 | Un trabajo encolado sobrevive a un reinicio del servidor | T | integration testing | Se encola, se mata el proceso, se levanta, y el trabajo sigue ahí y se completa | **No comprueba unicidad**: el trabajo puede completarse habiendo llamado al modelo dos veces | `commons/trabajos/tests/` |
 | VER-05 | Ninguna llamada al modelo supera los 100.000 tokens, salida incluida, **medido con un contador independiente del ensamblador** | T | property-based testing | El contexto ensamblado más la reserva de salida cabe en el límite **según el `usage` que devuelve el modelo o un segundo tokenizador**, no según el contador de producción (Regla 3) | Mide el **techo**, no el **contenido**: un contexto de 3.000 tokens que dejó fuera al protagonista pasa | `features/contexto/tests/` |
 | VER-06 | Cuando no cabe, se recorta en el orden declarado, y por debajo del **tercer bloque** se falla en vez de generar | T | property-based testing | Ningún recorte parte un bloque; el orden es el de las filas de `SPEC-01` §2.4 —condensaciones, fichas y setups, escena anterior— y si aún no cabe, el trabajo falla sin tocar el bloque 4.º (**estado del mundo y registro de conocimiento**), la reserva de salida ni el nivel inmutable. **El caso negativo obligatorio es el recortador que itera por niveles de `CLAUDE.md` en vez de por bloques**: se lleva el registro de conocimiento con las fichas y deja `INV-03` sin datos | Comprueba que el **orden** se respeta, no que lo que queda **baste**: un contexto recortado correctamente, que conserva el estado y el registro de conocimiento pero se quedó sin la ficha del protagonista, pasa. Eso es `PC-9` | `features/contexto/tests/` |
+| **VER-59** | Ninguna forma reducida de `SPEC-12` §2.4 se lleva algo que la columna «Qué lee» asocie a una invariante `bloqueante` de nivel escena | A | static analysis | Se cruzan las formas reducidas declaradas contra lo que leen `INV-01`…`INV-05`. Cero solapamientos | Compara **declaración contra declaración**: si la columna «Qué lee» está incompleta, el validador pasa igual. Lo que una invariante lee de verdad solo lo dice su implementación *(lo cubre parcialmente `VER-38`)* | `harness/documentos/` |
 | VER-07 | Nunca se manda el texto completo de la obra al modelo | T | unit testing | Con una obra de muchas escenas, el contexto no contiene el texto de ninguna escena salvo la anterior | Mira **texto de escena**, no **volumen equivalente**: resúmenes que crecen hasta reconstruir la obra pasan | `features/contexto/tests/` |
 | VER-08 | El texto completo de una escena se guarda pero no se recupera por similitud | T | integration testing | La búsqueda vectorial solo devuelve fichas, resúmenes y presagios | Comprueba el **índice**, no el **camino de lectura**: leer el texto por clave primaria lo esquiva *(lo cubre `VER-07`)* | `commons/db/tests/` |
 | VER-09 | El estado del mundo se reconstruye acumulando deltas en orden, **contrastado con una implementación de referencia** | T | property-based testing | Reconstruir con el aplicador de producción y con un **aplicador de referencia ingenuo escrito solo para la prueba** da el mismo estado (Regla 3) | Comprueba que el estado **se construye bien desde el delta**, no que el **delta sea cierto** *(lo cubre parcialmente `VER-39`)* | `features/consolidacion/tests/` |
@@ -634,6 +635,7 @@ repositorio. Encontraron dos el primer día:
 | `VER-56` | Se crea `backend/` con una afirmación marcada `Caduca con:` `backend/` todavía en pie | Falla: la condición que sostenía la afirmación ya se cumplió |
 | `VER-57` | Un worker muere con la reserva del Escritor tomada y otro trabajo esperando | El segundo no arranca hasta el margen; si arranca antes, el techo se repartió mal |
 | `VER-58` | Una escena de 944 palabras con `longitud_objetivo` de 1.200 a 2.200 | Falla, aunque los jueces la aprueben: es el caso de la Regla 2 |
+| `VER-59` | Una forma reducida del bloque de estado que retire `ubicaciones` | Falla: `INV-02` la lee y es `bloqueante` de escena |
 
 ### Lo que el documento no aguantó al llevarlo a código
 

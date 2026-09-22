@@ -84,6 +84,28 @@ fuentes, tres nombres, y ningún atajo.
 Un ensamblador que cuenta exacto para decidir si recorta paga el tokenizador en cada
 iteración y no gana nada: lo que decide es *"me paso o no"*, no *"por cuánto"*.
 
+### C-3 bis · Ninguna forma reducida se lleva lo que lee una `bloqueante` de escena
+
+> **La forma reducida de un bloque nunca puede llevarse lo que lee una invariante
+> `bloqueante` de nivel escena.** Si lo hace, la puerta sigue en pie y ya no puede decidir.
+
+**De dónde salió**, porque el motivo no se entiende sin la historia: al corregir la forma
+reducida del bloque 4.º se vio que no podía llevarse el registro de conocimiento, porque
+`INV-03` sin él no es peor, es **imposible**. Al escribir `SPEC-13` se vio que **ese
+argumento no era solo del registro**: `ubicaciones` es efímera por naturaleza —la primera
+candidata a irse— pero `INV-02` es `bloqueante` y comprueba que un personaje presente sea
+**accesible**, cosa que sin ubicaciones no se puede saber. Dos casos con el mismo patrón
+son una regla.
+
+**Es comprobable desde `SPEC-13`**, que añadió a la tabla de invariantes la columna «Qué
+lee». Sin ella la regla sería una intención. Lo comprueba `VER-59`.
+
+**Y destapa un conflicto con la tabla de la pregunta 1**, que hay que resolver antes de
+aplicar esta spec: la forma reducida del bloque 2.º es *"solo las entidades presentes; se
+van las mencionadas"*, pero `INV-02` lee `Lugar.accesos_y_salidas`, y **un lugar que está en
+el camino entre dos lugares no es una entidad presente**. Tal como está escrita, esa
+reducción viola la regla. Hay más de una forma de arreglarlo y ninguna es obvia.
+
 ### C-4 · Los problemas del intento anterior entran en la ventana
 
 `main` mete en la ventana del escritor los problemas del intento anterior. Ninguno de
