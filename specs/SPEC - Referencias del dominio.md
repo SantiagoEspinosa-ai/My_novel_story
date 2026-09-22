@@ -5,7 +5,7 @@ estado: aplicada
 aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-22
 fecha_aplicacion: 2026-09-22
-commit_de_aplicacion: pendiente-de-anotar
+commit_de_aplicacion: dface19
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
