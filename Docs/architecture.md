@@ -229,12 +229,27 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | **Escaletador** | Sí | Repartir el cambio de valor por escena; prever la curva de dread; asignar beats a arcos | `Brief` + `GuiaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
 | **Ensamblador de contexto** | No | Recuperar por similitud; seleccionar fichas y setups pendientes; recortar por nivel de prioridad; contar tokens | Escena planificada → contexto dentro del presupuesto | Ninguna; hace cumplir el límite de `CLAUDE.md` |
 | **Escritor de escena** | Sí | Escribir la escena; sostener el POV; respetar las anclas de estilo; **devolver el delta estructurado en la misma llamada** | Contexto → `Borrador` + `DeltaDeEscena` | Produce el material de `INV-01`…`INV-04` |
-| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; **comparación contra el registro de conocimiento en `t`**; setups huérfanos; repetición léxica; distribución de longitud de frase; varianza de la curva | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-06`, `INV-07`, `INV-09`, `INV-12`, `INV-13`, `INV-16` |
+| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; **comparación contra el registro de conocimiento en `t`**; repetición léxica; distribución de longitud de frase | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-07`, `INV-13` |
 | **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-10`. Como desempate: `INV-03`, `INV-11`, `INV-14` |
 | **Revisor** | Sí | Un `PaseDeRevision` por tipo: continuidad, voz, ritmo, densidad, línea | Borrador + hallazgos → borrador nuevo | Las del hallazgo que corrige |
 | **Resumidor** | Sí | Condensar escena → capítulo → parte; extraer hechos clave; actualizar fichas de entidad | Escena consolidada → `Resumen`, `Ficha` | Ninguna; es lo que hace que el sistema escale |
 | **Consolidador** | No | Aplicar el delta al estado; detectar delta incompatible; reindexar embeddings | Delta aceptado → `EstadoDelMundo(t+1)` | `INV-05`, `INV-06` |
 | **Auditor de obra** | Mixto | Comprobaciones de nivel obra y capítulo, que no se pueden hacer escena a escena | Obra completa → `Hallazgo[]` | Obra: `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13`, `INV-14`, `INV-16`. Capítulo: `INV-08`, `INV-15` |
+
+**Qué significa «en su forma prevista».** El Escaletador comprueba `INV-01`, `INV-07`,
+`INV-12` e `INV-16` **contra la `Escaleta`, antes de que exista ningún texto**: que cada
+escena planificada tenga su `cambio_de_valor`, que sus beats sirvan a un arco, y que la
+curva de dread prevista tenga su máximo en el clímax y varianza suficiente. Es la misma
+invariante sobre el plan en vez de sobre la obra, y por eso no sustituye a la comprobación
+del Auditor: un plan correcto que se ejecuta mal sigue fallando, y quien lo caza es el
+barrido final sobre la curva realizada.
+
+**Por qué el Verificador de reglas no comprueba invariantes de nivel obra.** Su entrada es
+una escena —borrador, delta y estado en `t`—, y `INV-09`, `INV-12` e `INV-16` no se pueden
+contestar desde ahí: un presagio es huérfano solo cuando la obra termina sin pagarlo, y el
+máximo y la varianza de la curva necesitan la serie entera. `INV-06` tampoco es suya: su
+forma incremental —que el delta no contradiga el estado en `t`— es del Consolidador, y así
+lo dice `RF-20` de `SPEC-01`. Las cuatro son del Auditor de obra.
 
 **Decisión: el Juez no comparte sesión con el Escritor.** Recibe el texto y la rúbrica, no
 el prompt ni el razonamiento que produjeron ese texto. Un modelo que juzga su propia
