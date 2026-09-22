@@ -107,12 +107,19 @@ flowchart LR
   P5 --> Q2["Verificador"]
   P5 --> Q3["Puerta"]
   P5 --> Q4["AntiPatron"]
-  Q2 --> V1["regla"]
-  Q2 --> V2["juez_llm"]
-  Q2 --> V3["humano"]
-  Q2 --> V4["Rubrica"]
+  P5 --> Q5["Rubrica"]
+  P5 --> Q6["Invariante"]
+  Q2 --> T["tipo_de_verificador"]
+  T --> V1["regla"]
+  T --> V2["juez_llm"]
+  T --> V3["humano"]
   Q3 --> G1["Hallazgo"]
 ```
+
+`Rubrica` e `Invariante` son clases del plano, no valores: cuelgan de `Plano Calidad` como
+las demás. Los tres que cuelgan de `Verificador` son los valores de `tipo_de_verificador`,
+y por eso van detrás de un nodo que dice de qué enumeración salen. Antes `Rubrica` colgaba
+del mismo nodo que los tres valores, que es mezclar una clase con una enumeración.
 
 La rama de memoria es la que decide si el sistema escala: sin `DeltaDeEscena` hay que releer el texto para saber el estado, y eso se rompe hacia el capítulo diez.
 
@@ -171,6 +178,27 @@ stateDiagram-v2
 ```
 
 La transición que importa es `aceptada → consolidada`: hasta que el delta no se aplica, el estado del mundo no ha cambiado y la escena siguiente no puede generarse. Es ahí donde se corta la propagación del error.
+
+## Ciclo de vida de un capítulo
+
+Los nombres son los literales de la enumeración `estado_de_capitulo`. Va en su propio
+diagrama y no mezclado con el de escena: son dos vocabularios distintos, y juntarlos
+invita a comparar valores que no pertenecen al mismo.
+
+```mermaid
+stateDiagram-v2
+  state "abierto" as abierto
+  state "cerrado" as cerrado
+  [*] --> abierto
+  abierto --> cerrado: firma humana
+  cerrado --> [*]
+```
+
+Dos estados y una transición, sin vuelta: un capítulo cerrado no se reabre. La condición
+la comprueba quien firma —todas las escenas `consolidada` y ningún hallazgo `mayor`
+abierto—, y los `menor` abiertos se listan al cerrar sin bloquearlo. Es la segunda puerta
+con firma humana, y es la que le da consecuencia a un hallazgo `mayor`: sin ella, `mayor`
+y `menor` producirían exactamente el mismo comportamiento.
 
 ## Generación de una escena
 

@@ -226,7 +226,7 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | **Escaletador** | Sí | Repartir el cambio de valor por escena; prever la curva de dread; asignar beats a arcos | `Brief` + `GuiaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
 | **Ensamblador de contexto** | No | Recuperar por similitud; seleccionar fichas y setups pendientes; recortar por nivel de prioridad; contar tokens | Escena planificada → contexto dentro del presupuesto | Ninguna; hace cumplir el límite de `CLAUDE.md` |
 | **Escritor de escena** | Sí | Escribir la escena; sostener el POV; respetar las anclas de estilo; **devolver el delta estructurado en la misma llamada** | Contexto → `Borrador` + `DeltaDeEscena` | Produce el material de `INV-01`…`INV-04` |
-| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; setups huérfanos; repetición léxica; distribución de longitud de frase; varianza de la curva | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-06`, `INV-07`, `INV-09`, `INV-12`, `INV-13`, `INV-16` |
+| **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; **comparación contra el registro de conocimiento en `t`**; setups huérfanos; repetición léxica; distribución de longitud de frase; varianza de la curva | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-06`, `INV-07`, `INV-09`, `INV-12`, `INV-13`, `INV-16` |
 | **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-10`. Como desempate: `INV-03`, `INV-11`, `INV-14` |
 | **Revisor** | Sí | Un `PaseDeRevision` por tipo: continuidad, voz, ritmo, densidad, línea | Borrador + hallazgos → borrador nuevo | Las del hallazgo que corrige |
 | **Resumidor** | Sí | Condensar escena → capítulo → parte; extraer hechos clave; actualizar fichas de entidad | Escena consolidada → `Resumen`, `Ficha` | Ninguna; es lo que hace que el sistema escale |
@@ -249,8 +249,16 @@ necesitan todos:
 | Escaletador | sí | sí | no | sí | sí |
 | Escritor de escena | sí | sí | sí | sí | según profundidad |
 | Juez de rúbrica | guía de estilo y anclas | no | escena anterior | no | no |
+| Verificador de reglas | no | sí | escena anterior | registro de conocimiento y setups pendientes | no |
 | Revisor | sí | sí | sí | solo lo que cita el hallazgo | no |
 | Resumidor | no | no | la escena que resume | no | los del nivel inferior |
+
+**Por qué el Verificador de reglas necesita `Recuperado`.** Desde `SPEC-04` ejecuta
+`INV-03`, cuya entrada es el registro de conocimiento aplicable, y ese registro vive en ese
+nivel. Sin él la invariante no es peor: es **imposible**, que es el mismo argumento por el
+que `SPEC-01` §2.4 lo sube a la cuarta posición del orden de recorte. No recibe `Inmutable`
+porque ninguna de las invariantes que ejecuta lo usa, y recibe la escena anterior porque la
+repetición léxica se mide contra ella.
 
 El reparto numérico de tokens entre agentes **no está fijado y no se inventa aquí**. Se
 fija cuando haya medidas reales de cuánto consume cada uno; hasta entonces cada agente usa
