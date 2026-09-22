@@ -100,11 +100,59 @@ son una regla.
 **Es comprobable desde `SPEC-13`**, que añadió a la tabla de invariantes la columna «Qué
 lee». Sin ella la regla sería una intención. Lo comprueba `VER-59`.
 
-**Y destapa un conflicto con la tabla de la pregunta 1**, que hay que resolver antes de
-aplicar esta spec: la forma reducida del bloque 2.º es *"solo las entidades presentes; se
-van las mencionadas"*, pero `INV-02` lee `Lugar.accesos_y_salidas`, y **un lugar que está en
-el camino entre dos lugares no es una entidad presente**. Tal como está escrita, esa
-reducción viola la regla. Hay más de una forma de arreglarlo y ninguna es obvia.
+**Destapó un conflicto con la tabla de la pregunta 1, y así se resolvió.** La forma
+reducida del 2.º decía *"solo las entidades presentes"*, pero `INV-02` lee
+`Lugar.accesos_y_salidas` y **un lugar del camino entre dos lugares no es una entidad
+presente**. Se resuelve como el 4.º: **partiendo el bloque por lo que lo hace irreducible,
+no declarando irreducible el bloque entero.** La forma reducida conserva **el grafo de
+accesos y nada más**.
+
+Eso parte `Lugar` por la mitad, y es la partición correcta: `accesos_y_salidas` es el único
+campo suyo que lee una `bloqueante`. La atmósfera, las reglas locales y el tipo son material
+para el **escritor**, no para la **puerta**. Son dos usos distintos del mismo objeto, y el
+recorte tiene derecho a distinguirlos.
+
+### El patrón, que ya no es casualidad
+
+**Los bloques del contexto se definen por procedencia; las invariantes leen por necesidad.
+Las dos particiones no coinciden.** Un bloque agrupa lo que viene del mismo sitio —del plan,
+del estado, de la recuperación por similitud, de los resúmenes—; una invariante toma lo que
+necesita para decidir, venga de donde venga. Cada vez que las dos líneas se cruzan, hay que
+partir algo.
+
+Van tres:
+
+| Dónde | Qué se partió | Quién lo obligó |
+| --- | --- | --- |
+| `P-A` de `SPEC-01` | `Recuperado`: el registro de conocimiento se separó de las fichas y los setups | `INV-03` |
+| `SPEC-13` | `Estado actual`: los hechos permanentes se separaron de los efímeros | El recorte, y `INV-02` por detrás |
+| Esta spec | **`Lugar`**: el grafo de accesos se separó del resto de la ficha | `INV-02` |
+
+**La tercera enseña algo que las dos primeras no:** la partición **no se detiene en el
+borde de un bloque**. Puede entrar dentro de una clase y cortarla, porque lo que decide no
+es de dónde viene el dato sino quién lo lee.
+
+**Quien diseñe el cuarto bloque debería verlo venir en vez de descubrirlo.** La pregunta que
+hay que hacerse al definir un bloque no es *"¿qué cosas vienen de aquí?"* sino *"¿qué de lo
+que hay aquí lo lee una puerta?"*.
+
+### C-3 ter · Lo que la regla ata de verdad
+
+La regla suena amplia y **ata a dos invariantes**. De las cinco `bloqueante` de nivel
+escena, solo dos leen bloques del contexto:
+
+| | Qué lee | ¿Atada? |
+| --- | --- | --- |
+| `INV-01` | `Escena.cambio_de_valor` | No: campo de la propia escena |
+| `INV-02` | `entidades_vivas`, `ubicaciones`, `Lugar.accesos_y_salidas` | **Sí** |
+| `INV-03` | `RegistroDeConocimiento`, `t_fabula`, revelaciones del delta | **Sí** |
+| `INV-04` | `Escena.pov` contra `Borrador.pov_usado` | No: compara la escena con su borrador |
+| `INV-05` | `DeltaDeEscena`, `EstadoDelMundo` | No: mira después de generar |
+
+**Esto se escribe para que nadie relaje la regla dentro de seis meses por miedo a un coste
+que no existe.** Una regla que parece cara y no está medida se ablanda sola: alguien decide
+que «conservarlo todo no cabe» sin haber mirado cuánto es todo. Son dos invariantes, y las
+dos se concentran en los bloques 2.º y 4.º.
 
 ### C-4 · Los problemas del intento anterior entran en la ventana
 
@@ -163,7 +211,7 @@ spec, con su razonamiento, no un parámetro que se ajusta sin revisarse.
 | Orden | Bloque | Forma reducida | Irreducible |
 | --- | --- | --- | --- |
 | 1.º | Condensaciones de capítulo y de parte | Solo las de capítulo; se van las de parte | No |
-| 2.º | Fichas de entidad y setups pendientes | Solo las entidades **presentes** en la escena; se van las mencionadas | No |
+| 2.º | Fichas de entidad y setups pendientes | **El grafo de accesos entre lugares** (`Lugar.accesos_y_salidas`) y nada más: se van las fichas enteras y los setups | No |
 | 3.º | Escena anterior completa y resumen de las tres previas | **La escena anterior baja a su `Resumen`** | No |
 | 4.º | Estado del mundo en `t` **y registro de conocimiento aplicable** | **El registro de conocimiento entero**, más solo los hechos duraderos del mundo (`C-2`). Si eso no cabe, el bloque es **irreducible** | Condicional |
 | 5.º | Reserva de salida | — | **Sí.** Reducirla no es recortar contexto, es truncar la escena |
