@@ -21,7 +21,7 @@ cosa: evalúa `SPEC-01` mientras sigue en `en_revision` y propone cómo llevarla
 `aprobada`. No toca código, no toca ficheros de `backend/`, y no sustituye al plan de
 implementación, que seguirá haciendo falta cuando `SPEC-01` se apruebe.
 
-**Por eso vive en `specs/revisiones/` y se llama `REV-01`.** La primera versión estaba en
+**Por eso vive en `Docs/revisiones/` y se llama `REV-01`.** La primera versión estaba en
 `specs/plans/` como `PLAN-01`, y ese número le corresponde al plan de implementación de
 `SPEC-01`. Con dos documentos distintos llamados `PLAN-01` la referencia cruzada deja de
 significar nada. Las revisiones tienen su propia serie, `REV-NN`, y su propia carpeta; una

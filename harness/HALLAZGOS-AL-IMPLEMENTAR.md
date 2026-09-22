@@ -114,3 +114,56 @@ En una tabla, `juez\_llm` y en el texto `juez_llm` son la misma cosa y **cadenas
 distintas**. Todo parser tiene que normalizarlo antes de comparar. No es un
 defecto del documento, pero es el fallo de comparación más fácil de cometer y
 conviene que esté escrito en alguna parte.
+
+---
+
+## Añadidos al implementar `VER-45` y `VER-46` — 2026-09-22
+
+## F-12 · `VER-44` estaba quemado y casi lo reutilizo
+
+`REV-02` asignó `VER-44` al validador de ratio de compresión **que después se
+rechazó**. El identificador está publicado en un documento de `Docs/revisiones/`,
+así que no se reutiliza: los validadores nuevos son `VER-45` y `VER-46`.
+
+Lo que hace esto interesante es que **`VER-23` no lo habría cazado**: su punto
+ciego declarado es que ve el conjunto de identificadores, no su significado.
+Reutilizar `VER-44` para otra cosa habría pasado en verde. Es el primer caso real
+de un punto ciego declarado protegiendo de nada y de alguien acordándose a mano.
+
+## F-13 · La columna "Dónde vive" no es una referencia, es un plan
+
+Al escribir `VER-45` hubo que separar tres cosas con forma de ruta: referencias a
+documentos que deberían existir, planes de dónde vivirá algo, y cosas que no son
+rutas (endpoints, fragmentos de árbol, repositorios de GitHub).
+
+La columna "Dónde vive" de este documento es **planes por construcción**:
+`harness/evals/`, `harness/adversarial/`, `features/contexto/tests/`. El
+validador las exime leyendo esa columna, no con una lista escrita a mano en el
+código. **Pero el documento no dice en ninguna parte que esas rutas sean
+futuras**, y un lector razonable las toma por existentes.
+
+## F-14 · `VER-46` no puede comprobar los valores que son palabras comunes
+
+`nivel_de_evaluacion` (`escena`, `capitulo`, `obra`), `severidad` (`bloqueante`,
+`mayor`, `menor`) y `tipo_de_verificador` (`regla`, `juez_llm`, `humano`) tienen
+valores que aparecen constantemente en prosa. Comprobarlos produciría ruido sin
+señal, así que quedan fuera de alcance y consta como punto ciego de la fila.
+
+**Consecuencia concreta:** si alguien escribe `Bloqueante` con mayúscula en un
+documento, `VER-46` no lo ve. Es un hueco pequeño pero real y no está tapado.
+
+## F-15 · Los validadores prohíben citar el defecto, y eso hay que escribirlo
+
+Al añadir las filas de caso negativo de `VER-45` y `VER-46` a
+`Docs/verification.md`, **los dos validadores fallaron contra mi propia prosa**:
+había citado los ejemplos rotos entre acentos graves, y el acento grave significa
+"este es el literal".
+
+Es una consecuencia inevitable del diseño, no un fallo: un validador que
+comprueba literales citados no puede distinguir una cita de una demostración. La
+convención queda escrita en el propio documento —un literal equivocado se escribe
+en cursiva o en prosa, nunca en acentos graves— y los ejemplos concretos viven en
+`harness/fixtures/`, que está fuera de alcance por eso mismo.
+
+**Conviene saberlo antes de editar `Docs/verification.md`**, porque el fallo
+aparece en un sitio que no es el que se tocó.

@@ -42,8 +42,9 @@ ha entendido.
 
 Si el punto ciego de un validador nuevo coincide con el de uno que ya está, es
 **cobertura falsa**: parece que se cubre más y no se cubre nada nuevo. El caso de
-libro son los validadores de análisis estático: hay once y comparten el mismo
-límite, así que el duodécimo no taparía nada. Un validador que no puede
+libro son los validadores ciegos a la ejecución: hay **doce**, los que lista
+`PC-1`, y comparten el mismo límite, así que el decimotercero no taparía nada.
+Un validador que no puede
 justificar un punto ciego propio no entra, y el hueco que iba a tapar se anota en
 "Puntos ciegos asumidos".
 
@@ -75,17 +76,31 @@ ver la nota bajo la tabla de nivel artefacto.
 
 | | |
 | --- | --- |
-| **Validadores definidos** | **43** (`VER-01`…`VER-43`) |
+| **Validadores definidos** | **45** (`VER-01`…`VER-46`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
-| **Validadores implementados** | **0** |
+| **Validadores implementados** | **5** — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
+| **De ellos, con caso negativo que demuestra que fallan** | **5 de 5** |
+| **Bloqueados por falta de código de producción** | 34 |
 | **Puntos ciegos asumidos a sabiendas** | 8 |
 
-**Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
-más cobertura.** Este documento ha pasado de 37 validadores a 43 y sigue sin
-proteger nada, porque no existen `backend/`, `frontend/` ni `harness/`, y
-`CLAUDE.md` dice que aún no hay build ni tests. Un plan de verificación con más
-filas y cero implementación es un plan mejor, no un sistema más fiable. La única
-cifra que mide fiabilidad es la tercera.
+Los cinco implementados viven en `harness/documentos/` y se ejecutan con
+`python -m pytest harness -q`. Son los únicos que se podían escribir sin que
+exista `backend/`: comparan documentos entre sí.
+
+**Cuarenta de cuarenta y cinco siguen sin proteger nada, y conviene decirlo en
+voz alta: una lista más larga no es más cobertura.** Este documento ha pasado de
+37 filas a 45 y la cifra que mide fiabilidad es la tercera, no la primera. Los
+treinta y cuatro bloqueados esperan a `backend/`, `frontend/` o CI.
+
+**`VER-45` y `VER-46` existen porque eran las dos únicas clases de defecto con
+historial real en este repositorio** —setenta y tres referencias rotas tras dos
+renombrados, y el diagrama de ciclo de vida en `PascalCase`— y cuarenta y tres
+validadores no cubrían ninguna de las dos. Al implementarlos encontraron dos
+defectos vivos el primer día: una referencia a la carpeta de revisiones en su
+ubicación antigua, que quedó colgando al moverla y ya está corregida, y el
+diagrama de `SPEC-01`, que sigue escribiendo los estados en PascalCase porque su
+corrección depende de una decisión pendiente y está registrada como fallo
+esperado en el harness.
 
 ## Semilla de contexto
 
@@ -136,6 +151,8 @@ implantación".
 | **VER-39** | Toda entidad que el delta declara aparece mencionada en el texto de la escena, y todo personaje mencionado está en `personajes_presentes[]` | T | contract testing | Por cada entrada del delta, su `nombre_canonico` o algún `alias` aparece en el texto; y ningún nombre del texto queda fuera de `personajes_presentes[]` | **Compara superficie léxica, no sentido**: un delta equivocado sobre alguien que **sí** está mencionado pasa | `features/consolidacion/tests/` |
 | **VER-42** | Aplicar un delta es atómico: o entran todas sus entradas o ninguna | T | integration testing | Se fuerza un fallo a mitad de la aplicación y el estado queda exactamente como antes; el número de cambios aplicados coincide con el de entradas del delta | Cuenta **entradas aplicadas**, no la **corrección de cada una** *(lo cubre parcialmente `VER-39`)* | `features/consolidacion/tests/` |
 | **VER-43** | Una escena no supera un número acotado de ciclos de regeneración | T | unit testing | Con un tope configurado, la escena número `tope+1` se detiene y se marca en vez de volver a generarse. **El valor del tope sale de medir, no se fija aquí** | Cuenta **ciclos**, no **diagnostica la causa**: detecta que gira, no por qué | `features/orquestacion/tests/` |
+| **VER-45** | Toda ruta citada en un documento existe tal cual está escrita | A | static analysis | Se recorren las rutas entre acentos graves de todos los documentos del proyecto; cero rutas inexistentes. Se eximen las reservadas en `AGENTS.md` § "Todavía no existe", las ignoradas por git y las de la columna "Dónde vive", que son planes por construcción | Solo ve rutas **cuyo primer segmento existe en la raíz**: una ruta de código planificado (`backend/…`, `features/…`) no la mira. Y comprueba **existencia**, no que el documento citado diga lo que el citante cree | `harness/documentos/` |
+| **VER-46** | Todo literal de enumeración citado en un documento se escribe como en la tabla de `Docs/definitions.md` | A | static analysis | Se normalizan los tokens con forma de identificador —minúsculas, sin tildes, sin guiones bajos— y se comparan con los valores de la tabla: si dos normalizan igual y se escriben distinto, es una variante | No ve los valores que son **palabras sueltas y comunes** (`obra`, `escena`, `regla`, `vivo`): comprobarlas daría ruido sin señal, así que `nivel_de_evaluacion`, `severidad` y `tipo_de_verificador` quedan fuera de alcance | `harness/documentos/` |
 
 **Nota sobre la Regla 3 aplicada a `VER-05` y `VER-09`.** Eran las dos filas que
 compartían implementación con lo que validaban.
@@ -208,11 +225,11 @@ dejaría pasar.
 | **PC-1** | **El análisis estático no ve la ejecución.** Once validadores lo comparten: `VER-01`, `VER-12`, `VER-13`, `VER-14`, `VER-15`, `VER-16`, `VER-17`, `VER-21`, `VER-23`, `VER-28`, `VER-31`, `VER-38` | Un script de mantenimiento hace `UPDATE escena SET estado='consolidada'` y salta la máquina de estados entera | Taparlo pide auditoría en tiempo de ejecución sobre la base. No es caro, pero no hay base todavía |
 | **PC-2** | **Nadie comprueba que quien acepta una escena sea una persona.** `VER-29` solo comprueba que el worker no puede | Un script llama a `POST /escenas/{id}/aceptar` en bucle y consolida la obra entera sin que nadie la lea | `SPEC-01` §2.5 excluye la autenticación de la v1. Sin identidad no hay nada que comprobar |
 | **PC-3** | **La fiabilidad del Juez no está medida**, y `VER-26` en verde significa "se midió", no "es fiable" | `INV-03` es `bloqueante` y de tipo `juez_llm`: es la única puerta que detiene una escena basándose en un modelo cuya fiabilidad se desconoce | El corpus de `VER-26` es una decisión abierta. Hasta entonces, `VER-40` detecta al menos que el Juez funciona |
-| **PC-4** | **Los resúmenes pueden crecer hasta reconstruir la obra.** Se propuso un validador de ratio de compresión y **se rechazó por la Regla 2**: su punto ciego —mide longitud, no calidad— ya lo tienen seis validadores | El Resumidor devuelve resúmenes casi tan largos como la escena. `VER-07` está en verde porque no hay texto de escena en el contexto, y el contexto lleva la obra entera de todos modos | Se asume hasta encontrar una comprobación con un punto ciego propio |
-| **PC-5** | **`VER-39` compara léxico, no sentido** | El delta dice que Marta coge el cuchillo y en el texto lo coge Luis. Los dos nombres están mencionados, así que `VER-39` pasa | La comprobación semántica exige un juez, y un juez sin fiabilidad medida no mejora esto |
+| **PC-4** | **Los resúmenes pueden crecer hasta reconstruir la obra.** Se propuso un validador de ratio de compresión —al que `REV-02` llegó a dar el número **`VER-44`**— y **se rechazó por la Regla 2**: su punto ciego, mide longitud y no calidad, ya lo tienen seis validadores. **`VER-44` queda quemado**: el identificador está publicado y no se reutiliza | El Resumidor devuelve resúmenes casi tan largos como la escena. `VER-07` está en verde porque no hay texto de escena en el contexto, y el contexto lleva la obra entera de todos modos | Se asume hasta encontrar una comprobación con un punto ciego propio |
+| **PC-5** | **`VER-39` compara léxico, no sentido.** Estrecha `BC-4` —que nada contrasta el delta con el texto— pero **no lo cierra**, y es fácil darlo por resuelto | El delta dice que Marta coge el cuchillo y en el texto lo coge Luis. Los dos nombres están mencionados, así que `VER-39` pasa. El hueco de `BC-4` sigue abierto para todo delta que se equivoque sobre alguien **sí** mencionado | La comprobación semántica exige un juez, y un juez sin fiabilidad medida no mejora esto |
 | **PC-6** | **`VER-12` comprueba que el identificador existe, no que sea el correcto** | Se copia un verificador y no se cambia el id: todos los hallazgos salen como `INV-01` y el recuento por invariante miente | `VER-38` valida el registro, no qué id usa cada verificador al construir el hallazgo |
 | **PC-7** | **`VER-21` comprueba que la migración existe, no que sea correcta** | Se añade un atributo obligatorio y se commitea una migración vacía. CI verde y la columna no existe | Validar que una migración hace lo que dice exige ejecutarla contra un esquema de referencia |
-| **PC-8** | **`VER-41` valida el contador contra el proveedor, no contra la verdad** | El `usage` del proveedor es incorrecto: el contador propio y el del proveedor coinciden en el mismo error | No hay una tercera fuente. Se asume que el proveedor mide bien lo que factura |
+| **PC-8** | **`VER-41` valida el contador contra el proveedor, no contra la verdad** | El `usage` del proveedor es incorrecto: el contador propio y el del proveedor coinciden en el mismo error | Se acota, no se cierra: **la factura mensual del proveedor es una tercera fuente independiente y es gratis**. No prueba que el `usage` por llamada sea correcto, pero si el total facturado se aleja del total trazado, algo miente. Cuadrar los dos totales una vez al mes cuesta una resta |
 
 ---
 
@@ -268,6 +285,16 @@ que nunca ha fallado en las pruebas no está verificada, solo declarada.
 | **VER-41** | Una traza que registra el presupuesto planificado en vez del consumido | La diferencia con el `usage` no es cero |
 | **VER-42** | Un fallo forzado a mitad de aplicar un delta de tres entradas | El estado queda como antes; no hay una entrada aplicada |
 | **VER-43** | Una escena que falla la misma invariante `tope+1` veces | Se detiene y se marca en vez de regenerarse |
+| **VER-45** | Un documento que cita la ruta del modelo de dominio con el typo que ya ocurrió —*defintions*, sin la segunda i— junto a la ruta correcta | El validador marca la rota y deja pasar la buena |
+| **VER-46** | Un diagrama que escribe los estados en PascalCase, y una fuente del miedo escrita con tilde donde la tabla la tiene sin ella | El validador los marca y dice cuál es la escritura de la tabla |
+
+> **Convención que imponen `VER-45` y `VER-46`, y que conviene conocer antes de
+> editar este documento:** los acentos graves significan *"este es el literal"*.
+> Una ruta rota o un literal mal escrito **no se citan entre acentos graves**,
+> porque entonces el validador los lee como una cita y los marca. Para hablar de
+> una escritura equivocada se usa cursiva o prosa. Los ejemplos concretos viven
+> en `harness/fixtures/`, que está fuera del alcance de los dos validadores
+> precisamente por esto.
 
 ---
 
