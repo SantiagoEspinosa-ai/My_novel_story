@@ -326,11 +326,11 @@ ver la nota bajo la tabla de nivel artefacto.
 | | |
 | --- | --- |
 | **Modos de fallo catalogados** | **25** (`MF-01`…`MF-25`), ninguno sin estado y dos sin validador por construcción |
-| **Validadores definidos** | **58** (`VER-01`…`VER-59`, con `VER-44` quemado: ver `PC-4`) |
+| **Validadores definidos** | **59** (`VER-01`…`VER-60`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 45 |
+| **Bloqueados por falta de código de producción** | 46 |
 | **Implementables hoy y sin implementar** | 2 — `VER-56` y `VER-59`, que solo necesitan los documentos |
 | **Puntos ciegos asumidos** | **11 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` |
 
@@ -338,8 +338,8 @@ ver la nota bajo la tabla de nivel artefacto.
 dejan de ser ciertos el día que exista esa carpeta.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
-más cobertura.** Este documento ha pasado de 37 filas a 58 y la cifra que mide
-fiabilidad sigue siendo cero. Cuarenta y cinco esperan a `backend/`, `frontend/` o
+más cobertura.** Este documento ha pasado de 37 filas a 59 y la cifra que mide
+fiabilidad sigue siendo cero. Cuarenta y seis esperan a `backend/`, `frontend/` o
 CI, seis esperan una medición o una decisión, y **dos —`VER-56` y `VER-59`— no esperan a nada**: solo
 necesitan los documentos, que ya existen.
 
@@ -396,6 +396,7 @@ implantación".
 | VER-07 | Nunca se manda el texto completo de la obra al modelo | T | unit testing | Con una obra de muchas escenas, el contexto no contiene el texto de ninguna escena salvo la anterior | Mira **texto de escena**, no **volumen equivalente**: resúmenes que crecen hasta reconstruir la obra pasan | `features/contexto/tests/` |
 | VER-08 | El texto completo de una escena se guarda pero no se recupera por similitud | T | integration testing | La búsqueda vectorial solo devuelve fichas, resúmenes y presagios | Comprueba el **índice**, no el **camino de lectura**: leer el texto por clave primaria lo esquiva *(lo cubre `VER-07`)* | `commons/db/tests/` |
 | VER-09 | El estado del mundo se reconstruye acumulando deltas en orden, **contrastado con una implementación de referencia** | T | property-based testing | Reconstruir con el aplicador de producción y con un **aplicador de referencia ingenuo escrito solo para la prueba** da el mismo estado (Regla 3) | Comprueba que el estado **se construye bien desde el delta**, no que el **delta sea cierto** *(lo cubre parcialmente `VER-39`)* | `features/consolidacion/tests/` |
+| **VER-60** | El texto de una escena en el manuscrito es byte a byte el del `Borrador` que se auditó | T | integration testing | Se ensambla un manuscrito con escenas `aceptada` y `aceptada_por_rendicion` y se compara cada una con su `Borrador`. Cero diferencias | Compara el **texto**, no el **orden ni lo que falta**: un manuscrito al que le falte una escena entera, o que las ponga desordenadas, pasa |
 | VER-10 | Ninguna escena pasa a `consolidada` sin su delta aplicado (`INV-05`) | T | unit testing | Intentar consolidar sin delta aplicado falla; la escena siguiente no se puede generar | Comprueba que el delta **se aplicó**, no que se aplicara **entero** *(lo cubre `VER-42`)* | `features/consolidacion/tests/` |
 | VER-11 | `bloqueante` detiene la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir, y un `mayor` abierto impide cerrar el capítulo | T | unit testing | Un hallazgo de cada severidad produce exactamente el comportamiento declarado, **incluida la diferencia entre `mayor` y `menor` en la puerta de cierre de capítulo** (`SPEC-04` C-2) | Comprueba el comportamiento **dada** una severidad, no que la **asignada sea la correcta** *(lo cubre `VER-38`)* | `commons/invariantes/tests/` |
 | VER-12 | Todo hallazgo cita su invariante **y el verificador que lo levantó**, los dos por identificador y nunca por descripción | A | static analysis | Todo `Hallazgo` construido lleva un identificador del registro `INV-xx` **y un `verificador` no vacío**. En las invariantes que comprueba más de un agente —`INV-13`, incremental y de barrido— dos hallazgos de la misma invariante levantados por agentes distintos tienen `verificador` distinto | Comprueba que los dos ids **existen** y que **se distinguen entre sí**, no que sean los **correctos**: un verificador copiado que no cambió ninguno de los dos sigue pasando | `commons/invariantes/` |
@@ -636,6 +637,7 @@ repositorio. Encontraron dos el primer día:
 | `VER-57` | Un worker muere con la reserva del Escritor tomada y otro trabajo esperando | El segundo no arranca hasta el margen; si arranca antes, el techo se repartió mal |
 | `VER-58` | Una escena de 944 palabras con `longitud_objetivo` de 1.200 a 2.200 | Falla, aunque los jueces la aprueben: es el caso de la Regla 2 |
 | `VER-59` | Una forma reducida del bloque de estado que retire `ubicaciones` | Falla: `INV-02` la lee y es `bloqueante` de escena |
+| `VER-60` | Un ensamblador que normaliza comillas al montar el manuscrito | Falla: el informe describiría un texto que ya no es el entregado |
 
 ### Lo que el documento no aguantó al llevarlo a código
 

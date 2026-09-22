@@ -266,6 +266,19 @@ siguiente sin delta aplicado— y el Consolidador, que es quien lo aplica. La de
 estaba a pelo, sin razón escrita, y era duplicación sin función. Si alguien la quiere de
 vuelta, que la escriba con su motivo.
 
+**Decisión: el modelo del Juez es fijo dentro de una obra.** Cambiarlo a mitad rompe la
+comparabilidad entre puntuaciones, y desde `SPEC-10` la comparabilidad decide cuál borrador
+se queda en `Escena.borrador_aceptado`. No aplica al Escritor: cambiarle el modelo afecta al
+estilo y eso lo caza `INV-15`; cambiárselo al Juez no lo caza nada. La traza registra qué
+modelo se usó, o la regla no se puede comprobar después.
+
+**Decisión: el Juez no ve las reglas del proyecto.** Ni `Docs/definitions.md`, ni los
+enunciados de las invariantes, ni este documento: recibe el texto, la rúbrica y nada más. Si
+las viera, su juicio sería un eco del nuestro — y desde `SPEC-04` el Juez es el **desempate**
+de `INV-03`, `INV-11` e `INV-14`. Un desempate que ve lo mismo que la regla no desempata:
+confirma. Es la Regla 3 de `Docs/verification.md` aplicada a un agente en vez de a un
+validador.
+
 **Decisión: el Juez no comparte sesión con el Escritor.** Recibe el texto y la rúbrica, no
 el prompt ni el razonamiento que produjeron ese texto. Un modelo que juzga su propia
 salida con su propio contexto delante tiende a aprobarla. Modelo distinto si se puede;
@@ -435,6 +448,7 @@ el mismo código leyendo el mismo tipo de valor, y dos convenciones para lo mism
 | `terminado` | Acabó y dejó su resultado |
 | `fallido` | Acabó mal, y **se sabe cómo**: fallo de contrato, o tope de reintentos agotado |
 | `abandonado` | Un worker lo tomó y no se supo más de él. **No se sabe si llegó a pasar** |
+| `detenido_por_presupuesto` | No arrancó porque el tope global de llamadas estaba alcanzado. **No falló nada** |
 
 **`fallido` y `abandonado` no son el mismo hecho**, y por eso son dos estados y no un
 estado con un campo. Uno significa que sabemos qué pasó; el otro, que no sabemos si llegó
@@ -452,6 +466,7 @@ a mano creyendo que falló, que es pagar dos veces por otra puerta.
 | `en_curso` → `terminado` | Worker | La llamada devuelve algo válido |
 | `en_curso` → `en_cola` | Worker | Fallo **de transporte** y tope no agotado: reintenta desde el ensamblado |
 | `en_curso` → `fallido` | Worker | Fallo **de contrato**, o tope agotado |
+| `en_cola` → `detenido_por_presupuesto` | Worker | El tope global de llamadas está alcanzado. No llega a arrancar |
 | `en_curso` → `abandonado` | *(sin decidir: ver Decisiones abiertas)* | Se excedió el margen desde que se tomó |
 | `abandonado` → `en_cola` | Persona | Relanzamiento manual, viendo qué pasó |
 
@@ -473,6 +488,15 @@ registra:
   cuesta nada y es lo que hace la reconstrucción **posible**, porque el índice vectorial
   crece al consolidar y los empates de una consulta KNN no tienen orden definido: sin los
   ids no se sabe cuáles entraron, aunque su contenido siga ahí.
+- **Los recortes que aplicó el ensamblador**, distinguiendo **reducciones** de
+  **eliminaciones**, que desde `SPEC-12` no son lo mismo. Van aquí y no en un registro
+  aparte porque la traza ya guarda **qué entró** en el contexto, y los recortes son la otra
+  cara del mismo dato: separarlos obligaría a reconciliar dos fuentes de lo mismo.
+  **La serie por obra es lo que importa, no el recorte suelto.** Si en la escena 40 hay
+  recortes que no había en la 3, la ventana crece con N y la compactación no funciona: es la
+  señal de alarma más importante que el sistema puede dar, y es lo único que dirá si el
+  orden de `SPEC-01` §2.4 era el bueno.
+- **Qué modelo se usó**, que es lo que hace comprobable la regla de abajo.
 - Los tokens, en los dos campos de abajo.
 - El resultado. Si fue un fallo de contrato, **la salida entera**: es pequeña, no se
   reconstruye, y es lo único que permite diagnosticar un delta fuera de esquema.
@@ -571,6 +595,28 @@ clasificar** —lo dará por aplicado o por no aplicado según qué parte se mir
 que corta la propagación del error dejaría de cortarla justo en el caso en que más falta
 hace.
 
+#### El tope global de llamadas
+
+El techo de 100.000 tokens acota lo **concurrente** y el tope de reintentos de `SPEC-07`
+acota los fallos **de transporte**. Ninguno acota **cuántas veces** se llama al modelo, y
+desde `SPEC-10` eso hace falta: una invariante `bloqueante` **no admite rendición**, así que
+una escena que insiste puede reintentarse sin final hasta que llegue una persona.
+
+**Hay dos topes, y hacen falta los dos.** Uno por escena, que acota a la que insiste; otro
+por obra, que acota el agregado. Con uno solo, el otro caso pasa entero.
+
+**Cuentan todas las llamadas al modelo, no solo las del Escritor.** Si los verificadores
+gastan más que el Escritor, estás pagando la auditoría más cara que la novela, y contando
+solo al Escritor eso no se ve nunca.
+
+El contador se comprueba **antes** de cada llamada. Si el tope se ha alcanzado, el trabajo
+no arranca y pasa a **`detenido_por_presupuesto`**, que es un estado más de los de
+`commons/trabajos/` y **no es `fallido`**: no falló nada, se agotó un presupuesto. La parada
+es ordenada —se escribe el estado y se deja constancia— y **no se pierde lo hecho**.
+
+Los dos números son provisionales y se fijan en el plan, como el tope de reintentos.
+**Caduca con:** `backend/`.
+
 #### El interbloqueo del presupuesto
 
 **Un solo trabajo abandonado del Escritor deja el sistema entero parado hasta que expire el
@@ -616,6 +662,21 @@ Tres carpetas y no más. Una cuarta necesita spec, que es justo lo que faltó pa
 **Un eval y el red-teaming no son lo mismo**, y por eso son dos carpetas: un eval mide
 concordancia contra un criterio, y el red-teaming busca una violación bajo presión
 adversaria. Distinta pregunta, distinto corpus, distinto criterio de salida.
+
+### El ensamblador del manuscrito no corrige nada
+
+Lo que se entrega es **exactamente** lo que se auditó. El ensamblador del manuscrito no
+retoca una transición floja ni unifica un nombre que baila, por muy tentador que sea con la
+obra entera delante.
+
+**El motivo es de trazabilidad, no de estilo.** Si retocara el texto, el informe dejaría de
+describir el manuscrito: diría que la escena 7 se aceptó con tres hallazgos abiertos, y la
+escena 7 del manuscrito ya no sería esa. La trazabilidad entre lo auditado y lo entregado es
+lo único que hace útil al informe.
+
+**Desde `SPEC-10` hace más falta que antes.** Una escena en `aceptada_por_rendicion` llega
+al manuscrito **con sus hallazgos abiertos**: si algo la retoca por el camino, esos hallazgos
+describen un texto que ya no existe. Lo comprueba `VER-60`.
 
 ## Pruebas
 

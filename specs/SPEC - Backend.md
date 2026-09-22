@@ -370,8 +370,9 @@ vez. Que el orden **se pueda cambiar** no está en discusión; lo que se fija es
 **Este orden se eligió razonando, no midiendo**, igual que la primera versión de §2.4. Lo
 que dirá si es el bueno es **la tendencia de los recortes**: si en la escena 40 aparecen
 recortes que no había en la 3, la compactación no está funcionando y el orden es lo de
-menos. Ese registro no existe todavía.
-**Caduca con:** `specs/aplicadas/SPEC - Observabilidad del pipeline.md`.
+menos. Ese registro no existe todavía: `SPEC-11` lo diseñó —la traza
+guarda los recortes, distinguiendo reducciones de eliminaciones— pero diseñarlo no es
+tenerlo. **Caduca con:** `backend/`.
 
 ## 2.5 Suposiciones y dependencias
 
