@@ -107,9 +107,9 @@ flowchart LR
   P5 --> Q2["Verificador"]
   P5 --> Q3["Puerta"]
   P5 --> Q4["AntiPatron"]
-  Q2 --> V1["Por regla"]
-  Q2 --> V2["Juez LLM"]
-  Q2 --> V3["Humano"]
+  Q2 --> V1["regla"]
+  Q2 --> V2["juez_llm"]
+  Q2 --> V3["humano"]
   Q2 --> V4["Rubrica"]
   Q3 --> G1["Hallazgo"]
 ```
@@ -170,7 +170,7 @@ stateDiagram-v2
   consolidada --> [*]
 ```
 
-La transición que importa es `Aceptada → Consolidada`: hasta que el delta no se aplica, el estado del mundo no ha cambiado y la escena siguiente no puede generarse. Es ahí donde se corta la propagación del error.
+La transición que importa es `aceptada → consolidada`: hasta que el delta no se aplica, el estado del mundo no ha cambiado y la escena siguiente no puede generarse. Es ahí donde se corta la propagación del error.
 
 ## Generación de una escena
 
