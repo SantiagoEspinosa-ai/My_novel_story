@@ -6,7 +6,7 @@ aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-22
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-21
-version: 4
+version: 5
 ---
 
 # SRS — Backend del harness de novelas
@@ -263,41 +263,115 @@ Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
 | Salida | 20.000 | Reserva para el texto generado y su delta |
 
 **Suma exactamente 100.000.** Esa igualdad tiene consecuencias en `P-5`.
-
 ### Orden de recorte
 
 `CLAUDE.md` dice que se recorta *"por el nivel de menor prioridad"* y no dice cuál es.
 Este es el orden, y **también modifica `CLAUDE.md`**, igual que `P-1`.
 
-El criterio no es cuánto ocupa cada nivel, sino **qué se pierde si falta**:
-
 **El orden opera sobre bloques, no sobre niveles**, y la diferencia no es de vocabulario:
 el nivel `Recuperado` de `CLAUDE.md` se parte en dos bloques que caen a distinto lado de la
-frontera de `RF-26` —fichas y setups en el 2.º, registro de conocimiento en el 4.º—. La
-columna "Nivel del que sale" está ahí para trazar el origen, no para recorrerla: quien
-implemente el recortador itera sobre las filas de esta tabla, nunca sobre los seis niveles
-del presupuesto.
+frontera de `RF-26`. La columna "Nivel del que sale" está ahí para trazar el origen, no
+para recorrerla: quien implemente el recortador itera sobre las filas de esta tabla, nunca
+sobre los seis niveles del presupuesto.
 
-| Orden | Bloque | Nivel del que sale | Qué se pierde |
-| --- | --- | --- | --- |
-| 1.º | Condensaciones de capítulo y de parte | Resúmenes | Son condensaciones de condensaciones. Perderlas degrada el contexto lejano, que es el que menos afecta a la escena en curso |
-| 2.º | Fichas de entidad y setups pendientes | Recuperado | Duele, pero es recuperable después y no rompe nada de inmediato |
-| 3.º | Escena anterior completa y resumen de las tres previas | Local | Aquí ya se nota: el texto pierde continuidad de tono y de ritmo |
-| 4.º | Estado del mundo en `t` **y registro de conocimiento aplicable** | Estado actual + Recuperado | Sin el primero el modelo inventa dónde está la gente. Sin el segundo, `INV-03` no es peor: es **imposible** |
-| 5.º | Reserva de salida | Salida | Recortar aquí no es recortar contexto: es **truncar la escena** |
-| 6.º | Premisa, guía de estilo, reglas del mundo, anclas | Inmutable | **Nunca.** Sin esto no estás generando esta novela, estás generando otra |
+#### Recortar es elegir cuánto se conserva, no qué se pierde
+
+**El recorte tiene dos vueltas.** Primero **reduce** todo lo reducible, en orden; solo
+después **elimina** bloques enteros, también en orden. Entre "completo" y "ausente" hay
+"reducido", y un bloque reducido sigue aportando.
+
+Cada fila declara su forma reducida. **Un bloque sin forma reducida lo dice**, y ese dato
+vale por sí solo: un bloque irreducible solo se puede perder entero, y saber cuáles son
+cambia el orden.
+
+| Orden | Bloque | Nivel del que sale | Forma reducida | Qué se pierde |
+| --- | --- | --- | --- | --- |
+| 1.º | Condensaciones de capítulo y de parte | Resúmenes | Solo las de capítulo; se van las de parte | Son condensaciones de condensaciones. Degradan el contexto lejano, que es el que menos afecta a la escena en curso |
+| 2.º | Fichas de entidad y setups pendientes | Recuperado | **El grafo de accesos entre lugares** (`Lugar.accesos_y_salidas`) y nada más | Duele, pero es recuperable después. El grafo se queda porque `INV-02` lo lee |
+| 3.º | Escena anterior completa y resumen de las tres previas | Local | **La escena anterior baja a su `Resumen`** | Aquí ya se nota: el texto pierde continuidad de tono y de ritmo |
+| 4.º | Estado del mundo en `t` **y registro de conocimiento aplicable** | Estado actual + Recuperado | **El registro de conocimiento entero**, `entidades_vivas`, `ubicaciones` y solo los hechos `permanente` | Sin el estado el modelo inventa dónde está la gente. Sin el registro, `INV-03` no es peor: es **imposible** |
+| 5.º | Problemas del intento anterior | Local | Solo los de severidad `bloqueante` y `mayor` | La reescritura repite el error que la motivó |
+| 6.º | Reserva de salida | Salida | **Irreducible** | Recortar aquí no es recortar contexto: es **truncar la escena** |
+| 7.º | Premisa, guía de estilo, reglas del mundo, anclas | Inmutable | **Irreducible** | **Nunca.** Sin esto no estás generando esta novela, estás generando otra |
 
 **Por qué el registro de conocimiento sube a la cuarta posición y no se queda con el resto
 de `Recuperado`.** `INV-03` es `bloqueante` y **depende de ese dato**. Si se recorta en
-segunda posición, el recorte se lo lleva antes de que la regla de fallar por debajo del
-bloque 3 llegue a activarse, y la puerta queda en pie pero sin la información con la que
-juzgar: sigue ahí, y ya no puede decidir. El criterio es el mismo que para el estado del
-mundo —sin él la comprobación no es peor, es imposible—, así que va en el mismo bloque.
+segunda posición, el recorte se lo lleva antes de que la regla de fallar llegue a
+activarse, y la puerta queda en pie pero sin la información con la que juzgar: sigue ahí, y
+ya no puede decidir.
 
-**Por debajo del nivel 3 no se recorta: se falla.** Una escena escrita sin la anterior y
-sin el estado del mundo va a salir mal y va a consumir una regeneración igualmente, así
-que fallar antes es más barato que generar y tirar. En la práctica eso hace que los
-niveles 4, 5 y 6 no se toquen nunca: el ensamblador se detiene antes de llegar a ellos.
+**Por qué los problemas del intento anterior son de los últimos.** Si se van, la
+reescritura repite el error que la motivó. Es el arreglo de un fallo real de la rama
+`main`: allí el aviso de longitud lo leía la sesión orquestadora y no el escritor, así que
+en el intento siguiente el escritor no sabía nada de él. Está contado junto a la Regla 2 de
+`Docs/verification.md`.
+
+#### Ninguna forma reducida se lleva lo que lee una `bloqueante` de escena
+
+> **La forma reducida de un bloque nunca puede llevarse lo que lee una invariante
+> `bloqueante` de nivel escena.** Si lo hace, la puerta sigue en pie y ya no puede decidir.
+
+Es comprobable porque la tabla de invariantes de `Docs/definitions.md` declara, por fila,
+**qué lee** cada una. Lo cruza `VER-59`.
+
+**Ata a dos invariantes, no a cinco.** De las cinco `bloqueante` de nivel escena, solo
+`INV-02` e `INV-03` leen bloques del contexto: `INV-01` mira un campo de la propia escena,
+`INV-04` compara la escena con su borrador e `INV-05` mira el delta después de generar.
+**Se escribe medido para que nadie relaje la regla por miedo a un coste que no existe**: una
+regla que parece cara y no se ha medido se ablanda sola.
+
+#### El patrón de las particiones
+
+**Los bloques del contexto se definen por procedencia; las invariantes leen por necesidad.
+Las dos particiones no coinciden**, y cada vez que se cruzan hay que partir algo. Van tres:
+
+| Qué se partió | Quién lo obligó |
+| --- | --- |
+| `Recuperado`: el registro de conocimiento, de las fichas y los setups | `INV-03` |
+| `Estado actual`: los hechos `permanente`, de los `efimero` | El recorte, con `INV-02` detrás |
+| **`Lugar`**: el grafo de accesos, del resto de la ficha | `INV-02` |
+
+La tercera enseña lo que las dos primeras no: **la partición no se detiene en el borde de un
+bloque**. Puede entrar dentro de una clase y cortarla, porque lo que decide no es de dónde
+viene el dato sino quién lo lee. Dos usos distintos del mismo objeto —la atmósfera de un
+lugar es material para el escritor; sus accesos son material para la puerta— y el recorte
+tiene derecho a distinguirlos.
+
+**Quien defina el bloque siguiente no debería preguntarse *"¿qué cosas vienen de aquí?"*
+sino *"¿qué de lo que hay aquí lo lee una puerta?"*.**
+
+#### Tres números, no uno
+
+| Número | Quién lo calcula | Para qué | Cuándo |
+| --- | --- | --- | --- |
+| `tokens_para_recortar` | El ensamblador | Decidir si hace falta otra vuelta | En cada iteración |
+| `tokens_reservados` | El control de presupuesto | Apartar el techo por `P-2` | Una vez, antes de salir |
+| `tokens_estimados` | El contador propio | Reconciliar contra el `usage` del proveedor | Una vez, al registrar la traza |
+
+El primero es **una estimación conservadora con su margen declarado**, no una cuenta exacta:
+lo que decide es *"me paso o no"*, no *"por cuánto"*, y contar exacto en cada vuelta del
+bucle paga el tokenizador sin ganar nada. Los otros dos son exactos.
+
+**Mezclar dos cualesquiera rompe la Regla 3 de `Docs/verification.md`.** Si el ensamblador y
+la reserva comparten número, la reserva hereda el margen de una estimación barata. Si la
+reserva y la traza lo comparten, `VER-41` compara un número consigo mismo y vuelve a ser el
+eco que `SPEC-08` cerró. **Es justo lo que alguien unifica al refactorizar creyendo que
+simplifica.**
+
+#### El orden se cambia por spec, nunca por configuración
+
+Un orden configurable es **un orden sin dueño**: si alguien lo cambia para desatascar una
+generación, no queda rastro de por qué era el otro. Y `VER-06` pasaría a comprobar *"se
+respetó lo que dijera el fichero"*, que es un criterio incapaz de marcar nada — `MF-24` otra
+vez. Que el orden **se pueda cambiar** no está en discusión; lo que se fija es por dónde.
+
+#### La reserva de este orden
+
+**Este orden se eligió razonando, no midiendo**, igual que la primera versión de §2.4. Lo
+que dirá si es el bueno es **la tendencia de los recortes**: si en la escena 40 aparecen
+recortes que no había en la 3, la compactación no está funcionando y el orden es lo de
+menos. Ese registro no existe todavía.
+**Caduca con:** `specs/aplicadas/SPEC - Observabilidad del pipeline.md`.
 
 ## 2.5 Suposiciones y dependencias
 
@@ -328,10 +402,10 @@ niveles 4, 5 y 6 no se toquen nunca: el ensamblador se detiene antes de llegar a
 | ID | Requisito | Verifica |
 | --- | --- | --- |
 | **RF-05** | Antes de cada llamada al modelo se ensambla el contexto por niveles y **se comprueba que cabe en el presupuesto** | `VER-05` |
-| **RF-06** | Si no cabe, se recorta siguiendo el **orden de recorte de §2.4**: condensaciones, después fichas y setups, después la escena anterior. Nunca truncando por el final ni partiendo un bloque | `VER-06` |
+| **RF-06** | Si no cabe, se recorta siguiendo el **orden de recorte de §2.4**, en dos vueltas: primero se reduce todo lo reducible, y solo después se eliminan bloques enteros. Nunca truncando por el final ni partiendo un bloque | `VER-06` |
 | **RF-07** | El contexto nunca incluye el texto completo de la obra. Solo la escena anterior entra en texto completo | `VER-07` |
 | **RF-08** | Cada agente recibe únicamente los niveles que le corresponden según `Docs/architecture.md` | — |
-| **RF-26** | **Si tras recortar los tres primeros bloques de §2.4 el contexto sigue sin caber, el trabajo falla en vez de generar.** El límite son **bloques, no niveles de `CLAUDE.md`**: el nivel `Recuperado` se parte en dos y sus dos mitades están a distinto lado de la frontera —fichas y setups en el bloque 2, que sí se recorta; registro de conocimiento en el bloque 4, que no—. Un recortador que itere por niveles se lleva el registro de conocimiento y deja `INV-03` sin datos. No se tocan los bloques 4.º, 5.º ni 6.º | `VER-06` |
+| **RF-26** | **Si tras agotar todas las formas reducidas de §2.4 y eliminar los tres primeros bloques el contexto sigue sin caber, el trabajo falla en vez de generar.** El límite llega más tarde que antes a propósito: con degradación se llega más lejos perdiendo menos. El límite son **bloques, no niveles de `CLAUDE.md`**: el nivel `Recuperado` se parte en dos y sus dos mitades están a distinto lado de la frontera —fichas y setups en el bloque 2, que sí se recorta; registro de conocimiento en el bloque 4, que no—. Un recortador que itere por niveles se lleva el registro de conocimiento y deja `INV-03` sin datos. No se tocan los bloques 4.º, 5.º, 6.º ni 7.º | `VER-06`, `VER-59` |
 
 ### Generación
 
@@ -639,4 +713,5 @@ Siguen abiertas:
 | 1 | 2026-09-21 | Primera versión. Absorbe la spec de orquestación, memoria y presupuesto conservando los identificadores `O-`, `M-`, `P-` |
 | 2 | 2026-09-21 | Pasa a ser **solo** la spec del backend: fuera el registro multi-spec. Se añade §2.2 con el proceso tomado de `Docs/`, y se documenta en §2.2.3 la contradicción entre `CLAUDE.md` y `Docs/architecture.md` sobre `mayor` y `menor` |
 | 3 | 2026-09-22 | Se cierran dos bloqueantes. **§2.4 fija el orden de recorte** por qué se pierde si falta, y `RF-26` añade que por debajo del nivel 3 se falla en vez de generar. **`Beat` y `ArcoNarrativo` entran en la v1** con su coste reconocido: el Escaletador pasa a tener que rellenarlos. `D4-6` ya lo había cerrado `SPEC-03` al poner `cambios_de_estado_vital` en el delta |
+| 5 | 2026-09-22 | **§2.4 reescrita por `SPEC-12`.** El recorte pasa a tener dos vueltas y cada bloque declara su forma reducida: recortar deja de ser elegir qué se pierde y pasa a ser elegir cuánto se conserva. Entra el bloque de problemas del intento anterior, se fija que ninguna forma reducida se lleva lo que lee una `bloqueante` de escena, se separan los tres números del presupuesto y se deja escrito que el orden se cambia por spec y nunca por configuración |
 | 4 | 2026-09-22 | **Se cierra `D4-9` entero**: `RF-27`…`RF-30` y el endpoint `POST /capitulos/{id}/cerrar` escriben la puerta de cierre de capítulo que `SPEC-04` había decidido. `RF-26` y §2.4 dicen ya que el orden de recorte opera sobre **bloques**, no sobre niveles. No quedan bloqueantes |
