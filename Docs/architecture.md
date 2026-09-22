@@ -412,6 +412,70 @@ caso en cada verificador:
 
 Todo hallazgo cita su invariante por identificador (`INV-07`), nunca por descripción.
 
+### Cuando algo falla
+
+Hasta aquí el camino feliz. Esto es lo que pasa cuando no lo es, y es tan arquitectura como
+lo anterior: `A-05` eligió una tabla de trabajos en SQLite frente a `BackgroundTasks`
+porque *"un reinicio pierde el trabajo en silencio"*, y esa decisión no vale nada si después
+no se dice qué pasa con el trabajo que el reinicio interrumpió.
+
+**El fallo vive en el trabajo, no en la escena.** Si la llamada al modelo falla, la escena
+se queda en `planificada` y es el trabajo el que pasa a un estado de fallo.
+`estado_de_escena` no gana ningún valor nuevo y la tabla de transiciones de arriba no gana
+ninguna fila: un fallo no es una transición del dominio, es un intento que no llegó a
+producir nada. Por eso **la tabla de trabajos no es dominio** y vive en
+`commons/trabajos/`: no existiría si la novela se escribiera a mano.
+
+La contrapartida hay que decirla, porque `RF-23` de `SPEC-01` promete que una escena se
+muestra siempre con su estado: **el frontend saca el motivo del fallo del trabajo, no de la
+escena.** Una escena en `planificada` con tres trabajos fallidos detrás se pinta como
+`planificada`, y lo que explica por qué no avanza está en el trabajo. Si la interfaz no lo
+enseña junto a la escena, el usuario ve una escena quieta sin motivo, que es el mismo fallo
+silencioso que las puertas evitan.
+
+#### Qué se reintenta y qué no
+
+**Solo los fallos de transporte, y los reintenta el worker.** Un timeout, un corte de
+conexión o un límite de tasa son sucesos que se resuelven repitiendo. Un delta fuera de
+esquema, una respuesta sin texto o un valor fuera de una enumeración no: repetirlos repite
+el error y gasta presupuesto en volver a fallar igual. Esos se marcan fallidos y los ve una
+persona.
+
+Se reintenta **el trabajo entero, desde el ensamblado del contexto**, no solo la llamada.
+Entre un intento y el siguiente el estado del mundo pudo cambiar, y reutilizar el contexto
+viejo es generar contra un mundo que ya no existe.
+
+**El tope de reintentos es provisional y se declara como tal.** Su número no está medido
+—`O-3` de `SPEC-01` lo hace depender de observar la tasa real de fallos transitorios, y no
+hay sistema que observar— así que el valor se fija en el plan de implementación y lleva su
+marca de caducidad. Lo que sí está decidido aquí es que el tope **existe** y que es
+provisional declarado: un número sin medir que no se declara es un número inventado con
+aspecto de medido. **Caduca con:** `backend/`.
+
+#### El trabajo que nadie terminó
+
+Un trabajo que un worker tomó y no terminó solo se distingue de uno en curso **por el
+tiempo**, así que la tabla registra cuándo se tomó y a partir de cierto margen se considera
+abandonado. Ese margen es un número sin medir, como el tope, y se fija igual.
+
+**Un trabajo abandonado se marca fallido y no se reintenta solo.** Pudo haber llamado al
+modelo y haber cobrado antes de morir, y relanzarlo a ciegas paga dos veces sin saberlo.
+Lo relanza una persona, viendo qué pasó. Por eso tampoco cuenta contra el tope de
+reintentos: no es un intento que falló, es un intento cuyo resultado no se conoce.
+
+#### El delta se aplica entero o no se aplica
+
+**La aplicación del delta al estado del mundo es atómica.** Es arquitectura y no detalle de
+implementación, por esto: `INV-05` exige que el delta esté aplicado antes de generar la
+escena siguiente, y un delta a medias es un estado que la invariante **no sabe
+clasificar** —lo dará por aplicado o por no aplicado según qué parte se mire—. La puerta
+que corta la propagación del error dejaría de cortarla justo en el caso en que más falta
+hace.
+
+Es además la única categoría de fallo de la que no se sale reintentando. Los otros tres
+detienen el trabajo y dejan el estado intacto; este lo corrompe, y a partir de ahí todo lo
+que se genere encima hereda la corrupción sin que nada avise.
+
 ### El harness — validadores que no son tests de una feature
 
 No todo validador de `Docs/verification.md` es un test de código de producción. El criterio
