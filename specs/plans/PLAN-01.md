@@ -99,7 +99,7 @@ Lo que **no** está forzado: el orden entre `features/lectura/`, `features/revis
 | **C4** | Puertas | `features/verificacion/` + `tests/` | El caso negativo de **cada** `INV-xx` que esta feature ejecuta | `VER-10`, `VER-11`, `VER-12`, `VER-22` | Puesto 7 de `Docs/verification.md`, y ya construible. Va después de `VER-38` (A2), que es quien garantiza que las severidades sobre las que opera son correctas | Una escena generada pasa o no pasa las puertas |
 | **C5** | Consolidación | `features/consolidacion/` + `tests/` | Un delta que falla a mitad **no deja el estado a medias** | `VER-09`, `VER-10`, `VER-42` | `INV-05`: sin esto la segunda escena de la obra no se puede generar. Es donde se corta la propagación del error | Una obra de dos escenas |
 
-## Fase D — Cierre
+## Fase D — Cierre · **terminada el 2026-09-22**
 
 | # | Paso | Ficheros | La prueba que falla primero | Pasa a implementable | Por qué va aquí | Queda funcionando |
 | --- | --- | --- | --- | --- | --- | --- |

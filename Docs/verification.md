@@ -329,10 +329,10 @@ ver la nota bajo la tabla de nivel artefacto.
 | **Validadores definidos** | **59** (`VER-01`…`VER-60`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
-| **Con su caso negativo escrito** | 11 — en las fases A, B y C de `PLAN-01` |
-| **Desbloqueados por las fases A, B y C** | 20 |
+| **Con su caso negativo escrito** | 19 — en las cuatro fases de `PLAN-01` |
+| **Desbloqueados por `PLAN-01` completo** | 28 |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **Bloqueados por falta de código de producción** | 26 |
+| **Bloqueados por falta de código de producción** | 18 |
 | **Implementables hoy y sin implementar** | 2 — `VER-56` y `VER-59`, que solo necesitan los documentos |
 | **Puntos ciegos asumidos** | **14 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` y `PC-14` quemado |
 
@@ -344,8 +344,7 @@ evitar.
 
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
 más cobertura.** Este documento ha pasado de 37 filas a 59 y la cifra que mide
-fiabilidad sigue siendo cero. Veintiséis esperan a `backend/`, `frontend/` o
-CI, seis esperan una medición o una decisión, y **dos —`VER-56` y `VER-59`— no esperan a nada**: solo
+fiabilidad sigue siendo cero. Dieciocho esperan a `frontend/`, a CI o a una ejecución real, seis esperan una medición o una decisión, y **dos —`VER-56` y `VER-59`— no esperan a nada**: solo
 necesitan los documentos, que ya existen.
 
 **Cero sigue siendo cero, y conviene no redondearlo hacia arriba.** La Fase A de `PLAN-01`
@@ -726,7 +725,14 @@ tapa nada nuevo no va primero por ser barato.
       — **cerrada por `SPEC-03`**: son identificadores.
 - [x] ~~Reclasificar `INV-03` de `juez_llm` a `regla` con juez de desempate~~
       — **cerrada por `SPEC-04` C-6**. Conserva la severidad `bloqueante`.
-- [ ] **Si la condición de una marca `Caduca con:` puede dejar de ser una ruta.** Una ruta
+- [ ] **Si la condición de una marca `Caduca con:` puede dejar de ser una ruta.**
+      **Dispararon por tercera vez en `PLAN-01` D2**, al crear
+      `features/orquestacion/`, y las seis afirmaciones de medidas **siguen siendo
+      ciertas**: hay máquina de estados y no hay ni una llamada al modelo.
+      **No se han vuelto a reapuntar a propósito**: reapuntar por cuarta vez sería
+      seguir fingiendo que una ruta puede expresar lo que no puede. Quedan apuntando a
+      `features/orquestacion/` y **caducadas a sabiendas** hasta que esta decisión se
+      cierre. Una ruta
       no puede expresar *"existe el dato"*, y siempre hay una carpeta antes que la primera
       medida: las marcas de medidas caducaron dos veces antes de tiempo, en `PLAN-01` A1 y
       B2. La salida sería una condición sobre datos —*"cuando exista una traza con
