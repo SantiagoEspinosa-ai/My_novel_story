@@ -1,7 +1,8 @@
 ---
 id: REV-03
 revisa: "specs/SPEC - Backend.md § 2.4 — Orden de recorte"
-estado: borrador
+estado: revisada
+resultado: "A, B, C y G a SPEC-12. E y H a SPEC-11. D, F e I decididos en contra o ya cubiertos"
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 ---
