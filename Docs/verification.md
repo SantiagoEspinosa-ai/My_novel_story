@@ -78,29 +78,26 @@ ver la nota bajo la tabla de nivel artefacto.
 | --- | --- |
 | **Validadores definidos** | **45** (`VER-01`…`VER-46`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
-| **Validadores implementados** | **5** — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
-| **De ellos, con caso negativo que demuestra que fallan** | **5 de 5** |
+| **Validadores implementados** | **0** |
+| **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
 | **Bloqueados por falta de código de producción** | 34 |
 | **Puntos ciegos asumidos a sabiendas** | 8 |
 
-Los cinco implementados viven en `harness/documentos/` y se ejecutan con
-`python -m pytest harness -q`. Son los únicos que se podían escribir sin que
-exista `backend/`: comparan documentos entre sí.
+**Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
+más cobertura.** Este documento ha pasado de 37 filas a 45 y la cifra que mide
+fiabilidad es la tercera, no la primera. Treinta y cuatro esperan a `backend/`,
+`frontend/` o CI, y seis esperan una medición o una decisión.
 
-**Cuarenta de cuarenta y cinco siguen sin proteger nada, y conviene decirlo en
-voz alta: una lista más larga no es más cobertura.** Este documento ha pasado de
-37 filas a 45 y la cifra que mide fiabilidad es la tercera, no la primera. Los
-treinta y cuatro bloqueados esperan a `backend/`, `frontend/` o CI.
+Cinco se escribieron de verdad, con su caso negativo, para comprobar si el
+documento aguantaba al llevarlo a código, y se retiraron después: la entrega de
+esta fase es este documento y la spec del backend. **Lo que se aprendió
+escribiéndolos está recogido más abajo**, porque es lo único que no se
+reconstruye releyendo.
 
 **`VER-45` y `VER-46` existen porque eran las dos únicas clases de defecto con
 historial real en este repositorio** —setenta y tres referencias rotas tras dos
-renombrados, y el diagrama de ciclo de vida en `PascalCase`— y cuarenta y tres
-validadores no cubrían ninguna de las dos. Al implementarlos encontraron dos
-defectos vivos el primer día: una referencia a la carpeta de revisiones en su
-ubicación antigua, que quedó colgando al moverla y ya está corregida, y el
-diagrama de `SPEC-01`, que sigue escribiendo los estados en PascalCase porque su
-corrección depende de una decisión pendiente y está registrada como fallo
-esperado en el harness.
+renombrados, y el diagrama de ciclo de vida con los estados en PascalCase— y
+cuarenta y tres validadores no cubrían ninguna de las dos.
 
 ## Semilla de contexto
 
@@ -292,9 +289,68 @@ que nunca ha fallado en las pruebas no está verificada, solo declarada.
 > editar este documento:** los acentos graves significan *"este es el literal"*.
 > Una ruta rota o un literal mal escrito **no se citan entre acentos graves**,
 > porque entonces el validador los lee como una cita y los marca. Para hablar de
-> una escritura equivocada se usa cursiva o prosa. Los ejemplos concretos viven
-> en `harness/fixtures/`, que está fuera del alcance de los dos validadores
-> precisamente por esto.
+> una escritura equivocada se usa cursiva o prosa. Los ejemplos concretos van en
+> los ficheros de caso negativo del harness, que quedan fuera del alcance de los
+> dos validadores precisamente por esto. Ver "Lo que se aprendió al implementar".
+
+---
+
+## Lo que se aprendió al implementar
+
+Cinco validadores —`VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46`— se
+escribieron de verdad, con su caso negativo, y después se retiraron: la entrega
+de esta fase es este documento y la spec, no el harness. **Lo que aprendieron sí
+se queda**, porque es lo único de todo esto que no se puede reconstruir
+leyendo.
+
+### La convención de los acentos graves
+
+Lo más práctico que salió, y afecta a cualquiera que edite este documento.
+
+Al añadir las filas de caso negativo de `VER-45` y `VER-46`, **los dos
+validadores fallaron contra la prosa de este mismo documento**: los ejemplos
+rotos estaban citados entre acentos graves, y el acento grave significa *"este es
+el literal"*.
+
+No tiene arreglo técnico: **un validador que comprueba literales citados no puede
+distinguir una cita de una demostración.** De ahí la convención —un literal
+equivocado se escribe en cursiva o en prosa, nunca entre acentos graves— y de ahí
+que los ejemplos concretos vivan en los ficheros de caso negativo, fuera del
+alcance de los validadores. Conviene saberlo porque **el fallo aparece en un sitio
+que no es el que se ha tocado**.
+
+### `VER-45` y `VER-46` cazaron dos defectos reales en su primera ejecución
+
+Se abrieron porque eran las dos únicas clases de defecto con historial en este
+repositorio. Encontraron dos el primer día:
+
+| Validador | Qué encontró | Estado |
+| --- | --- | --- |
+| `VER-45` | Una referencia a la carpeta de revisiones en su ubicación antigua, que quedó colgando al moverla de `specs/` a `Docs/` en el commit anterior | **Corregido**. Es exactamente la clase de defecto que el validador existe para cazar, y ocurrió otra vez mientras se escribía |
+| `VER-46` | El diagrama de §2.2.1 de `SPEC-01`, que sigue escribiendo los estados en PascalCase | **Abierto**: es `D1-2` de `REV-01` y su corrección va junto con la decisión `C-1`, así que no tocaba arreglarlo |
+
+### Lo que el documento no aguantó al llevarlo a código
+
+Quince hallazgos. Los que siguen abiertos son decisiones pendientes sobre este
+documento, no sobre el código.
+
+| # | Hallazgo | Estado |
+| --- | --- | --- |
+| F-1 | **`VER-38` no puede contrastar la severidad**, que es un tercio de su enunciado: solo existe en `Docs/definitions.md`, no hay segunda fuente. Se implementó cruzando nivel y tipo, y comprobando la severidad contra su propio vocabulario | Abierto |
+| F-2 | El "Dónde vive" de `VER-01` y `VER-38` apunta a `harness/esquema/`, que no es ninguna de las carpetas de la estructura del harness | Abierto |
+| F-3 | **`VER-01` no se puede implementar ni a medias**: compara esquemas Pydantic con fichas de clase y sin `backend/` falta la mitad de la comparación | Abierto |
+| F-4 | No había fila para "las rutas citadas existen" | **Cerrado**: es `VER-45` |
+| F-5 | No había fila para "los literales citados son los de la tabla" | **Cerrado**: es `VER-46` |
+| F-6 | **`VER-28` no dice de qué documento sale la máquina de estados.** Está en la tabla de `Docs/architecture.md` y en el diagrama de `Docs/domain-knowledge.md`; se eligió la tabla, y la eligió el implementador | Abierto |
+| F-7 | **`VER-23` no dice contra qué compara.** Se eligió el commit anterior, con un agujero conocido: un borrado en dos commits ya no se ve | Abierto |
+| F-8 | **`VER-23` se salta en vez de fallar cuando no hay historial**, así que puede aparecer en verde sin haber comprobado nada. El documento no dice qué hacer | Abierto |
+| F-9 | No se pudo escribir la comprobación de que el nivel del agente cuadre con el de la invariante: `Docs/architecture.md` no declara el nivel de cada agente, y decidirlo es de dominio. Sigue asignando invariantes de obra al Verificador de reglas | Abierto |
+| F-10 | **Los datos normativos en prosa se rompen al editar.** La skill `harness-invariantes` afirma el reparto de tipos en letra; es parseable y cualquier reescritura del párrafo lo rompe | Abierto |
+| F-11 | **El escape de guion bajo de las tablas markdown es una trampa**: en una tabla y en el texto son cadenas distintas para la misma cosa, y todo comparador tiene que normalizarlo antes | Abierto |
+| F-12 | **`VER-44` estaba quemado y casi se reutiliza.** `REV-02` se lo asignó al validador de ratio de compresión que luego se rechazó. **`VER-23` no lo habría cazado**: su punto ciego es que ve el conjunto de identificadores, no su significado | Cerrado por el número elegido |
+| F-13 | **La columna "Dónde vive" es un plan, no una referencia**, y el documento no lo dice en ninguna parte. Un lector razonable toma esas rutas por existentes | Abierto |
+| F-14 | **`VER-46` no ve los valores que son palabras comunes.** Si alguien escribe la severidad con mayúscula inicial en un documento, no lo detecta | Abierto, y consta como punto ciego de la fila |
+| F-15 | **Los validadores prohíben citar el defecto** (ver arriba) | Cerrado por convención |
 
 ---
 

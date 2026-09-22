@@ -13,11 +13,10 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Definiciones del dominio | `Docs/definitions.md` | Referencia normativa: los cinco planos, clases con atributos, tabla de relaciones, vocabularios controlados e invariantes `INV-01`…`INV-16` |
 | Árbol y diagramas | `Docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
-| Plan de verificación del sistema | `Docs/verification.md` | Cómo se prueba que el código hace lo que dice: 45 validadores `VER-01`…`VER-46`, cada uno con su **punto ciego** declarado, más los 8 puntos ciegos asumidos a sabiendas. Cinco implementados en `harness/`; el resto espera a `backend/` |
+| Plan de verificación del sistema | `Docs/verification.md` | Cómo se prueba que el código hace lo que dice: 45 validadores `VER-01`…`VER-46`, cada uno con su **punto ciego** declarado, más los 8 puntos ciegos asumidos y lo que se aprendió al escribir cinco de ellos. Ninguno implementado hoy |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las siete skills instaladas. Ver la sección "Skills" más abajo |
 | Specs | `specs/` | Un fichero por spec, sin carpetas anidadas. Hoy: `SPEC - Backend.md` = `SPEC-01`, backend del harness |
 | Revisiones de documentos | `Docs/revisiones/` | Un `REV-NN.md` por documento revisado. Evalúa un documento **existente**; una spec dice qué va a cambiar. Por eso cuelga de `Docs/` y no de `specs/` |
-| Harness de verificación | `harness/` | El código que ejecuta los validadores. `documentos/` los que solo leen `Docs/` y se pueden correr hoy; `invariantes/` los de dominio, que esperan a `backend/`; `fixtures/` los casos rotos a propósito. Lo que se rompió al implementar está en `harness/HALLAZGOS-AL-IMPLEMENTAR.md` |
 
 > Las rutas de esta tabla son literales del repositorio: se copian tal cual, con su extensión. Si se renombra un documento, hay que actualizar esta tabla, el enlace en `CLAUDE.md` y todas las referencias en el mismo commit. Pasó lo contrario al renombrar `defintions` → `definitions.md` y `SRS.md` → `SPEC - Backend.md`: quedaron setenta referencias rotas.
 
@@ -123,6 +122,7 @@ Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuent
 
 - `backend/` — servicio FastAPI.
 - `frontend/` — aplicación React.
+- `harness/` — ejecución de los validadores de `Docs/verification.md` y sus fixtures. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `Docs/verification.md` § "Lo que se aprendió al implementar".
 - `Docs/decisions/` — decisiones de arquitectura fechadas.
 - `specs/plans/` — un `PLAN-NN.md` por spec aprobada. Nace con el primer plan.
 
