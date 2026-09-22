@@ -42,11 +42,11 @@ pasos 15,7 %, no reconocer condiciones de terminación 12,4 %, desobedecer la
 especificación 11,8 %, pérdida de historial 2,8 %, actuar fuera de rol 1,5 %.
 Sirven para ordenar por dónde empezar a mirar, no para afirmar nada sobre esta
 implementación: **aquí no se ha medido ninguna**, y no las hay porque no hay
-sistema que medir. **Caduca con:** `backend/app/commons/modelo/`.
+sistema que medir. **Caduca con:** `backend/app/features/orquestacion/`.
 
 ConStory-Bench mide **densidad de errores por diez mil palabras**. Es una métrica
 que no tenemos y que conviene adoptar cuando haya texto: sin denominador, contar
-hallazgos no dice si la obra mejora o solo se alarga. **Caduca con:** `backend/app/commons/modelo/`, que es lo que produce texto.
+hallazgos no dice si la obra mejora o solo se alarga. **Caduca con:** `backend/app/features/orquestacion/`, que es lo que produce texto.
 
 ## Cómo leer la tabla
 

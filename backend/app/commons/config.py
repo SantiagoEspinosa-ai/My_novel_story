@@ -20,12 +20,12 @@ inventado que se presenta como medido es peor que no tener el dato.
 # sistema que observar. Tres intentos con espera creciente: lo que sobrevive a
 # eso no es transitorio, es el proveedor caido. Seguir insistiendo cuesta
 # llamadas pagadas y, si es el Escritor, bloquea el sistema entero.
-# Caduca con: backend/app/commons/modelo/
+# Caduca con: backend/app/features/orquestacion/
 TOPE_REINTENTOS_TRANSPORTE = 3
 
 # Provisional: elegido por razonamiento, no medido. Acota `MF-25` -el techo de
 # contexto retenido por un trabajo que no vuelve- pero no lo previene: subirlo
 # alarga esa parada. Corto cuesta latencia y no correccion, porque el worker
 # comprueba su estado antes de escribir.
-# Caduca con: backend/app/commons/modelo/
+# Caduca con: backend/app/features/orquestacion/
 MARGEN_ABANDONO_SEGUNDOS = 15 * 60

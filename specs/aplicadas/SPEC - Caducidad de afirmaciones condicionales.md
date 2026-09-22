@@ -138,6 +138,15 @@ el ejemplo de su propia convención. **La excepción no se generaliza a otros va
 `Docs/domain-knowledge.md` —así fue como se encontró *Juez LLM* escrito a mano—. Excluir los
 bloques de código en los tres los dejaría ciegos justo donde miran.
 
+**Y el techo de la convención, encontrado en el paso B2.** Las seis marcas de medidas se
+reapuntaron a `commons/modelo/`… y volvieron a caducar antes de tiempo al crearlo, porque un
+cliente sin llamadas reales tampoco produce mediciones. **Una condición expresable como ruta
+no puede expresar "existe el dato"**: siempre habrá una carpeta antes que la primera medida.
+Se reapuntaron a `backend/app/features/orquestacion/`, que es lo primero capaz de ejecutar
+una generación entera, y es el proxy más ajustado que la convención admite — no el exacto.
+Queda dicho para que nadie lo tome por exacto: **la marca avisa cuando el instrumento puede
+existir, no cuando el dato existe.**
+
 ## Preguntas que hay que responder al aprobar
 
 | # | Pregunta | Propuesta |

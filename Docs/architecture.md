@@ -322,7 +322,7 @@ implícita cuenta—, así que necesita esa escena y no la obra entera.
 
 El reparto numérico de tokens entre agentes **no está fijado y no se inventa aquí**. Se
 fija cuando haya medidas reales de cuánto consume cada uno; hasta entonces cada agente usa
-el presupuesto por nivel de `CLAUDE.md`. **Caduca con:** `backend/app/commons/modelo/`, que es lo que produce las medidas.
+el presupuesto por nivel de `CLAUDE.md`. **Caduca con:** `backend/app/features/orquestacion/`, que es lo que produce las medidas.
 
 **La regla de recorte no se reenuncia aquí: vive en `CLAUDE.md` § "Límite de contexto" y
 este documento la usa, no la redefine.** La precedencia de `AGENTS.md` ya dice que en lo
@@ -565,7 +565,7 @@ viejo es generar contra un mundo que ya no existe.
 hay sistema que observar— así que el valor se fija en el plan de implementación y lleva su
 marca de caducidad. Lo que sí está decidido aquí es que el tope **existe** y que es
 provisional declarado: un número sin medir que no se declara es un número inventado con
-aspecto de medido. **Caduca con:** `backend/app/commons/modelo/`, que es donde se observará la tasa real de fallos transitorios que `O-3` espera.
+aspecto de medido. **Caduca con:** `backend/app/features/orquestacion/`, que es donde se observará la tasa real de fallos transitorios que `O-3` espera.
 
 #### El trabajo que nadie terminó
 
@@ -615,7 +615,7 @@ no arranca y pasa a **`detenido_por_presupuesto`**, que es un estado más de los
 es ordenada —se escribe el estado y se deja constancia— y **no se pierde lo hecho**.
 
 Los dos números son provisionales y se fijan en el plan, como el tope de reintentos.
-**Caduca con:** `backend/app/commons/modelo/`.
+**Caduca con:** `backend/app/features/orquestacion/`.
 
 #### El interbloqueo del presupuesto
 
