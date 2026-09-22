@@ -97,7 +97,7 @@ se sostiene.
 ## Migración
 
 Ninguna hoy. Con datos, `capitulo` gana una columna con valor por defecto `abierto`, que
-es la migración más barata que existe.
+es la migración más barata que existe. **Caduca con:** `backend/app/commons/db/`.
 
 ---
 

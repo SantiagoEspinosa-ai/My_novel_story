@@ -77,6 +77,8 @@ sola llamada: texto y delta. Lo único que cambia es dónde se guarda cada dato.
 
 ### Migración
 
+**Caduca con:** `backend/app/commons/db/`.
+
 Ninguna hoy: no hay esquema ni base de datos. Cuando la haya, `cambio_de_valor`
 es una columna obligatoria en `delta_de_escena` y `pov_usado` dos columnas en
 `borrador`, y como son obligatorias haría falta rellenar las filas existentes

@@ -272,7 +272,7 @@ escena y no la obra entera.
 
 El reparto numérico de tokens entre agentes **no está fijado y no se inventa aquí**. Se
 fija cuando haya medidas reales de cuánto consume cada uno; hasta entonces cada agente usa
-el presupuesto por nivel de `CLAUDE.md`.
+el presupuesto por nivel de `CLAUDE.md`. **Caduca con:** `backend/`.
 
 **La regla de recorte no se reenuncia aquí: vive en `CLAUDE.md` § "Límite de contexto" y
 este documento la usa, no la redefine.** La precedencia de `AGENTS.md` ya dice que en lo

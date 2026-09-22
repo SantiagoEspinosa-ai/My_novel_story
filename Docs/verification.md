@@ -42,11 +42,11 @@ pasos 15,7 %, no reconocer condiciones de terminación 12,4 %, desobedecer la
 especificación 11,8 %, pérdida de historial 2,8 %, actuar fuera de rol 1,5 %.
 Sirven para ordenar por dónde empezar a mirar, no para afirmar nada sobre esta
 implementación: **aquí no se ha medido ninguna**, y no las hay porque no hay
-sistema que medir.
+sistema que medir. **Caduca con:** `backend/`.
 
 ConStory-Bench mide **densidad de errores por diez mil palabras**. Es una métrica
 que no tenemos y que conviene adoptar cuando haya texto: sin denominador, contar
-hallazgos no dice si la obra mejora o solo se alarga.
+hallazgos no dice si la obra mejora o solo se alarga. **Caduca con:** `backend/`.
 
 ## Cómo leer la tabla
 
@@ -296,17 +296,22 @@ ver la nota bajo la tabla de nivel artefacto.
 | | |
 | --- | --- |
 | **Modos de fallo catalogados** | **24** (`MF-01`…`MF-24`), ninguno sin estado y dos sin validador por construcción |
-| **Validadores definidos** | **54** (`VER-01`…`VER-55`, con `VER-44` quemado: ver `PC-4`) |
+| **Validadores definidos** | **55** (`VER-01`…`VER-56`, con `VER-44` quemado: ver `PC-4`) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
 | **Bloqueados por falta de código de producción** | 43 |
+| **Implementables hoy y sin implementar** | 1 — `VER-56`, que solo necesita los documentos y el repositorio |
 | **Puntos ciegos asumidos** | **11 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` |
 
+**Caduca con:** `backend/` — los recuentos de esta tabla y los dos párrafos siguientes
+dejan de ser ciertos el día que exista esa carpeta.
+
 **Cero implementados, y conviene decirlo en voz alta: una lista más larga no es
-más cobertura.** Este documento ha pasado de 37 filas a 54 y la cifra que mide
+más cobertura.** Este documento ha pasado de 37 filas a 55 y la cifra que mide
 fiabilidad sigue siendo cero. Cuarenta y tres esperan a `backend/`, `frontend/` o
-CI, y seis esperan una medición o una decisión.
+CI, seis esperan una medición o una decisión, y **una —`VER-56`— no espera a nada**: solo
+necesita los documentos y el repositorio, que ya existen.
 
 Lo que sí ha cambiado son dos cosas. **Ya no hay ningún modo de fallo sin
 estado**: antes había nueve que no estaban ni cubiertos ni reconocidos, que es el
@@ -379,6 +384,7 @@ implantación".
 | **VER-43** | Una escena no supera un número acotado de ciclos de regeneración | T | unit testing | Con un tope configurado, la escena número `tope+1` se detiene y se marca en vez de volver a generarse. **El valor del tope sale de medir, no se fija aquí** | Cuenta **ciclos**, no **diagnostica la causa**: detecta que gira, no por qué | `features/orquestacion/tests/` |
 | **VER-45** | Toda ruta citada en un documento **existe tal cual está escrita, o encaja en la estructura declarada de `Docs/architecture.md`** | A | static analysis | Se recorren las rutas entre acentos graves de todos los documentos del proyecto. Cada una existe en disco **o** corresponde a una carpeta del árbol de `Docs/architecture.md`, resuelta contra su raíz declarada `backend/app/`. Cero rutas que no cumplan ninguna de las dos. Se eximen solo las ignoradas por git | Ve **existencia y forma**, no **corrección**: una ruta que existe, o que encaja en el árbol, pero que no es donde vive de verdad ese test, pasa igual. Y sigue sin comprobar que el documento citado diga lo que el citante cree | `harness/documentos/` |
 | **VER-46** | Todo literal de enumeración citado en un documento se escribe como en la tabla de `Docs/definitions.md` | A | static analysis | Se normalizan los tokens con forma de identificador —minúsculas, sin tildes, sin guiones bajos— y se comparan con los valores de la tabla: si dos normalizan igual y se escriben distinto, es una variante | No ve los valores que son **palabras sueltas y comunes** (`obra`, `escena`, `regla`, `vivo`): comprobarlas daría ruido sin señal, así que `nivel_de_evaluacion`, `severidad` y `tipo_de_verificador` quedan fuera de alcance | `harness/documentos/` |
+| **VER-56** | Ninguna afirmación marcada con una condición de caducidad tiene su condición ya cumplida | A | static analysis | Se recorren las marcas `Caduca con:` de todos los documentos. Para cada una, la ruta **no** existe en disco, o la sección citada sigue diciendo lo que la marca supone. Cero marcas con su condición cumplida. **Falla el build**: un aviso que nadie mira es el mismo problema con otra cara | **Ve la condición, no el argumento.** Que `backend/` no exista no garantiza que la afirmación siga siendo cierta por el motivo que declara. Y **no detecta una afirmación condicional sin marcar**, que sigue siendo lectura humana: es `PC-13` | `harness/documentos/` |
 | **VER-47** | La escena entregada es la que la escaleta pidió | T | contract testing | Tres comparaciones, las tres exactas: **(a)** toda entidad que el delta toca está entre los `personajes_presentes` declarados; **(b)** el `cambio_de_valor` del delta es el que la escaleta previó, par `{eje, signo}` contra par; **(c)** el `pov_usado` del borrador coincide en `persona` y `tiempo_verbal` con el `pov` asignado | Compara **lo que el agente declara**, no lo que el texto hace. Un Escritor que declare el POV correcto y escriba otro pasa: para eso está `VER-48` | `features/generacion/tests/` |
 | **VER-53** | Todo hecho que un resumen cita fue establecido o revelado en la escena que resume | T | contract testing | `Resumen.hechos_clave` es una lista de identificadores de `HechoCanonico`: la intersección con los que la escena estableció o reveló tiene que ser total | Ve **identificadores citados**, no un resumen que **parafrasee** un hecho sin citarlo. Ese punto ciego es distinto del léxico de `VER-39`, que es lo que permitió admitirlo | `features/consolidacion/tests/` |
 | **VER-54** | Los accesos de un `Lugar` no cambian sin que un `HechoCanonico` lo establezca | T | integration testing | `Lugar.accesos_y_salidas` es una lista de referencias: cualquier diferencia entre dos momentos `t` exige un `HechoCanonico` con su `escena_de_establecimiento` | Ve el **conjunto declarado**, no el texto: una puerta que la prosa describe y que nadie declaró sigue sin verse | `features/consolidacion/tests/` |
@@ -457,8 +463,8 @@ dejaría pasar.
 
 | # | Punto ciego asumido | Fallo concreto que se cuela | Por qué se asume |
 | --- | --- | --- | --- |
-| **PC-1** | **Ninguna comprobación que no ejecute el sistema ve la ejecución.** Doce validadores lo comparten —nueve de análisis estático, `VER-28` de *model checking* y `VER-21` y `VER-31` de integración en CI—: `VER-01`, `VER-12`, `VER-13`, `VER-14`, `VER-15`, `VER-16`, `VER-17`, `VER-21`, `VER-23`, `VER-28`, `VER-31`, `VER-38` | Un script de mantenimiento hace `UPDATE escena SET estado='consolidada'` y salta la máquina de estados entera | Taparlo pide auditoría en tiempo de ejecución sobre la base. No es caro, pero no hay base todavía |
-| **PC-2** | **Nadie comprueba que quien acepta una escena sea una persona.** `VER-29` solo comprueba que el worker no puede | Un script llama a `POST /escenas/{id}/aceptar` en bucle y consolida la obra entera sin que nadie la lea | `SPEC-01` §2.5 excluye la autenticación de la v1. Sin identidad no hay nada que comprobar |
+| **PC-1** | **Ninguna comprobación que no ejecute el sistema ve la ejecución.** Doce validadores lo comparten —nueve de análisis estático, `VER-28` de *model checking* y `VER-21` y `VER-31` de integración en CI—: `VER-01`, `VER-12`, `VER-13`, `VER-14`, `VER-15`, `VER-16`, `VER-17`, `VER-21`, `VER-23`, `VER-28`, `VER-31`, `VER-38` | Un script de mantenimiento hace `UPDATE escena SET estado='consolidada'` y salta la máquina de estados entera | Taparlo pide auditoría en tiempo de ejecución sobre la base. No es caro, pero no hay base todavía. **Caduca con:** `backend/app/commons/db/` |
+| **PC-2** | **Nadie comprueba que quien acepta una escena sea una persona.** `VER-29` solo comprueba que el worker no puede | Un script llama a `POST /escenas/{id}/aceptar` en bucle y consolida la obra entera sin que nadie la lea | `SPEC-01` §2.5 excluye la autenticación de la v1. Sin identidad no hay nada que comprobar. **Caduca con:** `SPEC-01` §2.5 |
 | **PC-3** | **La fiabilidad del Juez no está medida**, y `VER-26` en verde significa "se midió", no "es fiable" | Tras `SPEC-04` **ninguna invariante `bloqueante` es de tipo `juez_llm`**: la única que queda del Juez es `INV-10`, de severidad `mayor`. El Juez ya no detiene una escena por sí solo | **Encogido dos veces, no cerrado.** `SPEC-03` hizo escribible la parte determinista de `INV-03`; `SPEC-04` la reclasificó a `regla` y dejó al Juez como desempate. Siguen abiertas dos vías por las que un modelo sin fiabilidad medida decide: **(a)** el desempate de `INV-03` es una decisión abierta, y si el veredicto del Juez cuenta, sigue deteniendo escenas `bloqueante`; **(b)** `SPEC-04` le dio una consecuencia nueva a `mayor`, así que `INV-10` —del Juez— ahora **bloquea el cierre de capítulo**, que es una puerta humana. Esta segunda vía no existía antes: parte del punto ciego encogió y otra parte se movió una puerta más arriba. Cierra cuando `VER-26` y la medida de estabilidad den un número |
 | **PC-4** | **Los resúmenes pueden crecer hasta reconstruir la obra.** Se propuso un validador de ratio de compresión —al que `REV-02` llegó a dar el número **`VER-44`**— y **se rechazó por la Regla 2**: su punto ciego, mide longitud y no calidad, ya lo tienen seis validadores. **`VER-44` queda quemado**: el identificador está publicado y no se reutiliza | El Resumidor devuelve resúmenes casi tan largos como la escena. `VER-07` está en verde porque no hay texto de escena en el contexto, y el contexto lleva la obra entera de todos modos | Se asume hasta encontrar una comprobación con un punto ciego propio |
 | **PC-5** | **`VER-39` compara léxico, no sentido.** Estrecha `BC-4` —que nada contrasta el delta con el texto— pero **no lo cierra**, y es fácil darlo por resuelto | El delta dice que Marta coge el cuchillo y en el texto lo coge Luis. Los dos nombres están mencionados, así que `VER-39` pasa. El hueco de `BC-4` sigue abierto para todo delta que se equivoque sobre alguien **sí** mencionado | La comprobación semántica exige un juez, y un juez sin fiabilidad medida no mejora esto |
@@ -592,6 +598,7 @@ repositorio. Encontraron dos el primer día:
 | `VER-45` | Una referencia a la carpeta de revisiones en su ubicación antigua, que quedó colgando al moverla de `specs/` a `Docs/` en el commit anterior | **Corregido**. Es exactamente la clase de defecto que el validador existe para cazar, y ocurrió otra vez mientras se escribía |
 | `VER-45` | Una ruta de la columna "Dónde vive" que no corresponde a ninguna carpeta del árbol de `Docs/architecture.md` | Falla: no existe en disco y tampoco encaja en la estructura, que es justo el hueco por el que pasaban las rutas mal escritas |
 | `VER-46` | El diagrama de §2.2.1 de `SPEC-01`, que sigue escribiendo los estados en PascalCase | **Abierto**: es `D1-2` de `REV-01` y su corrección va junto con la decisión `C-1`, así que no tocaba arreglarlo |
+| `VER-56` | Se crea `backend/` con una afirmación marcada `Caduca con:` `backend/` todavía en pie | Falla: la condición que sostenía la afirmación ya se cumplió |
 
 ### Lo que el documento no aguantó al llevarlo a código
 
