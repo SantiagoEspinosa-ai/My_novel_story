@@ -242,23 +242,31 @@ sesión limpia como mínimo.
 
 El límite duro y el reparto por nivel de memoria están en `CLAUDE.md` y no se repiten
 aquí. Lo que sí es arquitectura es **qué niveles recibe cada agente**, porque no todos
-necesitan todos:
+necesitan todos.
+
+**Aquí aparecen solo los agentes que llaman al modelo**, porque son los únicos que
+consumen el presupuesto de contexto y esta tabla reparte ese presupuesto. El Orquestador,
+el Consolidador y el Verificador de reglas no mandan ningún prompt: lo que necesitan para
+trabajar está en su columna de habilidades, no aquí. Y el Ensamblador de contexto no
+recibe niveles, los **construye**. El criterio se escribe porque estaba implícito, y un
+criterio implícito no impide que alguien añada una fila que no le corresponde.
 
 | Agente | Inmutable | Estado actual | Local | Recuperado | Resúmenes |
 | --- | --- | --- | --- | --- | --- |
 | Escaletador | sí | sí | no | sí | sí |
 | Escritor de escena | sí | sí | sí | sí | según profundidad |
 | Juez de rúbrica | guía de estilo y anclas | no | escena anterior | no | no |
-| Verificador de reglas | no | sí | escena anterior | registro de conocimiento y setups pendientes | no |
 | Revisor | sí | sí | sí | solo lo que cita el hallazgo | no |
 | Resumidor | no | no | la escena que resume | no | los del nivel inferior |
+| Auditor de obra | anclas de estilo | sí | no | setups pendientes | sí, todos |
 
-**Por qué el Verificador de reglas necesita `Recuperado`.** Desde `SPEC-04` ejecuta
-`INV-03`, cuya entrada es el registro de conocimiento aplicable, y ese registro vive en ese
-nivel. Sin él la invariante no es peor: es **imposible**, que es el mismo argumento por el
-que `SPEC-01` §2.4 lo sube a la cuarta posición del orden de recorte. No recibe `Inmutable`
-porque ninguna de las invariantes que ejecuta lo usa, y recibe la escena anterior porque la
-repetición léxica se mide contra ella.
+**El Auditor de obra vive de los resúmenes, y esa es su única entrada posible.** Comprueba
+invariantes de nivel obra y capítulo, y `CLAUDE.md` prohíbe mandarle el texto completo, así
+que las condensaciones son todo lo que tiene: si una condensación pierde un presagio, el
+Auditor no lo ve y `INV-09` pasa. Recibe `Estado actual` por `INV-06`, que compara hechos
+vigentes entre sí; `Recuperado` por los setups pendientes de `INV-09`; y del nivel
+inmutable solo las anclas de estilo, que es contra lo que `INV-15` mide la distancia. No
+recibe `Local`: trabaja sobre la obra, no sobre la escena en curso.
 
 El reparto numérico de tokens entre agentes **no está fijado y no se inventa aquí**. Se
 fija cuando haya medidas reales de cuánto consume cada uno; hasta entonces cada agente usa
