@@ -1,9 +1,11 @@
 ---
 id: SPEC-11
 titulo: Lo que hay que mirar mientras el sistema corre
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-22
+fecha_aplicacion: 2026-09-22
+commit_de_aplicacion: f6b3eca
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
 version: 1
@@ -134,3 +136,28 @@ De la rama `main`: `EJECUCION.md` §4 reglas 3, 5 y 6 y §7; `DECISIONES.md` dec
 | 5 | `C-3`: ¿el modelo fijo es del Juez solo, o de todos los agentes? | Del Juez. Cambiar el modelo del Escritor a mitad de obra afecta al estilo y lo caza `INV-15`; cambiar el del Juez rompe la comparabilidad, que no lo caza nada |
 | 6 | `C-4`: ¿el Juez ve las reglas del proyecto? | **No.** Si las ve, su juicio es un eco del nuestro, y como desempate de `INV-03`, `INV-11` e `INV-14` dejaría de aportar la segunda opinión que justifica que exista |
 | 7 | ¿`C-5` necesita validador, o basta con declararlo? | Necesita. Es la misma exigencia que aplicamos a la independencia de `VER-41`: una regla que nadie comprueba es una intención |
+
+
+# Qué se tocó al aplicarla
+
+`Docs/architecture.md`: el tope global con su estado `detenido_por_presupuesto` y su
+transición; los recortes y el modelo usado en la traza; dos decisiones nuevas sobre el Juez;
+y la sección del ensamblador que no corrige. `Docs/verification.md`: `VER-60` con su caso
+negativo y los recuentos.
+
+## Lo que la spec no previó
+
+**Una marca `Caduca con:` estaba mal apuntada, y la puso esta misma línea de trabajo dos
+commits antes.** La reserva de `SPEC-01` §2.4 apuntaba al **fichero de esta spec**, de modo
+que habría caducado al moverla a `specs/aplicadas/`. Pero aplicar `SPEC-11` **diseña** el
+registro de recortes; no lo crea. La reserva se levanta cuando exista el dato, no cuando
+exista el diseño, así que la marca pasa a `backend/` como las otras siete.
+
+Es el error que `SPEC-05` existe para evitar, cometido al ponerlo: una condición de
+caducidad que se cumple antes que el hecho que describe. Lo cazó escribir esta spec, no
+`VER-56`, que solo comprueba si la ruta existe y no si es la correcta — y eso ya está en su
+punto ciego declarado.
+
+**Tres reglas quedan sin validador**, y conviene decirlo: el tope global, el modelo fijo del
+Juez y lo que el Juez no ve. Las tres se declaran aquí y ninguna se comprueba. Solo `C-5`
+tenía su pregunta al respecto y por eso solo `C-5` salió con `VER-60`.
