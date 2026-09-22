@@ -268,6 +268,35 @@ Un validador que no puede
 justificar un punto ciego propio no entra, y el hueco que iba a tapar se anota en
 "Puntos ciegos asumidos".
 
+**Y su reverso, que costó una novela descubrir.** La Regla 2 dice que dos
+validadores con el mismo punto ciego no suman. La otra mitad es que **repartir
+toda la auditoría entre validadores de juicio deja fuera lo que ninguno mira**, y
+el hueco no se ve hasta que pasa.
+
+Ocurrió en la rama `main`, generando la primera novela de verdad —terror, tres
+capítulos, rango configurado de 1.200 a 2.200 palabras—. El capítulo 1 dio esta
+secuencia:
+
+| Intento | Palabras | Continuidad | Género | Estilo |
+| --- | --- | --- | --- | --- |
+| 1 | 1.574 | PASA | FALLO: *"el capítulo es largo para el género, condensa"* | FALLO |
+| 2 | **944** | PASA | **PASA** | FALLO |
+
+El escritor obedeció la pega de longitud y sobrecorrigió hasta **944 palabras,
+256 por debajo del mínimo configurado**. El validador de género, que en el intento
+anterior había pedido acortar, **aprobó la nueva longitud sin decir nada**. Los
+otros dos tampoco la mencionaron: no es su trabajo.
+
+El diagnóstico de `DECISIONES.md` es el que importa: *"el spec repartió toda la
+auditoría entre tres validadores y dio por hecho que un capítulo fuera de rango lo
+cazaría el de género. Es una suposición razonable y resultó ser falsa: el
+validador de género juzga **ritmo**, y un capítulo corto puede tener buen ritmo."*
+
+Si ese capítulo hubiera acabado aceptado por puntuación, **habría entrado corto en
+el manuscrito con los tres validadores conformes**. La longitud es un número, y
+pedirle a un juez que compruebe un número es lo que dejó el hueco. Es la misma
+lección que la Regla 3 por otra puerta: lo que se puede contar, se cuenta.
+
 ### Regla 3 — Un validador no comparte implementación con lo que valida
 
 **Si el validador usa la misma pieza que la cosa validada, no está verificando:
