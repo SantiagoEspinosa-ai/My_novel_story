@@ -271,14 +271,24 @@ Este es el orden, y **también modifica `CLAUDE.md`**, igual que `P-1`.
 
 El criterio no es cuánto ocupa cada nivel, sino **qué se pierde si falta**:
 
-| Orden | Nivel | Qué se pierde |
-| --- | --- | --- |
-| 1.º | Resúmenes | Son condensaciones de condensaciones. Perderlas degrada el contexto lejano, que es el que menos afecta a la escena en curso |
-| 2.º | Recuperado | Fichas y setups pendientes. Duele, pero es recuperable después y no rompe nada de inmediato |
-| 3.º | Local | La escena anterior completa. Aquí ya se nota: el texto pierde continuidad de tono y de ritmo |
-| 4.º | Estado actual | Sin esto el modelo inventa dónde está la gente |
-| 5.º | Salida | Recortar aquí no es recortar contexto: es **truncar la escena** |
-| 6.º | Inmutable | **Nunca.** Sin premisa, reglas del mundo ni anclas de voz no estás generando esta novela, estás generando otra |
+El orden opera sobre **bloques**, no sobre niveles, porque `Recuperado` se parte en dos:
+sus fichas y setups se recortan pronto y su registro de conocimiento no.
+
+| Orden | Bloque | Nivel del que sale | Qué se pierde |
+| --- | --- | --- | --- |
+| 1.º | Condensaciones de capítulo y de parte | Resúmenes | Son condensaciones de condensaciones. Perderlas degrada el contexto lejano, que es el que menos afecta a la escena en curso |
+| 2.º | Fichas de entidad y setups pendientes | Recuperado | Duele, pero es recuperable después y no rompe nada de inmediato |
+| 3.º | Escena anterior completa y resumen de las tres previas | Local | Aquí ya se nota: el texto pierde continuidad de tono y de ritmo |
+| 4.º | Estado del mundo en `t` **y registro de conocimiento aplicable** | Estado actual + Recuperado | Sin el primero el modelo inventa dónde está la gente. Sin el segundo, `INV-03` no es peor: es **imposible** |
+| 5.º | Reserva de salida | Salida | Recortar aquí no es recortar contexto: es **truncar la escena** |
+| 6.º | Premisa, guía de estilo, reglas del mundo, anclas | Inmutable | **Nunca.** Sin esto no estás generando esta novela, estás generando otra |
+
+**Por qué el registro de conocimiento sube a la cuarta posición y no se queda con el resto
+de `Recuperado`.** `INV-03` es `bloqueante` y **depende de ese dato**. Si se recorta en
+segunda posición, el recorte se lo lleva antes de que la regla de fallar por debajo del
+nivel 3 llegue a activarse, y la puerta queda en pie pero sin la información con la que
+juzgar: sigue ahí, y ya no puede decidir. El criterio es el mismo que para el estado del
+mundo —sin él la comprobación no es peor, es imposible—, así que va en el mismo bloque.
 
 **Por debajo del nivel 3 no se recorta: se falla.** Una escena escrita sin la anterior y
 sin el estado del mundo va a salir mal y va a consumir una regeneración igualmente, así
@@ -314,10 +324,10 @@ niveles 4, 5 y 6 no se toquen nunca: el ensamblador se detiene antes de llegar a
 | ID | Requisito | Verifica |
 | --- | --- | --- |
 | **RF-05** | Antes de cada llamada al modelo se ensambla el contexto por niveles y **se comprueba que cabe en el presupuesto** | `VER-05` |
-| **RF-06** | Si no cabe, se recorta siguiendo el **orden de recorte de §2.4**: primero Resúmenes, después Recuperado, después Local. Nunca truncando por el final ni partiendo un bloque | `VER-06` |
+| **RF-06** | Si no cabe, se recorta siguiendo el **orden de recorte de §2.4**: condensaciones, después fichas y setups, después la escena anterior. Nunca truncando por el final ni partiendo un bloque | `VER-06` |
 | **RF-07** | El contexto nunca incluye el texto completo de la obra. Solo la escena anterior entra en texto completo | `VER-07` |
 | **RF-08** | Cada agente recibe únicamente los niveles que le corresponden según `Docs/architecture.md` | — |
-| **RF-26** | **Si tras recortar Resúmenes, Recuperado y Local el contexto sigue sin caber, el trabajo falla en vez de generar.** No se toca `Estado actual`, ni `Salida`, ni `Inmutable` | `VER-06` |
+| **RF-26** | **Si tras recortar los tres primeros bloques el contexto sigue sin caber, el trabajo falla en vez de generar.** No se tocan el estado del mundo, el registro de conocimiento, la reserva de salida ni el nivel inmutable | `VER-06` |
 
 ### Generación
 

@@ -89,6 +89,11 @@ Recórrelas una a una:
 
 - [ ] Cada fila cita fichero **y** sección de origen.
 - [ ] Cada criterio de salida se puede comprobar; ninguno dice "que funcione".
+- [ ] **Ningún criterio remite a algo que no esté escrito.** Busca artículos
+      definidos sin antecedente —"la prioridad declarada", "el orden acordado"— y
+      comparaciones sin segundo operando —"solo crece", "no supera lo fijado"—.
+      Un criterio colgante no falla, no avisa y cuenta como cobertura. **No hay
+      forma automática razonable de detectarlo: esta lectura es el control.**
 - [ ] Ningún número aparece sin haber sido medido. Los que faltan dicen
       "sin medir" o están en la tabla `U`.
 - [ ] Toda regla numerada del proyecto se referencia por su identificador.
