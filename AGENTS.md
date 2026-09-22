@@ -126,7 +126,7 @@ Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuent
 
 - `backend/` — servicio FastAPI.
 - `frontend/` — aplicación React.
-- `harness/` — ejecución de los validadores de `Docs/verification.md` y sus fixtures. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `Docs/verification.md` § "Lo que se aprendió al implementar".
+- `harness/` — ejecución de los validadores de `Docs/verification.md` y sus fixtures, en las tres carpetas que declara `Docs/architecture.md` § "El harness": `documentos/`, `evals/` y `adversarial/`. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `Docs/verification.md` § "Lo que se aprendió al implementar".
 - `specs/plans/` — un `PLAN-NN.md` por spec aprobada. Nace con el primer plan.
 - `Docs/decisions/` — decisiones de arquitectura fechadas.
 
