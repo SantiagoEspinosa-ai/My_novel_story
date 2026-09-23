@@ -173,6 +173,21 @@ puerta de los diez capítulos** y contrastar esa unión contra el conjunto de
 diferencias que no significan nada, y peor: si alguna significara algo, ese
 ruido la taparía.
 
+**Y la agregación no es una unión cualquiera: el resultado esperado es una
+igualdad exacta.** Lo señaló la sesión de backend y cambia la prueba. Una
+inversión que cruza del capítulo tres al cuatro aparece **una sola vez**,
+imputada al cuatro — que es además el capítulo que `L-1` nombra al describir
+el par. Así que agregar los diez capítulos debe dar **exactamente** el
+conjunto de `L-1`, sin duplicados y sin huecos:
+
+- si un par sale **dos veces** al agregar, o
+- si `L-1` ve un par que **ninguna** puerta levantó,
+
+eso ya no es alcance, es **discrepancia real**, y hay que averiguar cuál de
+los dos está mal. Vale la pena plantearlo así porque convierte un
+«se parecen» en una igualdad que se puede falsar, que es lo único que sirve
+como segunda fuente.
+
 Y queda una decisión abierta que es del autor, no del código (`F-50`):
 **`INV-08` dice «salvo analepsis declarada» y no hay dónde declararla.**
 `MomentoNarrativo` tiene `t_fabula`, `t_discurso` y `duracion_ficcional`, y
