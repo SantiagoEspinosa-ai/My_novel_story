@@ -60,6 +60,8 @@ class Traza:
     tokens_reservados: int | None = None
     tokens_estimados: int | None = None
     tokens_declarados: int | None = None
+    modelos: list = field(default_factory=list)
+    medidas: dict | None = None
     resultado: str | None = None
     clase_de_fallo: str | None = None
     salida_fallida: str | None = None

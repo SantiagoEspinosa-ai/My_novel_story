@@ -759,8 +759,35 @@ esperando una respuesta que el dato no da.
   amortizó. Si el caché se reutiliza entre delegaciones, la columna de la derecha se cae.
   **Una sola medida no distingue las dos cosas.**
 
-  `A-03` **no se revisa todavía**: revisarla con este número sería decidir sobre un arranque
-  en frío. Lo que sí queda es que la pregunta dejó de ser abstracta.
+  **Segunda medida, 2026-09-23, ciclo completo con tres agentes y caché ya caliente.** La
+  incógnita era si el caché amortiza, porque en la primera `cache_read` fue cero. **Amortiza
+  en parte**: el Escritor leyó 1.553 tokens de caché y el Juez 1.572, pero la creación sigue
+  dominando —8.434 en el Escritor—.
+
+  | Agente | Modelo | Tokens | Coste | % del ciclo |
+  | --- | --- | --- | --- | --- |
+  | Escritor | `fable` | 2.511 | **0,2968 $** | 75 % |
+  | Juez | `opus` | 1.567 | 0,0689 | 17 % |
+  | Resumidor | `haiku` | 1.872 | 0,0294 | 7 % |
+  | **Escena completa** | | 5.950 | **0,3951 $** | |
+
+  **Dos cosas que el número enseña y que no se deducían.** La primera: **los tokens no
+  predicen el coste.** El Resumidor gastó más tokens que el Juez y costó menos de la mitad,
+  porque el precio del modelo pesa más que el volumen. La segunda: **aislar al Juez lo hizo
+  cuatro veces más barato.** Su directorio no tiene `CLAUDE.md`, así que crea 2.562 tokens de
+  caché en vez de 8.434. El aislamiento se decidió por corrección —`SPEC-11` C-4— y resultó
+  ser también la partida más rentable del ciclo.
+
+  **La proyección se estrecha un orden de magnitud:**
+
+  | Escenario | Obra de 60 escenas |
+  | --- | --- |
+  | Con este contexto (9.237 tokens) | **24 $** |
+  | Con el contexto al techo de 100.000 | **148 $** |
+
+  El rango anterior era de 150 a 1.428 $ y salía de una sola medida en frío con un contexto
+  de 138 tokens. **`A-03` sigue sin revisarse**, pero ya no por falta de datos: por falta de
+  una obra larga que diga por dónde crece el contexto de verdad.
 - [ ] **Suficiencia del reparto por niveles de `CLAUDE.md`.** Nunca se ha ensamblado el **Se contesta sola** con una traza real.
   contexto de una escena real para ver si los niveles caben (`VER-37`).
 - [ ] **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla`, la pregunta deja **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide. **La traza dirá cuántas veces discrepan y en qué dirección, no quién gana.**

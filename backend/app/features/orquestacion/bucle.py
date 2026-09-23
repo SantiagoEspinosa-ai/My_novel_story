@@ -39,19 +39,21 @@ decide quien llama, con el tope de `commons/config.py`.
 """
 
 import hashlib
+import json
 from dataclasses import dataclass, field
 
 from app.commons.modelo import presupuesto, traza as modulo_traza
 from app.commons.modelo.doble import FalloDeTransporte
 from app.features.contexto import recorte
 from app.features.escaleta import repository as repo
-from app.features.generacion import contrato
+from app.features.generacion import contrato, prompt
 from app.features.verificacion import puertas
 
 
 @dataclass
 class Resultado:
     medidas: dict | None = field(default=None, init=False)
+    leida_delta: dict | None = field(default=None, init=False)
     escena: str = ""
     version: int | None = None
     hallazgos: list = field(default_factory=list)
@@ -59,10 +61,23 @@ class Resultado:
     fallo: str | None = None
 
 
-def _prompt(escena, contexto):
-    """El prompt real llega en `E3`. Aqui basta con que sea determinista para
-    que el `prompt_hash` signifique algo."""
-    return "ESCENA {0}\nCONTEXTO {1}".format(escena["id"], sorted(contexto.items()))
+def _prompt(escena, contexto, mundo=None, problemas=None):
+    """Usa la plantilla real, con los identificadores disponibles dentro.
+
+    Sin ellos el modelo no puede citarlos y se le esta pidiendo lo imposible:
+    es la mitad del arreglo de `F-21`. La otra la hace el contrato, porque un
+    prompt bien construido no garantiza una respuesta bien formada.
+    """
+    mundo = mundo or {}
+    return prompt.construir(
+        parametros={"escena": escena["id"],
+                    "longitud_objetivo": escena.get("longitud_objetivo")},
+        estado={"contexto": sorted(contexto.items())},
+        objetivo=json.dumps(escena.get("cambio_de_valor"), sort_keys=True),
+        problemas=problemas,
+        personajes=sorted(mundo.get("entidades_vivas") or {}),
+        hechos=sorted({h for (_s, h) in (mundo.get("conocimiento") or {})}),
+    )
 
 
 def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,
@@ -83,9 +98,9 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
         modulo_traza.registrar_recorte(t, paso.bloque, paso.clase.value)
 
     t.tokens_para_recortar = sum(contexto.values())
-    prompt = _prompt(escena, contexto)
+    texto_prompt = _prompt(escena, contexto, mundo)
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
-        prompt.encode("utf-8")).hexdigest()[:12])
+        texto_prompt.encode("utf-8")).hexdigest()[:12])
 
     # 2. Comprobar el techo y delegar.
     #
@@ -96,7 +111,7 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
     if t.tokens_para_recortar > techo:
         return Resultado(escena=escena_id, traza=t, fallo="no_cabe")
     try:
-        respuesta = modelo.llamar(prompt)
+        respuesta = modelo.llamar(texto_prompt)
     except FalloDeTransporte:
         modulo_traza.registrar_fallo(t, clase="transporte", salida=None)
         return Resultado(escena=escena_id, traza=t, fallo="transporte")
@@ -114,6 +129,11 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
     if medidas:
         t.tokens_estimados = ((medidas.get("tokens_entrada") or 0)
                               + (medidas.get("tokens_salida") or 0))
+        # Sin esto la traza del Escritor sale "sin registrar" y `VER-62` no
+        # puede comprobar la estabilidad del conjunto justo en el agente que
+        # mas delegaciones hace.
+        t.modelos = medidas.get("modelos") or []
+        t.medidas = medidas
 
     # 4. Guardar el borrador.
     version = repo.guardar_borrador(con, escena_id, texto=leida.texto,
@@ -131,6 +151,7 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
                               descripcion=h.descripcion)
     res = Resultado(escena=escena_id, version=version, hallazgos=hallazgos, traza=t)
     res.medidas = respuesta.get("medidas")
+    res.leida_delta = leida.delta
     return res
 
 

@@ -229,16 +229,28 @@ def medidas_de(sobre: dict) -> dict:
 
 
 def _normalizar(datos: dict) -> dict:
-    """Deja la respuesta en la forma que el bucle espera.
+    """Devuelve la respuesta **tal cual**, sin imponerle ninguna forma.
 
-    No hay `usage` que copiar: los tokens los ve la sesion que delego y los
-    pasa aparte. Por eso `tokens_estimados` es **un suelo y no una medida**
-    (`SPEC-14` C-3), y por eso el campo no se rellena aqui con un cero.
+    La primera version devolvia `{"texto": ..., "delta": ...}` porque era la
+    forma del Escritor, y **se la imponia a todos**: en la primera ejecucion
+    del ciclo completo el veredicto del Juez salio `None` y los `hechos_clave`
+    del Resumidor se perdieron, sin que nada fallara. El ciclo informo exito
+    habiendo tirado el juicio.
+
+    Es la Regla 4 otra vez: **la forma de una respuesta es cosa del contrato de
+    su agente, no del transporte**. El transporte entrega lo que llego; quien
+    sabe que forma espera es quien la pidio.
+
+    Lo unico que se toca es `delta` cuando llega como cadena, porque eso es un
+    artefacto del transporte -un JSON dentro de un JSON- y no una decision del
+    agente.
     """
-    delta = datos.get("delta")
-    if isinstance(delta, str):
+    salida = dict(datos)
+    if isinstance(salida.get("delta"), str):
         try:
-            delta = json.loads(delta)
+            salida["delta"] = json.loads(salida["delta"])
         except ValueError:
-            delta = None
-    return {"texto": datos.get("texto") or datos.get("content"), "delta": delta}
+            salida["delta"] = None
+    if "texto" not in salida and "content" in salida:
+        salida["texto"] = salida["content"]
+    return salida
