@@ -304,3 +304,79 @@ def test_la_generacion_acumula_el_coste_y_dice_que_delegaciones_no_lo_traen(con)
     assert g.coste["usd"] == pytest.approx(0.02), "las dos que lo traen"
     assert g.coste["sin_coste"] == 1, "el escritor doble no lo trae"
     assert g.coste["delegaciones"] == 3
+
+
+# --- F-38: reanudar sin regenerar ni degradar lo que iba bien -------------
+
+def test_relanzar_salta_lo_consolidado_y_no_lo_toca(con):
+    """`F-38`: la segunda pasada regeneraba `e1` ya consolidada, pagaba la
+    delegacion, le guardaba un borrador 2 y **la degradaba a `generada`**. Cada
+    parada devolvia al principio y estropeaba lo que iba bien."""
+    from app.commons.modelo.doble import Guion
+
+    obra.generar_obra(con, "cap-1", DobleDelModelo(Guion(["bien", "actua_sin_saber"])),
+                      *_agentes()[1:], techo=1_000_000)
+    assert repo.escena(con, "e1")["estado"] == "consolidada"
+
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:], techo=1_000_000)
+    assert repo.escena(con, "e1")["estado"] == "consolidada", "no se degrada"
+    assert repo.intentos_de(con, "e1") == 1, "no se regenera: no se paga dos veces"
+
+
+def test_relanzar_continua_por_la_escena_que_fallo(con):
+    from app.commons.modelo.doble import Guion
+
+    g1 = obra.generar_obra(con, "cap-1", DobleDelModelo(Guion(["bien", "actua_sin_saber"])),
+                           *_agentes()[1:], techo=1_000_000)
+    assert g1.parada["escena"] == "e2"
+
+    g2 = obra.generar_obra(con, "cap-1", DobleDelModelo(), *_agentes()[1:],
+                           techo=1_000_000)
+    assert g2.escenas_hechas == ["e2", "e3"], "sigue donde lo dejo"
+    assert g2.llego_al_final
+
+
+def test_lo_saltado_se_dice_para_que_el_informe_no_mienta(con):
+    """Un informe que dice "2 escenas" cuando la obra tiene 3 induce a pensar
+    que falta una. Saltar no es lo mismo que no hacer."""
+    from app.commons.modelo.doble import Guion
+
+    obra.generar_obra(con, "cap-1", DobleDelModelo(Guion(["bien", "actua_sin_saber"])),
+                      *_agentes()[1:], techo=1_000_000)
+    g = obra.generar_obra(con, "cap-1", DobleDelModelo(), *_agentes()[1:],
+                          techo=1_000_000)
+    assert g.saltadas == ["e1"]
+    assert "saltadas" in obra.informe(g) or "e1" in obra.informe(g)
+
+
+def test_una_instruccion_humana_entra_en_el_prompt_del_reintento(con):
+    """`F-38`, tercera pieza. El canal ya existia -los problemas del intento
+    anterior- y **no habia forma de escribir en el desde fuera**. Sin esto,
+    desatascar obliga a replanificar la escena aunque lo unico que falte sea
+    decirle al modelo lo que hizo mal."""
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:], techo=1_000_000,
+                      hasta=1,
+                      instrucciones=["Marta ya sabe que el sotano esta cerrado: "
+                                     "declara la revelacion en el delta"])
+    assert "declara la revelacion en el delta" in escritor.llamadas[0]
+
+
+def test_sin_instruccion_el_prompt_no_lleva_ninguna(con):
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:], techo=1_000_000,
+                      hasta=1)
+    assert "INSTRUCCION" not in escritor.llamadas[0].upper()
+
+
+def test_la_instruccion_se_distingue_de_un_hallazgo_en_el_prompt(con):
+    """Un hallazgo lo levanto una regla; una instruccion la escribio una
+    persona. Mezclarlos haria que el modelo no supiera cual es cual, y que
+    quien lea la traza no pueda saber de donde salio cada cosa."""
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:], techo=1_000_000,
+                      hasta=1, instrucciones=["haz esto otro"])
+    prompt = escritor.llamadas[0]
+    assert "haz esto otro" in prompt
+    assert "PERSONA" in prompt.upper() or "HUMANA" in prompt.upper()

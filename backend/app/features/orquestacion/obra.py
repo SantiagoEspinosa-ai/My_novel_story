@@ -33,6 +33,11 @@ from dataclasses import dataclass, field
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.features.auditoria import capitulo
+
+# Una escena en estos estados ya paso por todo: su delta esta aplicado y su
+# texto elegido. Son los mismos que `auditoria/` llama `COMPLETAS` para decidir
+# si un capitulo puede cerrarse, y por el mismo motivo.
+YA_HECHAS = {EE.CONSOLIDADA, EE.ACEPTADA_POR_RENDICION}
 from app.features.consolidacion import memoria, mundo as modulo_mundo
 from app.features.contexto import ensamblado, recorte
 from app.features.escaleta import repository as repo
@@ -47,6 +52,7 @@ class Generacion:
     rendidas: list = field(default_factory=list)
     delegaciones: int = 0
     cierre: dict | None = None
+    saltadas: list = field(default_factory=list)
     coste: dict = field(default_factory=lambda: {
         "usd": 0.0, "delegaciones": 0, "sin_coste": 0})
 
@@ -74,7 +80,7 @@ def reunir_material(con, escena, obra_id, inmutable=""):
 
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
-                 tope_delegaciones=None):
+                 tope_delegaciones=None, instrucciones=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -91,6 +97,16 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     for escena in repo.escenas_de(con, obra):
         if hasta is not None and escena["orden"] > hasta:
             break
+
+        # `F-38`: lo que ya esta hecho **no se vuelve a hacer**. Antes el bucle
+        # recorria desde el principio sin mirar el estado, asi que relanzar
+        # tras una parada regeneraba las escenas consolidadas, pagaba su
+        # delegacion, les guardaba otro borrador y **las degradaba a
+        # `generada`** antes de morir con `YaConsolidada`. Cada parada devolvia
+        # al principio y estropeaba lo que iba bien.
+        if EE(escena["estado"]) in YA_HECHAS:
+            g.saltadas.append(escena["id"])
+            continue
 
         if not rendicion.queda_presupuesto(g.delegaciones, tope_delegaciones):
             g.parada = {"escena": escena["id"], "motivo": "tope_delegaciones",
@@ -113,7 +129,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         g.medidas.append(_medida(escena, tamanos, plan))
 
         c, intentos = _intentar(con, escena, tamanos, escritor, juez, resumidor,
-                                material, techo, tope_intentos, g)
+                                material, techo, tope_intentos, g,
+                                instrucciones)
 
         if c.fallo:
             g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -181,7 +198,7 @@ def evaluar_cierre(con, obra):
 
 
 def _intentar(con, escena, tamanos, escritor, juez, resumidor, material,
-              techo, tope, g):
+              techo, tope, g, instrucciones=None):
     """Hasta `tope` intentos, y los problemas de uno entran en el siguiente.
 
     Se para en cuanto sale limpia, y **tambien en cuanto una `bloqueante`
@@ -196,7 +213,8 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material,
                            material["mundo"], techo=techo,
                            trabajo="obra-{0}-i{1}".format(escena["orden"], numero + 1),
                            hechos=[h["id"] for h in material["hechos"]],
-                           problemas=_problemas_de(intentos))
+                           problemas=_problemas_de(intentos),
+                           instrucciones=instrucciones)
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
         _acumular_coste(g, c.trazas)
         if c.generacion is not None and c.generacion.version is not None:
@@ -271,7 +289,13 @@ def _medida(escena, tamanos, plan):
 
 
 def informe(g: Generacion) -> str:
-    lineas = ["escena  total   recortes"]
+    lineas = []
+    if g.saltadas:
+        # Saltar no es lo mismo que no hacer, y un informe que las omitiera
+        # induciria a pensar que faltan escenas.
+        lineas.append("ya estaban hechas y se saltaron: {0}".format(
+            ", ".join(g.saltadas)))
+    lineas.append("escena  total   recortes")
     for m in g.medidas:
         lineas.append("{0:6}  {1:6}  {2}".format(
             m["escena"], m["total"], m["recortes"] or "-"))

@@ -128,3 +128,61 @@ def test_los_hechos_de_otra_obra_no_se_cuelan(con):
     repo.declarar_hechos(con, "obra-1", [{"id": "hec-a", "enunciado": "a"}])
     repo.declarar_hechos(con, "obra-2", [{"id": "hec-b", "enunciado": "b"}])
     assert [h["id"] for h in repo.hechos_declarados(con, "obra-1")] == ["hec-a"]
+
+
+# --- F-38: un hallazgo se puede cerrar ------------------------------------
+#
+# `resuelto` y `descartado` estaban en `estado_de_hallazgo` desde el primer dia
+# y **ninguna funcion los escribia**. Un hallazgo nacia abierto y se quedaba
+# abierto para siempre, asi que aunque se arreglara la causa el capitulo no
+# podia cerrarse nunca.
+
+def test_un_hallazgo_se_resuelve_y_deja_de_contar_como_abierto(con):
+    _sembrar(con)
+    repo.guardar_hallazgo(con, "INV-17", "v", "e1", S.MAYOR, EH.ABIERTO, "corta")
+    ident = repo.hallazgos_abiertos(con, "e1")[0]["id"]
+    repo.cerrar_hallazgo(con, ident, EH.RESUELTO, motivo="se reescribio la escena")
+    assert repo.hallazgos_abiertos(con, "e1") == []
+
+
+def test_descartar_no_es_lo_mismo_que_resolver_y_se_distingue(con):
+    """Resuelto es *se arreglo*; descartado es *se decidio que no aplica*. Si
+    no se distinguieran, el recuento por invariante mezclaria dos cosas y nadie
+    podria saber cuantas veces la regla acerto."""
+    _sembrar(con)
+    repo.guardar_hallazgo(con, "INV-17", "v", "e1", S.MAYOR, EH.ABIERTO, "corta")
+    ident = repo.hallazgos_abiertos(con, "e1")[0]["id"]
+    repo.cerrar_hallazgo(con, ident, EH.DESCARTADO, motivo="el rango estaba mal")
+    fila = con.execute("SELECT estado, motivo_de_cierre FROM hallazgo "
+                       "WHERE id = ?", (ident,)).fetchone()
+    assert fila[0] == "descartado"
+    assert fila[1] == "el rango estaba mal"
+
+
+def test_cerrar_exige_motivo(con):
+    """Un hallazgo cerrado sin motivo es indistinguible de uno que alguien
+    cerro para que dejara de molestar."""
+    _sembrar(con)
+    repo.guardar_hallazgo(con, "INV-17", "v", "e1", S.MAYOR, EH.ABIERTO, "corta")
+    ident = repo.hallazgos_abiertos(con, "e1")[0]["id"]
+    with pytest.raises(ValueError, match="motivo"):
+        repo.cerrar_hallazgo(con, ident, EH.RESUELTO, motivo="")
+
+
+def test_no_se_puede_cerrar_a_un_estado_que_no_es_de_cierre(con):
+    _sembrar(con)
+    repo.guardar_hallazgo(con, "INV-17", "v", "e1", S.MAYOR, EH.ABIERTO, "corta")
+    ident = repo.hallazgos_abiertos(con, "e1")[0]["id"]
+    with pytest.raises(ValueError, match="cierre"):
+        repo.cerrar_hallazgo(con, ident, EH.SIN_VEREDICTO, motivo="x")
+
+
+def test_un_sin_veredicto_tambien_se_puede_cerrar(con):
+    """Es lo que permite firmar un capitulo cuando el juez estuvo caido y
+    alguien miro la escena a mano."""
+    _sembrar(con)
+    repo.guardar_hallazgo(con, "INV-04", "v", "e1", S.BLOQUEANTE,
+                          EH.SIN_VEREDICTO, "no se pudo comprobar")
+    ident = repo.hallazgos_abiertos(con, "e1")[0]["id"]
+    repo.cerrar_hallazgo(con, ident, EH.RESUELTO, motivo="revisado a mano")
+    assert repo.hallazgos_abiertos(con, "e1") == []

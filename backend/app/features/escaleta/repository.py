@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS hallazgo (
     escena      TEXT NOT NULL,
     severidad   TEXT NOT NULL,
     estado      TEXT NOT NULL,
-    descripcion TEXT NOT NULL
+    descripcion TEXT NOT NULL,
+    motivo_de_cierre TEXT
 );
 """
 
@@ -191,6 +192,42 @@ def intentos_de(con, escena):
                        (escena,)).fetchone()[0]
 
 
+# Los dos estados en los que un hallazgo deja de contar. `sin_veredicto` no
+# esta: significa que **falta el juicio**, no que se haya emitido.
+DE_CIERRE = (EH.RESUELTO, EH.DESCARTADO)
+
+
+def cerrar_hallazgo(con, id_hallazgo, estado, motivo: str):
+    """`resuelto` o `descartado`, **con motivo**.
+
+    Los dos estados existian en `estado_de_hallazgo` desde el primer dia y
+    **ninguna funcion los escribia** (`F-38`): un hallazgo nacia abierto y se
+    quedaba abierto para siempre, asi que aunque alguien arreglara la causa el
+    capitulo no podia cerrarse nunca.
+
+    **Resuelto y descartado no son lo mismo** y por eso son dos valores:
+    resuelto es *se arreglo*, descartado es *se decidio que no aplica*. Si se
+    confundieran, el recuento por invariante mezclaria las veces que la regla
+    acerto con las que se equivoco, y ese recuento es lo unico que dice si una
+    regla sirve.
+
+    El motivo es obligatorio porque un hallazgo cerrado sin motivo es
+    indistinguible de uno que alguien cerro para que dejara de molestar.
+    """
+    if estado not in DE_CIERRE:
+        raise ValueError(
+            "`{0}` no es un estado de cierre. Solo {1}: `sin_veredicto` "
+            "significa que falta el juicio, no que se haya emitido".format(
+                estado, " y ".join(str(e) for e in DE_CIERRE)))
+    if not (motivo or "").strip():
+        raise ValueError(
+            "cerrar un hallazgo exige un motivo: sin el, no se distingue de "
+            "uno que se cerro para que dejara de molestar")
+    with con:
+        con.execute("UPDATE hallazgo SET estado = ?, motivo_de_cierre = ? "
+                    "WHERE id = ?", (str(estado), motivo, id_hallazgo))
+
+
 def guardar_hallazgo(con, invariante, verificador, escena, severidad, estado, descripcion):
     with con:
         con.execute(
@@ -214,12 +251,12 @@ def hallazgos_abiertos(con, escena):
     entra.
     """
     filas = con.execute(
-        "SELECT invariante, verificador, severidad, estado, descripcion FROM hallazgo "
-        "WHERE escena = ? AND estado IN (?, ?)",
+        "SELECT invariante, verificador, severidad, estado, descripcion, id "
+        "FROM hallazgo WHERE escena = ? AND estado IN (?, ?)",
         (escena, CUENTAN_COMO_ABIERTOS[0], CUENTAN_COMO_ABIERTOS[1]))
     return [{"invariante": f[0], "verificador": f[1],
              "severidad": Severidad(f[2]), "estado": EH(f[3]),
-             "descripcion": f[4]} for f in filas]
+             "descripcion": f[4], "id": f[5]} for f in filas]
 
 
 def aceptar_borrador(con, escena, version, rindiendose):

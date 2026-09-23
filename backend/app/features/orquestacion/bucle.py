@@ -61,7 +61,8 @@ class Resultado:
     fallo: str | None = None
 
 
-def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None):
+def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None,
+            instrucciones=None):
     """Usa la plantilla real, con los identificadores disponibles dentro.
 
     Sin ellos el modelo no puede citarlos y se le esta pidiendo lo imposible:
@@ -83,11 +84,13 @@ def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None):
         # la lista salia de las revelaciones y las revelaciones necesitaban la
         # lista, asi que nunca habia ninguna.
         hechos=sorted(hechos or []),
+        instrucciones=instrucciones,
     )
 
 
 def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,
-            mundo=None, trabajo="sin-trabajo", hechos=None, problemas=None):
+            mundo=None, trabajo="sin-trabajo", hechos=None, problemas=None,
+            instrucciones=None):
     escena = repo.escena(con, escena_id)
     t = modulo_traza.nueva(agente="escritor", escena=escena_id, trabajo=trabajo,
                            modelo=modelo.nombre)
@@ -105,7 +108,7 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
 
     t.tokens_para_recortar = sum(contexto.values())
     texto_prompt = _prompt(escena, contexto, mundo, problemas=problemas,
-                           hechos=hechos)
+                           hechos=hechos, instrucciones=instrucciones)
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
         texto_prompt.encode("utf-8")).hexdigest()[:12])
 

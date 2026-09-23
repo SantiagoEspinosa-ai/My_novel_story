@@ -60,8 +60,7 @@ Usa SOLO estos. Son identificadores, no descripciones: si lo que quieres decir
 no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
 {identificadores}
 
-{problemas}
-FORMATO DE LA RESPUESTA
+{problemas}{instrucciones}FORMATO DE LA RESPUESTA
 Devuelve un unico objeto JSON con dos claves:
   "texto": la escena, en prosa.
   "pov_usado": el identificador del personaje desde cuyo punto de vista la
@@ -91,6 +90,13 @@ No expliques el JSON ni lo envuelvas en vallas de bloque de codigo.
 """
 
 SIN_PROBLEMAS = ""
+SIN_INSTRUCCIONES = ""
+CON_INSTRUCCIONES = """INSTRUCCIONES DE UNA PERSONA SOBRE ESTA ESCENA
+Esto no lo levanto ninguna regla: lo escribio quien supervisa la obra. Tiene
+prioridad sobre tu criterio.
+{lista}
+
+"""
 CON_PROBLEMAS = """PROBLEMAS DEL INTENTO ANTERIOR QUE HAY QUE CORREGIR
 {lista}
 
@@ -98,7 +104,7 @@ CON_PROBLEMAS = """PROBLEMAS DEL INTENTO ANTERIOR QUE HAY QUE CORREGIR
 
 
 def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
-              personajes=None, hechos=None) -> str:
+              personajes=None, hechos=None, instrucciones=None) -> str:
     """Los problemas del intento anterior entran en el prompt, no en un aviso.
 
     En la otra rama el aviso de longitud lo leia la sesion orquestadora y no el
@@ -111,6 +117,14 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
         bloque = CON_PROBLEMAS.format(
             lista="\n".join("- [{0}] {1}".format(p["invariante"], p["descripcion"])
                             for p in problemas))
+    # Las instrucciones humanas van en un bloque **propio** y no mezcladas con
+    # los problemas: un hallazgo lo levanto una regla y una instruccion la
+    # escribio una persona. Mezclarlos haria que el modelo no supiera cual es
+    # cual, y que quien lea la traza no pueda saber de donde salio cada cosa.
+    bloque_humano = SIN_INSTRUCCIONES
+    if instrucciones:
+        bloque_humano = CON_INSTRUCCIONES.format(
+            lista="\n".join("- " + str(i) for i in instrucciones))
     ids = "\n".join([
         "personajes: " + (", ".join(personajes or []) or "(ninguno)"),
         "hechos: " + (", ".join(hechos or []) or "(ninguno)"),
@@ -122,6 +136,7 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
         estado=json.dumps(estado, ensure_ascii=False, sort_keys=True),
         objetivo=objetivo,
         problemas=bloque,
+        instrucciones=bloque_humano,
     )
 
 
