@@ -1,0 +1,127 @@
+"""El bucle de generacion de una escena, de principio a fin.
+
+VIVE EN `orquestacion/` Y NO EN `generacion/`, Y NO POR GUSTO
+--------------------------------------------------------------
+Compone `contexto/`, `escaleta/`, `generacion/` y `verificacion/`, y `A-02`
+dice que una feature **nunca** importa de otra salvo `orquestacion/`, que es la
+unica autorizada a componer. Se escribio primero en `generacion/agente.py` y lo
+cazo la prueba de `A-02` del alta de obra, que recorre `features/` buscando
+importaciones cruzadas: el comprobador mas barato del proyecto encontrando la
+primera violacion real de una decision de arquitectura.
+
+Es tambien la unica pieza que compone otras, y por eso se prueba entera contra
+un doble antes de que exista un cliente real: **un bucle roto descubierto
+pagandolo es la forma mas cara de descubrirlo.**
+
+EL ORDEN DE LOS PASOS, Y POR QUE CADA UNO VA DONDE VA
+------------------------------------------------------
+    1. Ensamblar el contexto dentro del presupuesto. Si no cabe tras agotar
+       las formas reducidas y eliminar los tres primeros bloques, `RF-26`:
+       **falla en vez de generar**. No se genera con un contexto mutilado.
+    2. Reservar presupuesto (`P-2`) y llamar.
+    3. Leer el contrato. Texto y delta en la misma respuesta. Lo que falle aqui
+       es fallo **de contrato**, no hallazgo: no produce `Hallazgo`, no pasa por
+       las puertas, y por `O-3` **no se reintenta**.
+    4. Guardar el borrador. La escena pasa a `generada`.
+    5. Pasar las puertas deterministas. Lo que salga son `Hallazgo`, con su
+       invariante y su verificador.
+    6. Liberar el presupuesto **siempre**, tambien cuando falla.
+
+QUE NO HACE ESTE MODULO
+-----------------------
+No decide que pasa con un hallazgo. Que una `bloqueante` detenga la escena lo
+decide `commons/invariantes/severidad.py`, una vez (`D-4`). Aqui solo se
+produce el material.
+
+Y no relanza nada por su cuenta: el reintento de un fallo de transporte lo
+decide quien llama, con el tope de `commons/config.py`.
+"""
+
+import hashlib
+from dataclasses import dataclass, field
+
+from app.commons.modelo import presupuesto, traza as modulo_traza
+from app.commons.modelo.doble import FalloDeTransporte
+from app.features.contexto import recorte
+from app.features.escaleta import repository as repo
+from app.features.generacion import contrato
+from app.features.verificacion import puertas
+
+
+@dataclass
+class Resultado:
+    escena: str
+    version: int | None = None
+    hallazgos: list = field(default_factory=list)
+    traza: object = None
+    fallo: str | None = None
+
+
+def _prompt(escena, contexto):
+    """El prompt real llega en `E3`. Aqui basta con que sea determinista para
+    que el `prompt_hash` signifique algo."""
+    return "ESCENA {0}\nCONTEXTO {1}".format(escena["id"], sorted(contexto.items()))
+
+
+def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,
+            mundo=None, trabajo="sin-trabajo"):
+    escena = repo.escena(con, escena_id)
+    t = modulo_traza.nueva(agente="escritor", escena=escena_id, trabajo=trabajo,
+                           modelo=modelo.nombre)
+    estado_del_techo = estado_del_techo if estado_del_techo is not None else {}
+
+    # 1. Ensamblar. `RF-26` falla antes que generar con el contexto mutilado.
+    try:
+        plan = recorte.planificar(contexto, techo=techo)
+    except recorte.NoCabe as e:
+        for paso in e.plan:
+            modulo_traza.registrar_recorte(t, paso.bloque, paso.clase.value)
+        return Resultado(escena=escena_id, traza=t, fallo="no_cabe")
+    for paso in plan:
+        modulo_traza.registrar_recorte(t, paso.bloque, paso.clase.value)
+
+    t.tokens_para_recortar = sum(contexto.values())
+    prompt = _prompt(escena, contexto)
+    modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
+        prompt.encode("utf-8")).hexdigest()[:12])
+
+    # 2. Reservar y llamar. Se libera siempre, tambien al fallar.
+    reservado = t.tokens_para_recortar
+    if not presupuesto.reservar(estado_del_techo, reservado):
+        return Resultado(escena=escena_id, traza=t, fallo="sin_presupuesto")
+    t.tokens_reservados = reservado
+    try:
+        respuesta = modelo.llamar(prompt)
+    except FalloDeTransporte as e:
+        modulo_traza.registrar_fallo(t, clase="transporte", salida=None)
+        return Resultado(escena=escena_id, traza=t, fallo="transporte")
+    finally:
+        presupuesto.liberar(estado_del_techo, reservado)
+
+    # 3. El contrato. Lo que falle aqui no es un hallazgo.
+    try:
+        leida = contrato.leer(respuesta)
+    except contrato.FalloDeContrato as e:
+        modulo_traza.registrar_fallo(t, clase="contrato", salida=repr(respuesta))
+        return Resultado(escena=escena_id, traza=t, fallo="contrato")
+    modulo_traza.registrar_respuesta(t, respuesta)
+
+    # 4. Guardar el borrador.
+    version = repo.guardar_borrador(con, escena_id, texto=leida.texto,
+                                    modelo=modelo.nombre, prompt_hash=t.prompt_hash)
+
+    # 5. Las puertas.
+    vista = dict(escena)
+    vista["palabras"] = len(leida.texto.split())
+    vista["longitud_objetivo"] = tuple(escena["longitud_objetivo"] or ()) or None
+    vista["personajes_presentes"] = escena.get("personajes_presentes", [])
+    hallazgos = puertas.verificar(vista, leida.delta, mundo or _mundo_vacio())
+    for h in hallazgos:
+        repo.guardar_hallazgo(con, invariante=h.invariante, verificador=h.verificador,
+                              escena=h.escena, severidad=h.severidad, estado=h.estado,
+                              descripcion=h.descripcion)
+    return Resultado(escena=escena_id, version=version, hallazgos=hallazgos, traza=t)
+
+
+def _mundo_vacio():
+    return {"entidades_vivas": {}, "ubicaciones": {}, "accesos": {}, "conocimiento": {}}
