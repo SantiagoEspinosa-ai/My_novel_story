@@ -23,6 +23,31 @@ de entorno y no decisiones de diseno:
    linea**, y el prompt llega truncado sin que nada avise. Costo un `502` que
    parecia un problema de prompt: *"no era el prompt: era el transporte"*.
 
+EL AISLAMIENTO SE CONSIGUE POR DIRECTORIO, NO POR `omitClaudeMd`
+-----------------------------------------------------------------
+`SPEC-11` C-4 dice que el Juez no ve las reglas del proyecto, y su mecanismo
+declarado era `omitClaudeMd: true` en la definicion del subagente. **Se
+comprobo en la version 2.1.274 y no funciona.** La comprobacion fue controlada:
+
+    omitClaudeMd: false  -> enumero los seis niveles del presupuesto, exactos
+    omitClaudeMd: true   -> enumero los seis niveles del presupuesto, exactos
+    cuerpo del agente    -> SI se aplica (un marcador arbitrario aparecio)
+    cwd sin CLAUDE.md    -> "NO LO SE"
+
+Es decir: la definicion del agente **si** se carga y la opcion **se ignora en
+silencio**, que es justo lo que el hallazgo 3 de `DECISIONES.md` advertia que
+pasa con lo que el frontmatter no reconoce.
+
+Lo que si aisla es **el directorio de trabajo**: `claude` carga `CLAUDE.md`
+desde el arbol del `cwd`, asi que una delegacion lanzada desde un directorio
+vacio no lo ve. Por eso `_ejecutar_proceso` acepta `cwd` y el Juez se lanzara
+desde uno aislado.
+
+**Y no basta con el directorio.** Un agente con herramientas de lectura puede
+ir a buscar el fichero: el propio agente aislado ofrecio hacerlo. El
+aislamiento es **directorio sin `CLAUDE.md` mas ninguna herramienta que lea el
+proyecto**.
+
 EL PARSEO ES DESCONFIADO A PROPOSITO
 -------------------------------------
 Aunque el prompt prohiba las vallas de bloque de codigo, **las anade la sesion
@@ -118,7 +143,7 @@ def interpretar(bruto: str) -> dict:
 class SesionDelegada:
     """Misma firma que `DobleDelModelo`. El bucle no distingue."""
 
-    def __init__(self, modelo=None, agente=None, ejecutar=None):
+    def __init__(self, modelo=None, agente=None, ejecutar=None, cwd=None):
         self.nombre = modelo or os.environ.get(VARIABLES["modelo_escritor"])
         if not self.nombre:
             raise FaltaEntorno(
@@ -126,6 +151,10 @@ class SesionDelegada:
                 "lo quiere fijo dentro de una obra".format(VARIABLES["modelo_escritor"])
             )
         self.agente = agente
+        # `cwd` aisla: `claude` carga CLAUDE.md desde el arbol del directorio
+        # de trabajo. `None` significa el del proyecto, que es lo que quiere el
+        # Escritor; el Juez se lanza desde uno vacio.
+        self.cwd = cwd
         self._ejecutar = ejecutar or _ejecutar_proceso
 
     def __repr__(self):
@@ -134,7 +163,7 @@ class SesionDelegada:
     def llamar(self, prompt: str) -> dict:
         try:
             salida = self._ejecutar(_resolver_ejecutable(), self.nombre,
-                                    self.agente, prompt)
+                                    self.agente, prompt, self.cwd)
         except FalloDeTransporte:
             raise
         except (OSError, subprocess.SubprocessError) as e:
@@ -147,14 +176,14 @@ class SesionDelegada:
         return _normalizar(interpretar(salida))
 
 
-def _ejecutar_proceso(ejecutable, modelo, agente, prompt):
+def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None):
     """El prompt por **stdin**. Nunca como argumento: `cmd.exe` lo trunca."""
     orden = [ejecutable, "-p", "--model", modelo]
     if agente:
         orden += ["--agent", agente]
     try:
         r = subprocess.run(orden, input=prompt, capture_output=True,
-                           text=True, encoding="utf-8", timeout=600)
+                           text=True, encoding="utf-8", timeout=600, cwd=cwd)
     except (OSError, subprocess.TimeoutExpired) as e:
         raise FalloDeTransporte(
             "la delegacion no completo: {0}".format(type(e).__name__)
