@@ -15,8 +15,13 @@ from app.main import app, preparar_base
 def cliente(tmp_path):
     ruta = str(tmp_path / "obra.db")
     con = preparar_base(ruta)
+    # `capitulo` explicito: la puerta de cierre pregunta por capitulo, y sin
+    # este campo estas pruebas pasaban solo porque obra y capitulo eran el
+    # mismo identificador. Era la coincidencia la que las sostenia, no la
+    # consulta.
     repo.guardar_escaleta(con, "cap-1", [
-        {"id": "e1", "orden": 1, "pov": "per-marta", "lugar": "lug-salon",
+        {"id": "e1", "orden": 1, "capitulo": "cap-1",
+         "pov": "per-marta", "lugar": "lug-salon",
          "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
          "beats": ["b1"], "longitud_objetivo": [1200, 2200]},
     ])
