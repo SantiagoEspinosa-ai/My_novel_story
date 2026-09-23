@@ -5,8 +5,15 @@ estado: en_revision
 aprobada_por:
 fecha_aprobacion:
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
+
+> **Historial.** v1: redactada con las respuestas de aclaración, con `O-1` y
+> `O-2` abiertas. v2: `O-1` y `O-2` resueltas por el autor. Al pasar a listas
+> cerradas, la contradicción «ocasión frente a tono» deja de ser comprobable
+> entre categorías de la lista (ninguna pareja de la lista es incoherente por sí
+> misma) y se sustituye por «edad frente a ocasión». La de ocasión y tono sigue
+> existiendo como juicio del modelo cuando algún valor es «otro» (`RF-08b`).
 
 # SPEC-25 — El destinatario, la entrevista y las palabras vetadas
 
@@ -54,9 +61,12 @@ Tiene dos consecuencias buscadas:
 - **El texto libre nunca llega al Escritor.** Llega lo que se extrajo de él y el
   comprador confirmó (`RF-07`). Es lo que corta la inyección.
 
-**Los valores los aporta el comprador, no un catálogo.** Género, tono, ocasión y
-papel del destinatario se preguntan y se anotan con las palabras que el
-comprador elija. Ver la cuestión abierta `O-1`.
+**Se pregunta con naturalidad y se anota en una lista cerrada con «otro»**
+(`O-1`). Género, tono, ocasión y papel del destinatario se preguntan con las
+palabras que el comprador quiera; el entrevistador anota la categoría que
+corresponde y, si ninguna encaja, anota «otro» junto con las palabras literales
+del comprador. Así la ficha es natural para quien la rellena y comprobable para
+el código (`CLAUDE.md`: los vocabularios controlados son `Enum`).
 
 ## Qué tiene que ser verdad al terminar
 
@@ -88,12 +98,21 @@ comprador elija. Ver la cuestión abierta `O-1`.
 - **RF-07.** El entrevistador **detecta lo que falta**: mientras quede un
   apartado obligatorio vacío, la entrevista no termina y la siguiente pregunta
   es sobre él.
-- **RF-08.** El entrevistador detecta al menos estas **tres contradicciones**:
-  - **edad frente a género o tono**: por ejemplo, un destinatario menor de 12
-    años con romance o terror;
-  - **ocasión frente a tono**: por ejemplo, un nacimiento con un tono sombrío;
+- **RF-08.** Se detectan al menos estas **tres contradicciones**, y las tres son
+  **deterministas**, porque comparan categorías y números:
+  - **edad frente a género**: por ejemplo, un destinatario menor de 12 años con
+    romance;
+  - **edad frente a ocasión**: por ejemplo, una boda o una jubilación para un
+    menor de 18 años;
   - **recuerdo frente a edad**: un recuerdo situado antes de que el destinatario
-    naciera, o a una edad que no ha cumplido.
+    naciera, o a una edad que todavía no ha cumplido.
+
+  Las parejas incompatibles y sus límites de edad son **configuración**, como las
+  franjas de `RF-16`; los ejemplos de arriba son el valor inicial.
+- **RF-08b.** Cuando género, tono u ocasión quedan en «otro», el código no puede
+  compararlos. En ese caso el entrevistador **juzga** si hay contradicción y, si
+  la ve, la trata como las de `RF-08`. Ese juicio queda marcado en la ficha como
+  juicio del modelo, no como comprobación: no se hace pasar por lo que no es.
 - **RF-09.** Ante una contradicción, **la entrevista se bloquea y pregunta**. No
   avisa y sigue: no termina hasta que el comprador la resuelve, cambiando un dato
   o confirmando que es intencionado. La resolución queda anotada en la ficha.
@@ -148,25 +167,28 @@ comprador elija. Ver la cuestión abierta `O-1`.
 
 ### Privacidad
 
-- **RF-21.** Cuando la novela **se entrega**, los datos de la entrevista se
-  borran. **La novela no se borra.** Qué entra exactamente en «los datos de la
-  entrevista» depende de `O-2`.
+- **RF-21.** Cuando la novela **se entrega**, se borran **la conversación de la
+  entrevista, el texto libre pegado y la ficha**. **La novela no se borra**, y
+  con ella se conservan **la lista de palabras vetadas de la novela** y **los
+  hechos de la story bible**, porque sin ellos no se puede regenerar con
+  seguridad después de la entrega (`O-2`). El borrado queda en el audit log
+  (`RF-20`) con qué se borró y cuándo, nunca con el contenido borrado.
 - **RF-22.** Los briefs de prueba y los de evaluación usan **datos inventados**.
   Un brief de evaluación con datos de una persona real es un defecto.
 
-## Cuestiones abiertas antes de aprobar
+## Cuestiones resueltas
 
-- **O-1. Valores libres o vocabulario controlado.** `CLAUDE.md` exige que los
-  vocabularios controlados sean `Enum`. Si género, tono y ocasión son texto
-  libre, las contradicciones de `RF-08` solo las puede juzgar el modelo, es
-  decir, son un juicio y no una regla. Si son una lista con una opción «otro»,
-  hay una comprobación determinista y el entrevistador sigue preguntando con
-  palabras naturales.
-- **O-2. Qué se borra al entregar.** Las regeneraciones que pide el lector
+- **O-1. Valores libres o vocabulario controlado → lista cerrada con «otro».**
+  Con texto libre, las contradicciones de `RF-08` solo las podría juzgar el
+  modelo, es decir, serían un juicio y no una regla. Con una lista hay una
+  comprobación determinista, y el entrevistador sigue preguntando con palabras
+  naturales. Los valores iniciales de cada lista están en el anexo.
+- **O-2. Qué se borra al entregar → la conversación, el texto libre y la ficha,
+  pero no lo que la novela necesita.** Las regeneraciones que pide el lector
   (sección 2 del enunciado) ocurren **después** de la entrega y necesitan las
-  palabras vetadas de la novela para no reintroducirlas. Si se borran con el
-  brief, una regeneración puede volver a meter el nombre de la expareja sin que
-  nada lo detecte.
+  palabras vetadas de la novela para no reintroducirlas. Si se borraran con el
+  brief, una regeneración podría volver a meter el nombre de una expareja sin
+  que nada lo detectara.
 
 ## Qué queda explícitamente fuera
 
@@ -210,13 +232,18 @@ comprador puede marcar ese elemento como imprescindible.
 - Cómo es: rasgos de carácter, aficiones y manías. Al menos uno. **(O)** **(I)**
 
 **2. La ocasión**
-- Para qué se regala: cumpleaños, boda, aniversario, jubilación, nacimiento… **(O)**
+- Para qué se regala. **(O)** Lista: cumpleaños, boda, aniversario, jubilación,
+  nacimiento, otro.
 - Quién la regala y qué relación tiene con el destinatario.
 
 **3. La historia que quiere**
-- Género: aventura, romance, misterio, fantasía… **(O)**
-- Tono: tierno, divertido, emotivo, épico… **(O)**
-- Papel del destinatario: protagonista, personaje secundario u otro. **(O)**
+- Género. **(O)** Lista: aventura, romance, comedia, fantasía, misterio, drama
+  cotidiano, otro.
+- Tono. **(O)** Lista: tierno, divertido, emotivo, épico, nostálgico, otro.
+- Papel del destinatario. **(O)** Lista: protagonista, personaje secundario, otro.
+
+En todas las listas, «otro» se anota junto con las palabras literales del
+comprador.
 - Extensión: no se pregunta; se informa de que son 10 capítulos de 1.000 a 1.500
   palabras.
 
