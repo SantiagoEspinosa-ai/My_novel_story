@@ -135,6 +135,25 @@ El contexto se gestiona por niveles, no metiendo todo lo que quepa.
 
 Tres mecanismos marcan la diferencia. El **delta por escena** hace que el estado se reconstruya acumulando diffs en vez de releyendo el texto, que es lo que no escala. Las **anclas de estilo** en el nivel inmutable contrarrestan la deriva de voz, el fallo más insidioso en obra larga. Y conviene separar la **ventana de coherencia** (local: ¿esta escena se sostiene?) de la **ventana de continuidad** (global: ¿contradice el capítulo 4?), porque son pases distintos y resolverlas con el mismo prompt degrada las dos.
 
+## Plano Destinatario
+
+La novela se escribe **para alguien** (`SPEC-25`). Estas clases recogen quién es, qué hay que contar de él y qué no debe aparecer. Las rellena el Entrevistador preguntando al comprador; el Planificador y el Escritor solo leen la ficha terminada.
+
+| Clase | Definición | Atributos clave |
+| --- | --- | --- |
+| FichaDeEntrevista | Lo acordado con el comprador: el único canal entre él y el Escritor. | **destinatario** → Destinatario, **ocasion** → `ocasion`, **genero** → `genero_de_la_historia`, **tono** → `tono_de_la_historia`, **papel** → `papel_del_destinatario`, literales\_de\_otro, regalado\_por, vetadas\[\] (cadenas), dedicatoria, hechos\_propuestos\[\] → HechoPropuesto, contradicciones\_resueltas\[\] |
+| Destinatario | La persona que recibe la novela. | **nombre**, **edad**, elementos\[\] → ElementoPersonal |
+| ElementoPersonal | Un rasgo, recuerdo, persona o mascota del destinatario. | **tipo** → `tipo_de_elemento_personal`, **descripcion**, nombre, relacion, momento, imprescindible |
+| HechoPropuesto | Hecho extraído del texto libre, pendiente de que el comprador lo confirme. | **texto**, **estado** → `estado_de_hecho_propuesto` |
+| PalabraVetada | Palabra o expresión que no puede aparecer en un capítulo aceptado. | **forma**, **nivel** → `nivel_de_veto`, franja, obra |
+| DecisionDePolitica | Una fila del audit log del policy engine. | **tipo** → `tipo_de_decision_de_politica`, **momento**, obra, detalle |
+
+**«otro» no es un valor vacío.** En `ocasion`, `genero_de_la_historia`, `tono_de_la_historia` y `papel_del_destinatario`, elegir `otro` obliga a guardar las palabras literales del comprador en `literales_de_otro`. Es lo que permite preguntar con naturalidad y seguir comprobando con código (`SPEC-25` `O-1`).
+
+**La extensión no está en la ficha porque no se decide**: son 10 capítulos de 1.000 a 1.500 palabras (`SPEC-25` `RF-03`).
+
+**Las palabras vetadas y `GuiaDeEstilo.tics_prohibidos` son cosas distintas.** Los tics son estilo y dan un hallazgo `menor`; las vetadas son política y las comprueba `INV-21`, que es `bloqueante`.
+
 ## Plano Calidad
 
 | Clase | Definición | Atributos clave |
@@ -227,6 +246,15 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `tipo_de_uso_de_hecho` | relación `usa` | establece, menciona, depende, contradice |
 | `origen_de_uso` | relación `usa` | regla, delta, juez\_llm, humano |
 | `tipo_de_presencia` | EventoCronologico.participantes | presente, mencionado |
+| `ocasion` | FichaDeEntrevista.ocasion | cumpleanos, boda, aniversario, jubilacion, nacimiento, otro |
+| `genero_de_la_historia` | FichaDeEntrevista.genero | aventura, romance, comedia, fantasia, misterio, drama\_cotidiano, otro |
+| `tono_de_la_historia` | FichaDeEntrevista.tono | tierno, divertido, emotivo, epico, nostalgico, otro |
+| `papel_del_destinatario` | FichaDeEntrevista.papel | protagonista, personaje\_secundario, otro |
+| `tipo_de_elemento_personal` | ElementoPersonal.tipo | rasgo, recuerdo, persona, mascota |
+| `estado_de_hecho_propuesto` | HechoPropuesto.estado | propuesto, confirmado, descartado |
+| `nivel_de_veto` | PalabraVetada.nivel | global, franja\_de\_edad, novela |
+| `tipo_de_contradiccion` | FichaDeEntrevista.contradicciones\_resueltas | edad\_frente\_a\_genero, edad\_frente\_a\_ocasion, recuerdo\_frente\_a\_edad, juicio\_del\_modelo |
+| `tipo_de_decision_de_politica` | DecisionDePolitica.tipo | coincidencia\_vetada, reescritura\_pedida, parada\_por\_vetada, instruccion\_en\_texto\_libre, contradiccion\_detectada, contradiccion\_resuelta, borrado\_al\_entregar |
 
 **«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —contar también los `menciona` reescribe media novela por una alusión de paso—. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.
 
@@ -328,6 +356,7 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla | `CurvaDeDread.serie` |
 | INV-17 | La longitud de la escena cae dentro de su `longitud_objetivo` | escena | mayor | regla | `Borrador.texto`, `Escena.longitud_objetivo` |
 | INV-18 | Todo hecho que los `beats` de una escena prometían establecer aparece en su delta | escena | mayor | regla | `Beat.establece[]`, `revelaciones` del delta, `HechoCanonico.escena_de_establecimiento` |
+| INV-21 | Ningún capítulo aceptado contiene una palabra vetada de ninguno de los tres niveles, tras normalizar mayúsculas, acentos, plurales y género gramatical | capitulo | bloqueante | regla | `Borrador.texto`, `PalabraVetada.forma`, `Destinatario.edad` |
 
 **La columna «Qué lee» existe para hacer verificable una regla del recorte.** `SPEC-12`
 fija que la forma reducida de un bloque de contexto **nunca puede llevarse lo que lee una

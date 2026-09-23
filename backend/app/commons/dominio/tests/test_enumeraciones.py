@@ -93,3 +93,37 @@ def test_tipo_de_presencia_separa_estar_de_ser_nombrado():
     vez se convierte en una fabrica de falsos positivos.
     """
     assert [p.value for p in enums.TipoDePresencia] == ["presente", "mencionado"]
+
+
+# --- `SPEC-25`: el destinatario, la entrevista y la politica ---------------
+
+
+def test_los_vocabularios_del_destinatario_son_los_de_definitions():
+    """`SPEC-25` `O-1`: listas cerradas, y todas las que el comprador elige
+    acaban en `otro`. Sin `otro` la entrevista tendria que forzar una categoria
+    que el comprador no dijo, y la ficha mentiria."""
+    assert [o.value for o in enums.Ocasion] == [
+        "cumpleanos", "boda", "aniversario", "jubilacion", "nacimiento", "otro"]
+    assert [g.value for g in enums.GeneroDeLaHistoria] == [
+        "aventura", "romance", "comedia", "fantasia", "misterio",
+        "drama_cotidiano", "otro"]
+    assert [t.value for t in enums.TonoDeLaHistoria] == [
+        "tierno", "divertido", "emotivo", "epico", "nostalgico", "otro"]
+    assert [p.value for p in enums.PapelDelDestinatario] == [
+        "protagonista", "personaje_secundario", "otro"]
+    assert [e.value for e in enums.TipoDeElementoPersonal] == [
+        "rasgo", "recuerdo", "persona", "mascota"]
+    assert [e.value for e in enums.EstadoDeHechoPropuesto] == [
+        "propuesto", "confirmado", "descartado"]
+
+
+def test_los_vocabularios_de_la_politica_son_los_de_definitions():
+    assert [n.value for n in enums.NivelDeVeto] == [
+        "global", "franja_de_edad", "novela"]
+    assert [c.value for c in enums.TipoDeContradiccion] == [
+        "edad_frente_a_genero", "edad_frente_a_ocasion",
+        "recuerdo_frente_a_edad", "juicio_del_modelo"]
+    assert [d.value for d in enums.TipoDeDecisionDePolitica] == [
+        "coincidencia_vetada", "reescritura_pedida", "parada_por_vetada",
+        "instruccion_en_texto_libre", "contradiccion_detectada",
+        "contradiccion_resuelta", "borrado_al_entregar"]

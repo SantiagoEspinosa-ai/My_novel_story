@@ -250,3 +250,81 @@ class Severidad(_Vocabulario):
     BLOQUEANTE = "bloqueante"
     MAYOR = "mayor"
     MENOR = "menor"
+
+
+# --- Plano Destinatario (`SPEC-25`) ----------------------------------------
+#
+# Las cuatro que elige el comprador terminan en `OTRO`. Elegir `OTRO` obliga a
+# guardar sus palabras literales (`FichaDeEntrevista.literales_de_otro`): es lo
+# que deja preguntar con naturalidad y seguir comprobando con codigo.
+
+class Ocasion(_Vocabulario):
+    CUMPLEANOS = "cumpleanos"
+    BODA = "boda"
+    ANIVERSARIO = "aniversario"
+    JUBILACION = "jubilacion"
+    NACIMIENTO = "nacimiento"
+    OTRO = "otro"
+
+
+class GeneroDeLaHistoria(_Vocabulario):
+    AVENTURA = "aventura"
+    ROMANCE = "romance"
+    COMEDIA = "comedia"
+    FANTASIA = "fantasia"
+    MISTERIO = "misterio"
+    DRAMA_COTIDIANO = "drama_cotidiano"
+    OTRO = "otro"
+
+
+class TonoDeLaHistoria(_Vocabulario):
+    TIERNO = "tierno"
+    DIVERTIDO = "divertido"
+    EMOTIVO = "emotivo"
+    EPICO = "epico"
+    NOSTALGICO = "nostalgico"
+    OTRO = "otro"
+
+
+class PapelDelDestinatario(_Vocabulario):
+    PROTAGONISTA = "protagonista"
+    PERSONAJE_SECUNDARIO = "personaje_secundario"
+    OTRO = "otro"
+
+
+class TipoDeElementoPersonal(_Vocabulario):
+    RASGO = "rasgo"
+    RECUERDO = "recuerdo"
+    PERSONA = "persona"
+    MASCOTA = "mascota"
+
+
+class EstadoDeHechoPropuesto(_Vocabulario):
+    PROPUESTO = "propuesto"
+    CONFIRMADO = "confirmado"
+    DESCARTADO = "descartado"
+
+
+class NivelDeVeto(_Vocabulario):
+    GLOBAL = "global"
+    FRANJA_DE_EDAD = "franja_de_edad"
+    NOVELA = "novela"
+
+
+class TipoDeContradiccion(_Vocabulario):
+    EDAD_FRENTE_A_GENERO = "edad_frente_a_genero"
+    EDAD_FRENTE_A_OCASION = "edad_frente_a_ocasion"
+    RECUERDO_FRENTE_A_EDAD = "recuerdo_frente_a_edad"
+    JUICIO_DEL_MODELO = "juicio_del_modelo"
+    """No es una comprobacion: la emite el Entrevistador cuando hay un `otro`
+    que el codigo no puede comparar (`SPEC-25` `RF-08b`)."""
+
+
+class TipoDeDecisionDePolitica(_Vocabulario):
+    COINCIDENCIA_VETADA = "coincidencia_vetada"
+    REESCRITURA_PEDIDA = "reescritura_pedida"
+    PARADA_POR_VETADA = "parada_por_vetada"
+    INSTRUCCION_EN_TEXTO_LIBRE = "instruccion_en_texto_libre"
+    CONTRADICCION_DETECTADA = "contradiccion_detectada"
+    CONTRADICCION_RESUELTA = "contradiccion_resuelta"
+    BORRADO_AL_ENTREGAR = "borrado_al_entregar"
