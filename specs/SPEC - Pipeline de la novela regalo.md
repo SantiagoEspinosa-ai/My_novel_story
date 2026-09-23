@@ -1,12 +1,16 @@
 ---
 id: SPEC-26
 titulo: El pipeline de la novela regalo
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión (sustituir por su identificador)"
+fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
+
+> **Historial.** v1: redactada con las doce respuestas, con `O-1` y `O-2`
+> abiertas. v2: el autor aprueba con las dos propuestas, que pasan a los
+> requisitos.
 
 # SPEC-26 — El pipeline de la novela regalo
 
@@ -66,7 +70,7 @@ Faltan cinco cosas:
   vetada aparece en el plan. **El Revisor juzga la fidelidad; la cobertura la
   cuenta el código.**
 - **RF-07.** Con objeciones, el Planificador rehace el plan con ellas delante,
-  hasta un tope de revisiones que es configuración. Si se agota, **la generación
+  hasta **3 revisiones** (configuración, `O-1`). Si se agota, **la generación
   no empieza** y lo informa: sin plan aprobado no se escribe.
 
 ### La escritura y el editor
@@ -99,7 +103,8 @@ Faltan cinco cosas:
   personajes aparecen **escritos exactamente** como en la story bible. Un nombre
   parecido que no es igual («Irena» por «Irene») hace que el capítulo **se
   reescriba**, con el mismo mecanismo que `INV-21`: vuelve al Escritor con el
-  fragmento exacto y un contador propio, y al agotarse se para sin rendición.
+  fragmento exacto, **el mismo contador y el mismo tope de 2 reescrituras** que
+  `INV-21` (`O-2`), y al agotarse se para sin rendición.
 - **RF-14 (`INV-23`, `mayor`).** Las palabras clave de cada imprescindible
   aparecen en su capítulo previsto. Si faltan, el capítulo se reescribe dentro de
   los intentos de calidad.
@@ -132,13 +137,13 @@ Faltan cinco cosas:
   otra, el informe dice **«no aplica»** junto a cada una, en vez de callarse.
   `INV-13` e `INV-15` no son de terror y se aplican siempre.
 
-## Cuestiones abiertas antes de aprobar
+## Cuestiones resueltas
 
-- **O-1. Tope de revisiones del plan (`RF-07`).** No está decidido. Propuesta: 3,
-  igual que las reescrituras del Editor.
-- **O-2. Tope de reescrituras por nombre mal escrito (`RF-13`).** Propuesta: el
-  mismo contador y tope que `INV-21` (2), porque es el mismo tipo de error: una
-  regla del código que le dice al Escritor exactamente qué escribió mal.
+- **O-1. Tope de revisiones del plan (`RF-07`) → 3**, igual que las reescrituras
+  del Editor.
+- **O-2. Tope de reescrituras por nombre mal escrito (`RF-13`) → el mismo
+  contador y tope que `INV-21` (2)**, porque es el mismo tipo de error: una regla
+  del código que le dice al Escritor exactamente qué escribió mal.
 
 ## Qué queda explícitamente fuera
 
