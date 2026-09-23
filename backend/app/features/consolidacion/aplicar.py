@@ -16,6 +16,8 @@ sin que nada avise.
 
 import sqlite3
 
+from app.features.consolidacion import mundo as modulo_mundo
+
 SQL = """
 CREATE TABLE IF NOT EXISTS entidad (
     id       TEXT PRIMARY KEY,
@@ -39,6 +41,7 @@ class YaConsolidada(Exception):
 def asegurar_tablas(con):
     with con:
         con.executescript(SQL)
+    modulo_mundo.asegurar_tablas(con)
 
 
 def sembrar(con, entidades):
@@ -81,6 +84,11 @@ def consolidar(con, escena, delta):
                     raise DeltaIncompatible(
                         "el delta lleva a {0} de {1} a {2}, y su estado en t no "
                         "es {1}".format(c["personaje"], c["de"], c["a"]))
+            # El conocimiento se escribe **dentro** de la misma transaccion.
+            # Fuera de ella, un delta que falle a mitad dejaria al personaje
+            # sabiendo algo que nunca llego a pasar: el estado a medias que
+            # `INV-05` no sabe clasificar, por otra puerta.
+            modulo_mundo.aplicar_conocimiento(con, escena, delta)
             con.execute("INSERT INTO escena_consolidada VALUES (?)", (escena,))
     except DeltaIncompatible:
         raise
