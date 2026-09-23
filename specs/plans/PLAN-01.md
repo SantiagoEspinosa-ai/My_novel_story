@@ -142,6 +142,46 @@ Una ejecución no es código y aun así es un paso, porque **es el único que ci
 abiertas**. Al terminar habrá, por primera vez, una traza con datos reales. Lo que eso
 contesta y lo que no está en la sección siguiente.
 
+## Fase F — Que el estado circule
+
+El agujero no es el número de piezas: **es que el estado no circula**. `ciclo.ejecutar`
+recibe el mundo como un diccionario escrito a mano, así que la escena 2 generaría contra el
+mundo de la 1 y **el contexto nunca crecería**. Por eso `VER-37` se ha quedado sin cerrar
+dos veces, con 138 y con 9.237 tokens de 100.000 y sin un solo recorte: **un fixture escrito
+a mano no llega al techo.**
+
+### El criterio de terminación no es una prueba verde
+
+Es el primero del proyecto que no lo es: **la Fase F termina cuando el contexto crece solo**.
+El paso final mide, en cada escena, el tamaño de cada bloque y si hubo recorte. Una suite en
+verde con un contexto de 9.000 tokens ya la tenemos y no contesta nada.
+
+| # | Paso | Ficheros | La prueba que falla primero | Por qué va aquí | Queda funcionando |
+| --- | --- | --- | --- | --- | --- |
+| **F1** | Reconstruir el mundo desde los deltas | `features/consolidacion/` | El mundo leído tras consolidar la escena 1 refleja su delta | Sin esto la 2 genera contra el mundo de la 1. Es `INV-05` a medio implementar | El estado circula entre dos escenas |
+| **F2** | El registro de conocimiento se escribe al consolidar | `features/consolidacion/` | Una revelación en la escena 1 hace que `INV-03` la acepte en la 2 | `INV-03` lo **lee** y nadie lo **escribe**: hoy funciona porque se siembra a mano | `INV-03` deja de bloquear lo que ya se reveló |
+| **F3** | Persistir `Resumen` con sus `hechos_clave` | `features/consolidacion/`, `commons/db/` | El resumen de la escena 1 se relee al montar la 2 | Es uno de los siete bloques, y hoy el Resumidor devuelve y se tira | Los resúmenes se apilan |
+| **F4** | `Ficha` con su `version_en_t` | `features/consolidacion/`, `commons/db/` | La ficha de una entidad tocada en la escena 1 cambia de versión | Es el bloque `Recuperado`. `SPEC-09` depende de esto | Las fichas crecen |
+| **F5** | Ensamblar de verdad | `features/contexto/` | Cada bloque devuelve **texto**, no un número, y el recorte opera sobre él | `contexto/` tiene el recorte y no el ensamblado: hoy el recorte opera sobre una ficción | El contexto es real |
+| **F6** | El bucle de escenas | `features/orquestacion/` | La escena 3 no arranca si la 2 no está consolidada | `puede_generarse_la_siguiente` existe y **nadie la llama** | Seis escenas seguidas, midiendo |
+
+### Lo que esta fase **no** hace, y hay que saberlo
+
+La rendición, el tope global de llamadas, la puerta de capítulo y la recuperación por
+similitud. **Ninguna bloquea `VER-37`**, y meterlas alargaría la fase sin acercar su
+criterio. Para seis escenas, `Recuperado` puede empezar con *todas* las fichas.
+
+### Dos cosas que hay que esperar, y una no es un fallo
+
+**El coste crece con el contexto, y ese es el dato.** Seis escenas a 0,3951 $ son 2,40 $
+**con el contexto de hoy**. Si el punto de la fase es que el contexto crezca, el coste
+crece con él, y por dónde crece es precisamente lo que se va a medir.
+
+**Y si la generación se para en la tercera escena, eso no es un fracaso: es la medida.**
+`INV-03` es `bloqueante` y no admite rendición —rendirse metería un hecho falso en el
+registro y todo lo siguiente se generaría encima—. Con qué frecuencia bloquea **no lo
+sabemos**, y hace falta saberlo antes de intentar sesenta escenas. Está como `VER-64`.
+
 ---
 
 ## Los dos números provisionales

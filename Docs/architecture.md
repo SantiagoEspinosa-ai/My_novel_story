@@ -797,6 +797,15 @@ esperando una respuesta que el dato no da.
 - [ ] **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla`, la pregunta deja **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide. **La traza dirá cuántas veces discrepan y en qué dirección, no quién gana.**
   de ser teórica: hay dos resultados que comparar en cada escena. Falta decidir qué gana
   cuando la regla no ve nada y el Juez marca. Lo mismo para `INV-11` e `INV-14`.
+- [ ] **Qué necesita una persona para desatascar una `bloqueante` rápido.** La decisión de
+  **no rendirse** ante una `bloqueante` no cambia con la escala, y con sesenta escenas es
+  aún más necesaria: rendirse ante `INV-03` mete un hecho falso en el registro de
+  conocimiento y todo lo que venga después se genera encima. **Lo que sí cambia es el coste
+  de desatascar.** Con una escena, parar y mirar es trivial; con sesenta, si cada bloqueo
+  exige entender el estado entero, el sistema es **inusable aunque sea correcto**. Hay que
+  fijar tres cosas: **qué dice el hallazgo** para que se entienda sin reconstruir la obra,
+  **qué se puede editar** sin romper lo ya consolidado, y **si se puede reintentar la escena
+  con una instrucción añadida** en vez de replanificar el capítulo.
 - [ ] **Quién detecta un trabajo abandonado.** `SPEC-07` decidió qué se hace con él —se
   marca `abandonado`, no cuenta contra el tope y lo relanza una persona— pero no quién lo
   detecta: el worker al arrancar, un barrido aparte, o una persona. La transición
