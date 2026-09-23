@@ -301,6 +301,57 @@ class Topes(_DelDominio):
     delegaciones_por_obra: int = Field(default=config.TOPE_DELEGACIONES_OBRA, gt=0)
     reintentos_de_transporte: int = Field(
         default=config.TOPE_REINTENTOS_TRANSPORTE, gt=0)
+    reescrituras_por_vetada: int = Field(
+        default=config.TOPE_REESCRITURAS_POR_VETADA, ge=0)
+
+
+class FranjaDeEdad(_DelDominio):
+    """Un tramo de edades con su propia lista de vetadas (`SPEC-25` `RF-16`).
+
+    `hasta` es **inclusivo**: la franja infantil de 0 a 11 incluye a quien tiene
+    11 años. Es configuracion y no codigo porque el limite lo decide quien vende
+    la novela, no quien la programa.
+    """
+
+    nombre: str = Field(min_length=1)
+    desde: int = Field(ge=0)
+    hasta: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def _el_tramo_no_esta_al_reves(self):
+        if self.hasta < self.desde:
+            raise ValueError("la franja {0} acaba ({1}) antes de empezar ({2})".format(
+                self.nombre, self.hasta, self.desde))
+        return self
+
+
+def _franjas_por_defecto():
+    return [FranjaDeEdad(nombre="infantil", desde=0, hasta=11),
+            FranjaDeEdad(nombre="juvenil", desde=12, hasta=17)]
+
+
+class ReglasDeContradiccion(_DelDominio):
+    """Las parejas incompatibles de `SPEC-25` `RF-08`, como configuracion.
+
+    Una entrada dice: por debajo de esta edad, este valor se contradice con el
+    destinatario. Un valor que no esta en el diccionario no tiene limite.
+    """
+
+    edad_minima_por_genero: dict[enums.GeneroDeLaHistoria, int] = Field(
+        default_factory=lambda: {enums.GeneroDeLaHistoria.ROMANCE: 12})
+    edad_minima_por_ocasion: dict[enums.Ocasion, int] = Field(
+        default_factory=lambda: {enums.Ocasion.BODA: 18,
+                                 enums.Ocasion.JUBILACION: 18})
+
+
+class ListasVetadas(_DelDominio):
+    """El contenido inicial de los niveles global y por franja (`SPEC-25`).
+
+    El nivel por novela no esta aqui: lo decide el comprador en la entrevista.
+    """
+
+    global_: list[str] = Field(alias="global")
+    franjas: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class Presupuesto(_DelDominio):
@@ -316,6 +367,9 @@ class ConfiguracionDelSistema(_DelDominio):
     topes: Topes = Field(default_factory=Topes)
     presupuesto: Presupuesto = Field(default_factory=Presupuesto)
     ruta_de_la_base: str = Field(default="obra.db")
+    franjas_de_edad: list[FranjaDeEdad] = Field(default_factory=_franjas_por_defecto)
+    contradicciones: ReglasDeContradiccion = Field(
+        default_factory=ReglasDeContradiccion)
 
     @property
     def huella(self) -> str:

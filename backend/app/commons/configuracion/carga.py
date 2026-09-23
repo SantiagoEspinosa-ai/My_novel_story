@@ -27,13 +27,18 @@ import pathlib
 
 from pydantic import ValidationError
 
-from app.commons.configuracion.esquemas import BriefDeObra, ConfiguracionDelSistema
+from app.commons.configuracion.esquemas import (
+    BriefDeObra,
+    ConfiguracionDelSistema,
+    ListasVetadas,
+)
 
 # `backend/config/`. Sube desde `app/commons/configuracion/carga.py`.
 RAIZ = pathlib.Path(__file__).resolve().parents[3]
 CONFIG = RAIZ / "config"
 SISTEMA_POR_DEFECTO = CONFIG / "sistema.json"
 BRIEF_POR_DEFECTO = CONFIG / "brief.json"
+VETADAS_POR_DEFECTO = CONFIG / "vetadas.json"
 
 
 class ConfiguracionInvalida(Exception):
@@ -79,6 +84,13 @@ def cargar_brief(ruta=None) -> BriefDeObra:
     """Lo que cambia con la novela: premisa, forma, estilo."""
     ruta = ruta or BRIEF_POR_DEFECTO
     return _validar(BriefDeObra, _leer_json(ruta, "la obra"), ruta, "la obra")
+
+
+def cargar_vetadas(ruta=None) -> ListasVetadas:
+    """Las listas global y por franja de edad (`SPEC-25` `RF-15`)."""
+    ruta = ruta or VETADAS_POR_DEFECTO
+    return _validar(ListasVetadas, _leer_json(ruta, "las palabras vetadas"),
+                    ruta, "las palabras vetadas")
 
 
 def comprobar_forma(brief, capitulos: int, escenas_por_capitulo: int):

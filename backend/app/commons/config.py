@@ -46,3 +46,10 @@ TOPE_INTENTOS_ESCENA = 3
 # el presupuesto de alguien. **Lo que acota es el gasto, no el error.**
 # Caduca con: harness/evals/
 TOPE_DELEGACIONES_OBRA = 540
+
+# **No es provisional: es contrato.** Lo decidio el autor en `SPEC-25` `RF-18`
+# y coincide con `MaxIntentos = 2` del modelo TLA+ (`specs/tla/`). Cuenta aparte
+# de `TOPE_INTENTOS_ESCENA`: una palabra vetada no es un fallo de calidad que
+# se arregle insistiendo, y si compartieran contador una escena podria gastar
+# sus intentos en vetadas y rendirse con un problema de calidad sin mirar.
+TOPE_REESCRITURAS_POR_VETADA = 2

@@ -8,12 +8,23 @@
   "topes": {
     "intentos_por_escena": 3,
     "delegaciones_por_obra": 540,
-    "reintentos_de_transporte": 3
+    "reintentos_de_transporte": 3,
+    "reescrituras_por_vetada": 2
   },
 
   "presupuesto": {
     "techo_de_contexto": 100000
   },
 
-  "ruta_de_la_base": "obra.db"
+  "ruta_de_la_base": "obra.db",
+
+  "franjas_de_edad": [
+    {"nombre": "infantil", "desde": 0, "hasta": 11},
+    {"nombre": "juvenil", "desde": 12, "hasta": 17}
+  ],
+
+  "contradicciones": {
+    "edad_minima_por_genero": {"romance": 12},
+    "edad_minima_por_ocasion": {"boda": 18, "jubilacion": 18}
+  }
 }

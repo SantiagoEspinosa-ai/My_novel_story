@@ -1,0 +1,11 @@
+{
+  "global": [
+    "idiota", "imbecil", "estupido", "gilipollas", "cabron", "puta", "puto",
+    "hijo de puta", "mierda", "joder", "coño", "maricon", "subnormal",
+    "retrasado", "zorra", "bastardo", "capullo", "polla", "follar", "malparido"
+  ],
+  "franjas": {
+    "infantil": ["sangre", "matar", "asesinar", "cadaver", "droga", "borracho", "sexo"],
+    "juvenil": ["droga", "sexo"]
+  }
+}
