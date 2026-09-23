@@ -101,26 +101,9 @@ def lecturas(material: dict) -> dict:
     conocimiento = [{"sujeto": s, "hecho": h}
                     for (s, h) in sorted((mundo.get("conocimiento") or {}))]
     return {
-        "hechos": [_id_de_hecho(h) for h in material.get("hechos") or []],
+        "hechos": [h["id"] for h in material.get("hechos") or []],
         "conocimiento": conocimiento,
     }
-
-
-def _id_de_hecho(hecho):
-    """`hechos` viaja hoy con **dos formas** y las dos son legitimas aqui.
-
-    `montar` recibe fichas completas -`{id, enunciado, establecido_en}`- porque
-    tiene que escribir el bloque; `bucle.generar` recibe solo identificadores,
-    que es lo que los `beats` declaran. Aceptar las dos es describir lo que el
-    codigo hace hoy, no una comodidad: quien registre una lectura no deberia
-    tener que saber por que camino llego el hecho.
-
-    Que el mismo nombre lleve dos formas es una Regla 5 pequeña y esta anotada
-    a proposito. Unificarlas es otro cambio y no se hace de paso.
-    """
-    return hecho["id"] if isinstance(hecho, dict) else hecho
-
-
 def montar(material: dict) -> dict:
     """Devuelve `{nombre_de_bloque: texto}` en el orden de 2.4."""
     return {b.nombre: CONSTRUCTORES[b.nombre](material) for b in BLOQUES}

@@ -33,10 +33,11 @@ def _ctx(tam=100):
     return {b.nombre: tam for b in BLOQUES}
 
 
-# La forma que usa de verdad el bucle: identificadores, que es lo que los
-# `beats` declaran. `montar` recibe fichas completas, y `lecturas` acepta las
-# dos porque hoy conviven; esta prueba usa la del camino real.
-HECHOS = ["hec-llave"]
+# **Una sola forma.** `hechos` son fichas del canon en todo el camino, desde
+# `reunir_material` hasta aqui. Los identificadores sueltos existen en un unico
+# sitio -lo que se imprime en el prompt- y la conversion es explicita.
+HECHOS = [{"id": "hec-llave", "enunciado": "La llave no aparece",
+           "establecido_en": None}]
 MUNDO = {"conocimiento": {("per-marta", "hec-llave"): {"desde": "e1"}}}
 
 
@@ -81,3 +82,23 @@ def test_se_registra_antes_de_llamar_al_modelo(con):
 
     assert r.fallo == "contrato"
     assert lecturas_repo.lecturas_de(con, "e1"), "la lectura ocurrió igual"
+
+
+def test_el_bucle_recibe_fichas_y_solo_el_prompt_ve_identificadores(con):
+    """El contrato unificado, fijado por su nombre.
+
+    `hechos` viajaba con dos formas -fichas hacia `montar`, identificadores
+    hacia `generar`- y el mismo nombre con dos formas es la Regla 5 en pequeño:
+    ya hizo tropezar a quien escribio el registro de lecturas. Ahora la ficha es
+    la unica forma que viaja y la proyeccion a identificadores ocurre una sola
+    vez, al construir el prompt.
+
+    Si alguien vuelve a aceptar las dos "por comodidad", esta prueba se lo dice.
+    """
+    r = agente.generar(con, "e1", _ctx(), DobleDelModelo(), techo=10_000,
+                       hechos=HECHOS, mundo=MUNDO)
+
+    assert r.fallo is None
+    # Lo que se registro es el identificador, no la ficha entera.
+    assert [f["hecho"] for f in lecturas_repo.lecturas_de(con, "e1")
+            if f["tipo"] == "hecho"] == ["hec-llave"]

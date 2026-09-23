@@ -285,7 +285,7 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
         c = ciclo.ejecutar(con, escena["id"], tamanos, escritor, juez, resumidor,
                            material["mundo"], techo=techo,
                            trabajo="obra-{0}-i{1}".format(escena["orden"], numero + 1),
-                           hechos=[h["id"] for h in material["hechos"]],
+                           hechos=material["hechos"],
                            problemas=_problemas_de(intentos),
                            instrucciones=instrucciones,
                            acta=_acta_de_la_escena(escena, obra_id,

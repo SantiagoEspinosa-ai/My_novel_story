@@ -111,7 +111,7 @@ CON_PROBLEMAS = """PROBLEMAS DEL INTENTO ANTERIOR QUE HAY QUE CORREGIR
 
 
 def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
-              personajes=None, hechos=None, instrucciones=None,
+              personajes=None, ids_de_hechos=None, instrucciones=None,
               establece=None) -> str:
     """Los problemas del intento anterior entran en el prompt, no en un aviso.
 
@@ -142,7 +142,7 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
             lista="\n".join("- " + str(i) for i in instrucciones))
     ids = "\n".join([
         "personajes: " + (", ".join(personajes or []) or "(ninguno)"),
-        "hechos: " + (", ".join(hechos or []) or "(ninguno)"),
+        "hechos: " + (", ".join(ids_de_hechos or []) or "(ninguno)"),
     ])
     return PLANTILLA.format(
         identificadores=ids,

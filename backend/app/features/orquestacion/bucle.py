@@ -84,7 +84,12 @@ def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None,
         # conocimiento. Derivarlos del registro creo el punto muerto de `F-29`:
         # la lista salia de las revelaciones y las revelaciones necesitaban la
         # lista, asi que nunca habia ninguna.
-        hechos=sorted(hechos or []),
+        #
+        # `hechos` son **fichas** en todo el camino; el prompt solo imprime sus
+        # identificadores, asi que la proyeccion ocurre aqui y una sola vez. Que
+        # el mismo nombre llevara las dos formas ya hizo tropezar a quien
+        # escribio el registro de lecturas: Regla 5 en pequeño.
+        ids_de_hechos=sorted(h["id"] for h in hechos or []),
         instrucciones=instrucciones,
         # `SPEC-19` P-5: lo que el plan prometio que esta escena establece.
         # Sale de los `beats`, que desde `SPEC-19` pueden llevar referencias
