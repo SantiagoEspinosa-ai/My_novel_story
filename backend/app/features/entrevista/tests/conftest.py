@@ -23,6 +23,8 @@ def ficha_completa(**cambios):
             ]},
         "ocasion": "cumpleanos", "genero": "aventura", "tono": "divertido",
         "papel": "protagonista", "dedicatoria": "Para Irene, que siempre llega.",
+        "titulo": "El mapa de Irene",
+        "premisa": "Un mapa antiguo devuelve a Irene al tren de Lisboa.",
     }
     datos.update(cambios)
     return FichaDeEntrevista.model_validate(datos)

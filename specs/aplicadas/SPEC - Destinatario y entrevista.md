@@ -7,7 +7,8 @@ fecha_aprobacion: 2026-09-23
 fecha_aplicacion: 2026-09-23
 commit_de_aplicacion: 88e3a2e
 fecha: 2026-09-23
-version: 2
+version: 3
+enmienda_aprobada: 2026-09-23
 ---
 
 > **Historial.** v1: redactada con las respuestas de aclaración, con `O-1` y
@@ -16,6 +17,11 @@ version: 2
 > entre categorías de la lista (ninguna pareja de la lista es incoherente por sí
 > misma) y se sustituye por «edad frente a ocasión». La de ocasión y tono sigue
 > existiendo como juicio del modelo cuando algún valor es «otro» (`RF-08b`).
+> v3 (enmienda del autor, 2026-09-23): **la premisa y el título los propone el
+> entrevistador**, no el planificador. En sus palabras: *«el enunciado dice que la
+> entrevista recoge género y tono, y la premisa sale de los recuerdos y rasgos del
+> destinatario — eso es material de la entrevista»*. Entran en la ficha como
+> obligatorios (`RF-02`, `RF-02b`) y en el anexo como apartado propio.
 
 # SPEC-25 — El destinatario, la entrevista y las palabras vetadas
 
@@ -80,6 +86,9 @@ el código (`CLAUDE.md`: los vocabularios controlados son `Enum`).
   tono, papel del destinatario en la historia, al menos un rasgo y al menos un
   recuerdo. Una ficha sin alguno de ellos **no es un brief válido** y no arranca
   la generación.
+- **RF-02b.** También son obligatorios **la premisa y el título**. Los propone el
+  entrevistador a partir de los recuerdos y rasgos ya recogidos, y el comprador
+  los confirma o los cambia. El planificador los recibe hechos: no los decide.
 - **RF-03.** La extensión **no se pregunta**: son 10 capítulos de entre 1.000 y
   1.500 palabras cada uno. La ficha la registra y el entrevistador informa de
   ella al comprador.
@@ -252,6 +261,11 @@ comprador.
 **4. Los recuerdos**
 - Momentos reales que deberían aparecer. Al menos uno. **(O)** **(I)**
 - Si el comprador lo sabe, cuándo pasó cada uno (fecha o edad del destinatario).
+
+**4b. La historia en una frase**
+- Premisa: de qué va la novela, en una o dos frases. El entrevistador la propone
+  a partir de los recuerdos y rasgos, y el comprador la confirma o la cambia. **(O)**
+- Título. El entrevistador lo propone y el comprador lo confirma. **(O)**
 
 **5. Personas y mascotas**
 - Nombre, relación con el destinatario y un detalle de cada una. **(I)**

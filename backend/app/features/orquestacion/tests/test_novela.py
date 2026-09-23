@@ -173,7 +173,7 @@ def _agentes():
     # La premisa, distinta de la sinopsis del capitulo 1 a proposito: si fueran
     # la misma frase, una prueba de que llega la premisa pasaria por la sinopsis.
     planificador = _Fijo({"titulo": "El mapa de Irene",
-                          "premisa": "Un mapa heredado lleva a Irene de vuelta a Lisboa.",
+                          "premisa": "una premisa del planificador que se ignora",
                           "plan": plan_dict()})
     revisor = _Fijo({"aprobado": True, "objeciones": []})
     # El POV del plan de prueba es `per-irene`; el doble de serie declara

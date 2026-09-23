@@ -36,6 +36,12 @@ imprescindible que aparezca y anotalo en `imprescindible`. De un recuerdo,
 pregunta si sabe cuando paso (año o edad del destinatario) y anotalo en
 `momento`.
 
+LA PREMISA Y EL TITULO
+Cuando ya tengas los recuerdos y los rasgos, propon tu una premisa (de que va la
+novela, en una o dos frases, construida con ese material) y un titulo. El
+comprador los confirma o los cambia; anotas lo que confirme en `premisa` y
+`titulo`. No los decide nadie despues de ti: el planificador los recibe hechos.
+
 LO QUE NO DEBE APARECER
 Las palabras o temas van en `vetadas`. Los nombres de personas van en
 `nombres_vetados`, porque se vetan completos y por su nombre de pila.

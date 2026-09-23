@@ -22,6 +22,8 @@ FICHA = {
     "ocasion": "cumpleanos", "genero": "aventura", "tono": "divertido",
     "papel": "protagonista", "vetadas": ["hospital"],
     "nombres_vetados": ["Tomas Ferrer"],
+    "titulo": "El mapa de Irene",
+    "premisa": "Un mapa heredado lleva a Irene de vuelta a Lisboa.",
 }
 
 

@@ -75,6 +75,10 @@ class FichaDeEntrevista(_DelDominio):
     genero: enums.GeneroDeLaHistoria | None = None
     tono: enums.TonoDeLaHistoria | None = None
     papel: enums.PapelDelDestinatario | None = None
+    # `SPEC-25` v3: los propone el entrevistador a partir de los recuerdos y
+    # rasgos; el planificador los recibe hechos.
+    titulo: str | None = None
+    premisa: str | None = None
     literales_de_otro: dict[str, str] = Field(default_factory=dict)
     regalado_por: str | None = None
     vetadas: list[str] = Field(default_factory=list)

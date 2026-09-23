@@ -97,11 +97,17 @@ def test_el_plan_aprobado_se_guarda_y_se_puede_leer(con):
     assert len(repo.aprobado(con, "obra-x").capitulos) == 10
 
 
-def test_un_plan_sin_titulo_ni_premisa_gasta_una_ronda(con):
-    """La obra los exige (`Docs/definitions.md` § `Obra`) y ni la ficha ni el
-    plan los tienen: los propone el Planificador."""
-    sin_titulo = {"plan": plan_dict()}
-    r = service.planificar(con, "obra-x", ficha(), Agente([sin_titulo, _plan()]),
+def test_la_premisa_y_el_titulo_vienen_de_la_ficha(con):
+    """`SPEC-25` v3: los propone el entrevistador. El planificador los recibe en
+    el prompt y no puede cambiarlos aunque devuelva otros."""
+    planificador = Agente([dict(_plan(), titulo="Otro titulo", premisa="Otra premisa")])
+    r = service.planificar(con, "obra-x", ficha(), planificador, Agente([APROBADO]))
+    assert r.titulo == "El mapa de Irene"
+    assert r.premisa == "Un mapa heredado lleva a Irene de vuelta a Lisboa."
+    assert "Un mapa heredado lleva a Irene de vuelta a Lisboa." in planificador.llamadas[0]
+
+
+def test_un_plan_sin_titulo_propio_ya_no_gasta_una_ronda(con):
+    r = service.planificar(con, "obra-x", ficha(), Agente([{"plan": plan_dict()}]),
                            Agente([APROBADO]))
-    assert r.version == 2 and r.titulo == "El mapa de Irene"
-    assert "titulo" in repo.versiones(con, "obra-x")[0]["objeciones"][0]
+    assert r.version == 1

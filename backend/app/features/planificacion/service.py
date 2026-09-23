@@ -25,11 +25,14 @@ PROMPT_PLANIFICADOR = """Planifica una novela para regalar a partir de esta fich
 FICHA (lo unico que dijo el comprador; no inventes nada que la contradiga)
 {ficha}
 
+PREMISA Y TITULO (los decidio la entrevista; no los cambies)
+{premisa}
+{titulo}
+
 FORMA
 {capitulos} capitulos. Cada capitulo es UNA escena de {minimo} a {maximo} palabras.
 {objeciones}
-Devuelve un unico objeto JSON: {{"titulo": "...", "premisa": "una frase",
-"plan": {{...}}}}, con el plan de esta forma:
+Devuelve un unico objeto JSON: {{"plan": {{...}}}}, con el plan de esta forma:
   mundo: lugares [{{id, nombre, accesos}}] y personajes [{{id, nombre,
     empieza_en, fecha_de_nacimiento}}]. El destinatario y cada persona o
     mascota de la ficha van con su nombre EXACTO.
@@ -81,15 +84,12 @@ def _objeciones(lista):
 
 
 def _leer_plan(bruto):
-    """El plan, el titulo y la premisa. La `Obra` exige los dos ultimos y ni la
-    ficha ni `PlanDeLaObra` los tienen: los propone el Planificador."""
+    """El plan. El titulo y la premisa **no** salen de aqui: los propone el
+    entrevistador y vienen en la ficha (`SPEC-25` v3). Si el Planificador
+    devuelve otros, se ignoran."""
     if not isinstance(bruto, dict) or not isinstance(bruto.get("plan"), dict):
         raise ValueError("la respuesta no trae `plan` como objeto")
-    for campo in ("titulo", "premisa"):
-        if not str(bruto.get(campo) or "").strip():
-            raise ValueError("falta `{0}`: la obra lo exige".format(campo))
-    return (PlanDeLaObra.model_validate(bruto["plan"]), str(bruto["titulo"]).strip(),
-            str(bruto["premisa"]).strip())
+    return PlanDeLaObra.model_validate(bruto["plan"])
 
 
 def _leer_veredicto(bruto):
@@ -109,12 +109,13 @@ def planificar(con, obra, ficha, planificador, revisor,
     anteriores = []
     for version in range(1, tope + 1):
         bruto = planificador.llamar(PROMPT_PLANIFICADOR.format(
-            ficha=ficha_json, capitulos=EXTENSION["capitulos"],
+            ficha=ficha_json, premisa=ficha.premisa or "(sin premisa)",
+            titulo=ficha.titulo or "(sin titulo)", capitulos=EXTENSION["capitulos"],
             minimo=EXTENSION["palabras_por_capitulo"][0],
             maximo=EXTENSION["palabras_por_capitulo"][1],
             objeciones=_objeciones(anteriores)))
         try:
-            plan, titulo, premisa = _leer_plan(bruto)
+            plan = _leer_plan(bruto)
         except (ValueError, ValidationError) as e:
             anteriores = ["el plan no cumple el esquema: {0}".format(str(e)[:600])]
             repo.guardar(con, obra, version, None, False, "esquema", anteriores)
@@ -129,7 +130,7 @@ def planificar(con, obra, ficha, planificador, revisor,
                                               ensure_ascii=False, indent=2))))
         repo.guardar(con, obra, version, plan, aprobado, "revisor", objeciones)
         if aprobado:
-            return PlanAprobado(plan, version, titulo, premisa)
+            return PlanAprobado(plan, version, ficha.titulo, ficha.premisa)
         anteriores = objeciones
     raise PlanNoAprobado(
         "el plan no se aprobo en {0} rondas; las ultimas objeciones: {1}".format(

@@ -33,6 +33,9 @@ def que_falta(ficha: FichaDeEntrevista) -> list:
         ("papel", ficha.papel is not None),
         ("rasgo", TE.RASGO in tipos),
         ("recuerdo", TE.RECUERDO in tipos),
+        # `SPEC-25` v3 `RF-02b`: despues de los recuerdos, porque salen de ellos.
+        ("premisa", bool((ficha.premisa or "").strip())),
+        ("titulo", bool((ficha.titulo or "").strip())),
     ]
     return [nombre for nombre, esta in comprobaciones if not esta]
 

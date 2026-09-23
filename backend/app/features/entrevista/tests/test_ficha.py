@@ -10,10 +10,12 @@ from app.features.entrevista import ficha as modulo
 from app.features.entrevista.tests.conftest import ficha_completa
 
 OBLIGATORIOS_EN_ORDEN = ["nombre", "edad", "ocasion", "genero", "tono", "papel",
-                         "rasgo", "recuerdo"]
+                         "rasgo", "recuerdo", "premisa", "titulo"]
 
 
-def test_una_ficha_vacia_pide_los_ocho_obligatorios_en_el_orden_del_anexo():
+def test_una_ficha_vacia_pide_los_diez_obligatorios_en_el_orden_del_anexo():
+    """`SPEC-25` v3: la premisa y el titulo van despues de los recuerdos, porque
+    salen de ellos (`RF-02b`)."""
     assert modulo.que_falta(FichaDeEntrevista()) == OBLIGATORIOS_EN_ORDEN
 
 
