@@ -16,6 +16,7 @@ sin que nada avise.
 
 import sqlite3
 
+from app.features.consolidacion import deltas as modulo_deltas
 from app.features.consolidacion import mundo as modulo_mundo
 
 SQL = """
@@ -42,6 +43,7 @@ def asegurar_tablas(con):
     with con:
         con.executescript(SQL)
     modulo_mundo.asegurar_tablas(con)
+    modulo_deltas.asegurar_tablas(con)
 
 
 def sembrar(con, entidades):
@@ -61,7 +63,7 @@ def puede_generarse_la_siguiente(con, escena):
     return fila is not None
 
 
-def consolidar(con, escena, delta):
+def consolidar(con, escena, delta, version=None):
     """Todo en una transaccion. Si algo falla, no queda nada escrito."""
     if puede_generarse_la_siguiente(con, escena):
         raise YaConsolidada(
@@ -89,6 +91,10 @@ def consolidar(con, escena, delta):
             # sabiendo algo que nunca llego a pasar: el estado a medias que
             # `INV-05` no sabe clasificar, por otra puerta.
             modulo_mundo.aplicar_conocimiento(con, escena, delta)
+            # El delta se guarda tambien aqui dentro, por el mismo motivo:
+            # fuera de la transaccion quedaria escrito el delta de una
+            # escena que no llego a consolidarse.
+            modulo_deltas.guardar(con, escena, delta, version)
             con.execute("INSERT INTO escena_consolidada VALUES (?)", (escena,))
     except DeltaIncompatible:
         raise
