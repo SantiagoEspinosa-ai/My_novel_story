@@ -161,9 +161,21 @@ Los tres casos juntos enseñan a apuntar una marca:
 | La reserva del orden de recorte | `features/contexto/` | **Disparó pronto.** El instrumento existe, el dato no |
 | `PC-1` | `features/consolidacion/` | **Disparó bien.** Crear esa feature **es** empezar a escribir estado |
 
-La diferencia no es la distancia: es si crear lo que la ruta nombra **es** el hecho, o solo
-lo hace posible. `consolidacion/` escribe estado en cuanto existe; `modelo/` puede existir
-sin que nadie llame.
+**La regla que sale de los tres, y que no se deduce leyendo la convención:**
+
+> **La condición de una marca apunta a algo cuya creación *es* el hecho, no a algo que lo
+> hace posible.** La diferencia no es la distancia.
+
+`consolidacion/` escribe estado en cuanto existe: crearla **es** empezar a tener base que
+auditar. `modelo/` puede existir sin que nadie llame, y `contexto/` sin que nadie ensamble.
+Una ruta que solo habilita el hecho disparará antes que el hecho, siempre, y reapuntarla más
+cerca no lo arregla: la acerca. Las marcas de medidas dispararon **tres veces** —`backend/`,
+`commons/modelo/`, `features/orquestacion/`— y las tres veces la afirmación seguía siendo
+cierta. A la tercera se dejaron caducadas a sabiendas en vez de reapuntar por cuarta vez.
+
+**Cómo se elige, en la práctica:** pregúntate qué tendría que borrar alguien para que la
+afirmación volviera a ser cierta. Si la respuesta es "esa carpeta", la marca está bien
+apuntada. Si es "los datos que hay dentro", no lo está.
 
 ## Preguntas que hay que responder al aprobar
 

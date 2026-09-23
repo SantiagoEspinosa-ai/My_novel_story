@@ -107,6 +107,41 @@ Lo que **no** está forzado: el orden entre `features/lectura/`, `features/revis
 | **D2** | Orquestación | `features/orquestacion/` + `tests/` | Existe un camino de `planificada` a `consolidada` que **no** pasa por `en_verificacion`: falla | `VER-28`, `VER-13` | Es la única feature autorizada a componer otras, así que va cuando ya hay qué componer | El ciclo entero de una escena, automático |
 | **D3** | Revisión y auditoría | `features/revision/`, `features/auditoria/` + `tests/` | Un `mayor` abierto **impide cerrar el capítulo**; un `menor` no, y se lista | `VER-45`, `VER-46`, `VER-56` | Cierran el ciclo: la puerta de capítulo y las invariantes de nivel obra | La puerta de capítulo y el barrido de obra |
 
+## Fase E — Que escriba una escena de verdad
+
+`PLAN-01` construyó las piezas y **ninguna llama a un modelo**. Esta fase es lo único que
+separa diecinueve casos negativos de una generación real, y se añade al plan en vez de
+improvisarse porque toca lo más delicado que hay: credenciales, una llamada que se paga, y
+el primer dato que el proyecto habrá medido en su vida.
+
+**Una advertencia antes de los pasos.** Hasta aquí, cada paso dejaba el repositorio
+funcionando y ninguno podía hacer daño. Desde `E1` una equivocación cuesta dinero y puede
+dejar rastro fuera de la máquina. El orden está elegido para que **lo que pueda fallar
+falle antes de gastar**: el doble de prueba va antes que el cliente real, y el cliente real
+va antes que el bucle que lo llama en serie.
+
+| # | Paso | Ficheros | La prueba que falla primero | Pasa a implementable | Por qué va aquí | Queda funcionando |
+| --- | --- | --- | --- | --- | --- | --- |
+| **E1** | Persistir escena, borrador y hallazgo | `commons/db/migraciones.py`, `features/escaleta/repository.py` | Una escaleta validada se guarda y se relee con sus escenas en `planificada` | `VER-09` | Hoy solo hay tablas de obra, capítulo, entidad y trabajo. Sin `Escena` y `Borrador` no hay dónde poner lo que el modelo devuelva | Una obra con sus escenas planificadas en disco |
+| **E2** | El doble del modelo y el bucle del worker | `features/generacion/agente.py`, `commons/modelo/doble.py` | El bucle entero —ensamblar, llamar, leer el contrato, pasar las puertas, registrar— **contra un doble que devuelve texto y delta en la misma respuesta** | `VER-20`, `VER-25`, `VER-42` | **Antes que el cliente real, a propósito.** Si el bucle está mal, se ve gratis. Y el doble tiene la misma forma que lo real, que es la tercera regla de pruebas del proyecto | Una escena se genera de principio a fin sin salir de la máquina |
+| **E3** | El cliente real y el prompt del Escritor | `commons/modelo/cliente.py`, `features/generacion/prompt.py` | Una llamada real devuelve texto y delta, y **la traza queda con `tokens_declarados` copiado del `usage`** | **`VER-41`**, `VER-05`, `VER-24` | Es el primer gasto. Va después del bucle probado y antes de cualquier serie | La primera llamada real, con su traza |
+| **E4** | Los endpoints del ciclo | `features/generacion/router.py`, `features/auditoria/router.py` | `POST /escenas/{id}/generar` devuelve `202` y un identificador, nunca el texto | `VER-03`, `VER-04`, `VER-29` | Los endpoints van después del bucle: un endpoint que encola un bucle roto es peor que no tenerlo | El ciclo conducible desde HTTP |
+| **E5** | La primera escena completa, medida | — | Ninguna nueva: es una **ejecución**, no código | `VER-34`, `VER-36`, `VER-37` | Es el paso que produce el primer dato que este proyecto habrá medido | Una escena real, consolidada, con su traza |
+
+### Las credenciales
+
+**No entran en el repositorio, ni en `config.json`, ni en un fichero de ejemplo.** Se leen
+del entorno y el código falla con un mensaje claro si faltan. `SPEC-01` §2.5 excluye la
+autenticación de la v1 —eso es sobre **quién usa el harness**— y esto es otra cosa: la clave
+del proveedor. Un fichero de configuración versionado con una clave dentro es el modo de
+fallo más caro y más frecuente que hay, y no se cataloga: se impide.
+
+### Lo que `E5` produce, y por qué es un paso del plan
+
+Una ejecución no es código y aun así es un paso, porque **es el único que cierra decisiones
+abiertas**. Al terminar habrá, por primera vez, una traza con datos reales. Lo que eso
+contesta y lo que no está en la sección siguiente.
+
 ---
 
 ## Los dos números provisionales

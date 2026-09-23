@@ -315,6 +315,14 @@ decidir. Sin esta columna esa regla es una intención, porque nadie sabe qué le
 Es la misma exigencia que el proyecto aplica a todo lo demás: una regla que nadie puede
 comprobar no está verificada, solo declarada.
 
+**La durabilidad decide qué se recorta del estado, no qué necesita una puerta.** Son dos
+ejes que se confunden al escribir y solo se separan cruzando dos tablas. Al implementar
+`PLAN-01` C1 salió el caso: la forma reducida del estado del mundo se quedaba con los hechos
+`permanente`, y `INV-03` necesita la `escena_de_establecimiento` de **cualquier** hecho que
+el delta revele —para comprobar que revelar no precede a establecer— y un hecho `efimero`
+tiene esa fecha igual que uno permanente. Un dato puede ser perfectamente efímero **y**
+imprescindible para una puerta, y quedarse solo con lo duradero se lo lleva.
+
 **Y `durabilidad` no se deriva de `certeza`.** Son ejes independientes: *"la puerta está
 abierta"* es `establecido` y `efimero`; *"la casa no quiere que se vayan"* es `implicito` y
 `permanente`. Derivar una de la otra confundiría cuánto sabemos de algo con cuánto dura, y
