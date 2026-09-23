@@ -3,14 +3,19 @@
     "escritor": "fable",
     "juez": "opus",
     "resumidor": "haiku",
-    "entrevistador": "sonnet"
+    "entrevistador": "sonnet",
+    "planificador": "opus",
+    "revisor_plan": "opus",
+    "editor": "opus"
   },
 
   "topes": {
     "intentos_por_escena": 3,
     "delegaciones_por_obra": 540,
     "reintentos_de_transporte": 3,
-    "reescrituras_por_vetada": 2
+    "reescrituras_por_vetada": 2,
+    "revisiones_de_plan": 3,
+    "reescrituras_del_editor": 3
   },
 
   "presupuesto": {
@@ -23,6 +28,12 @@
     {"nombre": "infantil", "desde": 0, "hasta": 11},
     {"nombre": "juvenil", "desde": 12, "hasta": 17}
   ],
+
+  "edicion": {
+    "umbral_del_editor": 3,
+    "umbral_repeticion_nombre": 12,
+    "longitud_frase_repetida": 8
+  },
 
   "contradicciones": {
     "edad_minima_por_genero": {"romance": 12},

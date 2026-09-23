@@ -341,6 +341,10 @@ class ModelosPorAgente(_DelDominio):
         description="`SPEC-25`. Opcional para que una maquina que solo genera "
                     "siga cargando; la entrevista falla de forma visible si "
                     "falta")
+    # `SPEC-26`. Opcionales por lo mismo: la obra de terror sigue cargando.
+    planificador: str | None = None
+    revisor_plan: str | None = None
+    editor: str | None = None
 
 
 class Topes(_DelDominio):
@@ -354,6 +358,18 @@ class Topes(_DelDominio):
         default=config.TOPE_REINTENTOS_TRANSPORTE, gt=0)
     reescrituras_por_vetada: int = Field(
         default=config.TOPE_REESCRITURAS_POR_VETADA, ge=0)
+    revisiones_de_plan: int = Field(default=config.TOPE_REVISIONES_DE_PLAN, gt=0)
+    reescrituras_del_editor: int = Field(
+        default=config.TOPE_REESCRITURAS_DEL_EDITOR, ge=0)
+
+
+class Edicion(_DelDominio):
+    """Los umbrales del Editor y de `INV-25`. **Provisionales**: su marca de no
+    medido vive con el numero en `commons/config.py` (`SPEC-26` `RF-10`, `RF-16`)."""
+
+    umbral_del_editor: int = Field(default=config.UMBRAL_DEL_EDITOR, ge=1, le=5)
+    umbral_repeticion_nombre: int = Field(default=config.UMBRAL_REPETICION_NOMBRE, gt=0)
+    longitud_frase_repetida: int = Field(default=config.LONGITUD_FRASE_REPETIDA, gt=1)
 
 
 class FranjaDeEdad(_DelDominio):
@@ -421,6 +437,7 @@ class ConfiguracionDelSistema(_DelDominio):
     franjas_de_edad: list[FranjaDeEdad] = Field(default_factory=_franjas_por_defecto)
     contradicciones: ReglasDeContradiccion = Field(
         default_factory=ReglasDeContradiccion)
+    edicion: Edicion = Field(default_factory=Edicion)
 
     @property
     def huella(self) -> str:
