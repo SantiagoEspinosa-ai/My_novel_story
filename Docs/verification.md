@@ -385,6 +385,47 @@ disponibles y el contrato comprueba que la respuesta los use. Faltaba que el pro
 **qué se está pidiendo con cada uno**. Un identificador bien formado en el campo equivocado
 pasa las dos primeras mitades sin despeinarse.
 
+### Regla 6 — Dos actores sobre un estado compartido pierden trabajo en la ventana entre dos operaciones
+
+**Basta con esto: un estado que dos actores tocan, una operación que en realidad son dos
+—preparar y confirmar, leer y escribir, apuntar y avanzar—, y un segundo actor que actúa
+entre las dos. El trabajo se pierde y no falla nada**, porque cada operación por separado
+terminó bien. No hay excepción que capturar ni código de error que mirar: el sistema queda
+en un estado válido que no es el que nadie quiso.
+
+**Esta regla no es del dominio de las novelas.** Se ha manifestado tres veces en este
+proyecto, en tres sustratos que no tienen nada que ver entre sí, y las tres veces con la
+misma forma:
+
+| Dónde | El estado compartido | La ventana | Qué se perdió |
+| --- | --- | --- | --- |
+| `F-38`, relanzar tras un bloqueo | El progreso de la obra | Entre decidir por dónde seguir y mirar en qué estado está cada escena | Se regeneró lo ya hecho, se pagó otra vez y **se degradó `consolidada` a `generada`** |
+| `CE-3` y `CE-4` de `specs/tla/`, reanudar por cursor | El cursor "iba por el capítulo N" | Entre escribir el capítulo y actualizar el cursor | Con el cursor por detrás se reescribe lo hecho; por delante se salta lo que falta. TLC encontró además una ejecución que **no termina nunca** |
+| `F-40`, el índice de Git | El índice, compartido por dos sesiones en el mismo directorio | Entre `git add` y `git commit` | Los cambios preparados se fueron **en el commit de la otra sesión**, con su mensaje y su atribución |
+
+Lo que las tres tienen en común no es el dominio: es la **forma**. Y por eso los tres
+remedios posibles son siempre los mismos tres, y conviene saber cuál se está eligiendo:
+
+1. **Hacerlo atómico.** Que las dos operaciones sean una. Es lo que consigue
+   `git add <ruta> && git commit -- <ruta>` en un solo comando: la ventana pasa de minutos
+   a milisegundos, aunque no desaparece.
+2. **No recordar el estado: re-derivarlo.** Si lo que toca hacer se deduce mirando lo que
+   hay guardado, no existe nada que pueda quedarse desfasado. Es lo que hace
+   `siguiente_paso()` en la rama `main` y lo que `Docs/architecture.md` exige ahora en la
+   máquina de estados del trabajo. **Es el remedio más fuerte de los tres**, porque elimina
+   la ventana en vez de estrecharla.
+3. **Dejar de compartir el estado.** Un worktree por sesión, cada uno con su índice. Cierra
+   la clase entera de problemas para ese estado concreto y no hace nada por los demás:
+   `AGENTS.md` lo dice en una frase que conviene no olvidar, **«un worktree separa
+   carpetas, no costumbres»**.
+
+**La consecuencia para verificar:** un fallo de esta familia **no se caza con pruebas de
+caso feliz ni mirando código**, porque cada operación aislada es correcta. Se caza
+explorando entrelazados —que es para lo que sirve un *model checker*, y por lo que
+`specs/tla/` modela las dos reanudaciones en vez de solo la buena— o no se caza. Es el
+mismo límite que `PC-1` por otro eje: **lo que solo existe entre dos pasos no lo ve nada
+que mire un paso.**
+
 ---
 
 ## Estado de implantación
@@ -753,6 +794,7 @@ documento, no sobre el código.
 | F-15 | **Un validador que no distingue una cita de un uso marca el texto que explica el defecto.** Vale para los dos soportes, y se descubrió en cada uno por separado: en documentos son los **acentos graves** —un literal equivocado citado entre ellos lo marcan `VER-45` y `VER-46`, así que se cita en cursiva—; en código son los **docstrings** —la prueba que impide el eco de `VER-41` buscaba la cadena `tokens_declarados` y falló contra el docstring que explica por qué ese módulo no la escribe, así que busca **escrituras**—. Era un patrón, no una curiosidad del markdown | Cerrado por convención en los dos |
 | F-29 | **La lista de identificadores se derivaba del registro de conocimiento, que solo crece revelando, que necesita la lista.** Un punto muerto que hizo `INV-03` inejecutable sin que nada fallara. Al arreglar `F-21` puse en el prompt `hechos = los del registro de conocimiento`, y el registro **arranca vacío**: el prompt decía *"hechos: (ninguno)"*, el modelo no citaba ninguno —correctamente—, no había revelaciones, y el registro seguía vacío. Seis escenas reales: **conocimiento 0, fichas 0**. Funcionó en `E5b` solo porque el fixture lo sembraba a mano. La causa de fondo es que **confundí "qué hechos existen" con "quién los sabe"**: lo primero lo declara el plan de la obra —los `HechoCanonico`— y lo segundo es lo que `INV-03` comprueba | Cerrado por `SPEC-15`: los hechos se declaran y el prompt los lleva. **El efecto todavía no se puede medir**, porque arreglarlo destapó `F-31` |
 | F-30 | **Cero bloqueos no es una medida de cero.** La ejecución de seis escenas terminó sin que `INV-03` bloqueara ni una vez, y ese número **no vale**: el mecanismo nunca se ejerció, porque no hubo una sola revelación que comprobar (`F-29`). Apuntarlo como *"`INV-03` bloquea 0 de 6"* sería exactamente el verde falso que este documento persigue — **un validador que no puede dispararse no está midiendo cero** | Abierto: `VER-64` sigue sin dato |
+| F-40 | **`F-38` otra vez, fuera del dominio de las novelas: dos sesiones sobre el mismo indice de Git, y el trabajo preparado se va en el commit de la otra.** Ocurrio **dos veces seguidas** al entregar `specs/tla/`. Con el indice comprobado vacio justo antes, `git add` y `git commit` en llamadas separadas: entre las dos, otra sesion commiteo y se llevo lo preparado. `specs/tla/` entero —README, `.gitignore` y la retirada de los volcados `states/`— acabo dentro de `ccf28b4`, *"SPEC-20: que se puede editar a mano"*; las anotaciones de `Docs/architecture.md` y la propia `F-39`, dentro de `ff354cc`, *"Mover SPEC-20 a aplicadas"*. **El contenido sobrevivio intacto y lo que se perdio fue el porque**: dos commits cuyo mensaje explicaba cada decision no llegaron a existir, y el historial atribuye el trabajo de verificacion formal a commits sobre edicion manual. Nada fallo en ningun momento: los dos `git add` funcionaron, los dos commits ajenos funcionaron, y el segundo `git commit` dijo *"nothing to commit, working tree clean"*, que es la frase de que todo esta bien | **Cerrado en los tres niveles, y los tres hacian falta.** Los worktrees ya estaban montados por otra sesion —cuatro carpetas, una por rama— y `AGENTS.md` ya prohibia `git add -A` y `git commit -a`; **no bastaba**, porque las dos sesiones que chocaron estaban en la **misma** carpeta y ninguna hizo un barrido: el conflicto fue por el indice compartido, no por el alcance del `add`. Lo que lo cierra de verdad es **una carpeta por sesion de verdad, no por rama**, mas `git add <ruta> && git commit -- <ruta>` **en un solo comando**. La causa de fondo quedo como **Regla 6** |
 | F-39 | **Una version publicada no tiene identidad, asi que "se conserva la version anterior" no es comprobable ni siquiera en principio.** Lo destapo la especificacion TLA+ (`specs/tla/`) por el peor camino posible: la propiedad `VersionesSoloCrecen` **pasaba** con el modelo configurado para que la publicacion **pisara** la version anterior. El motivo es que una version se representaba por el conjunto de sus capitulos, y al regenerar y volver a aprobarlos todos, la version nueva era un valor **identico** a la vieja: pisar algo con una copia exacta no se ve. Con un campo `ronda` que le da identidad, la misma configuracion viola la propiedad en 1.148 estados. En el codigo pasa lo mismo y peor: `copiar_novela()` de la rama `main` guarda `salida-novela-1/`, `salida-novela-2/`… y **el numero de carpeta es lo unico que las distingue** —nada dentro de la novela dice de que ronda es—, y ademas solo se invoca desde `POST /api/ampliar`, asi que cualquier otro camino que regenere se lleva la anterior por delante. Es **una de las invariantes de seguridad que el enunciado del examen exige**, y hoy no hay contra que comprobarla | Abierto. **Es el mismo hueco que `G-07`** de `SPEC - Frontend y contrato congelado.md` —*"la obra no tiene version"*—, alcanzado por el otro lado: alli desde la interfaz que necesita decir que capitulos cambiaron, aqui desde una propiedad que no podia fallar. **Se resuelve una vez, con `G-07`**, y decidir que es una version de la obra es de dominio |
 | F-38 | **Relanzar tras un bloqueo no reanuda: regenera lo ya hecho, lo paga y lo corrompe.** Medido contra dobles sobre una base donde `e1` estaba `consolidada` y `e2` bloqueada: la segunda pasada **vuelve a generar `e1`** —delegación pagada—, le guarda un borrador 2, **degrada su estado de `consolidada` a `generada`** y muere con `delta:YaConsolidada` sin haber llegado a `e2`. El bucle recorre `escenas_de` desde el principio y **no mira en qué estado está cada escena**. Con `VER-64` en ~29%, una obra de sesenta escenas son **diecisiete paradas**, y hoy cada una cuesta la obra entera **y además estropea lo que había**. Esto convierte *"desatascar tiene que ser barato"* en el requisito principal y no en una nota al margen | **Cerrado con tres piezas.** El bucle **salta lo que ya está hecho** y lo dice en el informe, porque saltar no es lo mismo que no hacer; los hallazgos **se pueden cerrar** como `resuelto` o `descartado` —los dos estados llevaban ahí desde el primer día y **nadie los escribía**, así que un capítulo no podía firmarse ni arreglando la causa— y con motivo obligatorio, porque uno cerrado sin motivo no se distingue de uno que se cerró para que dejara de molestar; y **una instrucción humana entra por el canal de `problemas`**, en bloque propio para que no se confunda con lo que levantó una regla |
 | F-37 | **El plan promete cosas en prosa y nada comprueba que el delta las entregue.** La escaleta de `e2` decia *"Marta encuentra el sotano cerrado y no aparece la llave"*. El texto se escribio, paso todas las puertas y se consolido — y `hec-sotano-cerrado` y `hec-llave-perdida` siguen **sin establecer**. Dos escenas despues, `INV-03` bloqueo a Marta por actuar sobre el sotano cerrado, que era justo lo que `e2` prometia haberle ensenado. **La invariante cazo la consecuencia, no la causa**, y con dos escenas de retardo: lo que fallo fue que el delta de `e2` no declaro lo que su propio texto hacia. Hoy nada compara lo que el plan prometio con lo que el delta entrego, porque los `beats` son prosa y el delta son identificadores. Es el hueco que `SPEC-15` C-3 hizo **nombrable** y que sigue sin validador | **Cerrado por `SPEC-19`.** No faltaba un validador: **faltaba el dato**. `Beat` gana `establece[]`, e `INV-18` cruza lo prometido con lo entregado **al cerrar la escena y no el capitulo**, porque el retardo era el defecto. Las dos mitades o ninguna: el prompt dice que hechos hay que establecer —Regla 4 por **tercera** vez, tras `F-21` y `F-34`— y la invariante comprueba que el delta los declare |
