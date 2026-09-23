@@ -43,6 +43,7 @@ import json
 from dataclasses import dataclass, field
 
 from app.commons.modelo import presupuesto, traza as modulo_traza
+from app.features.contexto import ensamblado, repository as lecturas_repo
 from app.commons.modelo.doble import FalloDeTransporte
 from app.features.contexto import recorte
 from app.features.escaleta import repository as repo
@@ -129,6 +130,13 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
                            hechos=hechos, instrucciones=instrucciones)
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
         texto_prompt.encode("utf-8")).hexdigest()[:12])
+    # Lo que esta llamada tuvo delante del canon, registrado **antes** de
+    # delegar: una llamada que falla tambien leyo algo, y es la que hay que
+    # diagnosticar. Va atado al `prompt_hash`, que es lo que comparte con el
+    # `Borrador` que salga de aqui (`RF-11`).
+    lecturas_repo.guardar_lecturas(
+        con, escena_id, ensamblado.lecturas({"hechos": hechos, "mundo": mundo}),
+        prompt_hash=t.prompt_hash)
 
     # 2. Comprobar el techo y delegar.
     #

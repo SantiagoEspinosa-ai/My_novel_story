@@ -393,3 +393,12 @@ bloque del estado dice *«los hechos permanentes y cualquier hecho que el delta 
 Existe, está declarada, y **solo se aplica al recortar** — es decir, nunca, porque el contexto
 real mide tres órdenes de magnitud menos que el techo. Es la misma decisión abierta que el
 reparto por niveles: un mecanismo diseñado que no se ha ejercido ni una vez.
+
+Eso tiene nombre desde que la sesión del backend lo bautizó: es la **Regla 8 a escala de
+diseño**. La `8` dice que una rama que no se ejecuta no es una comprobación que pasa; esto es
+el mismo fallo un nivel arriba —no una rama, un mecanismo entero declarado y no ejercido— y
+con la misma apariencia desde fuera, que es **todo verde**. `MomentoNarrativo.t_discurso`,
+definido, obligatorio, con columna desde `SPEC-21` y sin que nadie lo rellene, es otra
+instancia. Conviene leerlo junto a `MF-26`: allí una comprobación dejó de significar lo que
+dice porque el mundo se movió; aquí un mecanismo nunca llegó a significar nada porque no
+corrió. **Las dos se ven igual desde fuera.**
