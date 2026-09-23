@@ -88,7 +88,7 @@ def main():
         modelo=os.environ.get("HARNESS_MODELO_RESUMIDOR", "haiku"), agente="resumidor")
 
     g = obra.generar_obra(con, "cap-1", escritor, juez, resumidor,
-                          inmutable=INMUTABLE, techo=100_000, reserva_de_salida=20_000)
+                          inmutable=INMUTABLE, techo=100_000)
 
     print("\n=== EL CONTEXTO, ESCENA A ESCENA (VER-37) ===")
     print(obra.informe(g))

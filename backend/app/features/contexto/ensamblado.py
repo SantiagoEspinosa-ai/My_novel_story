@@ -88,21 +88,29 @@ def montar(material: dict) -> dict:
     return {b.nombre: CONSTRUCTORES[b.nombre](material) for b in BLOQUES}
 
 
-def tamanos(bloques: dict, reserva_de_salida=20_000) -> dict:
+def tamanos(bloques: dict) -> dict:
     """Los tokens estimados de cada bloque.
 
     Estimacion conservadora, no cuenta exacta: decide **si** hay que recortar,
     no **por cuanto**, y contar exacto en cada vuelta del bucle paga el
     tokenizador sin ganar nada (`SPEC-12` C-3, `tokens_para_recortar`).
 
-    La reserva de salida no tiene texto y ocupa igual: es sitio apartado para
-    lo que el modelo va a escribir, y recortarla no es recortar contexto, es
-    truncar la escena.
+    LA RESERVA DE SALIDA NO OCUPA, Y NO SE PUEDE PEDIR QUE OCUPE
+    --------------------------------------------------------------
+    `SPEC-14` C-1 la retiro —*"`P-1`…`P-5` pierden la reserva, conservan la
+    estimacion"*— porque el harness **no administra la ventana del subagente**
+    y no se puede apartar sitio en un techo ajeno.
+
+    Esta funcion tenia un parametro `reserva_de_salida` con 20.000 por defecto
+    y **se retira entero**, no se pone a cero: mientras el parametro exista,
+    quien llame puede volver a inyectarlos y el total vuelve a mentir sin que
+    nada falle (`F-35`). El bloque sigue en el orden de `2.4` y sigue siendo
+    irreducible; lo que ya no hace es ocupar.
     """
     from app.commons.modelo.presupuesto import estimar_para_recortar
 
     medidos = {n: estimar_para_recortar(t) for n, t in bloques.items()}
-    medidos["reserva_de_salida"] = reserva_de_salida
+    medidos["reserva_de_salida"] = 0
     return medidos
 
 

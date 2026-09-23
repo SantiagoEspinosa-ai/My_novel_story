@@ -65,7 +65,7 @@ def reunir_material(con, escena, obra_id, inmutable=""):
 
 
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
-                 techo=100_000, reserva_de_salida=20_000, hasta=None):
+                 techo=100_000, hasta=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`."""
     g = Generacion()
     for escena in repo.escenas_de(con, obra):
@@ -74,7 +74,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
 
         material = reunir_material(con, escena, obra, inmutable)
         bloques = ensamblado.montar(material)
-        tamanos = ensamblado.tamanos(bloques, reserva_de_salida)
+        tamanos = ensamblado.tamanos(bloques)
 
         try:
             plan = recorte.planificar(tamanos, techo=techo)

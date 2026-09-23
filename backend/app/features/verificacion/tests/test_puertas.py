@@ -109,3 +109,73 @@ def test_una_escena_limpia_no_produce_hallazgos():
            "pov": "marta", "pov_usado": "marta",
            "longitud_objetivo": (500, 2200), "palabras": 900}
     assert puertas.verificar(esc, {}, _mundo()) == []
+
+
+# --- F-34: una invariante sin su dato no calla, dice que no pudo ----------
+#
+# "Una invariante que se salta en silencio cuando le falta un campo esta
+# ausente, no en verde, y desde fuera se ven igual." El mecanismo ya existia
+# en este modulo para otro caso -`veredicto_ilegible`, con estado
+# `sin_veredicto`- y el argumento es identico: un verificador que no contesta
+# es un agujero en la validacion.
+#
+# El criterio de que campo es imprescindible **sale del dominio, no de aqui**:
+# `Docs/definitions.md` marca en negrita `Escena.pov`, `Escena.lugar` y
+# `Borrador.pov_usado`; `personajes_presentes` y `longitud_objetivo` no lo
+# estan, asi que su ausencia es legitima y la invariante simplemente no aplica.
+
+def _sin_veredicto(hallazgos, inv):
+    return [x for x in hallazgos if x.invariante == inv
+            and x.estado is EstadoDeHallazgo.SIN_VEREDICTO]
+
+
+def test_inv04_sin_pov_usado_no_calla_dice_que_no_pudo():
+    """El caso de `F-34`: el modelo escribio la escena sobre otro personaje y
+    `INV-04` paso en verde porque el campo no estaba."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "control", "signo": "negativo"},
+           "lugar": "salon", "pov": "marta"}
+    h = puertas.verificar(esc, {}, _mundo())
+    assert _sin_veredicto(h, "INV-04"), "sin pov_usado no se puede comparar"
+
+
+def test_inv04_sin_pov_planificado_tampoco_calla():
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "control", "signo": "negativo"},
+           "lugar": "salon", "pov_usado": "ana"}
+    h = puertas.verificar(esc, {}, _mundo())
+    assert _sin_veredicto(h, "INV-04")
+
+
+def test_inv04_con_los_dos_campos_y_coincidiendo_no_marca_nada():
+    """El caso positivo: tener el dato y que este bien no produce hallazgo."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "control", "signo": "negativo"},
+           "lugar": "salon", "pov": "marta", "pov_usado": "marta"}
+    h = puertas.verificar(esc, {}, _mundo())
+    assert not any(x.invariante == "INV-04" for x in h)
+
+
+def test_inv02_con_personajes_y_sin_lugar_no_calla():
+    """La mitad de accesibilidad se saltaba en silencio: `lugar` es obligatorio
+    en el dominio y sin el no se puede comprobar de donde viene nadie."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "vida", "signo": "negativo"},
+           "personajes_presentes": ["marta"], "pov": "marta", "pov_usado": "marta"}
+    h = puertas.verificar(esc, {}, _mundo())
+    assert _sin_veredicto(h, "INV-02")
+
+
+def test_inv17_con_rango_y_sin_palabras_no_calla():
+    """Si hay rango, el texto se puede contar. No contarlo es no comprobarlo."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "vida", "signo": "negativo"},
+           "lugar": "salon", "pov": "marta", "pov_usado": "marta",
+           "longitud_objetivo": [1200, 2200]}
+    h = puertas.verificar(esc, {}, _mundo())
+    assert _sin_veredicto(h, "INV-17")
+
+
+def test_un_campo_opcional_ausente_no_produce_nada():
+    """El reverso, y es lo que evita que esto se vuelva ruido: sin
+    `longitud_objetivo` no hay rango que comprobar, y eso es legitimo."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "vida", "signo": "negativo"},
+           "lugar": "salon", "pov": "marta", "pov_usado": "marta"}
+    h = puertas.verificar(esc, {}, _mundo())
+    assert not any(x.invariante == "INV-17" for x in h)
+    assert not any(x.invariante == "INV-02" for x in h)

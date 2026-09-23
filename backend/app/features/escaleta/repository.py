@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS escena (
     estado             TEXT NOT NULL,
     cambio_de_valor    TEXT NOT NULL,
     beats              TEXT NOT NULL,
+    pov                TEXT,
+    lugar              TEXT,
     longitud_objetivo  TEXT,
     borrador_aceptado  INTEGER
 );
@@ -70,9 +72,11 @@ def guardar_escaleta(con, obra, escenas):
         for e in escenas:
             con.execute(
                 "INSERT INTO escena (id, obra, orden, estado, cambio_de_valor, "
-                "beats, longitud_objetivo) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "beats, pov, lugar, longitud_objetivo) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (e["id"], obra, e["orden"], EE.PLANIFICADA.value,
                  json.dumps(e["cambio_de_valor"]), json.dumps(e["beats"]),
+                 e.get("pov"), e.get("lugar"),
                  json.dumps(e.get("longitud_objetivo"))),
             )
 
@@ -121,21 +125,23 @@ def establecer_hecho(con, hecho, escena):
 def escenas_de(con, obra):
     filas = con.execute(
         "SELECT id, orden, estado, cambio_de_valor, beats, longitud_objetivo, "
-        "borrador_aceptado FROM escena WHERE obra = ? ORDER BY orden", (obra,))
+        "borrador_aceptado, pov, lugar FROM escena WHERE obra = ? ORDER BY orden",
+        (obra,))
     return [{"id": f[0], "orden": f[1], "estado": f[2],
              "cambio_de_valor": json.loads(f[3]), "beats": json.loads(f[4]),
              "longitud_objetivo": json.loads(f[5]) if f[5] else None,
-             "borrador_aceptado": f[6]} for f in filas]
+             "borrador_aceptado": f[6], "pov": f[7], "lugar": f[8]}
+            for f in filas]
 
 
 def escena(con, id_escena):
     for e in con.execute(
             "SELECT id, orden, estado, cambio_de_valor, beats, longitud_objetivo, "
-            "borrador_aceptado FROM escena WHERE id = ?", (id_escena,)):
+            "borrador_aceptado, pov, lugar FROM escena WHERE id = ?", (id_escena,)):
         return {"id": e[0], "orden": e[1], "estado": e[2],
                 "cambio_de_valor": json.loads(e[3]), "beats": json.loads(e[4]),
                 "longitud_objetivo": json.loads(e[5]) if e[5] else None,
-                "borrador_aceptado": e[6]}
+                "borrador_aceptado": e[6], "pov": e[7], "lugar": e[8]}
     return None
 
 
