@@ -59,3 +59,37 @@ def test_un_nombre_de_una_sola_palabra_tiene_una_sola_forma():
 
 def test_sin_vetadas_no_hay_coincidencias():
     assert coincidencias("Cualquier cosa.", []) == []
+
+
+# --- `F-59`: «coño» se normalizaba en «con» -------------------------------------
+
+from app.commons.configuracion import carga
+
+# Las palabras mas frecuentes del español escrito, en sus formas mas comunes.
+# Una vetada que coincida con alguna de estas deja la novela sin poder escribirse.
+COMUNES = """de la que el en y a los se del las un por con no una su para es al lo
+como mas o pero sus le ha me si sin sobre este ya entre cuando todo esta ser son
+dos tambien fue habia era muy anos hasta desde esta mi porque que solo han yo
+hay vez puede todos asi nos ni parte tiene el uno donde bien tiempo mismo ese
+ahora cada e vida otro despues te otros aunque esa eso hace otra gobierno tan
+durante siempre dia tanto ella tres si dijo sido gran pais segun menos mundo
+casa cosa caso mano noche agua ojos luz tarde parque amigo amiga novio novia
+padre madre hijo hija perro perra nino nina cama mesa puerta calle ciudad
+camino cielo mar sol voz vino con cono canto conto contra""".split()
+
+
+def test_la_ene_no_se_pierde():
+    """`F-59`: sin la ñ, «coño» quedaba en «con» y vetaba la preposicion."""
+    assert _encontradas("Vino con ella.", ["coño"]) == []
+    assert _encontradas("¡Coño!", ["coño"]) == ["coño"]
+    assert _encontradas("Soltó dos coños.", ["coño"]) == ["coño"]
+
+
+def test_ninguna_vetada_de_la_lista_real_veta_una_palabra_comun():
+    """El barrido que habria cazado `F-59` antes de gastar una ejecucion real:
+    cada palabra de `config/vetadas.json` contra las palabras mas comunes."""
+    listas = carga.cargar_vetadas()
+    vetadas = list(listas.global_) + [v for vs in listas.franjas.values() for v in vs]
+    texto = " ".join(COMUNES)
+    choques = [(c.vetada, c.fragmento) for c in coincidencias(texto, vetadas)]
+    assert choques == []

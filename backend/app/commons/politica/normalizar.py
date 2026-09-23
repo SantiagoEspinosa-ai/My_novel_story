@@ -23,8 +23,14 @@ VOCALES = "aeiou"
 
 
 def sin_acentos(texto: str) -> str:
-    descompuesto = unicodedata.normalize("NFD", texto)
-    return "".join(c for c in descompuesto if not unicodedata.combining(c))
+    """Quita las tildes **pero no la de la ñ**, que no es un acento sino otra
+    letra. Quitarla convertia «coño» en «cono» y, al recortar el genero, en
+    «con»: la vetada global prohibia la preposicion y ningun capitulo podia
+    pasar `INV-21` (`F-59`)."""
+    protegido = texto.replace("ñ", "\x00").replace("Ñ", "\x01")
+    descompuesto = unicodedata.normalize("NFD", protegido)
+    limpio = "".join(c for c in descompuesto if not unicodedata.combining(c))
+    return limpio.replace("\x00", "ñ").replace("\x01", "Ñ")
 
 
 def raiz(palabra: str) -> str:
