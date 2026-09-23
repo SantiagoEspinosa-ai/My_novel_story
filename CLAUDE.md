@@ -15,7 +15,7 @@ La línea de arriba importa `AGENTS.md` entero: Claude Code la expande al arranc
 
 ### FastAPI
 
-- Los modelos Pydantic son la frontera de validación y replican las clases de `Docs/definitions.md`. Un campo que no está definido allí no entra en un esquema.
+- Los modelos Pydantic son la frontera de validación y replican las clases de `docs/definitions.md`. Un campo que no está definido allí no entra en un esquema.
 - Los valores de los vocabularios controlados se implementan como `Enum`, no como cadenas libres. Un valor fuera de la enumeración es un error de validación, no un aviso.
 - Las llamadas al modelo son asíncronas. Generar una escena tarda, así que el endpoint arranca un trabajo y devuelve su identificador; no bloquea.
 
@@ -49,7 +49,7 @@ contexto medido de una escena real es de **1.339 tokens** —el 1,3% del techo�
 ejecuciones **no se ha recortado nunca**. El reparto no está mal: está sin ejercer, y un
 mecanismo que nunca se ejerce **no está verificado, solo declarado**. Las pruebas lo
 ejercitan con techos artificiales, lo que comprueba que el algoritmo funciona y no que el
-reparto sea el correcto. Está abierto en `Docs/verification.md` con dos salidas: ajustar las
+reparto sea el correcto. Está abierto en `docs/verification.md` con dos salidas: ajustar las
 cifras a lo que se mide, o declarar que describen una obra larga que todavía no existe.
 
 **Y esa cifra medía lo que se montaba, no lo que se enviaba** (`F-58`). Hasta el arreglo, el
@@ -68,11 +68,11 @@ Nunca se manda el texto completo de la obra **al modelo**. El límite de 100.000
 - Una sola base de datos guarda el estado estructurado y los embeddings. La búsqueda por similitud se hace con una extensión vectorial de SQLite; no se añade un servicio aparte.
 - Se indexan fichas de entidad, resúmenes de escena y setups pendientes (los presagios, específicos de terror, se retiraron en `SPEC-26` v3). El texto completo de las escenas se guarda pero no se recupera por similitud: para eso están los resúmenes.
 - El estado del mundo se reconstruye acumulando los deltas de escena en orden. No se relee el texto para averiguar qué pasó.
-- Las migraciones de esquema se versionan. Un cambio en `Docs/definitions.md` que altere un atributo obligatorio necesita su migración en el mismo commit.
+- Las migraciones de esquema se versionan. Un cambio en `docs/definitions.md` que altere un atributo obligatorio necesita su migración en el mismo commit.
 
 ## Reglas de trabajo
 
-- No inventes campos, clases ni valores de enumeración. Si algo falta, se añade primero a `Docs/definitions.md`.
+- No inventes campos, clases ni valores de enumeración. Si algo falta, se añade primero a `docs/definitions.md`.
 - Una comprobación del harness cita siempre su invariante por identificador.
 - Las invariantes `bloqueante` detienen la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir. Esa diferencia se respeta en el código, no se resuelve caso por caso.
 - Antes de dar por buena una escena, su delta tiene que estar aplicado. Es lo que corta la propagación del error.

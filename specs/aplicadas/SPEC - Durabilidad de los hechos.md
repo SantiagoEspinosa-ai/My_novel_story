@@ -119,7 +119,7 @@ Lo que **sí** se puede reducir del 4.º: `posesiones`, `relaciones` y los hecho
 
 ## Qué gobierna esto
 
-`SPEC-12` `C-2`; `HechoCanonico` y `EstadoDelMundo` de `Docs/definitions.md`; `INV-02` e
+`SPEC-12` `C-2`; `HechoCanonico` y `EstadoDelMundo` de `docs/definitions.md`; `INV-02` e
 `INV-03`; `MF-05`; la respuesta a `P-A` de `SPEC-01` §2.4; y de la rama `main`,
 `hechos_permanentes` frente a `hechos_efimeros` en `src/contexto.py`.
 
@@ -135,10 +135,10 @@ Lo que **sí** se puede reducir del 4.º: `posesiones`, `relaciones` y los hecho
 
 # Qué se tocó al aplicarla
 
-`Docs/definitions.md`: `HechoCanonico.durabilidad`, la enumeración `durabilidad_del_hecho`,
+`docs/definitions.md`: `HechoCanonico.durabilidad`, la enumeración `durabilidad_del_hecho`,
 la columna «Qué lee» con las diecisiete filas rellenas, y dos notas de justificación.
 `specs/SPEC - Formas reducidas del recorte.md`: la regla `C-3 bis` con su referencia
-cruzada. `Docs/verification.md`: `VER-59` con su caso negativo.
+cruzada. `docs/verification.md`: `VER-59` con su caso negativo.
 
 ## Lo que la spec no previó
 

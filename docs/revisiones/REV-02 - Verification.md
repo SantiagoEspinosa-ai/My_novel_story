@@ -1,20 +1,20 @@
 ---
 id: REV-02
-titulo: Revisión de Docs/verification.md — cobertura cruzada de validadores
+titulo: Revisión de docs/verification.md — cobertura cruzada de validadores
 tipo: revision_de_documento
 estado: en_revision
 aprobada_por:
 fecha_aprobacion:
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-22
-documento_evaluado: "Docs/verification.md (37 afirmaciones VER-01…VER-37)"
+documento_evaluado: "docs/verification.md (37 afirmaciones VER-01…VER-37)"
 ---
 
-# REV-02 — Cobertura cruzada de `Docs/verification.md`
+# REV-02 — Cobertura cruzada de `docs/verification.md`
 
 ## Qué es esto y qué cambia
 
-`Docs/verification.md` está organizado como una lista de 37 afirmaciones, cada una con su
+`docs/verification.md` está organizado como una lista de 37 afirmaciones, cada una con su
 metodología y su criterio de salida. Está bien construido para responder *"¿cómo pruebo
 esta afirmación?"* y **no responde a la pregunta que importa**: *¿qué fallo se cuela
 aunque las 37 estén en verde?*
@@ -24,7 +24,7 @@ de él: sale de los validadores que lo rodean. Y un validador aislado no signifi
 porque **cada uno tiene un punto ciego por construcción**. Lo que importa es si los puntos
 ciegos se solapan o se cubren entre sí.
 
-Este documento **analiza, no reescribe**. `Docs/verification.md` no se toca hasta que
+Este documento **analiza, no reescribe**. `docs/verification.md` no se toca hasta que
 decidas qué entra.
 
 **Separación que se mantiene en todo el documento:** un **hueco real** es un fallo
@@ -157,7 +157,7 @@ conocida vale más que un juez que dice cubrirlos todos con fiabilidad sin medir
 ## 3.1 Y lo mismo aguas arriba: las cuatro invariantes de juez
 
 No son filas `VER`, pero es donde más juicio hay y donde más barato sale quitarlo.
-`Docs/definitions.md` clasifica `INV-03`, `INV-10`, `INV-11` e `INV-14` como `juez_llm`.
+`docs/definitions.md` clasifica `INV-03`, `INV-10`, `INV-11` e `INV-14` como `juez_llm`.
 
 | Invariante | Parte programable | Parte irreducible | Propuesta |
 | --- | --- | --- | --- |
@@ -185,7 +185,7 @@ Comprobaciones oblicuas: no miden el fallo directamente, miden algo que correlac
 | **P-4** | **VER-32 / INV-15**, deriva de voz | **Cuatro números por escena**, sin juicio estético: longitud media de frase, ratio de diálogo (contar rayas y comillas), densidad de adverbios en `-mente`, riqueza léxica (*type-token ratio*). La distancia de ese vector al de las anclas es la señal | **Se puede empezar hoy sin umbral**: se registra la serie y se mira su forma. El umbral sale después de mirarla, que es exactamente lo que `VER-32` está esperando |
 | **P-5** | **H-6 / BC-6**, agente que devuelve vacío | **Canario.** Inyectar en cada lote de verificación una escena con un defecto conocido y comprobar que el Juez lo caza. Si no lo caza, el Juez no está funcionando, devuelva lo que devuelva | Pilla el fallo silencioso y la degradación del proveedor. No mide fiabilidad general |
 | **P-6** | **H-3**, llamada duplicada | **Contar `Borrador` por escena.** Si el número crece sin que nadie haya pedido regeneración, hubo duplicado. El dato ya está en la tabla | Pilla el duplicado por reinicio. No lo previene |
-| **P-7** | **H-2 / BC-5**, severidad mal clasificada | **Contrastar dos diccionarios.** Parsear la tabla de invariantes de `Docs/definitions.md` y compararla con el registro de `commons/invariantes/`: identificador, nivel, severidad y tipo | Cierra BC-5 entero. Es el atajo con mejor relación entre lo que cuesta y lo que tapa |
+| **P-7** | **H-2 / BC-5**, severidad mal clasificada | **Contrastar dos diccionarios.** Parsear la tabla de invariantes de `docs/definitions.md` y compararla con el registro de `commons/invariantes/`: identificador, nivel, severidad y tipo | Cierra BC-5 entero. Es el atajo con mejor relación entre lo que cuesta y lo que tapa |
 | **P-8** | **H-7**, traza falsa | **Reconciliación.** Restar los tokens que la traza registra menos los que devuelve el `usage` de la respuesta del modelo. Si la diferencia no es cero, la traza miente | Desbloquea de paso `VER-34`, `VER-36` y `VER-37`, que hoy medirían sobre un dato sin validar |
 | **P-9** | **H-10**, bucle de regeneración | **Contar transiciones por escena.** Si supera un tope, parar y marcar | Trivial de implementar. El tope hay que medirlo antes de fijarlo |
 | **P-10** | **H-4**, delta a medias | **Contar entradas aplicadas frente a entradas del delta.** Si no coinciden, no fue atómico | Pilla la aplicación parcial sin necesidad de razonar sobre transacciones |
@@ -202,7 +202,7 @@ exista solo para llenar la matriz.
 
 | Propuesto | Afirmación | Cierra | Clase |
 | --- | --- | --- | --- |
-| **VER-38** | La severidad, el nivel y el tipo de cada invariante en el código coinciden con la tabla de `Docs/definitions.md` | `H-2`, y con él BC-5 entero | A |
+| **VER-38** | La severidad, el nivel y el tipo de cada invariante en el código coinciden con la tabla de `docs/definitions.md` | `H-2`, y con él BC-5 entero | A |
 | **VER-39** | Toda entidad que el delta declara aparece mencionada en el texto de la escena, y todo personaje mencionado está en `personajes_presentes[]` | `H-1`, parcialmente BC-4 | T |
 | **VER-40** | El Juez caza el defecto conocido del canario en cada lote | `H-6`, BC-6 | T |
 | **VER-41** | Los tokens que registra la traza coinciden con los que declara la respuesta del modelo | `H-7`, y desbloquea `VER-34`, `VER-36`, `VER-37` | T |

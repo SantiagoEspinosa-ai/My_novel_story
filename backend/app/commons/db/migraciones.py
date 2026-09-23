@@ -1,7 +1,7 @@
 """Migraciones versionadas de SQLite.
 
 `CLAUDE.md`: "Las migraciones de esquema se versionan. Un cambio en
-`Docs/definitions.md` que altere un atributo obligatorio necesita su migracion
+`docs/definitions.md` que altere un atributo obligatorio necesita su migracion
 en el mismo commit." `VER-21` comprueba la segunda mitad cruzando commits;
 este modulo sostiene la primera.
 

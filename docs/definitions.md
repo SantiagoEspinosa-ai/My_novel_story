@@ -228,7 +228,7 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 documento define los del **dominio**: lo que es verdad en la ficción o lo que el harness
 comprueba sobre ella. Un vocabulario que describe infraestructura —algo que no existiría si
 la novela se escribiera a mano— se declara donde vive esa infraestructura. Hoy hay uno
-así: **los estados de un trabajo**, en `Docs/architecture.md` § "Los estados de un
+así: **los estados de un trabajo**, en `docs/architecture.md` § "Los estados de un
 trabajo". Sigue las mismas reglas de nombres que estos, porque es el mismo código leyendo
 el mismo tipo de valor.
 
@@ -334,7 +334,7 @@ en negativo y el canon no sabe escribirlo.
 
 **Por qué `estado_de_hallazgo` tiene `descartado`.** Separa el hallazgo que se arregló del que se revisó y se decidió que no era un problema. Sin ese tercer valor, la única forma de cerrar un falso positivo es marcarlo como `resuelto`, es decir, fingir que se corrigió algo que nunca estuvo mal, y el recuento de hallazgos deja de significar nada.
 
-El harness usa `estado_de_escena` para saber qué transiciones son legales y cuáles indican un fallo de orquestación. El diagrama de ciclo de vida de `Docs/domain-knowledge.md` dibuja esa misma máquina de estados, pero es una vista: **los literales se copian de esta tabla, nunca del diagrama.**
+El harness usa `estado_de_escena` para saber qué transiciones son legales y cuáles indican un fallo de orquestación. El diagrama de ciclo de vida de `docs/domain-knowledge.md` dibuja esa misma máquina de estados, pero es una vista: **los literales se copian de esta tabla, nunca del diagrama.**
 
 ## Invariantes verificables
 
@@ -416,7 +416,7 @@ el recorte se llevaría hechos estructurales por implícitos.
 `longitud_objetivo` no la caza ninguna invariante de juicio: repartir toda la auditoría
 entre jueces deja fuera lo que ninguno mira. El caso que lo demostró —un capítulo de 944
 palabras, 256 por debajo del mínimo, aprobado por el mismo validador que en el intento
-anterior había pedido acortarlo— está escrito junto a la Regla 2 de `Docs/verification.md`.
+anterior había pedido acortarlo— está escrito junto a la Regla 2 de `docs/verification.md`.
 Es `mayor` y no `menor` porque un `menor` no bloquea el cierre de capítulo desde `SPEC-04`,
 así que una escena corta entraría firmada y nadie la vería, que es exactamente el fallo que
 la motivó.

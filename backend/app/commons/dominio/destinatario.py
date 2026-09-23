@@ -1,4 +1,4 @@
-"""El plano Destinatario de `Docs/definitions.md`, como modelos Pydantic.
+"""El plano Destinatario de `docs/definitions.md`, como modelos Pydantic.
 
 POR QUE VIVE EN `commons/` Y NO EN `features/entrevista/`
 ----------------------------------------------------------

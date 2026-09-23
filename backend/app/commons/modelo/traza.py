@@ -7,7 +7,7 @@ POR QUE LOS TOKENS VAN EN CAMPOS SEPARADOS
 -------------------------------------------
 `VER-41` reconcilia lo que registra la traza contra lo que declara el modelo, y
 es **la segunda fuente independiente** que exige la Regla 3 de
-`Docs/verification.md`. Si los numeros salieran del mismo sitio, `VER-41`
+`docs/verification.md`. Si los numeros salieran del mismo sitio, `VER-41`
 compararia un numero consigo mismo: pasaria siempre y seria un eco.
 
 Son **tres numeros, no dos** (`SPEC-12` C-3):

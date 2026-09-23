@@ -59,8 +59,8 @@ compara. Lo que aquí no existe es la mitad del plan.
 ## Qué tiene que ser verdad al terminar
 
 1. `MomentoNarrativo` tiene un atributo que declara que el retroceso temporal
-   es deliberado, definido primero en `Docs/definitions.md` y solo después
-   dibujado en `Docs/domain-knowledge.md`.
+   es deliberado, definido primero en `docs/definitions.md` y solo después
+   dibujado en `docs/domain-knowledge.md`.
 2. Ese atributo lo rellena **la escaleta**, en el mismo momento y por el mismo
    camino que `pov` y `cambio_de_valor`. Ninguna ruta del Escritor lo escribe.
 3. `INV-08` deja pasar la inversión cuyo evento posterior en el discurso lo
@@ -90,7 +90,7 @@ compara. Lo que aquí no existe es la mitad del plan.
 
 ## Lo que la gobierna
 
-`INV-08` de `Docs/definitions.md`; `MomentoNarrativo` y su atributo doble
-`t_fabula` / `t_discurso`; la puerta de capítulo de `Docs/architecture.md`;
-`F-50` y `F-47` de `Docs/verification.md`; y `L-1` de `specs/lean/README.md`,
+`INV-08` de `docs/definitions.md`; `MomentoNarrativo` y su atributo doble
+`t_fabula` / `t_discurso`; la puerta de capítulo de `docs/architecture.md`;
+`F-50` y `F-47` de `docs/verification.md`; y `L-1` de `specs/lean/README.md`,
 que es la segunda fuente que hoy comprueba lo mismo por otro camino.

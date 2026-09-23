@@ -28,7 +28,7 @@ def test_el_que_estima_no_escribe_el_declarado():
     buscaba la cadena suelta y fallo contra el docstring que explica por que el
     modulo no escribe ese campo: un validador que no distingue una cita de un
     uso marca el texto que explica el defecto. Es `F-15` de
-    `Docs/verification.md`, que se descubrio con los acentos graves de un
+    `docs/verification.md`, que se descubrio con los acentos graves de un
     documento y resulta valer igual para el codigo.
     """
     fuente = inspect.getsource(presupuesto)

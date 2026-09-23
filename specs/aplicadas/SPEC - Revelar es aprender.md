@@ -126,14 +126,14 @@ falso positivo, y no lo era.
 **No hace falta.** `acciones` es un campo del delta, y el delta no se persiste en ninguna
 tabla: se aplica y lo que queda es `escena_consolidada`. Ninguna columna cambia y ningún
 atributo obligatorio se altera, así que la regla de `CLAUDE.md` —*un cambio en
-`Docs/definitions.md` que altere un atributo obligatorio necesita su migración en el mismo
+`docs/definitions.md` que altere un atributo obligatorio necesita su migración en el mismo
 commit*— no se dispara aquí.
 
 ## Qué gobierna esto
 
 `DeltaDeEscena`, `RegistroDeConocimiento`, `HechoCanonico.escena_de_establecimiento` e
-`INV-03` de `Docs/definitions.md`; `F-24`, `F-29`, `F-30` y `F-31` de
-`Docs/verification.md`; `VER-64` y `VER-37`, que siguen sin dato hasta que esto se aplique;
+`INV-03` de `docs/definitions.md`; `F-24`, `F-29`, `F-30` y `F-31` de
+`docs/verification.md`; `VER-64` y `VER-37`, que siguen sin dato hasta que esto se aplique;
 y las **Reglas 2 y 4**, de las que `C-5` y `C-3` salen respectivamente.
 
 ## Preguntas respondidas al aprobar

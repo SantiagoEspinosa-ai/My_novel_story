@@ -76,7 +76,7 @@ del plan, en su feature.
 
 ### E1 · El dominio primero
 
-`Docs/definitions.md`: en `PlanDeLaObra`, los imprescindibles del plan
+`docs/definitions.md`: en `PlanDeLaObra`, los imprescindibles del plan
 (`{elemento, capitulo, palabras_clave[]}`), el momento de la fábula por capítulo,
 la fecha de nacimiento por personaje y las exclusiones previstas
 (`{personaje, capitulo, estado_vital}`); la clase `ValoracionDelEditor`
@@ -243,7 +243,7 @@ en el prompt. `sistema.json` gana los modelos de los tres agentes y
 menciona «terror» salvo la rúbrica del Juez de terror; `sistema.json` carga con
 los campos nuevos.
 
-### E12 · `Docs/` y spec al día
+### E12 · `docs/` y spec al día
 
 `architecture.md` (la feature, los tres agentes, los hooks), `domain-knowledge.md`,
 `verification.md` (filas nuevas, números comprobados al commitear), `AGENTS.md` y

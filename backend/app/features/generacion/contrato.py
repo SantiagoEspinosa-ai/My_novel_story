@@ -19,7 +19,7 @@ from app.commons.dominio.enumeraciones import EjeDeValor, SignoDeCambio
 # encaja aqui es prosa, y la prosa en un campo de referencia es un fallo de
 # **contrato**: si llega a la puerta, `INV-03` lo denunciara como "actua sobre
 # un hecho que no conoce", que describe mal el defecto y hereda una severidad
-# `bloqueante` que no le corresponde (Regla 4 de `Docs/verification.md`).
+# `bloqueante` que no le corresponde (Regla 4 de `docs/verification.md`).
 IDENTIFICADOR = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 
 

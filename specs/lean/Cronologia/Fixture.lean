@@ -6,7 +6,7 @@
   tan inutil como uno que no marca nada, y sin este caso no se distinguen.
 
   `obraAdversaria` viola las cuatro, una vez cada una. Es **el caso negativo
-  obligatorio** que `Docs/verification.md` exige de todo validador: una
+  obligatorio** que `docs/verification.md` exige de todo validador: una
   invariante que nunca ha fallado en las pruebas no esta verificada, solo
   declarada.
 

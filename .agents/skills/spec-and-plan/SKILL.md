@@ -15,7 +15,7 @@ El proceso de trabajo de este repositorio, ejecutable. La versión normativa est
 en `AGENTS.md` § Proceso de trabajo; esta skill lo aplica.
 
 ```
-Docs/  →  spec aprobada  →  plan aprobado  →  código (TDD)  →  spec y Docs/ al día
+docs/  →  spec aprobada  →  plan aprobado  →  código (TDD)  →  spec y docs/ al día
 ```
 
 ## Lo primero: ¿qué puerta está abierta?
@@ -25,7 +25,7 @@ formalidad: es lo que la skill hace.**
 
 | Te piden | Comprueba | Si no se cumple |
 | --- | --- | --- |
-| Un cambio en `Docs/` | ¿Es documental o decide algo nuevo? | Si decide algo nuevo: hace falta spec |
+| Un cambio en `docs/` | ¿Es documental o decide algo nuevo? | Si decide algo nuevo: hace falta spec |
 | Un plan | ¿Su spec tiene `estado: aprobada`? | **No escribas el plan.** Dilo y escribe o termina la spec |
 | Código | ¿Su plan tiene `estado: aprobada`? | **No escribas código**, ni andamiaje |
 
@@ -69,7 +69,7 @@ Responde a tres cosas, y solo a tres:
 
 1. **Qué problema resuelve.** El hueco concreto, no la solución.
 2. **Qué tiene que ser verdad al terminar.** Criterios numerados y comprobables,
-   para poder citarlos desde el plan y desde `Docs/verification.md`.
+   para poder citarlos desde el plan y desde `docs/verification.md`.
 3. **Qué queda explícitamente fuera.** Lo que no se hace y por qué.
 
 Más dos secciones cortas: **qué la gobierna** (`INV-xx`, `A-xx`, `VER-xx`, y qué
@@ -88,7 +88,7 @@ Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec.
 - **Comprueba primero que la spec está aprobada**, en el frontmatter de su
   propio fichero. Si no, para.
 - Dice qué ficheros se tocan, en qué orden, **qué prueba cubre cada paso** y qué
-  filas `VER-xx` de `Docs/verification.md` cierra.
+  filas `VER-xx` de `docs/verification.md` cierra.
 - **Cada paso deja el repositorio funcionando.** Un paso que solo tiene sentido
   con el siguiente son un paso.
 - Cada paso cita el criterio de la spec que satisface.
@@ -99,7 +99,7 @@ Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec.
 - **TDD, en este orden:** la prueba que falla, el código mínimo que la pasa, el
   refactor. Ningún código de producción nace sin una prueba que haya fallado
   antes.
-- **Al terminar, en el mismo commit:** spec al día, `Docs/` al día y la fila
+- **Al terminar, en el mismo commit:** spec al día, `docs/` al día y la fila
   `VER-xx` actualizada si se ha cerrado alguna.
 
 ## Cuando el código descubre que la spec estaba mal

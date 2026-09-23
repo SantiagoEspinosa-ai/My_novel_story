@@ -127,7 +127,7 @@ def test_la_huella_no_cambia_por_el_orden_de_las_claves(tmp_path):
 
 def test_las_palabras_prohibidas_son_las_de_la_guia_de_estilo(tmp_path):
     """No es un campo nuevo: `GuiaDeEstilo.tics_prohibidos` existe en
-    `Docs/definitions.md`. El brief lo rellena, no lo inventa."""
+    `docs/definitions.md`. El brief lo rellena, no lo inventa."""
     datos = dict(BRIEF_MINIMO, estilo={"tics_prohibidos": ["de repente", "sintio que"]})
     b = carga.cargar_brief(_escribir(tmp_path, "brief.json", datos))
     assert "de repente" in b.estilo.tics_prohibidos

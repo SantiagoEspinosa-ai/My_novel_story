@@ -3,7 +3,7 @@
 `CLAUDE.md` y `D-5` de `SPEC-01`:
 
     "Las migraciones de esquema se versionan. Un cambio en
-     `Docs/definitions.md` que altere un atributo obligatorio necesita su
+     `docs/definitions.md` que altere un atributo obligatorio necesita su
      migracion en el mismo commit."
 
 La segunda mitad es la que `VER-21` comprueba y la que esta prueba sostiene:

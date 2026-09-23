@@ -20,7 +20,7 @@ from app.commons.dominio.modelos import Hallazgo
 
 
 def test_los_valores_del_vocabulario_son_los_de_definitions():
-    """Los literales son los de `Docs/definitions.md`, sin traducir ni abreviar."""
+    """Los literales son los de `docs/definitions.md`, sin traducir ni abreviar."""
     assert [s.value for s in enums.Severidad] == ["bloqueante", "mayor", "menor"]
     assert [e.value for e in enums.EstadoDeHallazgo] == [
         "abierto",

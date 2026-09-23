@@ -19,7 +19,7 @@ Dos frases. Las dos son verdad hoy en este repositorio, y **puede que no quepan 
 > sistema **regenera solo los capítulos afectados** sin romper la continuidad de la obra.
 
 > **El modelo que tenemos.** *El estado del mundo se reconstruye acumulando los deltas de
-> escena en orden* (`Docs/architecture.md`, `CLAUDE.md`, y `VER-09` lo comprueba contra una
+> escena en orden* (`docs/architecture.md`, `CLAUDE.md`, y `VER-09` lo comprueba contra una
 > implementación de referencia). Cada escena se escribe contra el estado que dejaron **todas**
 > las anteriores.
 
@@ -57,7 +57,7 @@ Comprobado, no supuesto:
   y no hay ninguna tabla que lo guarde. Lo que se conserva es su **efecto** —entidades, sus
   ubicaciones, el registro de conocimiento—, no lo que cada escena aportó.
 - **De `consolidada` no sale ninguna transición.** `rechazada` vuelve a `generada`; una escena
-  consolidada no tiene camino de vuelta en `Docs/architecture.md`.
+  consolidada no tiene camino de vuelta en `docs/architecture.md`.
 - **`RF-19` e `INV-05`** prohíben generar la escena siguiente mientras la anterior no esté
   consolidada. La generación está pensada como una sola pasada hacia delante.
 - **Un capítulo `cerrado` no se reabre** (`RF-30`): dos valores y una sola transición.
@@ -108,7 +108,7 @@ no es un defecto de la regeneración —la regeneración solo lo **destapa**— 
 modelo de verificación que estaba ahí desde el principio, esperando a que algo moviera el
 estado hacia atrás.
 
-Queda catalogado como **`MF-26`** en `Docs/verification.md`, en la tabla de los fallos
+Queda catalogado como **`MF-26`** en `docs/verification.md`, en la tabla de los fallos
 silenciosos, y es hoy **el único modo de fallo sin ningún validador que lo mire**. Nombrarlo no
 lo arregla; lo que hace es que la elección de salida se tome sabiendo que ninguna lo cierra
 sola:
@@ -126,7 +126,7 @@ Y deja una pregunta que sobrevive a esta spec: si un resultado de verificación 
 qué estado se evaluó, **caducaría solo** —la misma forma que las marcas `Caduca con:`, una
 condición comprobable en lugar de una nota que alguien tiene que acordarse de revisar—. Eso es
 un cambio del modelo de verificación y no se decide aquí: queda **abierta como decisión
-propia** en `Docs/verification.md` § Decisiones abiertas, con lo que habría que elegir —qué
+propia** en `docs/verification.md` § Decisiones abiertas, con lo que habría que elegir —qué
 identifica un estado, y qué se hace con un verde caducado—. Es la única forma conocida de que
 `MF-26` deje de ser silencioso.
 
@@ -375,12 +375,12 @@ antemano, el número decide; sin él, el número se interpreta.
 
 ## Qué gobierna esto
 
-`CLAUDE.md` y `Docs/architecture.md` § Persistencia —*el estado del mundo se reconstruye
+`CLAUDE.md` y `docs/architecture.md` § Persistencia —*el estado del mundo se reconstruye
 acumulando los deltas de escena en orden*— y su tabla de transiciones; `DeltaDeEscena`,
 `Borrador`, `EstadoDelMundo`, `HechoCanonico`, `Capitulo` y `estado_de_escena` de
-`Docs/definitions.md`; `INV-02`, `INV-03`, `INV-05`, `INV-06`; `RF-09`, `RF-12`, `RF-19`,
+`docs/definitions.md`; `INV-02`, `INV-03`, `INV-05`, `INV-06`; `RF-09`, `RF-12`, `RF-19`,
 `RF-30` y §3.2.2 de `SPEC-01`; `SPEC-22` `C-9` y sus huecos `G-05`…`G-09`; `MF-11`, `MF-18`,
-`PC-5` y `VER-09` de `Docs/verification.md`; las **Reglas 4 y 5**; y el criterio de
+`PC-5` y `VER-09` de `docs/verification.md`; las **Reglas 4 y 5**; y el criterio de
 `SPEC-10` C-2, `SPEC-18` C-3 y `RF-26`: entre fallar ruidoso y fallar en silencio, el
 proyecto ya ha elegido tres veces.
 

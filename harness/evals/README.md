@@ -1,7 +1,7 @@
 # `harness/evals/`
 
 Briefs de prueba y sus resultados esperados. La carpeta la declara
-`Docs/architecture.md` § "El harness" junto a `documentos/` y `adversarial/`;
+`docs/architecture.md` § "El harness" junto a `documentos/` y `adversarial/`;
 esta es la primera que se crea, y se crea con un solo fichero porque hace
 falta ya.
 

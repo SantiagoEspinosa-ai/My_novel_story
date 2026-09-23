@@ -3,7 +3,7 @@
     "Un doble de prueba tiene la misma forma que lo real. Si el modelo devuelve
      texto y delta en la misma respuesta, el doble tambien."
 
-Es la tercera regla de pruebas de `Docs/architecture.md`, y la otra rama la
+Es la tercera regla de pruebas de `docs/architecture.md`, y la otra rama la
 aprendio a golpes: un doble demasiado limpio no caza lo que el real hace mal.
 Por eso este doble **puede portarse mal a peticion**: devolver un delta fuera de
 esquema, quedarse mudo, o quedarse corto de palabras. Si solo supiera portarse

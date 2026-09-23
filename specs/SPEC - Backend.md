@@ -12,7 +12,7 @@ version: 5
 # SRS — Backend del harness de novelas
 
 Especificación de requisitos del **backend**: el servicio que ejecuta el proceso de
-generación y verificación de escenas descrito en `Docs/`.
+generación y verificación de escenas descrito en `docs/`.
 
 ## Qué es y qué no es este documento
 
@@ -21,14 +21,14 @@ frontend, la interfaz de puertas y cualquier otra pieza tendrán su propia spec,
 propio fichero dentro de `specs/`.
 
 **No es** una redefinición del dominio ni del proceso. El dominio está en
-`Docs/definitions.md` y el proceso en `Docs/domain-knowledge.md` y `Docs/architecture.md`. Este
+`docs/definitions.md` y el proceso en `docs/domain-knowledge.md` y `docs/architecture.md`. Este
 documento los toma como dados y especifica **qué tiene que hacer el backend para
 ejecutarlos**.
 
-**Precedencia.** Aquí se repiten cosas que ya están en `CLAUDE.md` y en `Docs/definitions.md`
+**Precedencia.** Aquí se repiten cosas que ya están en `CLAUDE.md` y en `docs/definitions.md`
 para que el documento se pueda leer solo. Si alguna vez discrepan, **gana el original** y
-este se corrige: `CLAUDE.md` en lo técnico, `Docs/definitions.md` en lo de dominio,
-`Docs/architecture.md` en cómo se organiza el código.
+este se corrige: `CLAUDE.md` en lo técnico, `docs/definitions.md` en lo de dominio,
+`docs/architecture.md` en cómo se organiza el código.
 
 | ID | Estado | Aprobada por | Fecha |
 | --- | --- | --- | --- |
@@ -78,7 +78,7 @@ mucho que genere texto.
 
 ## 1.3 Definiciones
 
-Literales de `Docs/definitions.md`. No admiten sinónimos ni traducción.
+Literales de `docs/definitions.md`. No admiten sinónimos ni traducción.
 
 | Término | Qué es |
 | --- | --- |
@@ -91,19 +91,19 @@ Literales de `Docs/definitions.md`. No admiten sinónimos ni traducción.
 | **Hallazgo** | Defecto detectado, con su verificador, su escena y su severidad |
 | **Puerta** | Condición que un artefacto debe pasar para avanzar |
 | **Trabajo** | Unidad de trabajo asíncrono registrada en la base de datos |
-| `INV-xx` | Invariante verificable de `Docs/definitions.md` |
-| `VER-xx` | Fila del plan de verificación de `Docs/verification.md` |
-| `A-xx` | Decisión de arquitectura de `Docs/architecture.md` |
+| `INV-xx` | Invariante verificable de `docs/definitions.md` |
+| `VER-xx` | Fila del plan de verificación de `docs/verification.md` |
+| `A-xx` | Decisión de arquitectura de `docs/architecture.md` |
 
 ## 1.4 Referencias
 
 | Documento | Qué aporta |
 | --- | --- |
 | `CLAUDE.md` | Stack, límite de contexto y su reparto por niveles, reglas de Pydantic y enumeraciones, persistencia |
-| `Docs/definitions.md` | Clases, atributos, vocabularios controlados e invariantes `INV-01`…`INV-16` |
-| `Docs/domain-knowledge.md` | **El proceso**: ciclo de vida de la escena y secuencia de generación |
-| `Docs/architecture.md` | Decisiones `A-01`…`A-09`, estructura por feature, agentes y quién dispara cada transición |
-| `Docs/verification.md` | Modos de fallo `MF-01`…`MF-23` y validadores `VER-01`…`VER-55`, cada uno con su punto ciego |
+| `docs/definitions.md` | Clases, atributos, vocabularios controlados e invariantes `INV-01`…`INV-16` |
+| `docs/domain-knowledge.md` | **El proceso**: ciclo de vida de la escena y secuencia de generación |
+| `docs/architecture.md` | Decisiones `A-01`…`A-09`, estructura por feature, agentes y quién dispara cada transición |
+| `docs/verification.md` | Modos de fallo `MF-01`…`MF-23` y validadores `VER-01`…`VER-55`, cada uno con su punto ciego |
 
 ---
 
@@ -131,13 +131,13 @@ vectores aparte ni cola externa.
 
 ## 2.2 El proceso que ejecuta el backend
 
-Esta sección no inventa nada: recoge el proceso tal como está en `Docs/` y dice qué parte
+Esta sección no inventa nada: recoge el proceso tal como está en `docs/` y dice qué parte
 cubre esta versión. Es el corazón del documento, porque todos los requisitos del §3
 existen para que este proceso se ejecute bien.
 
 ### 2.2.1 Ciclo de vida de una escena
 
-Los estados son la enumeración `estado_de_escena` de `Docs/definitions.md`:
+Los estados son la enumeración `estado_de_escena` de `docs/definitions.md`:
 
 ```mermaid
 stateDiagram-v2
@@ -153,7 +153,7 @@ stateDiagram-v2
   Consolidada --> [*]
 ```
 
-Quién dispara cada transición, según `Docs/architecture.md`:
+Quién dispara cada transición, según `docs/architecture.md`:
 
 | Transición | Quién la dispara | Condición | ¿En la v1? |
 | --- | --- | --- | --- |
@@ -218,7 +218,7 @@ documentos no dicen lo mismo:
 | Documento | Qué dice |
 | --- | --- |
 | `CLAUDE.md` § Reglas de trabajo | *"`mayor` y `menor` generan hallazgo y dejan seguir"* |
-| `Docs/architecture.md` § transiciones | `en_verificacion` → `en_revision` disparada por un hallazgo `mayor` o `menor` |
+| `docs/architecture.md` § transiciones | `en_verificacion` → `en_revision` disparada por un hallazgo `mayor` o `menor` |
 
 No pueden ser las dos: si va a `en_revision`, no sigue.
 
@@ -226,7 +226,7 @@ No pueden ser las dos: si va a `en_revision`, no sigue.
 en lo técnico. Un hallazgo `mayor` o `menor` **no** bloquea: la escena puede alcanzar
 `aceptada` con el hallazgo abierto y visible. `en_revision` entra cuando entre `revision/`,
 y entonces será una decisión del cliente mandar allí una escena, no un automatismo del
-Juez. Queda anotado en §5.3 para cerrarlo en `Docs/architecture.md`.
+Juez. Queda anotado en §5.3 para cerrarlo en `docs/architecture.md`.
 
 ## 2.3 Funciones principales
 
@@ -248,7 +248,7 @@ De `CLAUDE.md`, no negociables desde aquí:
 | Persistencia | SQLite con extensión vectorial. Una sola base. Sin servicio de vectores externo |
 | Contexto | 100.000 tokens, salida incluida. Ver `RNF-P` |
 | Asincronía | Las llamadas al modelo son asíncronas: el endpoint arranca un trabajo y devuelve su identificador |
-| Validación | Los modelos Pydantic son la frontera y replican las clases de `Docs/definitions.md`. Un campo que no está allí no entra en un esquema |
+| Validación | Los modelos Pydantic son la frontera y replican las clases de `docs/definitions.md`. Un campo que no está allí no entra en un esquema |
 | Vocabularios | Los valores cerrados son `Enum`. Un valor fuera de la enumeración es un error de validación, no un aviso |
 
 Reparto del presupuesto por nivel, tal como está hoy en `CLAUDE.md`:
@@ -304,7 +304,7 @@ ya no puede decidir.
 reescritura repite el error que la motivó. Es el arreglo de un fallo real de la rama
 `main`: allí el aviso de longitud lo leía la sesión orquestadora y no el escritor, así que
 en el intento siguiente el escritor no sabía nada de él. Está contado junto a la Regla 2 de
-`Docs/verification.md`.
+`docs/verification.md`.
 
 #### Ninguna forma reducida se lleva lo que lee una `bloqueante` de escena
 
@@ -323,7 +323,7 @@ consecuencia que `SPEC-12` no llevó hasta el final: si la partición por proced
 partición por necesidad no coinciden, **el sitio de un dato que lee una `bloqueante` es el
 bloque que no se elimina, no el bloque del que vino**.
 
-Es comprobable porque la tabla de invariantes de `Docs/definitions.md` declara, por fila,
+Es comprobable porque la tabla de invariantes de `docs/definitions.md` declara, por fila,
 **qué lee** cada una. Lo cruza `VER-59`.
 
 **Ata a dos invariantes, no a cinco.** De las cinco `bloqueante` de nivel escena, solo
@@ -378,7 +378,7 @@ El primero es **una estimación conservadora con su margen declarado**, no una c
 lo que decide es *"me paso o no"*, no *"por cuánto"*, y contar exacto en cada vuelta del
 bucle paga el tokenizador sin ganar nada. Los otros dos son exactos.
 
-**Mezclarlos rompe la Regla 3 de `Docs/verification.md`, y ahora más que antes.** Si el
+**Mezclarlos rompe la Regla 3 de `docs/verification.md`, y ahora más que antes.** Si el
 número que reporta la sesión y el que estima el ensamblador salieran del mismo sitio,
 `VER-61` compararía uno consigo mismo y volvería a ser el eco que `SPEC-08` cerró. **Es
 justo lo que alguien unifica al refactorizar creyendo que simplifica.**
@@ -400,7 +400,7 @@ guarda los recortes, distinguiendo reducciones de eliminaciones— pero diseñar
 tenerlo. **Caduca con:** `backend/app/features/orquestacion/`. Apuntó antes a
 `features/contexto/` y volvió a disparar pronto: el ensamblador existe desde `PLAN-01` C1 y
 el registro de recortes también, pero **el instrumento no es el dato**. Es el mismo techo de
-la convención que se encontró en B2, y está como decisión abierta en `Docs/verification.md`.
+la convención que se encontró en B2, y está como decisión abierta en `docs/verification.md`.
 
 ## 2.5 Suposiciones y dependencias
 
@@ -421,7 +421,7 @@ la convención que se encontró en B2, y está como decisión abierta en `Docs/v
 
 | ID | Requisito | Verifica |
 | --- | --- | --- |
-| **RF-01** | Se puede crear una `Obra` a partir de un `Brief` con premisa, tono, guía de estilo y prohibiciones. Los campos obligatorios de `Docs/definitions.md` son obligatorios aquí | — |
+| **RF-01** | Se puede crear una `Obra` a partir de un `Brief` con premisa, tono, guía de estilo y prohibiciones. Los campos obligatorios de `docs/definitions.md` son obligatorios aquí | — |
 | **RF-02** | Se genera una `Escaleta`: lista ordenada de escenas planificadas, cada una con su `cambio_de_valor` previsto, su `pov`, su `lugar`, su `objetivo_dramatico` **y los `Beat` que realiza, cada uno ligado al `ArcoNarrativo` al que sirve** | `INV-01`, `INV-07` |
 | **RF-03** | Toda escena de la escaleta nace en estado `planificada` | — |
 | **RF-04** | La generación de la escaleta es asíncrona: devuelve un identificador de trabajo | — |
@@ -433,7 +433,7 @@ la convención que se encontró en B2, y está como decisión abierta en `Docs/v
 | **RF-05** | Antes de cada llamada al modelo se ensambla el contexto por niveles y **se comprueba que cabe en el presupuesto** | `VER-05` |
 | **RF-06** | Si no cabe, se recorta siguiendo el **orden de recorte de §2.4**, en dos vueltas: primero se reduce todo lo reducible, y solo después se eliminan bloques enteros. Nunca truncando por el final ni partiendo un bloque | `VER-06` |
 | **RF-07** | El contexto nunca incluye el texto completo de la obra. Solo la escena anterior entra en texto completo | `VER-07` |
-| **RF-08** | Cada agente recibe únicamente los niveles que le corresponden según `Docs/architecture.md` | — |
+| **RF-08** | Cada agente recibe únicamente los niveles que le corresponden según `docs/architecture.md` | — |
 | **RF-26** | **Si tras agotar todas las formas reducidas de §2.4 y eliminar los tres primeros bloques el contexto sigue sin caber, el trabajo falla en vez de generar.** El límite llega más tarde que antes a propósito: con degradación se llega más lejos perdiendo menos. El límite son **bloques, no niveles de `CLAUDE.md`**: el nivel `Recuperado` se parte en dos y sus dos mitades están a distinto lado de la frontera —fichas y setups en el bloque 2, que sí se recorta; registro de conocimiento en el bloque 4, que no—. Un recortador que itere por niveles se lleva el registro de conocimiento y deja `INV-03` sin datos. No se tocan los bloques 4.º, 5.º, 6.º ni 7.º | `VER-06`, `VER-59` |
 
 ### Generación
@@ -448,7 +448,7 @@ la convención que se encontró en B2, y está como decisión abierta en `Docs/v
 
 | ID | Requisito | Verifica |
 | --- | --- | --- |
-| **RF-12** | Las comprobaciones deterministas las ejecuta **código**, no un juez. El reparto entre regla y juez es el de la columna `Tipo` de `Docs/definitions.md` y no se reinterpreta caso por caso | — |
+| **RF-12** | Las comprobaciones deterministas las ejecuta **código**, no un juez. El reparto entre regla y juez es el de la columna `Tipo` de `docs/definitions.md` y no se reinterpreta caso por caso | — |
 | **RF-13** | Se ejecutan las invariantes de nivel escena: `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-05`, `INV-07`, `INV-10` | `VER-10`, `VER-11` |
 | **RF-14** | Un fallo `bloqueante` detiene la escena en la puerta: no puede pasar a `aceptada`. `mayor` y `menor` generan `Hallazgo`, dejan seguir y el hallazgo queda abierto (ver §2.2.3) | `VER-11` |
 | **RF-15** | Todo `Hallazgo` cita su invariante **por identificador** (`INV-07`), nunca por descripción | `VER-12` |
@@ -494,7 +494,7 @@ tiene ninguna consecuencia en ninguna parte del sistema.
 
 ### 3.2.1 API HTTP
 
-Contratos, no implementación. Los nombres de campo replican `Docs/definitions.md`.
+Contratos, no implementación. Los nombres de campo replican `docs/definitions.md`.
 
 | Método | Ruta | Entrada | Salida | Códigos |
 | --- | --- | --- | --- | --- |
@@ -578,7 +578,7 @@ Los identificadores `O-`, `M-`, `P-` y `T-` se conservan de la versión 1. No se
   `BackgroundTasks`. Lo que **no** ocurre es el relanzamiento automático: el trabajo que
   estaba en vuelo no se retoma solo, porque pudo haber llamado al modelo antes de morir y
   relanzarlo a ciegas paga dos veces. Lo relanza una persona, viendo qué pasó
-  (`Docs/architecture.md` § "El trabajo que nadie terminó").
+  (`docs/architecture.md` § "El trabajo que nadie terminó").
 - **O-3.** Los fallos **transitorios** (red, timeout) se reintentan con espera creciente y
   un tope acotado de intentos. Los fallos **de contrato** (salida fuera de esquema) **no**
   se reintentan: el trabajo queda marcado como fallido y visible. Reintentar a ciegas un
@@ -638,7 +638,7 @@ vuelo en un dato medible en vez de una suposición.
 
 ## 3.4 Restricciones de diseño
 
-De `Docs/architecture.md`. Condicionan el código, no solo su organización:
+De `docs/architecture.md`. Condicionan el código, no solo su organización:
 
 - **D-1.** Una carpeta por feature —caso de uso del pipeline— más `commons/` para lo
   compartido (`A-01`, `A-02`).
@@ -650,7 +650,7 @@ De `Docs/architecture.md`. Condicionan el código, no solo su organización:
   todos eran de dominio, y `SPEC-08` creó el primero que no lo es.
 - **D-4.** La severidad de las invariantes se implementa una vez, en
   `commons/invariantes/`, y no se resuelve caso por caso en cada verificador.
-- **D-5.** Las migraciones se versionan. Un cambio en `Docs/definitions.md` que altere un
+- **D-5.** Las migraciones se versionan. Un cambio en `docs/definitions.md` que altere un
   atributo obligatorio necesita su migración en el mismo commit.
 
 ---
@@ -688,7 +688,7 @@ El backend v1 está terminado cuando **todo** esto es cierto:
 | M-2, M-3 | `INV-05` | filas nuevas pendientes |
 | T-1, T-2 | — | `VER-24` |
 
-`Docs/verification.md` necesita filas nuevas para `O-3`, `M-2`, `M-3`, `P-2` y `P-3`, y
+`docs/verification.md` necesita filas nuevas para `O-3`, `M-2`, `M-3`, `P-2` y `P-3`, y
 `VER-05` hay que revisarla porque hoy habla del límite **por llamada**.
 
 ---
@@ -711,7 +711,7 @@ distinguirse de uno medido.**
 
 | Qué falta | Bloquea | Cómo se obtiene |
 | --- | --- | --- |
-| Umbrales de `INV-15` e `INV-16` | `VER-32`, `VER-33` | Medir sobre un corpus y fijar con esa medición. Es la decisión "Umbrales" abierta en `Docs/definitions.md`: se cierran a la vez o ninguna |
+| Umbrales de `INV-15` e `INV-16` | `VER-32`, `VER-33` | Medir sobre un corpus y fijar con esa medición. Es la decisión "Umbrales" abierta en `docs/definitions.md`: se cierran a la vez o ninguna |
 | Reparto de tokens por agente | `VER-34` | Instrumentar el consumo durante varias escenas |
 | Coste por escena | `VER-36` | Medir una escena completa con `A-03` |
 | Suficiencia del reparto por niveles | `VER-37` | Ensamblar el contexto de una escena real y ver si cabe |
@@ -732,7 +732,7 @@ distinguirse de uno medido.**
 Siguen abiertas:
 
 - **`mayor` y `menor`: ¿dejan seguir o van a `en_revision`?** `CLAUDE.md` y
-  `Docs/architecture.md` se contradicen (§2.2.3). La v1 asume lo primero. Al cerrarlo hay
+  `docs/architecture.md` se contradicen (§2.2.3). La v1 asume lo primero. Al cerrarlo hay
   que corregir el documento que quede en falso.
 - **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla` (`SPEC-04` C-6) y el
   Juez como desempate, falta decidir qué gana cuando la regla no ve nada y el Juez marca.
@@ -749,7 +749,7 @@ Siguen abiertas:
 | Versión | Fecha | Cambio |
 | --- | --- | --- |
 | 1 | 2026-09-21 | Primera versión. Absorbe la spec de orquestación, memoria y presupuesto conservando los identificadores `O-`, `M-`, `P-` |
-| 2 | 2026-09-21 | Pasa a ser **solo** la spec del backend: fuera el registro multi-spec. Se añade §2.2 con el proceso tomado de `Docs/`, y se documenta en §2.2.3 la contradicción entre `CLAUDE.md` y `Docs/architecture.md` sobre `mayor` y `menor` |
+| 2 | 2026-09-21 | Pasa a ser **solo** la spec del backend: fuera el registro multi-spec. Se añade §2.2 con el proceso tomado de `docs/`, y se documenta en §2.2.3 la contradicción entre `CLAUDE.md` y `docs/architecture.md` sobre `mayor` y `menor` |
 | 3 | 2026-09-22 | Se cierran dos bloqueantes. **§2.4 fija el orden de recorte** por qué se pierde si falta, y `RF-26` añade que por debajo del nivel 3 se falla en vez de generar. **`Beat` y `ArcoNarrativo` entran en la v1** con su coste reconocido: el Escaletador pasa a tener que rellenarlos. `D4-6` ya lo había cerrado `SPEC-03` al poner `cambios_de_estado_vital` en el delta |
 | 5 | 2026-09-22 | **§2.4 reescrita por `SPEC-12`.** El recorte pasa a tener dos vueltas y cada bloque declara su forma reducida: recortar deja de ser elegir qué se pierde y pasa a ser elegir cuánto se conserva. Entra el bloque de problemas del intento anterior, se fija que ninguna forma reducida se lleva lo que lee una `bloqueante` de escena, se separan los tres números del presupuesto y se deja escrito que el orden se cambia por spec y nunca por configuración |
 | 4 | 2026-09-22 | **Se cierra `D4-9` entero**: `RF-27`…`RF-30` y el endpoint `POST /capitulos/{id}/cerrar` escriben la puerta de cierre de capítulo que `SPEC-04` había decidido. `RF-26` y §2.4 dicen ya que el orden de recorte opera sobre **bloques**, no sobre niveles. No quedan bloqueantes |

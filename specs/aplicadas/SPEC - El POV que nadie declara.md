@@ -20,7 +20,7 @@ la escaleta pedía *"Marta recorre la casa heredada"* y el bloque inmutable exig
 persona limitada sobre Marta"*, y el texto salió sobre Ana. `INV-04` **no miró nada**
 (`F-34`), y al hacer que dejara de callarse apareció la causa de fondo (`F-36`):
 
-> `Docs/definitions.md` marca en negrita `Escena.pov`, `Escena.lugar` y `Borrador.pov_usado`.
+> `docs/definitions.md` marca en negrita `Escena.pov`, `Escena.lugar` y `Borrador.pov_usado`.
 > La tabla no guardaba los dos primeros y **nada rellena el tercero**. Ninguna prueba lo notó
 > **porque la invariante que los necesita se saltaba en silencio**.
 
@@ -82,8 +82,8 @@ dominio prohíbe es una frontera que no lo es.
 ## Qué gobierna esto
 
 `Escena.pov`, `Escena.lugar`, `Borrador.pov_usado`, `INV-04` y `estado_de_hallazgo` de
-`Docs/definitions.md`; `SPEC-04` C-2 y `SPEC-10` C-2; `F-34` y `F-36` de
-`Docs/verification.md`; `VER-48`; y las Reglas 3 y 4.
+`docs/definitions.md`; `SPEC-04` C-2 y `SPEC-10` C-2; `F-34` y `F-36` de
+`docs/verification.md`; `VER-48`; y las Reglas 3 y 4.
 
 ## Preguntas respondidas al aprobar
 

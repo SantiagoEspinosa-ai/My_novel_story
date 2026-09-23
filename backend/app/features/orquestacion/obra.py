@@ -360,7 +360,7 @@ def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
     """Dice si el capitulo **podria** cerrarse. No lo cierra.
 
     La firma es humana y la dispara el cliente de la API, nunca el worker
-    (`Docs/architecture.md`): al decidir que un `mayor` no detiene la escena, el
+    (`docs/architecture.md`): al decidir que un `mayor` no detiene la escena, el
     control no desaparecio, **se movio aqui**, que es donde una persona puede
     juzgar si el conjunto se sostiene. Un bucle que firmara solo devolveria ese
     control a la maquina y dejaria la puerta de adorno.

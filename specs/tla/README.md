@@ -78,10 +78,10 @@ verificar: un segundo ciclo no visita ninguna transición nueva.
 
 ## Qué implementa cada acción
 
-Las tres máquinas de estados del repositorio viven en `Docs/architecture.md`
+Las tres máquinas de estados del repositorio viven en `docs/architecture.md`
 (escena, capítulo y trabajo) y el harness que de verdad genera novelas vive en la
 rama `main`. La especificación modela **el flujo por capítulos de `main`**,
-porque es el que el enunciado describe, y cita `Docs/` donde la transición
+porque es el que el enunciado describe, y cita `docs/` donde la transición
 existe también allí.
 
 | Acción TLA+ | Estado o transición en el código | Documento |
@@ -89,14 +89,14 @@ existe también allí.
 | `Configurar` | `src/config.py` → `validar()`, `ruta_salida()`. En el panel, `PUT /api/config` de `src/servidor.py` | `EJECUCION.md` §3.1 |
 | `Planificar` | Delegación en el subagente `arquitecto`; `src/biblia.py` → `validar()` y `normalizar()`. Crea `salida/biblia.json` | `EJECUCION.md` §3.4 |
 | `Escribir` | `siguiente_paso()` devuelve `{"paso": "escribir"}`; delegación en `escritor`; `guardar_intento()` escribe `salida/.tmp/cap-NN-intento-M.md`; `estado.registrar_intento()` | `EJECUCION.md` §3.5a–b |
-| `ValidarPasa` | `siguiente_paso()` → `{"paso": "validar"}` y luego `{"paso": "resolver"}`; `puntuacion.aprueba(veredictos)` con los tres validadores más `veredicto_longitud()`; `estado.aprobar_capitulo()` | `EJECUCION.md` §3.5c–d. En `Docs/architecture.md`: `en_verificacion → aceptada` |
-| `Reintentar` | `escalon_de_intento()`, `modelo_de_escalon()`, `intentos_maximos()`. La escalera `haiku → sonnet → opus` | `EJECUCION.md` §3.5e. En `Docs/architecture.md`: `en_revision → generada` |
-| `AgotarEscalera` | `puntuacion.mejor_intento()` y `estado.marcar_capitulo()`. Produce `ACEPTADO_POR_PUNTUACION` en `informe-validacion.md` | `EJECUCION.md` §3.5f. En `Docs/architecture.md`: `en_revision → aceptada_por_rendicion` |
-| `AgotarTope` | `delegaciones_agotadas()` y `limite_delegaciones()` sobre `limites.delegaciones_max_totales`; `siguiente_paso()` → `{"paso": "limite"}` | `EJECUCION.md` regla inviolable 6. En `Docs/architecture.md`: `en_cola → detenido_por_presupuesto` |
+| `ValidarPasa` | `siguiente_paso()` → `{"paso": "validar"}` y luego `{"paso": "resolver"}`; `puntuacion.aprueba(veredictos)` con los tres validadores más `veredicto_longitud()`; `estado.aprobar_capitulo()` | `EJECUCION.md` §3.5c–d. En `docs/architecture.md`: `en_verificacion → aceptada` |
+| `Reintentar` | `escalon_de_intento()`, `modelo_de_escalon()`, `intentos_maximos()`. La escalera `haiku → sonnet → opus` | `EJECUCION.md` §3.5e. En `docs/architecture.md`: `en_revision → generada` |
+| `AgotarEscalera` | `puntuacion.mejor_intento()` y `estado.marcar_capitulo()`. Produce `ACEPTADO_POR_PUNTUACION` en `informe-validacion.md` | `EJECUCION.md` §3.5f. En `docs/architecture.md`: `en_revision → aceptada_por_rendicion` |
+| `AgotarTope` | `delegaciones_agotadas()` y `limite_delegaciones()` sobre `limites.delegaciones_max_totales`; `siguiente_paso()` → `{"paso": "limite"}` | `EJECUCION.md` regla inviolable 6. En `docs/architecture.md`: `en_cola → detenido_por_presupuesto` |
 | `Caer` | No hay código: es el fallo que el sistema sufre, no una transición que dispare | `EJECUCION.md` §6 |
-| `Reanudar` | `estado.debe_reanudar()`, `estado.cargar()`, `estado.capitulos_pendientes()`; y sobre todo `siguiente_paso()`, que re-deriva todo del disco | `EJECUCION.md` §6. En `Docs/architecture.md`: `en_curso → en_cola` |
-| `Publicar` | `siguiente_paso()` → `{"paso": "ensamblar"}`; `src/ensamblador.py` → `manuscrito()` y `portada()`. Escribe `salida/manuscrito.md` | `EJECUCION.md` §3.6. En `Docs/architecture.md`: `abierto → cerrado` del capítulo |
-| `Regenerar` | `POST /api/ampliar` de `src/servidor.py`, con `copiar_novela()` delante | **Sin equivalente en `Docs/`**: ver D-2 |
+| `Reanudar` | `estado.debe_reanudar()`, `estado.cargar()`, `estado.capitulos_pendientes()`; y sobre todo `siguiente_paso()`, que re-deriva todo del disco | `EJECUCION.md` §6. En `docs/architecture.md`: `en_curso → en_cola` |
+| `Publicar` | `siguiente_paso()` → `{"paso": "ensamblar"}`; `src/ensamblador.py` → `manuscrito()` y `portada()`. Escribe `salida/manuscrito.md` | `EJECUCION.md` §3.6. En `docs/architecture.md`: `abierto → cerrado` del capítulo |
+| `Regenerar` | `POST /api/ampliar` de `src/servidor.py`, con `copiar_novela()` delante | **Sin equivalente en `docs/`**: ver D-2 |
 | `Terminado` | Estado terminal. No es código: existe para que TLC distinguja "aquí se acaba" de "aquí se atasca" | — |
 
 ### Lo que el modelo simplifica a propósito
@@ -133,7 +133,7 @@ nada: se publica una novela de cero capítulos como si fuera una entrega.
 
 **Cambio que provoca:** `PublicarAlAgotarTope = FALSE`. Que salte el freno es
 una parada, no un final: el trabajo debe quedar `detenido`, no `publicada`.
-Nótese que `Docs/architecture.md` ya lo tiene bien —su estado se llama
+Nótese que `docs/architecture.md` ya lo tiene bien —su estado se llama
 `detenido_por_presupuesto` y dice explícitamente "**no falló nada**", que es
 otra cosa que publicar—; el que se desvía es `EJECUCION.md`.
 
@@ -148,7 +148,7 @@ Agotada la escalera, el capítulo se queda con el mejor intento y se marca
 
 **Esto no es una discrepancia entre el código y el enunciado: son tres fuentes
 contra una.** `EJECUCION.md` regla 1 dice "ningún capítulo detiene la
-generación", sin condiciones. Pero `Docs/architecture.md` —que es lo normativo—
+generación", sin condiciones. Pero `docs/architecture.md` —que es lo normativo—
 sí pone condición: `aceptada_por_rendicion` exige que "**ninguna invariante
 `bloqueante` siga abierta**", y añade que "una invariante `bloqueante` abierta no
 se rinde nunca". El enunciado del examen pide lo mismo. La rendición
@@ -235,7 +235,7 @@ necesita identidad propia**. `copiar_novela()` guarda `salida-novela-1/`,
 `salida-novela-2/`… y el número de carpeta es lo único que las distingue; nada
 dentro de la novela dice de qué ronda es.
 
-**Registrado como `F-43` en `Docs/verification.md`**, porque no es trabajo de
+**Registrado como `F-43` en `docs/verification.md`**, porque no es trabajo de
 esta especificación y se cruza con `G-07` de `SPEC - Frontend y contrato
 congelado.md`, que llegó a lo mismo por el otro lado: la obra no tiene versión.
 
@@ -245,10 +245,10 @@ Se documentan y se resuelve a favor del documento, que es lo normativo.
 
 | | Discrepancia | Resolución |
 | --- | --- | --- |
-| **D-1** | `Docs/architecture.md` modela **escenas** con ocho estados y dos puertas humanas (`A-04`: la aceptación la dispara una persona). `main` trabaja por **capítulos** y sin ninguna puerta humana | La especificación modela capítulos, porque es lo que pide el enunciado y lo que existe. **La ausencia de puerta humana es un hueco real**, no una simplificación del modelo |
-| **D-2** | La regeneración por cambio del lector **no existía en ningún documento** cuando se escribió esta especificación. No había transición, ni estado, ni versión. **Desde entonces la describen `SPEC-22` `RF-50`..`RF-55` (`aprobada`) y `SPEC-23` `D-2` (`en_revision`), que adopta versiones con identidad propia por `CE-5`**; en `Docs/` sigue sin estar | La acción `Regenerar` es nueva. Antes de implementarla hace falta spec: es un cambio que decide algo nuevo |
+| **D-1** | `docs/architecture.md` modela **escenas** con ocho estados y dos puertas humanas (`A-04`: la aceptación la dispara una persona). `main` trabaja por **capítulos** y sin ninguna puerta humana | La especificación modela capítulos, porque es lo que pide el enunciado y lo que existe. **La ausencia de puerta humana es un hueco real**, no una simplificación del modelo |
+| **D-2** | La regeneración por cambio del lector **no existía en ningún documento** cuando se escribió esta especificación. No había transición, ni estado, ni versión. **Desde entonces la describen `SPEC-22` `RF-50`..`RF-55` (`aprobada`) y `SPEC-23` `D-2` (`en_revision`), que adopta versiones con identidad propia por `CE-5`**; en `docs/` sigue sin estar | La acción `Regenerar` es nueva. Antes de implementarla hace falta spec: es un cambio que decide algo nuevo |
 | **D-3** | `EJECUCION.md` §3.5 describe un bucle "en orden"; el código usa lista de pendientes | Gana el código, y el documento debe corregirse. Ver CE-3 |
-| **D-4** | Rendición incondicional (`EJECUCION.md` regla 1) frente a rendición condicionada a que no quede ninguna invariante `bloqueante` (`Docs/architecture.md`) | Gana `Docs/architecture.md`. Ver CE-2 |
+| **D-4** | Rendición incondicional (`EJECUCION.md` regla 1) frente a rendición condicionada a que no quede ninguna invariante `bloqueante` (`docs/architecture.md`) | Gana `docs/architecture.md`. Ver CE-2 |
 
 ## Lo que apareció al formalizar y las máquinas no dicen
 

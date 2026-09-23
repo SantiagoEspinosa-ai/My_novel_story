@@ -20,11 +20,11 @@ pide un cambio— y del **contrato** que lo separa del backend.
 es `SPEC-01` y no se reescribe desde aquí.
 
 **No es** una redefinición del dominio ni del proceso. El dominio está en
-`Docs/definitions.md`, la estructura del código en `Docs/architecture.md` y el backend en
+`docs/definitions.md`, la estructura del código en `docs/architecture.md` y el backend en
 `SPEC-01`. Este documento los toma como dados y especifica **qué tiene que hacer la interfaz
 y contra qué se valida**.
 
-**Precedencia.** Aquí se repiten cosas que ya están en `CLAUDE.md`, en `Docs/definitions.md`
+**Precedencia.** Aquí se repiten cosas que ya están en `CLAUDE.md`, en `docs/definitions.md`
 y en `SPEC-01` para que el documento se pueda leer solo. Si alguna vez discrepan, **gana el
 original** y este se corrige.
 
@@ -80,7 +80,7 @@ El orden no es casual y es una decisión (`D-4`): el contrato primero, las pági
 
 | Fuera | Por qué |
 | --- | --- |
-| Las vistas de operación —Puertas, Continuidad, Trabajos— | `Docs/architecture.md` ya las enumera. Esta spec cubre la lectura de la obra y la petición de cambio |
+| Las vistas de operación —Puertas, Continuidad, Trabajos— | `docs/architecture.md` ya las enumera. Esta spec cubre la lectura de la obra y la petición de cambio |
 | Autenticación y control de acceso | El proyecto no los tiene. `D-1` decide que no aparece un actor nuevo, que es otra cosa |
 | Publicar la obra a un formato de libro | Portada y dedicatoria son de la interfaz de lectura, no de una exportación |
 | La implementación del backend que falta | La lista de §5 es una dependencia, no el plan de trabajo de esta spec |
@@ -89,7 +89,7 @@ El orden no es casual y es una decisión (`D-4`): el contrato primero, las pági
 
 ## 1.3 Definiciones
 
-Literales de `Docs/definitions.md` y de `SPEC-01`. No admiten sinónimos ni traducción.
+Literales de `docs/definitions.md` y de `SPEC-01`. No admiten sinónimos ni traducción.
 
 | Término | Qué es |
 | --- | --- |
@@ -106,12 +106,12 @@ Literales de `Docs/definitions.md` y de `SPEC-01`. No admiten sinónimos ni trad
 | Documento | Qué aporta |
 | --- | --- |
 | `CLAUDE.md` § React | *La interfaz muestra estado, no lo calcula*, y la regla de que una escena se muestra siempre con su estado y sus hallazgos |
-| `Docs/architecture.md` | `A-01`, `A-04`, `A-09`, su § "Frontend — React" y la frontera *el frontend nunca toca la base de datos y nunca calcula nada del dominio* |
-| `Docs/definitions.md` | `Obra`, `Parte`, `Capitulo`, `Escena`, `Borrador`, `DeltaDeEscena`, `Personaje`, `Lugar`, `HechoCanonico`, `PaseDeRevision`, las relaciones `contiene`, `participa_en`, `ocurre_en`, y las enumeraciones `estado_de_escena`, `estado_de_capitulo`, `estado_de_hallazgo`, `severidad` |
+| `docs/architecture.md` | `A-01`, `A-04`, `A-09`, su § "Frontend — React" y la frontera *el frontend nunca toca la base de datos y nunca calcula nada del dominio* |
+| `docs/definitions.md` | `Obra`, `Parte`, `Capitulo`, `Escena`, `Borrador`, `DeltaDeEscena`, `Personaje`, `Lugar`, `HechoCanonico`, `PaseDeRevision`, las relaciones `contiene`, `participa_en`, `ocurre_en`, y las enumeraciones `estado_de_escena`, `estado_de_capitulo`, `estado_de_hallazgo`, `severidad` |
 | `SPEC-01` | `RF-17`, `RF-19`, `RF-23`, `RF-24`, `RF-25`, `RF-27`…`RF-30`, y su §3.2.1, que es el contrato que esta spec sustituye por uno comprobable |
 | `SPEC-21` | `C-1` (`escena.capitulo`) y `C-2` (qué significa usar un hecho) |
 | `SPEC-23` | `D-1` (no hay verde heredado), `D-2` (dos versiones vivas), `D-3` (qué se le promete al lector) |
-| `Docs/verification.md` | `VER-09`, `VER-16`…`VER-19`, `VER-21`, `VER-60`, la **Regla 5**, la **Regla 9**, `MF-26` y `PC-1` |
+| `docs/verification.md` | `VER-09`, `VER-16`…`VER-19`, `VER-21`, `VER-60`, la **Regla 5**, la **Regla 9**, `MF-26` y `PC-1` |
 | `REV-01` | `D3-5`: un requisito de backend no se cierra con una prueba de frontend |
 
 ---
@@ -140,7 +140,7 @@ diciendo la verdad lo comprueba el validador, y ningún otro sitio.
 
 ## 2.2 El problema: una frontera que nadie comprueba
 
-`frontend/` no existe. `A-09` eligió su estructura, `Docs/architecture.md` § "Frontend —
+`frontend/` no existe. `A-09` eligió su estructura, `docs/architecture.md` § "Frontend —
 React" enumeró sus vistas y `VER-16`…`VER-19` llevan desde entonces esperando a una carpeta
 que nadie ha creado.
 
@@ -152,7 +152,7 @@ cumple**: la tabla promete `GET /escenas/{id}`, `GET /trabajos/{id}`, `GET /trab
 `estado_de_escena`, y lo que devuelve es `capitulos: list[str]`, una lista de identificadores.
 **La tabla no se enteró**, porque una tabla en prosa no falla cuando el código cambia.
 
-Eso es la **Regla 5 de `Docs/verification.md` en esta frontera**: una forma fijada y un
+Eso es la **Regla 5 de `docs/verification.md` en esta frontera**: una forma fijada y un
 significado que cada lado deduce por su cuenta. Mientras las dos intuiciones coinciden,
 funciona y nadie se entera; cuando divergen, **las dos partes cumplen el contrato y el sistema
 está roto**, sin error y sin nada que falle. Con un frontend delante, el síntoma no es una
@@ -175,7 +175,7 @@ hacer mal.
 
 Esto ya estaba decidido y esta spec solo lo lleva a su consecuencia: `D3-5` de `REV-01` obligó
 a partir en dos las filas que trazaban un requisito de backend a una prueba de frontend, y
-`Docs/architecture.md` fija la frontera —*el frontend nunca toca la base de datos y nunca
+`docs/architecture.md` fija la frontera —*el frontend nunca toca la base de datos y nunca
 calcula nada del dominio*—. **El backend devuelve, la interfaz muestra.** Si para pintar algo
 la interfaz tuviera que calcularlo, **falta un campo en la respuesta** y el arreglo es del
 backend.
@@ -234,7 +234,7 @@ hueco del backend, y las últimas dependen de la única decisión que sigue abie
 
 ## 2.6 Restricciones
 
-De `CLAUDE.md` y `Docs/architecture.md`, no negociables desde aquí:
+De `CLAUDE.md` y `docs/architecture.md`, no negociables desde aquí:
 
 | Restricción | Detalle |
 | --- | --- |
@@ -257,7 +257,7 @@ De `CLAUDE.md` y `Docs/architecture.md`, no negociables desde aquí:
 | **RF-31** | Existe un **esquema OpenAPI congelado y versionado** en el repositorio. Es el contrato: lo que el frontend puede suponer del backend es lo que ahí está escrito, y nada más. **No se escribe a mano**: se deriva del esquema que FastAPI genera. Dónde vive, con qué nombre y en qué formato lo decide el plan | `C-1` | fila nueva |
 | **RF-32** | Un validador **genera el esquema del backend actual y lo compara con el congelado**. Cualquier diferencia es **un fallo, no un aviso**. El mensaje dice **qué operación, qué campo y en qué dirección** cambió | `C-2` | fila nueva |
 | **RF-33** | Actualizar el congelado es un acto deliberado y **va en el mismo commit que el cambio de la API**. Es la exigencia que `VER-21` ya le hace a una migración: el cambio y su consecuencia, juntos o ninguno | `C-2` | `VER-21`, fila nueva |
-| **RF-34** | Cada operación y cada campo del congelado llevan **qué significan**, y los valores cerrados viajan como **enumeración** —`estado_de_escena`, `estado_de_capitulo`, `estado_de_hallazgo`, `severidad`— con los literales de `Docs/definitions.md`. Un valor fuera de la enumeración es un error de validación en el esquema, igual que lo es en Pydantic | `C-3` | fila nueva |
+| **RF-34** | Cada operación y cada campo del congelado llevan **qué significan**, y los valores cerrados viajan como **enumeración** —`estado_de_escena`, `estado_de_capitulo`, `estado_de_hallazgo`, `severidad`— con los literales de `docs/definitions.md`. Un valor fuera de la enumeración es un error de validación en el esquema, igual que lo es en Pydantic | `C-3` | fila nueva |
 | **RF-35** | **Un dato sin medir viaja ausente o nulo, nunca como `0`**, y el contrato **no admite las dos lecturas para el mismo campo**. Si las admite, la interfaz acierta pintando lo que le llega y el dato miente | `C-3` | `VER-19` |
 | **RF-36** | Los **cuerpos de error** que el frontend necesita para actuar llevan **forma declarada** en el contrato. En particular el `409` de cierre de capítulo: qué escenas no están `consolidada` y qué hallazgos `mayor` siguen abiertos (`RF-28`), y qué `menor` se deja pasar (`RF-29`) | `C-3` | fila nueva |
 | **RF-37** | **`obra` y `capitulo` son identificadores distintos en el contrato, y ninguna respuesta permite sustituir uno por otro.** Ningún campo llamado `capitulo` admite un identificador de obra ni al revés | nuevo | fila nueva |
@@ -298,7 +298,7 @@ De `CLAUDE.md` y `Docs/architecture.md`, no negociables desde aquí:
 
 | ID | Requisito | Origen | Verifica |
 | --- | --- | --- | --- |
-| **RF-46** | La obra se abre por una portada con su `titulo` y su **dedicatoria**. La dedicatoria la escribe una persona y **la guarda el backend**, porque el frontend no persiste nada. Es **una por obra**: atributo de `Obra`, con su cambio en `Docs/definitions.md` y su migración en el mismo commit | `C-7`, `D-2` | fila nueva |
+| **RF-46** | La obra se abre por una portada con su `titulo` y su **dedicatoria**. La dedicatoria la escribe una persona y **la guarda el backend**, porque el frontend no persiste nada. Es **una por obra**: atributo de `Obra`, con su cambio en `docs/definitions.md` y su migración en el mismo commit | `C-7`, `D-2` | fila nueva |
 
 ### Selección y petición de cambio (de `C-8` y `D-1`)
 
@@ -417,7 +417,7 @@ Esta spec está terminada cuando **todo** esto es cierto:
 ## 4.1 Matriz de trazabilidad
 
 Cada requisito, de dónde sale y qué lo comprueba. **"Fila nueva" quiere decir que
-`Docs/verification.md` no tiene hoy nada que lo cubra**, y que esa fila la escribe el commit
+`docs/verification.md` no tiene hoy nada que lo cubra**, y que esa fila la escribe el commit
 que implementa el requisito.
 
 | Requisito | Origen | Invariante | Fila de verificación | Criterio |
@@ -447,11 +447,11 @@ que implementa el requisito.
 | `NF-06` | `CLAUDE.md` § React | — | `VER-16` | `CA-6` |
 | `NF-07`, `DF-1` | `A-09` | — | `VER-17` | — |
 
-**Filas nuevas en `Docs/verification.md`.** Esta spec obliga al menos a un modo de fallo
+**Filas nuevas en `docs/verification.md`.** Esta spec obliga al menos a un modo de fallo
 —*el contrato se movió de un lado y el otro no se enteró*, que hoy no está catalogado— y a las
 filas del congelado y de su comparación. **No se numeran aquí**: los identificadores los
 asigna el commit que las escribe, y el rango libre **empieza en `MF-29` y en `VER-65`**,
-comprobado contra `Docs/verification.md` el 2026-09-23.
+comprobado contra `docs/verification.md` el 2026-09-23.
 
 ---
 
@@ -500,7 +500,7 @@ nada**, y por eso va primero.
 # 6. Puntos ciegos declarados
 
 Cada uno dice qué **no** ve lo que esta spec propone. Se escriben aquí por la misma razón por
-la que cada validador de `Docs/verification.md` escribe el suyo: un punto ciego dicho sigue
+la que cada validador de `docs/verification.md` escribe el suyo: un punto ciego dicho sigue
 siendo utilizable, y uno callado decide por su cuenta.
 
 | ID | Punto ciego | De quién |
@@ -539,7 +539,7 @@ es la respuesta. Da `RF-49`.
 
 ### `D-2` · La dedicatoria es una por obra
 
-Atributo de `Obra`, con su cambio en `Docs/definitions.md` y su migración.
+Atributo de `Obra`, con su cambio en `docs/definitions.md` y su migración.
 
 Si el enunciado acabara exigiendo una por lector, **entra como concepto propio —un ejemplar— y
 nunca como versión**. Una versión existe para decir que **el contenido es otro**, y en una
@@ -580,8 +580,8 @@ asumido no se lea como acordado.
 | **DA-1** | **Qué salida toma la regeneración**: `S-1` (cascada hasta el final) o `S-2` (regenerar lo que usa el hecho y reverificar el resto) | `SPEC-23`, pregunta 1. Espera al **arrastre medido**, con el umbral ya fijado de antemano: ~2 capítulos → `S-1`; ~8 → `S-2` | Que **`RF-50`…`RF-55` no se implementan**, y que la interfaz **no promete la función** hasta que esté decidida. Lo demás de esta spec no depende de ello |
 | **DA-2** | **Si existe CI** y con qué | Fuera de esta spec | Que `RF-32` corre en local, y por tanto **no protege la integración** (`PCF-6`). No se cuenta como cobertura en ninguna tabla |
 | **DA-3** | **Desde dónde se sirve el frontend** y qué declara el backend sobre su origen (`G-15`) | El plan, o una spec menor | Que las pruebas de `NF-01` **no hacen llamadas reales desde un navegador**, así que la decisión no las bloquea. Bloquea la primera ejecución real |
-| **DA-4** | **Qué herramienta cierra `VER-17`** (comprobador de FSD) | Abierta en `Docs/verification.md` | Que `NF-07` se declara y **no se comprueba** todavía |
-| **DA-5** | **Qué atributos del canon se persisten** para la ficha (`G-03`) | Una spec de dominio | Que `RF-43` enumera lo que el dominio ya exige, y que **quien lo implemente no puede inventar atributos**: si falta uno, se añade primero a `Docs/definitions.md` |
+| **DA-4** | **Qué herramienta cierra `VER-17`** (comprobador de FSD) | Abierta en `docs/verification.md` | Que `NF-07` se declara y **no se comprueba** todavía |
+| **DA-5** | **Qué atributos del canon se persisten** para la ficha (`G-03`) | Una spec de dominio | Que `RF-43` enumera lo que el dominio ya exige, y que **quien lo implemente no puede inventar atributos**: si falta uno, se añade primero a `docs/definitions.md` |
 | **DA-6** | **Qué representa el ancla de una selección** y qué le pasa cuando el texto anclado desaparece tras una regeneración (`G-10`) | Una spec de dominio | Que `RF-47` fija **contra qué se ancla** —un `Borrador` y su `version`— y deja sin decidir qué ocurre después. Sin eso, la petición de cambio no se implementa |
 
 ---

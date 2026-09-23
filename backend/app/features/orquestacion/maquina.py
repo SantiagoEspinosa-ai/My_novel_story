@@ -1,6 +1,6 @@
 """La maquina de estados de la escena, con quien dispara cada transicion.
 
-Es la copia en codigo de la tabla de `Docs/architecture.md`, y como con el
+Es la copia en codigo de la tabla de `docs/architecture.md`, y como con el
 registro de invariantes se escribe a mano: generarla leyendo el documento
 dejaria a su validador comparandolo consigo mismo.
 

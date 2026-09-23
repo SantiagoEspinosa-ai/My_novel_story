@@ -5,8 +5,8 @@ NO SON DOMINIO, Y POR ESO ESTAN AQUI
 `VER-15` y `D-3` dicen que los `Enum` de los vocabularios controlados **del
 dominio** viven solo en `commons/dominio/`. Este no lo es: la tabla de trabajos
 no existiria si la novela se escribiera a mano, asi que es infraestructura y
-vive con su infraestructura. `Docs/architecture.md` los declara, no
-`Docs/definitions.md`, y su seccion de vocabularios avisa de que hay uno fuera.
+vive con su infraestructura. `docs/architecture.md` los declara, no
+`docs/definitions.md`, y su seccion de vocabularios avisa de que hay uno fuera.
 
 Siguen las mismas reglas de nombres -ASCII, `snake_case`- porque es el mismo
 codigo leyendo el mismo tipo de valor, y dos convenciones para lo mismo es como

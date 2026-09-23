@@ -60,7 +60,7 @@ intentos— y, agotada, `mejor_intento()` se queda con el menos malo.
 **Hoy:** `severidad` clasifica el **hallazgo** —`bloqueante`, `mayor`, `menor`— y
 `estado_de_hallazgo` su ciclo de vida. **Ninguna de las dos puede expresar que no hubo
 veredicto.** Un Juez que devuelve basura no tiene sitio en el modelo, y ninguna de las 56
-filas de `Docs/verification.md` lo cubre.
+filas de `docs/verification.md` lo cubre.
 
 **Lo que `main` decidió.** Regla 2: un JSON que no parsea cuenta como `FALLO`, **jamás**
 como `PASA`. El procedimiento es defensivo y está escrito: `json.loads` directo → extraer
@@ -92,7 +92,7 @@ Juez no funcionó**. Lo primero es un hueco de medida; lo segundo, de vocabulari
 
 **Hoy:** `Escena` tiene `longitud_objetivo` y **ninguna de las 16 invariantes la mira**.
 
-**Lo que costó descubrirlo** está escrito junto a la Regla 2 de `Docs/verification.md`, con
+**Lo que costó descubrirlo** está escrito junto a la Regla 2 de `docs/verification.md`, con
 sus números: un capítulo de 944 palabras, 256 por debajo del mínimo, aprobado por el
 validador que en el intento anterior había pedido acortarlo.
 
@@ -178,7 +178,7 @@ sola, o hace falta una clase.
 | 9 | Aislamiento entre varios jueces | `A-06` | `SPEC-11` |
 | 10 | El ensamblador del manuscrito no corrige nada | Proceso | `SPEC-11` |
 
-Los cinco de arriba **no se pueden escribir sin tocar `Docs/definitions.md`**; los cinco de
+Los cinco de arriba **no se pueden escribir sin tocar `docs/definitions.md`**; los cinco de
 abajo **no lo tocan en absoluto**. Meterlos juntos serían dos migraciones y dos documentos
 normativos en un solo commit, que es justo lo que `VER-21` vigila.
 
@@ -186,7 +186,7 @@ normativos en un solo commit, que es justo lo que `VER-21` vigila.
 
 `EJECUCION.md` §4 reglas 1, 2 y 3 y §7 de la rama `main`; `DECISIONES.md` decisión 9 y
 hallazgo 11; `src/puntuacion.py`; y de esta línea, `PC-3`, la Regla 2 de
-`Docs/verification.md`, `INV-15` y `estado_de_escena`.
+`docs/verification.md`, `INV-15` y `estado_de_escena`.
 
 ## Preguntas que hay que responder al aprobar
 
@@ -204,10 +204,10 @@ hallazgo 11; `src/puntuacion.py`; y de esta línea, `PC-3`, la Regla 2 de
 
 | Documento | Cambio |
 | --- | --- |
-| `Docs/definitions.md` | `INV-17`; `sin_veredicto` en `estado_de_hallazgo`; `aceptada_por_rendicion` en `estado_de_escena`; `Escena.intentos` y `Escena.borrador_aceptado`; la clase `FraseRecurrente`; cuatro notas de justificación; dos decisiones abiertas |
-| `Docs/architecture.md` | Dos transiciones nuevas, la nota de que no hay rendición desde `rechazada`, e `INV-17` al Verificador de reglas |
-| `Docs/domain-knowledge.md` | `FraseRecurrente` en el plano Proceso y el estado nuevo en el ciclo de vida |
-| `Docs/verification.md` | `VER-58` con su caso negativo; `MF-16` actualizado; recuentos |
+| `docs/definitions.md` | `INV-17`; `sin_veredicto` en `estado_de_hallazgo`; `aceptada_por_rendicion` en `estado_de_escena`; `Escena.intentos` y `Escena.borrador_aceptado`; la clase `FraseRecurrente`; cuatro notas de justificación; dos decisiones abiertas |
+| `docs/architecture.md` | Dos transiciones nuevas, la nota de que no hay rendición desde `rechazada`, e `INV-17` al Verificador de reglas |
+| `docs/domain-knowledge.md` | `FraseRecurrente` en el plano Proceso y el estado nuevo en el ciclo de vida |
+| `docs/verification.md` | `VER-58` con su caso negativo; `MF-16` actualizado; recuentos |
 
 ## Lo que la spec no previó
 
@@ -225,4 +225,4 @@ la bloquea. Es un ejemplo de que la calibración de otro sistema no se hereda si
 la sostenía.
 
 **`FraseRecurrente` queda sin invariante**, a propósito: la clase guarda la señal y nadie la
-comprueba todavía. Está anotado como decisión abierta en `Docs/definitions.md`.
+comprueba todavía. Está anotado como decisión abierta en `docs/definitions.md`.

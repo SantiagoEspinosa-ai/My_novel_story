@@ -212,7 +212,7 @@ def test_una_escena_con_un_mayor_se_reintenta_y_acaba_rindiendose(con):
     assert len(escritor.llamadas) == 3, "se agotan los intentos antes de rendirse"
     assert g.escenas_hechas == ["e1"]
     # Acaba en `consolidada`, no en `aceptada_por_rendicion`: la tabla de
-    # transiciones de `Docs/architecture.md` tiene `aceptada_por_rendicion ->
+    # transiciones de `docs/architecture.md` tiene `aceptada_por_rendicion ->
     # consolidada`, asi que ese estado es de paso. Lo que deja constancia de
     # que se rindio es `borrador_aceptado` -que dice cual de los intentos se
     # eligio- y los hallazgos que siguen abiertos.
@@ -257,7 +257,7 @@ def test_el_tope_global_de_delegaciones_detiene_la_obra(con):
 
 def test_al_terminar_se_evalua_el_cierre_pero_no_se_firma(con):
     """La firma es **humana** y la dispara el cliente de la API, nunca el
-    worker (`Docs/architecture.md`). Lo que hace el bucle al terminar es decir
+    worker (`docs/architecture.md`). Lo que hace el bucle al terminar es decir
     si el capitulo **podria** cerrarse, que es distinto de cerrarlo."""
     g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000)
     assert g.llego_al_final

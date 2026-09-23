@@ -142,8 +142,8 @@ saberse: entra en `PC-17`, que ya dice que nadie comprueba esa regla.
 
 # Qué se tocó al aplicarla
 
-`CLAUDE.md`, `SPEC-01` (§2.4 y `RNF-P`), `Docs/verification.md` y
-`Docs/architecture.md`. En código: `commons/modelo/proveedor.py` reescrito entero,
+`CLAUDE.md`, `SPEC-01` (§2.4 y `RNF-P`), `docs/verification.md` y
+`docs/architecture.md`. En código: `commons/modelo/proveedor.py` reescrito entero,
 `features/orquestacion/bucle.py` sin reserva, y las pruebas que dependían de ella.
 
 ## Lo que la spec no previó

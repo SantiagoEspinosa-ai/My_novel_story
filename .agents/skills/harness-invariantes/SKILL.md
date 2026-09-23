@@ -12,7 +12,7 @@ description: >
 # Invariantes del harness
 
 Cómo se implementa una comprobación `INV-xx`. Las invariantes **se definen** en
-`Docs/definitions.md`; esta skill dice **cómo se ejecutan**.
+`docs/definitions.md`; esta skill dice **cómo se ejecutan**.
 
 ## Regla número uno: lo determinista no lo verifica un modelo
 
@@ -25,12 +25,12 @@ Un juez solo entra cuando la comprobación necesita criterio sobre el texto:
 función dramática, credibilidad del diálogo, eficacia del presagio, adecuación
 al POV, calidad del cambio de valor.
 
-**El reparto ya está decidido en `Docs/definitions.md`**, en la columna `Tipo` de la
+**El reparto ya está decidido en `docs/definitions.md`**, en la columna `Tipo` de la
 tabla de invariantes. No lo reinterpretes caso por caso: quince son de regla,
 una es de juez. Tres de las quince —`INV-03`, `INV-11` e `INV-14`— escalan al
 juez solo para desempatar lo que la regla no puede ver; el tipo dice quién
 decide primero. Si crees que una está mal clasificada, eso es un cambio en
-`Docs/definitions.md` y necesita su spec, no un apaño en el código.
+`docs/definitions.md` y necesita su spec, no un apaño en el código.
 
 ## Severidad: se implementa una vez, no caso por caso
 
@@ -86,15 +86,15 @@ verificador de escena. Las tres las ejecuta el Auditor de obra.
 
 En este orden, sin saltarse ninguno:
 
-1. Se define en `Docs/definitions.md` con su identificador, nivel, severidad y tipo.
+1. Se define en `docs/definitions.md` con su identificador, nivel, severidad y tipo.
    Antes de eso no existe.
 2. El identificador **no se reutiliza ni se renumera**. Lo que deja de aplicar
    se marca obsoleto, no se borra.
-3. Se añade su fila en `Docs/verification.md` con su caso negativo.
+3. Se añade su fila en `docs/verification.md` con su caso negativo.
 4. Se implementa, empezando por el caso negativo.
 
 Y como es un cambio que decide algo nuevo, necesita **spec aprobada** antes de
-tocar `Docs/definitions.md`. Ver el proceso en `AGENTS.md`.
+tocar `docs/definitions.md`. Ver el proceso en `AGENTS.md`.
 
 ## Errores que hay que vigilar
 
@@ -104,5 +104,5 @@ tocar `Docs/definitions.md`. Ver el proceso en `AGENTS.md`.
 | Resolver la severidad dentro de cada verificador | Acaba habiendo tres comportamientos distintos para `mayor` |
 | `Hallazgo` sin identificador de invariante | No se puede agregar ni cerrar |
 | Comprobación sin caso negativo | No está verificada, solo declarada |
-| Invariante inventada en el código | Si no está en `Docs/definitions.md`, no existe |
+| Invariante inventada en el código | Si no está en `docs/definitions.md`, no existe |
 | Bajar una `bloqueante` a `mayor` para desatascar | Es exactamente lo que la puerta existe para impedir |

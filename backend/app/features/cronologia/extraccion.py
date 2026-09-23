@@ -30,7 +30,7 @@ hecho "La llave del sotano esta en el costurero" y **no lo menciona** para este
 modulo. Es un falso negativo conocido, no un descuido: la alternativa -pedirselo
 a un juez- cambia un punto ciego medible por uno que no lo es. Se compensa con
 que `establece` y `depende` vienen declarados, asi que los tres juntos no
-comparten punto ciego, que es lo que `Docs/verification.md` Regla 3 pide.
+comparten punto ciego, que es lo que `docs/verification.md` Regla 3 pide.
 """
 
 import re
@@ -52,7 +52,7 @@ def _normalizar(texto):
     """Minusculas, sin tildes y sin puntuacion.
 
     Sin tildes porque una cadena acentuada admite dos representaciones Unicode
-    iguales a la vista y distintas byte a byte (`Docs/definitions.md`,
+    iguales a la vista y distintas byte a byte (`docs/definitions.md`,
     "Convencion de nombres"): comparar sin normalizar falla en silencio.
     """
     sin_tildes = "".join(

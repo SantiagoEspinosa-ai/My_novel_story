@@ -3,7 +3,7 @@ intentos.
 
 LO QUE NO SE RINDE NUNCA
 -------------------------
-Una invariante `bloqueante` abierta. `Docs/architecture.md` lo dice sin margen:
+Una invariante `bloqueante` abierta. `docs/architecture.md` lo dice sin margen:
 *"el delta de una escena rendida entra al canon igual que el de una limpia, y
 una falsedad en el canon la heredan todas las escenas siguientes"*. La salida
 de ahi es humana, no automatica.
@@ -17,7 +17,7 @@ limpia.
 
 POR QUE SE COMPARA SIN PESOS
 -----------------------------
-`Docs/definitions.md` deja los pesos por severidad como **decision abierta**:
+`docs/definitions.md` deja los pesos por severidad como **decision abierta**:
 *"no se fijan aqui"*, salen de medir. Asi que aqui **no se inventa ninguno**: se
 ordena por cuantos hallazgos hay de cada severidad, de la mas grave a la menos.
 Ese orden es el mismo que daria cualquier asignacion de pesos crecientes, asi
@@ -74,7 +74,7 @@ def test_a_igualdad_total_gana_el_primero():
 
 
 def test_un_sin_veredicto_pesa_el_maximo_de_la_escala_y_no_mas():
-    """`Docs/definitions.md`: *"si el mudo ganara siempre, un intento con un
+    """`docs/definitions.md`: *"si el mudo ganara siempre, un intento con un
     juez caido seria automaticamente peor que otro con tres fallos reales, y
     eso no es cierto"*. Pesa como un `bloqueante`, no mas."""
     intentos = [(1, [_h(Severidad.BLOQUEANTE, EstadoDeHallazgo.SIN_VEREDICTO)]),

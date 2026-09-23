@@ -36,7 +36,7 @@ medido es peor que no tenerlo.
 
 ## Dos órdenes en conflicto
 
-`Docs/verification.md` tiene ya una **"Orden de implantación"** de doce puestos, ordenada
+`docs/verification.md` tiene ya una **"Orden de implantación"** de doce puestos, ordenada
 por *hueco que tapa*: `VER-38` va primero porque valida a otros tres, y los comprobadores
 de estructura van octavos aunque sean baratos, porque comparten `PC-1` y dan sensación de
 cobertura sin añadirla.
@@ -51,7 +51,7 @@ Los dos órdenes se reconcilian así, y es la regla que gobierna la tabla:
 > que tapa el hueco más grande.**
 
 Por eso `commons/invariantes/` es el paso 2 y no el 6: es lo primero que desbloquea el
-validador que `Docs/verification.md` puso el primero de todos.
+validador que `docs/verification.md` puso el primero de todos.
 
 ## Dependencias que obligan a un orden concreto
 
@@ -75,8 +75,8 @@ Lo que **no** está forzado: el orden entre `features/lectura/`, `features/revis
 
 | # | Paso | Ficheros | La prueba que falla primero | Pasa a implementable | Por qué va aquí | Queda funcionando |
 | --- | --- | --- | --- | --- | --- | --- |
-| **A1** | Esqueleto y dominio | `backend/app/main.py`, `commons/dominio/`, `commons/errores.py`, `pyproject` | Un modelo Pydantic con un valor fuera de una enumeración **levanta error de validación, no un aviso** (`CLAUDE.md`) | `VER-15`, `VER-01` | Todo lo demás lo importa. Y `VER-01` compara esquemas contra las fichas de `Docs/definitions.md`, así que la comparación empieza a tener sentido desde el primer fichero | Un `main.py` que arranca y no sirve nada |
-| **A2** | Registro de invariantes | `commons/invariantes/` + `tests/` | Un registro cuya severidad de `INV-01` no coincide con `Docs/definitions.md` **falla** | **`VER-38`**, `VER-11`, `VER-12` | `VER-38` es el puesto 1 de `Docs/verification.md` porque valida a otros tres. Es lo primero construible de esa lista | El registro y el comportamiento de severidad, sin nadie que los use todavía |
+| **A1** | Esqueleto y dominio | `backend/app/main.py`, `commons/dominio/`, `commons/errores.py`, `pyproject` | Un modelo Pydantic con un valor fuera de una enumeración **levanta error de validación, no un aviso** (`CLAUDE.md`) | `VER-15`, `VER-01` | Todo lo demás lo importa. Y `VER-01` compara esquemas contra las fichas de `docs/definitions.md`, así que la comparación empieza a tener sentido desde el primer fichero | Un `main.py` que arranca y no sirve nada |
+| **A2** | Registro de invariantes | `commons/invariantes/` + `tests/` | Un registro cuya severidad de `INV-01` no coincide con `docs/definitions.md` **falla** | **`VER-38`**, `VER-11`, `VER-12` | `VER-38` es el puesto 1 de `docs/verification.md` porque valida a otros tres. Es lo primero construible de esa lista | El registro y el comportamiento de severidad, sin nadie que los use todavía |
 | **A3** | Persistencia | `commons/db/` + migraciones versionadas | Una migración que cambia un atributo obligatorio y no viene en el mismo commit **falla** (`VER-21`) | `VER-21`, `VER-08` | `A-05` pone la cola en la misma base, así que la base va antes que la cola | Base creada y migrable, vacía |
 | **A4** | Cola y worker | `commons/trabajos/` + `tests/` | Un worker que vuelve y se encuentra `abandonado` **no escribe su resultado** | `VER-03`, `VER-04`, `VER-29`, `VER-57` | Todo endpoint que llama al modelo devuelve `202` y un identificador. Sin cola no hay endpoint asíncrono | Se puede encolar, tomar y fallar un trabajo de mentira |
 
@@ -96,7 +96,7 @@ Lo que **no** está forzado: el orden entre `features/lectura/`, `features/revis
 | **C1** | Ensamblado y recorte | `features/contexto/` + `tests/` | Un recortador que **itera por los seis niveles de `CLAUDE.md` en vez de por los bloques de §2.4** se lleva el registro de conocimiento (`VER-06`) | `VER-05`, `VER-06`, `VER-07` | `RF-26` falla antes que generar, así que el recorte tiene que existir antes que el Escritor | Se ensambla contexto de una escena y se mide |
 | **C2** | Escaleta | `features/escaleta/` + `tests/` | Una escena planificada sin `cambio_de_valor` no pasa (`INV-01` en su forma prevista) | `VER-02` | El Escritor necesita una escaleta de la que salir | `POST /obras/{id}/escaleta` |
 | **C3** | Generación | `features/generacion/` + `tests/` | Una respuesta del Escritor **con texto y sin delta** se rechaza antes de las puertas | `VER-20`, `VER-25` | Es lo que produce el material que verifican las puertas | Una escena se genera y queda en `generada` |
-| **C4** | Puertas | `features/verificacion/` + `tests/` | El caso negativo de **cada** `INV-xx` que esta feature ejecuta | `VER-10`, `VER-11`, `VER-12`, `VER-22` | Puesto 7 de `Docs/verification.md`, y ya construible. Va después de `VER-38` (A2), que es quien garantiza que las severidades sobre las que opera son correctas | Una escena generada pasa o no pasa las puertas |
+| **C4** | Puertas | `features/verificacion/` + `tests/` | El caso negativo de **cada** `INV-xx` que esta feature ejecuta | `VER-10`, `VER-11`, `VER-12`, `VER-22` | Puesto 7 de `docs/verification.md`, y ya construible. Va después de `VER-38` (A2), que es quien garantiza que las severidades sobre las que opera son correctas | Una escena generada pasa o no pasa las puertas |
 | **C5** | Consolidación | `features/consolidacion/` + `tests/` | Un delta que falla a mitad **no deja el estado a medias** | `VER-09`, `VER-10`, `VER-42` | `INV-05`: sin esto la segunda escena de la obra no se puede generar. Es donde se corta la propagación del error | Una obra de dos escenas |
 
 ## Fase D — Cierre · **terminada el 2026-09-22**
@@ -267,7 +267,7 @@ Salió al repartir ficheros, y es el tipo de cosa que solo aparece cuando se int
 - `VER-15`: *"Los `Enum` de los vocabularios controlados viven solo en `commons/dominio/`"*.
 - `D-3` de `SPEC-01` dice lo mismo.
 - `SPEC-08` decidió que los estados de un trabajo son vocabulario controlado y que **no**
-  son dominio, y por eso se declaran en `Docs/architecture.md` y no en `Docs/definitions.md`.
+  son dominio, y por eso se declaran en `docs/architecture.md` y no en `docs/definitions.md`.
 
 Las tres afirmaciones son razonables y juntas no dejan sitio donde poner el `Enum`. Las dos
 salidas:

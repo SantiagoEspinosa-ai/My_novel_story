@@ -102,8 +102,8 @@ cambio sí llevaría la suya.
 
 ## Qué gobierna esto
 
-`Beat`, `HechoCanonico`, `Escaleta.hechos_canonicos[]` e `INV-11` de `Docs/definitions.md`;
-`SPEC-03`, `SPEC-15` C-3 y `SPEC-15` P-4; `F-37` de `Docs/verification.md`; la Regla 2, que
+`Beat`, `HechoCanonico`, `Escaleta.hechos_canonicos[]` e `INV-11` de `docs/definitions.md`;
+`SPEC-03`, `SPEC-15` C-3 y `SPEC-15` P-4; `F-37` de `docs/verification.md`; la Regla 2, que
 es la que obliga a declarar el punto ciego de `C-3`.
 
 ## Preguntas que hay que responder al aprobar

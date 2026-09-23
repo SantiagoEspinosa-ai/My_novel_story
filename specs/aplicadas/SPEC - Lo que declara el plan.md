@@ -102,7 +102,7 @@ necesita la suya numerada en el mismo commit.
 ## Qué gobierna esto
 
 `HechoCanonico`, `Presagio`, `SetupYPago`, `Escaleta` y `estado_de_presagio` de
-`Docs/definitions.md`; `INV-03` e `INV-09`; `F-29` y `F-30` de `Docs/verification.md`;
+`docs/definitions.md`; `INV-03` e `INV-09`; `F-29` y `F-30` de `docs/verification.md`;
 `VER-37` y `VER-64`; y la Regla 4, porque el punto muerto se manifestó en la frontera del
 prompt y se diagnosticó mirando el estado, no un error.
 
@@ -118,7 +118,7 @@ prompt y se diagnosticó mirando el estado, no un error.
 
 
 Las cinco se respondieron el 2026-09-23. La 5 abrió una decisión, anotada en
-`Docs/definitions.md`: **lo declarado y nunca entregado pide invariante propia**, porque un
+`docs/definitions.md`: **lo declarado y nunca entregado pide invariante propia**, porque un
 presagio nunca plantado incumple el plan y uno plantado y no pagado rompe una promesa al
 lector — y con la puerta de capítulo, una severidad `menor` significaría que la obra se
 firma habiendo incumplido su propio plan.

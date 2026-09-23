@@ -4,7 +4,7 @@ Dos cosas distintas y las dos viven aqui, porque `D-4` de `SPEC-01` dice que
 la diferencia entre severidades **se implementa una vez** y no caso por caso.
 
 La primera prueba es el caso negativo de `VER-38`: un registro cuya severidad
-no coincida con la tabla de `Docs/definitions.md` tiene que fallar. `VER-38`
+no coincida con la tabla de `docs/definitions.md` tiene que fallar. `VER-38`
 es el puesto 1 de la orden de implantacion porque valida a otros tres:
 `VER-11`, `VER-12` y `VER-22` pueden estar los tres en verde con una severidad
 mal puesta, que es el anti-patron de bajar una bloqueante para desatascar.
@@ -85,7 +85,7 @@ def test_la_diferencia_entre_mayor_y_menor_esta_en_la_puerta_de_capitulo():
 
 # NO HAY PRUEBA DEL PESO DE `sin_veredicto`, Y ES DELIBERADO.
 # `SPEC-10` C-2 decidio que pesa "lo maximo posible", pero los pesos por
-# severidad siguen siendo decision abierta en `Docs/definitions.md`. "Lo maximo
+# severidad siguen siendo decision abierta en `docs/definitions.md`. "Lo maximo
 # posible" admite dos implementaciones que no son equivalentes -el mayor peso
 # de la escala, o un peso que gana a cualquiera- y elegir aqui seria decidir
 # por el documento. Queda anotado y sin codigo.

@@ -1,6 +1,6 @@
 """Que hace cada severidad, implementado una vez.
 
-`D-4` de `SPEC-01` y `Docs/architecture.md`: la diferencia entre severidades se
+`D-4` de `SPEC-01` y `docs/architecture.md`: la diferencia entre severidades se
 implementa aqui y **no se resuelve caso por caso en cada verificador**. Si cada
 uno decidiera por su cuenta que hacer con un `mayor`, la escala seria una
 sugerencia.

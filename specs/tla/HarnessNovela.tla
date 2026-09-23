@@ -255,7 +255,7 @@ Caer ==
 (*   es: fiarse de `checkpoint.actual` y dar por perdido el trabajo en      *)
 (*   vuelo. Se modela para PODER ROMPERLA. Sin esta rama, las invariantes   *)
 (*   de reanudacion pasan sin haber sido puestas a prueba nunca, que es     *)
-(*   justo lo que `Docs/verification.md` llama un validador sin caso        *)
+(*   justo lo que `docs/verification.md` llama un validador sin caso        *)
 (*   negativo.                                                              *)
 (***************************************************************************)
 

@@ -193,4 +193,4 @@ Faltan cinco cosas:
 - `SPEC-24`: una analepsis la declara el plan (`RF-04`).
 - `SPEC-25`: la ficha es la única entrada que viene del comprador; `INV-21`.
 - `INV-17` (longitud), `INV-21` (vetadas) y las nuevas `INV-22` a `INV-25`, que se
-  añaden a `Docs/definitions.md` al aplicar esta spec.
+  añaden a `docs/definitions.md` al aplicar esta spec.

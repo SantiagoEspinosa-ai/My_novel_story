@@ -26,7 +26,7 @@ def con():
 
 
 def test_un_worker_que_vuelve_abandonado_no_escribe_su_resultado(con):
-    """LA prueba del paso. `SPEC-07` C-3 y `Docs/architecture.md`."""
+    """LA prueba del paso. `SPEC-07` C-3 y `docs/architecture.md`."""
     id_t = cola.encolar(con, "generar_escena", {"escena": "esc-1"})
     cola.tomar(con, id_t)
     cola.marcar_abandonado(con, id_t)

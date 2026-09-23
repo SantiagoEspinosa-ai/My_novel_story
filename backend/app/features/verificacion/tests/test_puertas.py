@@ -120,7 +120,7 @@ def test_una_escena_limpia_no_produce_hallazgos():
 # es un agujero en la validacion.
 #
 # El criterio de que campo es imprescindible **sale del dominio, no de aqui**:
-# `Docs/definitions.md` marca en negrita `Escena.pov`, `Escena.lugar` y
+# `docs/definitions.md` marca en negrita `Escena.pov`, `Escena.lugar` y
 # `Borrador.pov_usado`; `personajes_presentes` y `longitud_objetivo` no lo
 # estan, asi que su ausencia es legitima y la invariante simplemente no aplica.
 

@@ -2,13 +2,13 @@
 name: coherencia-docs
 description: >
   Detecta y resuelve inconsistencias entre los documentos de contexto del proyecto
-  (Docs/definitions.md, Docs/domain-knowledge.md, Docs/architecture.md,
-  Docs/verification.md, CLAUDE.md y AGENTS.md): referencias de sección rotas, citas
+  (docs/definitions.md, docs/domain-knowledge.md, docs/architecture.md,
+  docs/verification.md, CLAUDE.md y AGENTS.md): referencias de sección rotas, citas
   rotas a identificador, contradicciones factuales, deriva terminológica, afirmaciones
   de estado obsoletas, invariantes condicionales que han dejado de cumplirse,
   requisitos sin clasificar y contenido colocado en el documento equivocado. Usar
   cuando el usuario pida revisar la coherencia de la documentación, sospeche que dos
-  documentos no concuerdan, antes de un merge que toque Docs/, tras renumerar
+  documentos no concuerdan, antes de un merge que toque docs/, tras renumerar
   secciones, o cuando aterrice código que convierta en obsoletas las afirmaciones de
   estado de verification.md. Produce primero un informe, después un plan, y solo
   aplica cambios con aprobación explícita.
@@ -23,14 +23,14 @@ clasificas y las resuelves. **Nunca editas sin aprobación explícita.**
 
 | Documento | Papel |
 | --- | --- |
-| `Docs/definitions.md` | Vocabulario del dominio |
-| `Docs/domain-knowledge.md` | Cómo funciona una novela |
-| `Docs/architecture.md` | Decisiones técnicas, agentes, proceso |
-| `Docs/verification.md` | Cómo se gana confianza: modos de fallo, validadores, puntos ciegos |
+| `docs/definitions.md` | Vocabulario del dominio |
+| `docs/domain-knowledge.md` | Cómo funciona una novela |
+| `docs/architecture.md` | Decisiones técnicas, agentes, proceso |
+| `docs/verification.md` | Cómo se gana confianza: modos de fallo, validadores, puntos ciegos |
 | `CLAUDE.md` | Stack, convenciones y reglas de dominio que el código debe respetar |
 | `AGENTS.md` | Mapa de contexto. Documento **derivado**: nunca gana un conflicto |
 
-`specs/` y `Docs/revisiones/` entran como **destino de citas**, no como sujetos de revisión.
+`specs/` y `docs/revisiones/` entran como **destino de citas**, no como sujetos de revisión.
 
 ## Reglas innegociables
 
@@ -49,23 +49,23 @@ La fija `AGENTS.md` § "Precedencia" y manda sobre esta tabla:
 
 | Tipo de afirmación | Manda | Los demás |
 | --- | --- | --- |
-| Qué significa un término, cómo se llama un concepto | `Docs/definitions.md` | Lo usan, no lo redefinen |
-| Cómo funciona el dominio | `Docs/domain-knowledge.md` | Lo aplican. Es **vista**, no fuente: si un diagrama contradice una definición, gana la definición |
-| Decisiones técnicas: stack, estructura, agentes, proceso, límites | `Docs/architecture.md` | Lo referencian |
+| Qué significa un término, cómo se llama un concepto | `docs/definitions.md` | Lo usan, no lo redefinen |
+| Cómo funciona el dominio | `docs/domain-knowledge.md` | Lo aplican. Es **vista**, no fuente: si un diagrama contradice una definición, gana la definición |
+| Decisiones técnicas: stack, estructura, agentes, proceso, límites | `docs/architecture.md` | Lo referencian |
 | Reglas de dominio que el código debe respetar, convenciones, comandos | `CLAUDE.md` | Las invocan |
-| Qué modo de fallo existe, qué validador lo cubre y con qué punto ciego | `Docs/verification.md` | — |
+| Qué modo de fallo existe, qué validador lo cubre y con qué punto ciego | `docs/verification.md` | — |
 
-`Docs/verification.md` **no introduce requisitos nuevos**: cada fila cita el documento del
+`docs/verification.md` **no introduce requisitos nuevos**: cada fila cita el documento del
 que sale, y una fila sin origen sobra. Eso lo deja como autoridad sobre el *método* y
 subordinado sobre los *hechos*. Sus citas de origen son el material más valioso de la
 revisión.
 
 ### Criterio de pertenencia
 
-- Cambiaría al cambiar de framework, de modelo o de base de datos → `Docs/architecture.md`.
-- Cambiaría aunque la novela se escribiera a mano → `Docs/domain-knowledge.md`.
-- Es «X significa Y» → `Docs/definitions.md`.
-- Describe cómo se comprueba algo y con qué punto ciego → `Docs/verification.md`.
+- Cambiaría al cambiar de framework, de modelo o de base de datos → `docs/architecture.md`.
+- Cambiaría aunque la novela se escribiera a mano → `docs/domain-knowledge.md`.
+- Es «X significa Y» → `docs/definitions.md`.
+- Describe cómo se comprueba algo y con qué punto ciego → `docs/verification.md`.
 - Es una instrucción operativa para quien escribe código → `CLAUDE.md`.
 
 ---
@@ -75,11 +75,11 @@ revisión.
 | Código | Tipo | Qué es | Resolución |
 | --- | --- | --- | --- |
 | `REF` | Referencia rota o desplazada | Una cita `§N` o a un identificador (`INV-xx`, `VER-xx`…) apunta a algo inexistente, o a algo que ya no dice lo que la cita afirma | Automática si el destino correcto es identificable |
-| `COB` | Cobertura | Una regla o requisito existe y no aparece cubierto en `Docs/verification.md` | Propuesta de fila nueva; la decide el usuario |
+| `COB` | Cobertura | Una regla o requisito existe y no aparece cubierto en `docs/verification.md` | Propuesta de fila nueva; la decide el usuario |
 | `EDO` | Estado obsoleto | Una afirmación de estado ya no coincide con el repositorio | Decisión del usuario |
 | `CND` | Invariante condicional caducada | Una afirmación es cierta *porque* algo no existe, y esa condición ha cambiado | **Máxima prioridad.** Decisión del usuario |
 | `FAC` | Factual | Dos documentos afirman cosas incompatibles | Decisión del usuario |
-| `TER` | Terminológica | Mismo concepto con nombres distintos, o literal escrito fuera de su forma canónica | Automática si hay canónico en `Docs/definitions.md` |
+| `TER` | Terminológica | Mismo concepto con nombres distintos, o literal escrito fuera de su forma canónica | Automática si hay canónico en `docs/definitions.md` |
 | `AUT` | Autoridad | El mismo asunto desarrollado a fondo en dos documentos | Propuesta: cuál manda, el otro enlaza |
 | `ALC` | Alcance | Contenido en el documento equivocado | Propuesta de movimiento |
 | `OBS` | Obsolescencia | Un documento refleja una decisión que otro ya cambió | Decisión del usuario |
@@ -139,7 +139,7 @@ Barata, con `grep` y `git`, antes de gastar contexto en razonar.
   que esté declarada. Ojo a los falsos positivos de arriba.
 - **Mapa de citas por sección.** `§N`, `sección N`, enlaces con ancla.
 - **Índice de términos.** Nombres de clase, atributo y valor de enumeración de
-  `Docs/definitions.md`. **Normaliza el guion bajo escapado** antes de contar, o los
+  `docs/definitions.md`. **Normaliza el guion bajo escapado** antes de contar, o los
   recuentos salen mal: en las tablas los atributos se escriben con la barra delante.
 - **Literales fuera de su forma canónica.** Un valor de enumeración escrito en mayúscula,
   con espacios o traducido. `definitions.md` es el canónico.
@@ -222,7 +222,7 @@ Propia. Escrita a partir de un borrador del usuario y adaptada al repositorio en
 del 2026-09-22. Los cambios respecto al borrador son todos por la misma razón: el borrador
 nombraba rutas y estructuras que aquí no existen, y `VER-45` las habría marcado.
 
-- `docs/` pasa a `Docs/`; `src/backend/` y `src/frontend/` pasan a las carpetas reservadas
+- `docs/` pasa a `docs/`; `src/backend/` y `src/frontend/` pasan a las carpetas reservadas
   reales de `AGENTS.md`.
 - El borrador remitía a un fichero de autoridad que no existe. La jerarquía la fija
   `AGENTS.md` § "Precedencia", y se cita esa.

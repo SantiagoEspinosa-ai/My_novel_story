@@ -21,15 +21,15 @@ cosa: evalúa `SPEC-01` mientras sigue en `en_revision` y propone cómo llevarla
 `aprobada`. No toca código, no toca ficheros de `backend/`, y no sustituye al plan de
 implementación, que seguirá haciendo falta cuando `SPEC-01` se apruebe.
 
-**Por eso vive en `Docs/revisiones/` y se llama `REV-01`.** La primera versión estaba en
+**Por eso vive en `docs/revisiones/` y se llama `REV-01`.** La primera versión estaba en
 `specs/plans/` como `PLAN-01`, y ese número le corresponde al plan de implementación de
 `SPEC-01`. Con dos documentos distintos llamados `PLAN-01` la referencia cruzada deja de
 significar nada. Las revisiones tienen su propia serie, `REV-NN`, y su propia carpeta; una
 revisión se numera por la spec que revisa, así que `REV-01` revisa `SPEC-01`.
 
 **Lo que se evaluó.** `SPEC-01` entera, contra el estado **actual** de
-`Docs/definitions.md` (después de aplicar `SPEC-02`), `Docs/architecture.md`,
-`Docs/verification.md`, `CLAUDE.md` y `AGENTS.md`. No contra ninguna spec ni contra
+`docs/definitions.md` (después de aplicar `SPEC-02`), `docs/architecture.md`,
+`docs/verification.md`, `CLAUDE.md` y `AGENTS.md`. No contra ninguna spec ni contra
 ninguna versión anterior de esos documentos.
 
 ---
@@ -44,13 +44,13 @@ deuda que hay que registrar; **menor** es cosmético.
 `SPEC-01 v2` se escribió el 2026-09-21, antes de aplicar `SPEC-02`. Estos son los puntos
 donde cita el dominio con su forma vieja.
 
-| # | Sev | Qué dice SPEC-01 | Qué dice `Docs/definitions.md` hoy | Propuesta |
+| # | Sev | Qué dice SPEC-01 | Qué dice `docs/definitions.md` hoy | Propuesta |
 | --- | --- | --- | --- | --- |
 | **D1-1** | 🟠 mayor | §1.3: *"**Hallazgo** \| Defecto detectado, con su verificador, su escena y su severidad"* | `Hallazgo`: **invariante** (`INV-xx`), **verificador**, **escena**, severidad, estado → `estado_de_hallazgo`, descripcion | El glosario de la propia spec describe la clase sin el campo que `RF-15` exige. La spec se contradice a sí misma: corregir §1.3 con los seis atributos actuales |
-| **D1-2** | 🟠 mayor | §2.2.1, diagrama Mermaid: `Planificada`, `Generada`, `EnVerificacion`, `EnRevision`, `Rechazada`, `Aceptada`, `Consolidada` | `estado_de_escena`: `planificada, generada, en_verificacion, rechazada, en_revision, aceptada, consolidada`. Y: *"los literales se copian de esta tabla, nunca del diagrama"* | Es el mismo defecto que se corrigió en `Docs/domain-knowledge.md` y que sigue vivo aquí. La tabla de transiciones que hay justo debajo del diagrama **sí** usa los literales correctos, así que el documento se contradice a dos párrafos de distancia |
-| **D1-3** | 🟠 mayor | §1.2, "No entra": *"`auditoria/` \| `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13` e `INV-16` necesitan la obra entera"* | El Auditor de obra ejecuta hoy, según `Docs/architecture.md`: obra `INV-06, INV-09, INV-11, INV-12, INV-13, INV-14, INV-16`; capítulo `INV-08, INV-15` | La lista de exclusión está incompleta: faltan `INV-14`, `INV-08` e `INV-15`. Como define el **alcance**, dejarla mal significa no saber qué queda fuera |
+| **D1-2** | 🟠 mayor | §2.2.1, diagrama Mermaid: `Planificada`, `Generada`, `EnVerificacion`, `EnRevision`, `Rechazada`, `Aceptada`, `Consolidada` | `estado_de_escena`: `planificada, generada, en_verificacion, rechazada, en_revision, aceptada, consolidada`. Y: *"los literales se copian de esta tabla, nunca del diagrama"* | Es el mismo defecto que se corrigió en `docs/domain-knowledge.md` y que sigue vivo aquí. La tabla de transiciones que hay justo debajo del diagrama **sí** usa los literales correctos, así que el documento se contradice a dos párrafos de distancia |
+| **D1-3** | 🟠 mayor | §1.2, "No entra": *"`auditoria/` \| `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13` e `INV-16` necesitan la obra entera"* | El Auditor de obra ejecuta hoy, según `docs/architecture.md`: obra `INV-06, INV-09, INV-11, INV-12, INV-13, INV-14, INV-16`; capítulo `INV-08, INV-15` | La lista de exclusión está incompleta: faltan `INV-14`, `INV-08` e `INV-15`. Como define el **alcance**, dejarla mal significa no saber qué queda fuera |
 | **D1-4** | 🟡 menor | §3.2.2: *"`escena` \| Atributos obligatorios de `Escena` **más su** `estado`"* | `estado` ya **es** un atributo obligatorio de `Escena` | El "más su" sobra y sugiere que `estado` es un añadido del backend, no del dominio |
-| **D1-5** | 🟡 menor | §1.3: *"`INV-xx` \| Invariante verificable de `Docs/definitions.md`"*, descrito como identificador | `Invariante` es ahora una **clase** del plano Calidad con **id**, **enunciado**, **nivel**, **severidad**, **tipo** | Distinguir la clase del identificador. Ver también `D3-4`: falta su tabla en el modelo de datos |
+| **D1-5** | 🟡 menor | §1.3: *"`INV-xx` \| Invariante verificable de `docs/definitions.md`"*, descrito como identificador | `Invariante` es ahora una **clase** del plano Calidad con **id**, **enunciado**, **nivel**, **severidad**, **tipo** | Distinguir la clase del identificador. Ver también `D3-4`: falta su tabla en el modelo de datos |
 | **D1-6** | 🟡 menor | `RF-23`, §2.2.2, criterio 3 de §4: *"hallazgos abiertos"* en prosa | Existe `estado_de_hallazgo` con el valor `abierto` | Citar el literal (`estado_de_hallazgo = abierto`) en vez de decirlo en prosa, como ya hace `INV-02` con `estado_vital = vivo` |
 
 **Identificadores desacentuados: sin hallazgos.** Comprobé uno a uno los que aparecen en
@@ -69,13 +69,13 @@ de graves: a unos solo les falta la fila `VER`, a otros les falta el criterio.
 | # | Sev | Requisito y cita | Qué le falta |
 | --- | --- | --- | --- |
 | **D2-1** | 🔴 bloqueante | `RF-06`: *"Si no cabe, se recorta **por el nivel de menor prioridad**"* | **La spec nunca dice cuál es el orden de prioridad de los seis niveles.** `CLAUDE.md` tampoco. El único orden parcial escrito está en el criterio de salida de `VER-06` (*"el nivel inmutable nunca se toca antes que los resúmenes"*), que son dos de seis. Sin el orden completo, `RF-06` no se puede implementar sin inventarlo ni verificar sin suponerlo **Cerrado el 2026-09-22 por la respuesta a `P-A`**: §2.4 de `SPEC-01` fija el orden completo, sobre bloques y no sobre niveles. |
-| **D2-2** | 🟠 mayor | `RF-08`: *"Cada agente recibe únicamente los niveles que le corresponden según `Docs/architecture.md`"* | La tabla a la que apunta no es especificable: sus celdas dicen *"según profundidad"*, *"guía de estilo y anclas"*, *"solo lo que cita el hallazgo"*. No son predicados comprobables, son descripciones. `RF-08` hereda esa vaguedad |
-| **D2-3** | 🟠 mayor | `T-1`: *"Cada llamada a un agente deja traza **consultable**"* | Consultable dónde. *"Dónde viven las trazas de `VER-24` y quién las mira"* sigue abierta en `Docs/verification.md`. Hasta que se cierre, `T-1` no tiene criterio |
+| **D2-2** | 🟠 mayor | `RF-08`: *"Cada agente recibe únicamente los niveles que le corresponden según `docs/architecture.md`"* | La tabla a la que apunta no es especificable: sus celdas dicen *"según profundidad"*, *"guía de estilo y anclas"*, *"solo lo que cita el hallazgo"*. No son predicados comprobables, son descripciones. `RF-08` hereda esa vaguedad |
+| **D2-3** | 🟠 mayor | `T-1`: *"Cada llamada a un agente deja traza **consultable**"* | Consultable dónde. *"Dónde viven las trazas de `VER-24` y quién las mira"* sigue abierta en `docs/verification.md`. Hasta que se cierre, `T-1` no tiene criterio |
 | **D2-4** | 🟠 mayor | `O-3`: *"se reintentan con espera creciente y un **tope acotado** de intentos"* | El número está explícitamente fuera de alcance (§5.2). La spec lo reconoce, pero eso convierte `O-3` en no verificable hasta que exista. Hay que decidir si se aprueba como deuda declarada o se le pone criterio cualitativo (*"el tope existe, es configurable y se registra"*), que sí es comprobable sin fijar el número |
 | **D2-5** | 🟠 mayor | `P-4`: *"'Esperando presupuesto' es un estado **visible** y distinguible de 'en curso'"* | Visible dónde. El frontend está fuera de alcance (§1.2). Dentro de esta spec lo comprobable es que el estado exista en el modelo y se devuelva por la API, no que se vea |
 | **D2-6** | 🟠 mayor | `RF-12`: *"Las comprobaciones deterministas las ejecuta **código**, no un juez"* | Es una restricción de diseño con forma de requisito funcional. Es verificable —con análisis estático: ninguna invariante de `tipo = regla` pasa por el cliente del modelo— pero no tiene criterio escrito ni fila `VER`. Su sitio natural es §3.4 |
 | **D2-7** | 🟠 mayor | `RF-21`: *"se actualizan las `Ficha` de **las entidades afectadas**"* | "Afectadas" no está definido. Ver también `D6-2`: es además ambiguo |
-| **D2-8** | 🟡 menor | `RF-03`, `RF-04`, `RF-10`, `RF-11` | Son perfectamente comprobables; solo les falta su fila en `Docs/verification.md`. `RF-11` es el que más importa de los cuatro, porque es el que sostiene la reproducibilidad |
+| **D2-8** | 🟡 menor | `RF-03`, `RF-04`, `RF-10`, `RF-11` | Son perfectamente comprobables; solo les falta su fila en `docs/verification.md`. `RF-11` es el que más importa de los cuatro, porque es el que sostiene la reproducibilidad |
 | **D2-9** | 🟡 menor | `RF-01`: *"un `Brief` con premisa, tono, guía de estilo y prohibiciones"* | Mezcla atributos de dos clases: `premisa`, `tono` y `prohibiciones` son de `Brief`; `guia_de_estilo` es de `Obra`. Falta decir cuáles son obligatorios en la petición |
 
 ## Eje 3 — Trazabilidad
@@ -83,13 +83,13 @@ de graves: a unos solo les falta la fila `VER`, a otros les falta el criterio.
 | # | Sev | Hallazgo, con cita | Propuesta |
 | --- | --- | --- | --- |
 | **D3-1** | 🟠 mayor | **La matriz de §4.1 y las tablas de §3.1 se contradicen.** §4.1 omite `RF-01`, `RF-02`, `RF-03`, `RF-04`, `RF-08`, `RF-10`, `RF-11`, `RF-12`, `RF-17`, `RF-21`, `RF-24`, `O-1`, `M-1`, `M-4`, `P-2`…`P-5` y `D-1`…`D-5`. Pero `RF-02` sí declara `INV-01` en su propia fila, `RF-17` declara `VER-29` y `RF-24` declara `VER-04` | Hay dos fuentes de trazabilidad que no coinciden. Una sobra: la matriz debe generarse desde las tablas, o desaparecer |
-| **D3-2** | 🟠 mayor | **La recuperación no tiene ningún requisito.** `Docs/architecture.md` da al Ensamblador *"recuperar por similitud; seleccionar fichas y setups pendientes"*, y `RF-05`…`RF-08` solo hablan de presupuesto y recorte | La mitad del componente más crítico del sistema no está especificada: ni cuántos vecinos, ni con qué criterio, ni qué pasa si la recuperación no devuelve nada |
+| **D3-2** | 🟠 mayor | **La recuperación no tiene ningún requisito.** `docs/architecture.md` da al Ensamblador *"recuperar por similitud; seleccionar fichas y setups pendientes"*, y `RF-05`…`RF-08` solo hablan de presupuesto y recorte | La mitad del componente más crítico del sistema no está especificada: ni cuántos vecinos, ni con qué criterio, ni qué pasa si la recuperación no devuelve nada |
 | **D3-3** | 🟠 mayor | **Nada cubre `VER-27`** (*"La salida de cada agente valida contra su esquema tipado, o se rechaza"*). `RF-09` lo exige solo para el Escritor; el Escaletador, el Juez y el Resumidor no tienen requisito equivalente | Falta un requisito transversal de validación de salida. Hoy la garantía está en `verification.md` pero no en la spec, y `AGENTS.md` dice que `verification.md` no introduce requisitos nuevos |
-| **D3-4** | 🟠 mayor | **El rechazo de transiciones ilegales no es un requisito.** §3.2.1 dice *"`409` cuando la transición pedida no es legal"*, pero ningún `RF` lo recoge, y `Docs/architecture.md` da al Orquestador *"decidir la siguiente transición legal"* | Es la garantía central de la máquina de estados y vive solo como nota de una tabla de endpoints |
+| **D3-4** | 🟠 mayor | **El rechazo de transiciones ilegales no es un requisito.** §3.2.1 dice *"`409` cuando la transición pedida no es legal"*, pero ningún `RF` lo recoge, y `docs/architecture.md` da al Orquestador *"decidir la siguiente transición legal"* | Es la garantía central de la máquina de estados y vive solo como nota de una tabla de endpoints |
 | **D3-5** | 🟠 mayor | **`RF-23` y `RF-25` trazan a pruebas de frontend.** `VER-18` y `VER-19` viven en `frontend/.../tests/` y hablan de *"se muestra"*, mientras `RF-25` dice *"se devuelve"* | Un requisito de backend no puede cerrarse con una prueba de frontend. Hay que partir esas dos filas `VER` en dos: la de la API y la de la interfaz |
 | **D3-6** | 🟡 menor | **`A-06` está cubierta a medias.** `RF-16` recoge *"el Juez no recibe el prompt"*, pero no la otra mitad: *"modelo distinto si se puede; sesión limpia como mínimo"* | O se añade a `RF-16`, o se dice que la elección de modelo queda fuera |
 
-**Partes de `Docs/architecture.md` sin requisito, comprobadas y descartadas:** `A-09` (FSD),
+**Partes de `docs/architecture.md` sin requisito, comprobadas y descartadas:** `A-09` (FSD),
 las vistas del frontend, el Revisor y el Auditor de obra están **legítimamente** sin
 requisito porque §1.2 los excluye de forma explícita. `A-07` y `A-08` son decisiones sobre
 documentación y no producen código. Recorrí las nueve decisiones `A-01`…`A-09` y los diez
@@ -137,11 +137,11 @@ abiertas en otros documentos que afectan a requisitos concretos de `SPEC-01` y n
 
 | # | Sev | Decisión | Dónde está abierta | Qué requisito de SPEC-01 bloquea |
 | --- | --- | --- | --- | --- |
-| **D5-1** | ✅ **cerrada** | *"`mayor` y `menor`: ¿dejan seguir o van a `en_revision`?"* | Era §2.2.3 de la propia spec, más `CLAUDE.md` y `Docs/architecture.md` | **Decidida el 2026-09-22. Ver "Decisiones cerradas" más abajo.** Queda pendiente de aplicar a `SPEC-01` en el paso 2 |
-| **D5-2** | 🟠 mayor | *"Qué valida un humano y cuándo"* | `Docs/definitions.md` y `Docs/architecture.md` | `RF-17` asume que **toda** aceptación la dispara un cliente. Si se decide que una escena sin hallazgos puede auto-aceptarse, `RF-17` cambia. No está en §5.3 |
-| **D5-3** | 🟠 mayor | *"Corpus de fixtures"* | `Docs/definitions.md` | El criterio 7 de §4 exige un caso negativo por invariante ejecutada; sin corpus no se puede construir. No está en §5.3 |
-| **D5-4** | 🟠 mayor | *"Dónde viven las trazas"* | `Docs/verification.md` | `T-1` (ver `D2-3`). No está en §5.3 |
-| **D5-5** | 🟡 menor | *"Persistencia del estado"* y *"Granularidad de generación"* | `Docs/definitions.md`, `Docs/architecture.md` y §5.3 | Sí están listadas y la spec dice qué asume. Correcto: se anota como suposición, no se decide |
+| **D5-1** | ✅ **cerrada** | *"`mayor` y `menor`: ¿dejan seguir o van a `en_revision`?"* | Era §2.2.3 de la propia spec, más `CLAUDE.md` y `docs/architecture.md` | **Decidida el 2026-09-22. Ver "Decisiones cerradas" más abajo.** Queda pendiente de aplicar a `SPEC-01` en el paso 2 |
+| **D5-2** | 🟠 mayor | *"Qué valida un humano y cuándo"* | `docs/definitions.md` y `docs/architecture.md` | `RF-17` asume que **toda** aceptación la dispara un cliente. Si se decide que una escena sin hallazgos puede auto-aceptarse, `RF-17` cambia. No está en §5.3 |
+| **D5-3** | 🟠 mayor | *"Corpus de fixtures"* | `docs/definitions.md` | El criterio 7 de §4 exige un caso negativo por invariante ejecutada; sin corpus no se puede construir. No está en §5.3 |
+| **D5-4** | 🟠 mayor | *"Dónde viven las trazas"* | `docs/verification.md` | `T-1` (ver `D2-3`). No está en §5.3 |
+| **D5-5** | 🟡 menor | *"Persistencia del estado"* y *"Granularidad de generación"* | `docs/definitions.md`, `docs/architecture.md` y §5.3 | Sí están listadas y la spec dice qué asume. Correcto: se anota como suposición, no se decide |
 
 ## Eje 6 — Ambigüedad
 
@@ -154,7 +154,7 @@ abiertas en otros documentos que afectan a requisitos concretos de `SPEC-01` y n
 | **D6-5** | 🟡 menor | `RF-25`: *"se devuelve como **ausente** y distinguible de cero"* | El campo se omite del JSON | El campo está presente con valor `null` |
 
 `D6-1` era bloqueante y no mayor porque el dominio separa `t_fabula` y `t_discurso` **a
-propósito** —`Docs/definitions.md` dice que esa separación *"es lo que habilita analepsis,
+propósito** —`docs/definitions.md` dice que esa separación *"es lo que habilita analepsis,
 relatos enmarcados y narradores no fiables"*— así que las dos lecturas no coinciden en
 cuanto haya una analepsis, que es material típico del género. Ya está cerrada: ver
 "Decisiones cerradas".
@@ -202,9 +202,9 @@ escena a escena y sigue habiendo un punto donde alguien responde.
 | `SPEC-01` §2.2.1, diagrama | Se elimina la arista `EnVerificacion --> EnRevision` (y se corrigen los literales, `D1-2`) |
 | `SPEC-01` §2.2.3 | Deja de ser una contradicción abierta y pasa a ser la decisión y su salvaguarda |
 | `CLAUDE.md` § Reglas de trabajo | Queda confirmado, no cambia |
-| `Docs/architecture.md` | Se elimina la misma fila de su tabla de transiciones |
-| `Docs/domain-knowledge.md` | Se elimina la arista `en_verificacion --> en_revision: juez marca` |
-| `Docs/verification.md` `VER-28` | Su enunciado razona sobre la máquina de estados y hay que revisarlo |
+| `docs/architecture.md` | Se elimina la misma fila de su tabla de transiciones |
+| `docs/domain-knowledge.md` | Se elimina la arista `en_verificacion --> en_revision: juez marca` |
+| `docs/verification.md` `VER-28` | Su enunciado razona sobre la máquina de estados y hay que revisarlo |
 
 **Consecuencia que hay que escribir en alguna parte:** la puerta de cierre de capítulo
 **no existe hoy en ningún documento**. `estado_de_escena` no tiene estados de capítulo y
@@ -285,7 +285,7 @@ porque no son la misma cosa:
 | Columnas nuevas en `escena` para `POV` (`personaje`, `persona`, `tiempo_verbal`, `distancia`, `fiabilidad`) y `MomentoNarrativo` (`t_fabula`, `t_discurso`, `duracion_ficcional`) | 8 columnas, 0 tablas |
 | Tablas `beat` y `arco_narrativo` | 2 tablas |
 | Tablas de unión `escena_realiza_beat` y `beat_sirve_a_arco` | 2 tablas |
-| Cambio de contrato del **Escaletador** | `Docs/architecture.md` ya le da *"asignar beats a arcos"*, así que su salida `Escaleta` tiene que incluirlos. Toca §3.2.3 y `RF-02` |
+| Cambio de contrato del **Escaletador** | `docs/architecture.md` ya le da *"asignar beats a arcos"*, así que su salida `Escaleta` tiene que incluirlos. Toca §3.2.3 y `RF-02` |
 | Decisión nueva | Si el Escritor puede **añadir o modificar** beats, o solo consumir los que vienen de la escaleta |
 
 ### Salida B — Sacar `INV-07` de la v1
@@ -350,7 +350,7 @@ no es una condición.
 
 Primero lo mecánico, que es barato y no necesita criterio:
 
-1. Todo literal de dominio citado existe hoy en `Docs/definitions.md`, con esa forma exacta.
+1. Todo literal de dominio citado existe hoy en `docs/definitions.md`, con esa forma exacta.
 2. Todo `RF`/`RNF` aparece en la matriz de trazabilidad, y al revés.
 3. Todo requisito tiene criterio de aceptación comprobable, o está declarado como deuda.
 4. Toda decisión abierta que afecta a un requisito está en §5.3.
@@ -407,10 +407,10 @@ Empieza cuando hay código y no termina. No tiene condición de salida: tiene di
 | Disparador | Qué se hace | Por qué |
 | --- | --- | --- |
 | **Un requisito resulta inimplementable** | Se **para el código**, se corrige la spec y se vuelve a aprobar. Si además cambia el alcance, spec nueva | Es la regla de `AGENTS.md`: el código nunca avanza por delante de la spec. Corregir la spec después convierte el documento en descripción, no en gobierno |
-| **Un umbral se mide y no era el supuesto** | **No se toca `SPEC-01`.** Se cierra la decisión abierta correspondiente y se actualiza `Docs/verification.md` | La spec nunca llevó el número: §5.2 lo declara pendiente. Esta es la recompensa de no haber inventado ninguno, y conviene notarla |
+| **Un umbral se mide y no era el supuesto** | **No se toca `SPEC-01`.** Se cierra la decisión abierta correspondiente y se actualiza `docs/verification.md` | La spec nunca llevó el número: §5.2 lo declara pendiente. Esta es la recompensa de no haber inventado ninguno, y conviene notarla |
 | **Una invariante falla de una forma que la spec no previó** | Tres casos distintos: **(a)** la invariante está mal definida → spec de dominio, como `SPEC-02`; **(b)** la spec no cubría ese caso → se corrige `SPEC-01` y se reaprueba; **(c)** el código está mal → no se toca ninguna spec, se arregla el código y se añade el caso negativo | Confundir (a) con (c) es lo que lleva a relajar una invariante para desatascar un test, que es exactamente lo que la puerta existe para impedir |
 | **Se cierra una decisión abierta que la spec asumía** | Se reescribe la sección que contenía la suposición y se reaprueba. `§2.2.3` es el caso vivo | Una suposición que sobrevive a la decisión que la reemplaza es peor que no haberla escrito |
-| **Cambia `Docs/`** | Al aprobar una spec de dominio se revisa qué specs la citan y se marcan como desfasadas | Es lo que le pasó a `SPEC-01` con `SPEC-02` y por eso existe el eje 1 de este plan |
+| **Cambia `docs/`** | Al aprobar una spec de dominio se revisa qué specs la citan y se marcan como desfasadas | Es lo que le pasó a `SPEC-01` con `SPEC-02` y por eso existe el eje 1 de este plan |
 
 ### Corregir, spec nueva, o documentar la desviación
 
@@ -432,7 +432,7 @@ Regla para no discutirlo cada vez:
 | **Retraso entre que un requisito se revela falso y que la spec lo refleja** | Si crece, la spec se está convirtiendo en ficción. Es la métrica principal |
 | **Requisitos cambiados después de escribir su código** | Rework. Alto significa que el ciclo corto no está haciendo su trabajo y hay que endurecer su condición de salida |
 | **Desviaciones abiertas y su antigüedad** | Cuántas hay y cuánto llevan. El umbral a partir del cual una desviación es inaceptable **se fija cuando haya datos**, no ahora |
-| **Specs marcadas desfasadas por un cambio de dominio** | Cuenta cuántas veces un cambio en `Docs/` rompió una spec. Si es frecuente, el dominio no está estable y las specs se están escribiendo demasiado pronto |
+| **Specs marcadas desfasadas por un cambio de dominio** | Cuenta cuántas veces un cambio en `docs/` rompió una spec. Si es frecuente, el dominio no está estable y las specs se están escribiendo demasiado pronto |
 
 Ninguna de las cuatro tiene número objetivo hoy, y ponerlo sería inventarlo. Lo que sí se
 puede hacer desde la primera vuelta es **registrarlas**, que es lo que permite fijarlas más
@@ -444,7 +444,7 @@ adelante con una medición en vez de con una intuición.
 
 1. **`C-1`, la decisión de `D5-1`** —la severidad de `mayor`—. Ya está tomada; aplicarla es
    lo primero porque arrastra `RF-14`, la tabla de §2.2.1, el diagrama, §2.2.3, `VER-28` y
-   tres documentos de `Docs/`. Todo lo demás se escribe encima de ella. Arrastra también
+   tres documentos de `docs/`. Todo lo demás se escribe encima de ella. Arrastra también
    `D4-9`, la puerta de capítulo que su salvaguarda necesita y que no existe.
 2. **Los bloqueantes restantes**: `D4-6` (el delta no sabe expresar `desaparecido`),
    `D4-4` (tablas que faltan), `D4-5` / `D2-1` (orden de recorte) y `C-2`, la decisión de
@@ -462,8 +462,8 @@ adelante con una medición en vez de con una intuición.
 # Qué correcciones se pisan entre sí
 
 - **`D5-1` toca cuatro sitios a la vez**: `RF-14`, la fila `en_verificacion → en_revision` de
-  §2.2.1, el diagrama de §2.2.1 y §2.2.3 entera. Y fuera de la spec, `Docs/architecture.md`,
-  `Docs/domain-knowledge.md` y `VER-28`. Va en un solo cambio o queda incoherente.
+  §2.2.1, el diagrama de §2.2.1 y §2.2.3 entera. Y fuera de la spec, `docs/architecture.md`,
+  `docs/domain-knowledge.md` y `VER-28`. Va en un solo cambio o queda incoherente.
 - **`D1-2` (diagrama) y `D5-1`** se pisan: no tiene sentido corregir los literales del
   diagrama y volver a tocarlo para quitar una transición. Primero la decisión, luego el
   dibujo.

@@ -283,7 +283,7 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
         return c
 
     # Un `mayor` o un `menor` abierto dejan la escena en `en_revision`, y
-    # `Docs/architecture.md` solo consolida desde `aceptada` o desde
+    # `docs/architecture.md` solo consolida desde `aceptada` o desde
     # `aceptada_por_rendicion`. Consolidar aqui meteria en el canon el delta de
     # un intento que todavia puede descartarse **y el canon no se deshace**.
     # Se descubrio al conectar los reintentos: el segundo intento moria con

@@ -1,4 +1,4 @@
-"""Los vocabularios controlados de `Docs/definitions.md`, como `Enum`.
+"""Los vocabularios controlados de `docs/definitions.md`, como `Enum`.
 
 POR QUE ESTAN AQUI Y SOLO AQUI
 ------------------------------
@@ -10,11 +10,11 @@ se escribiera a mano.
 
 POR QUE ESTAN ESCRITOS A MANO Y NO GENERADOS
 --------------------------------------------
-Seria facil generarlos leyendo la tabla de `Docs/definitions.md`, y seria un
+Seria facil generarlos leyendo la tabla de `docs/definitions.md`, y seria un
 error. `VER-01` comprueba que los esquemas y las fichas de clase digan lo
 mismo; si los esquemas salieran de las fichas, `VER-01` compararia el documento
 consigo mismo y estaria en verde por construccion. Es la Regla 3 de
-`Docs/verification.md`: un validador no comparte implementacion con lo que
+`docs/verification.md`: un validador no comparte implementacion con lo que
 valida.
 
 Asi que la copia es deliberada, y `VER-01` existe para cazarla cuando divergen.
@@ -24,7 +24,7 @@ LOS LITERALES SON LITERALES
 No se traducen, no se abrevian y no se les ponen tildes. Una cadena acentuada
 admite dos representaciones Unicode iguales a la vista y distintas byte a byte,
 asi que dos valores que se leen igual dejarian de compararse iguales y fallarian
-en silencio (`Docs/definitions.md`, "Convencion de nombres").
+en silencio (`docs/definitions.md`, "Convencion de nombres").
 """
 
 from enum import Enum

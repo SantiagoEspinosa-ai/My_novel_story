@@ -84,8 +84,8 @@ Es el mismo argumento que obligó a poner motivo al cerrar un hallazgo (`F-38`).
 ## Qué gobierna esto
 
 `EstadoDelMundo`, `HechoCanonico`, `RegistroDeConocimiento` y `estado_de_escena` de
-`Docs/definitions.md`; el *"el estado del mundo se reconstruye acumulando los deltas"* de
-`CLAUDE.md`; `F-38` y `VER-60` de `Docs/verification.md`.
+`docs/definitions.md`; el *"el estado del mundo se reconstruye acumulando los deltas"* de
+`CLAUDE.md`; `F-38` y `VER-60` de `docs/verification.md`.
 
 ## Preguntas respondidas al aprobar
 

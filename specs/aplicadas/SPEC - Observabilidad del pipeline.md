@@ -14,7 +14,7 @@ version: 1
 # SPEC-11 — Observabilidad del pipeline
 
 Los cinco huecos de arquitectura que inventarió `SPEC-10` al comparar nuestro contrato con
-el de la rama `main`. **Ninguno toca `Docs/definitions.md`**: ese fue el criterio que los
+el de la rama `main`. **Ninguno toca `docs/definitions.md`**: ese fue el criterio que los
 separó de los cinco de dominio.
 
 Son cinco cosas distintas con un hilo común: **el sistema no se puede conducir mirando solo
@@ -82,7 +82,7 @@ puede comprobar a posteriori.
 mínimas, y razona por qué: *"si los tres vieran el mismo material y las reglas del proyecto,
 serían tres copias del mismo juicio"*.
 
-Es nuestra **Regla 3** de `Docs/verification.md` aplicada a los jueces, y es la misma idea
+Es nuestra **Regla 3** de `docs/verification.md` aplicada a los jueces, y es la misma idea
 que sostiene los dos campos de tokens de `SPEC-08`. `A-06` dice hoy que el Juez no comparte
 sesión con el Escritor; no dice qué ve.
 
@@ -113,7 +113,7 @@ esa prohibición.
 
 - **Los números**: topes, umbrales de alarma, retención de series.
 - **El formato del informe.** Qué se mira está aquí; cómo se pinta es del frontend.
-- **Métricas de calidad de la novela.** Eso es `Docs/verification.md`.
+- **Métricas de calidad de la novela.** Eso es `docs/verification.md`.
 - **Los `RF` y endpoints que esto genere en `SPEC-01`.** Vienen después.
 - **Reabrir §2.4.** `C-2` construye el instrumento que permitirá releer el orden; releerlo
   es otra decisión, y la marca `Caduca con:` de §2.4 la disparará sola.
@@ -121,7 +121,7 @@ esa prohibición.
 ## Qué gobierna esto
 
 De esta línea: `SPEC-10` huecos 6 a 10; `SPEC-12` §2.4 y su reserva; `A-06`; `P-1`…`P-5`;
-`SPEC-07` y `SPEC-08`; la Regla 3 de `Docs/verification.md`; `VER-26`, `VER-41`, `VER-56`.
+`SPEC-07` y `SPEC-08`; la Regla 3 de `docs/verification.md`; `VER-26`, `VER-41`, `VER-56`.
 De la rama `main`: `EJECUCION.md` §4 reglas 3, 5 y 6 y §7; `DECISIONES.md` decisión 9;
 `src/contexto.py` y `src/ensamblador.py`.
 
@@ -140,9 +140,9 @@ De la rama `main`: `EJECUCION.md` §4 reglas 3, 5 y 6 y §7; `DECISIONES.md` dec
 
 # Qué se tocó al aplicarla
 
-`Docs/architecture.md`: el tope global con su estado `detenido_por_presupuesto` y su
+`docs/architecture.md`: el tope global con su estado `detenido_por_presupuesto` y su
 transición; los recortes y el modelo usado en la traza; dos decisiones nuevas sobre el Juez;
-y la sección del ensamblador que no corrige. `Docs/verification.md`: `VER-60` con su caso
+y la sección del ensamblador que no corrige. `docs/verification.md`: `VER-60` con su caso
 negativo y los recuentos.
 
 ## Lo que la spec no previó

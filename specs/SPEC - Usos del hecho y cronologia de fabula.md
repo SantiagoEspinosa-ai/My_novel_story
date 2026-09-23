@@ -27,7 +27,7 @@ cuatro capacidades que hoy no se pueden construir.
   establece una vez y se usa muchas. Sin la segunda no hay enlaces de ficha de personaje al
   capítulo, ni regeneración selectiva, ni comprobación de que un elemento pedido por el
   lector llegue al texto, ni fichero Lean.
-- **La cronología de la fábula.** `EventoCronologico` está definido en `Docs/definitions.md`
+- **La cronología de la fábula.** `EventoCronologico` está definido en `docs/definitions.md`
   desde el primer día —**id**, **t_fabula**, participantes[], consecuencias[]— y **no lo
   implementa nadie**. `MomentoNarrativo` es atributo obligatorio de `Escena` y la tabla
   `escena` no tiene ninguna de sus tres columnas. Así, las tres afirmaciones que un

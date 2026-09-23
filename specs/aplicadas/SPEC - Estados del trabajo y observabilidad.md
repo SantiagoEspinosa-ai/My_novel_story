@@ -27,7 +27,7 @@ documento describe**. No son lo mismo, pero comparten dueño —`commons/trabajo
 | `O-4` | Los intentos consumidos y el motivo del último fallo son visibles por trabajo |
 | `P-3` | Si no hay techo disponible, el trabajo **«espera en cola»** |
 | `P-4` | **«Esperando presupuesto»** es un estado visible y **distinguible de «en curso»** |
-| `Docs/architecture.md` § "Cuando algo falla" | El trabajo pasa a **«un estado de fallo»** |
+| `docs/architecture.md` § "Cuando algo falla" | El trabajo pasa a **«un estado de fallo»** |
 
 Cinco afirmaciones, cuatro nombres de estado sueltos en prosa y **ninguna enumeración**. Es
 exactamente lo que pasó con `estado_de_capitulo`: la puerta se daba por existente porque
@@ -35,7 +35,7 @@ varios documentos la mencionaban, y no existía en ninguna parte.
 
 ### Problema 2 · `T-1` y `T-2` hablan de trazas que la arquitectura no menciona
 
-`Docs/architecture.md` no contiene ni una aparición de *traza*, *observabilidad* ni
+`docs/architecture.md` no contiene ni una aparición de *traza*, *observabilidad* ni
 *telemetría*. Mientras tanto:
 
 - **`T-1`** exige que cada llamada a un agente deje traza consultable.
@@ -45,7 +45,7 @@ varios documentos la mencionaban, y no existía en ninguna parte.
 - **`VER-34`** depende de `VER-41`: sin reconciliar, mediría sobre un dato sin validar.
 
 **Y aquí está lo que de verdad importa.** `VER-41` es la **segunda fuente independiente**
-que exige la Regla 3 de `Docs/verification.md`. Si la traza se rellena desde el mismo sitio
+que exige la Regla 3 de `docs/verification.md`. Si la traza se rellena desde el mismo sitio
 que el contador de presupuesto, `VER-41` compara un número consigo mismo: pasa siempre, no
 puede fallar, y **es un eco**. Entonces `PC-8` deja de ser *"el contador y el proveedor
 podrían equivocarse igual"* y pasa a ser *"no hay segunda fuente en absoluto"*, que es un
@@ -56,12 +56,12 @@ además depende otro.
 
 ## Qué tiene que ser verdad al terminar
 
-### C-1 · Los estados de un trabajo están enumerados en `Docs/architecture.md`
+### C-1 · Los estados de un trabajo están enumerados en `docs/architecture.md`
 
 Junto a la máquina de estados de la escena y a la del capítulo, en su **propia tabla** y
 con su columna de quién dispara cada transición, igual que las otras dos.
 
-**No van en `Docs/definitions.md`**, y el motivo es el criterio de pertenencia: la tabla de
+**No van en `docs/definitions.md`**, y el motivo es el criterio de pertenencia: la tabla de
 trabajos no existiría si la novela se escribiera a mano. No es dominio, es infraestructura,
 y por eso ya vive en `commons/trabajos/`.
 
@@ -73,11 +73,11 @@ Los estados que las cinco afirmaciones exigen, como mínimo:
 | `esperando_presupuesto` | `P-4`, que además pide que sea **distinguible** del siguiente |
 | `en_curso` | `P-4` |
 | `terminado` | Implícito: un trabajo que acaba bien |
-| `fallido` | `O-3`, `O-4`, `Docs/architecture.md` § "Cuando algo falla" |
+| `fallido` | `O-3`, `O-4`, `docs/architecture.md` § "Cuando algo falla" |
 
 ### C-2 · El trabajo abandonado, que es donde la lista se rompe
 
-`Docs/architecture.md` dice dos cosas sobre él que **no caben en un solo estado**:
+`docs/architecture.md` dice dos cosas sobre él que **no caben en un solo estado**:
 
 > *"Un trabajo abandonado **se marca fallido** y no se reintenta solo."*
 >
@@ -91,7 +91,7 @@ estado propio, `RF-24` devuelve algo que el frontend puede pintar distinto; con 
 
 Esto es también por lo que `O-2` de `SPEC-01` quedó redactado sin nombrar el estado.
 
-### C-3 · La traza, descrita en `Docs/architecture.md`
+### C-3 · La traza, descrita en `docs/architecture.md`
 
 Qué registra una llamada al modelo, para que `T-1`, `T-2` y `VER-41` tengan base:
 
@@ -130,23 +130,23 @@ que es una cosa distinta y mucho peor.
 - **El formato y el destino de la traza** —fichero, tabla, exportador—. Es del plan.
 - **Los números**: retención de trazas, tamaño, muestreo.
 - **Métricas de producto.** Esto es observabilidad del pipeline, no calidad de la novela;
-  eso es `Docs/verification.md`.
+  eso es `docs/verification.md`.
 - **Los `RF` y endpoints que esto genere en `SPEC-01`.** Vienen después.
 - **Reconciliar el coste en dinero.** `VER-36` lo necesitará; no entra aquí.
 
 ## Qué gobierna esto
 
 `RF-24`, `O-2`, `O-3`, `O-4`, `P-2`, `P-3`, `P-4`, `T-1` y `T-2` de `SPEC-01`; `VER-41` y
-`VER-34`, `PC-8`, `MF-24` y las Reglas 2 y 3 de `Docs/verification.md`; `A-05` y la sección
-"Cuando algo falla" de `Docs/architecture.md`.
+`VER-34`, `PC-8`, `MF-24` y las Reglas 2 y 3 de `docs/verification.md`; `A-05` y la sección
+"Cuando algo falla" de `docs/architecture.md`.
 
 ## Preguntas que hay que responder al aprobar
 
 | # | Pregunta | Propuesta |
 | --- | --- | --- |
 | 1 | `C-2`: ¿el trabajo abandonado es un **estado propio** o un **campo** sobre `fallido`? | Estado propio, `abandonado`. `RF-24` lo devuelve y el frontend lo pinta distinto; con un campo, una interfaz que solo mire el estado los confunde y vuelve a relanzarlo a mano creyendo que falló |
-| 2 | `C-1`: ¿la enumeración de estados de trabajo sigue las reglas de nombres de `Docs/definitions.md` —ASCII, `snake_case`— aunque no viva ahí? | Sí. Es el mismo código leyendo el mismo tipo de valor; dos convenciones de nombres para lo mismo es lo que hizo divergir `juez LLM` de `juez_llm` |
-| 3 | `C-1`: ¿deja esto un precedente incómodo, con vocabularios controlados en dos documentos? | Sí, y se asume: el criterio de pertenencia manda sobre la comodidad de tenerlos juntos. `Docs/architecture.md` dice de dónde sale cada uno |
+| 2 | `C-1`: ¿la enumeración de estados de trabajo sigue las reglas de nombres de `docs/definitions.md` —ASCII, `snake_case`— aunque no viva ahí? | Sí. Es el mismo código leyendo el mismo tipo de valor; dos convenciones de nombres para lo mismo es lo que hizo divergir `juez LLM` de `juez_llm` |
+| 3 | `C-1`: ¿deja esto un precedente incómodo, con vocabularios controlados en dos documentos? | Sí, y se asume: el criterio de pertenencia manda sobre la comodidad de tenerlos juntos. `docs/architecture.md` dice de dónde sale cada uno |
 | 4 | `C-4`: ¿la regla 2 necesita su propio validador, o basta con que `VER-41` cite los dos campos? | Necesita validador. Una regla que nadie comprueba es una intención, y esta es precisamente la que impide que otro validador se vuelva un eco |
 | 5 | `C-3`: ¿la traza de una llamada fallida registra también la entrada que la produjo? | **Sí, pero acotada.** `prompt_hash`, los identificadores que entraron con su `version_en_t`, los niveles y la salida que falló — no el contexto entero, que se reconstruye. La salida de un fallo de contrato sí va entera: es pequeña y no se reconstruye.
 
@@ -155,8 +155,8 @@ que es una cosa distinta y mucho peor.
 
 # 5. Qué se tocó al aplicarla
 
-`Docs/architecture.md` gana "Los estados de un trabajo" —con su tabla de transiciones, junto
-a las de escena y capítulo— y "La traza de una llamada al modelo". `Docs/definitions.md`
+`docs/architecture.md` gana "Los estados de un trabajo" —con su tabla de transiciones, junto
+a las de escena y capítulo— y "La traza de una llamada al modelo". `docs/definitions.md`
 avisa en su sección de vocabularios de que hay uno fuera y dónde. `VER-41` cita los dos
 campos por nombre.
 
@@ -174,4 +174,4 @@ fallida nunca produce. Pasa a vivir también en la traza.
 
 **Quién detecta un trabajo abandonado no lo decidió ninguna respuesta.** `SPEC-07` fijó qué
 se hace con él y no quién lo encuentra. La celda de esa transición queda vacía a propósito
-y la pregunta, en las decisiones abiertas de `Docs/architecture.md`.
+y la pregunta, en las decisiones abiertas de `docs/architecture.md`.

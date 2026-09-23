@@ -1,6 +1,6 @@
 # EXAMEN.md — Alcance del proyecto
 
-Este documento es el enunciado del examen: la fuente de verdad sobre **qué hay que construir y entregar**. No describe cómo está construido el sistema — para eso están `CLAUDE.md`, `Docs/` y las specs.
+Este documento es el enunciado del examen: la fuente de verdad sobre **qué hay que construir y entregar**. No describe cómo está construido el sistema — para eso están `CLAUDE.md`, `docs/` y las specs.
 
 **Precedencia:** si algo de este documento contradice a una decisión del proyecto, gana este documento y la decisión se revisa. Lo que este documento no menciona, lo gobiernan las reglas del proyecto.
 

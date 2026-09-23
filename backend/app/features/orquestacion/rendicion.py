@@ -2,7 +2,7 @@
 
 QUE NO SE RINDE NUNCA, Y POR QUE NO ES NEGOCIABLE
 ---------------------------------------------------
-Una invariante `bloqueante` **abierta**. `Docs/architecture.md`: *"el delta de
+Una invariante `bloqueante` **abierta**. `docs/architecture.md`: *"el delta de
 una escena rendida entra al canon igual que el de una limpia, y una falsedad en
 el canon la heredan todas las escenas siguientes"*. Rendirse ante `INV-03`
 meteria un hecho falso en el registro de conocimiento y **las cincuenta escenas
@@ -12,7 +12,7 @@ Lo que si se rinde es `mayor` y `menor`: molestan, no corrompen.
 
 COMO SE ELIGE EL MENOS MALO SIN INVENTAR UN PESO
 --------------------------------------------------
-`Docs/definitions.md` deja los pesos por severidad como decision abierta —*"no
+`docs/definitions.md` deja los pesos por severidad como decision abierta —*"no
 se fijan aqui"*, salen de medir sobre esta implementacion— y este modulo **no
 los adelanta**. Ordena por cuantos hallazgos hay de cada severidad, empezando
 por la mas grave: entre dos intentos gana el que tenga menos `bloqueante`; a

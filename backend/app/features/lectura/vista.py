@@ -1,6 +1,6 @@
 """Lo que la API devuelve. Solo estado: el frontend no calcula nada.
 
-`Docs/architecture.md`: "el frontend nunca toca la base y nunca calcula nada
+`docs/architecture.md`: "el frontend nunca toca la base y nunca calcula nada
 del dominio. Si el frontend necesitara calcular algo para pintarlo, falta un
 campo en la respuesta." Por eso `se_acepto_rindiendose` sale resuelto de aqui y
 no se deduce comparando cadenas en el navegador.

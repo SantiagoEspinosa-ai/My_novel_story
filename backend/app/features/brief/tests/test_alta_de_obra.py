@@ -31,7 +31,7 @@ def cliente(tmp_path):
 
 
 def test_un_brief_sin_premisa_devuelve_422(cliente):
-    """El caso negativo. `premisa` es obligatoria en `Docs/definitions.md`."""
+    """El caso negativo. `premisa` es obligatoria en `docs/definitions.md`."""
     r = cliente.post("/obras", json={"titulo": "La casa"})
     assert r.status_code == 422
 

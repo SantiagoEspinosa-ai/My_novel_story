@@ -23,7 +23,7 @@ modelo, y a revisar la maquina para escribir otra historia.
 LO QUE **NO** SE INVENTA AQUI
 -------------------------------
 `CLAUDE.md` es explicito: *"no inventes campos, clases ni valores de
-enumeracion. Si algo falta, se añade primero a `Docs/definitions.md`"*. Asi
+enumeracion. Si algo falta, se añade primero a `docs/definitions.md`"*. Asi
 que todo lo que este esquema recoge de la obra **ya existe en el dominio**:
 `titulo`, `premisa`, `genero`, `subgenero` y `extension_objetivo` son de
 `Obra`; `persona`, `tiempo_verbal` y `tics_prohibidos` son de `GuiaDeEstilo`.
@@ -38,7 +38,7 @@ recuerdos que incorporar, palabras que no usar. De esas cuatro, **una ya
 existe** y esta recogida: las palabras prohibidas son
 `GuiaDeEstilo.tics_prohibidos`.
 
-Las otras tres **no estan en `Docs/definitions.md`**, asi que no se añaden
+Las otras tres **no estan en `docs/definitions.md`**, asi que no se añaden
 aqui: entrarian como campos que el dominio no conoce, que es exactamente lo
 que la regla prohibe. Cuando se decidan, el sitio es una seccion `destinatario`
 al lado de `estilo`, y el orden es el de siempre — primero la definicion,

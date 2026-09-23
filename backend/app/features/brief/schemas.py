@@ -1,7 +1,7 @@
 """Esquemas de entrada y salida del alta de obra: la frontera de validacion.
 
 `CLAUDE.md`: "Los modelos Pydantic son la frontera de validacion y replican las
-clases de `Docs/definitions.md`. Un campo que no esta definido alli no entra en
+clases de `docs/definitions.md`. Un campo que no esta definido alli no entra en
 un esquema." La base `_DelDominio` ya trae `extra="forbid"`, asi que un campo
 inventado no entra en silencio: sale por el 422.
 """

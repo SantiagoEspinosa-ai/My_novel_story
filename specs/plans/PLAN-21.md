@@ -38,7 +38,7 @@ tabla**.
 Tres `Enum` nuevos en `commons/dominio/enumeraciones.py`, con sus literales ASCII.
 
 **Prueba:** `test_enumeraciones.py` — los valores son exactamente los de
-`Docs/definitions.md`, y `TipoDeUsoDeHecho` tiene los cuatro.
+`docs/definitions.md`, y `TipoDeUsoDeHecho` tiene los cuatro.
 
 ### E2 · `escena` gana capítulo, momento narrativo y presentes
 
@@ -91,14 +91,14 @@ preguntar por presencia; y la escritura es idempotente por `id`.
 **Prueba:** consolidar una escena deja sus usos y su evento escritos; si el delta es
 incompatible y la consolidación revierte, **no queda ninguna fila**.
 
-### E8 · `Docs/` al día
+### E8 · `docs/` al día
 
-`Docs/definitions.md`: los tres vocabularios, `Escena.capitulo`,
+`docs/definitions.md`: los tres vocabularios, `Escena.capitulo`,
 `Personaje.fecha_de_nacimiento`, `EventoCronologico.lugar` y `.capitulo`, y la relación
 `usa` en la tabla de relaciones.
 
 ## Qué filas `VER-xx` cierra
 
-Ninguna. `Docs/verification.md` no tiene hoy fila para estas dos relaciones porque no
+Ninguna. `docs/verification.md` no tiene hoy fila para estas dos relaciones porque no
 existían. Las filas nuevas son trabajo de la spec que construya cada capacidad, que es
 donde se podrá decir qué punto ciego tiene cada validador.

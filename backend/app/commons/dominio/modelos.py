@@ -3,7 +3,7 @@
 `CLAUDE.md` lo dice en dos frases que gobiernan este fichero:
 
     "Los modelos Pydantic son la frontera de validacion y replican las clases
-     de `Docs/definitions.md`. Un campo que no esta definido alli no entra en
+     de `docs/definitions.md`. Un campo que no esta definido alli no entra en
      un esquema."
     "Un valor fuera de la enumeracion es un error de validacion, no un aviso."
 
@@ -28,7 +28,7 @@ class _DelDominio(BaseModel):
     """Base de los modelos del dominio.
 
     `extra="forbid"` no es una manía: es "un campo que no esta definido en
-    `Docs/definitions.md` no entra en un esquema" hecho cumplir. Sin esto, un
+    `docs/definitions.md` no entra en un esquema" hecho cumplir. Sin esto, un
     campo inventado entraria en silencio y el esquema dejaria de replicar la
     ficha sin que nada fallara.
     """

@@ -149,7 +149,7 @@ que *parece* terminado:
 
 | | Estado |
 | --- | --- |
-| Declarada | `Docs/definitions.md`: `INV-08`, nivel capítulo, severidad `mayor`, con sus fuentes de datos |
+| Declarada | `docs/definitions.md`: `INV-08`, nivel capítulo, severidad `mayor`, con sus fuentes de datos |
 | Implementada | `cronologia/consultas.py` → `orden_temporal()`, que compara fábula con discurso y devuelve las inversiones |
 | Probada | Sus propias pruebas la ejercitan y pasan |
 | **Enchufada** | **No.** No aparece en `features/verificacion/puertas.py`, y a `orden_temporal()` **solo la llaman sus propias pruebas** |

@@ -270,7 +270,7 @@ def guardar_borrador(con, escena, texto, modelo, prompt_hash):
 def marcar_consolidada(con, escena):
     """`aceptada` -> `consolidada`, la transicion del Consolidador.
 
-    Existia en la tabla de `Docs/architecture.md` y **no la aplicaba nadie**:
+    Existia en la tabla de `docs/architecture.md` y **no la aplicaba nadie**:
     las escenas se quedaban en `generada` para siempre, asi que la puerta de
     capitulo veia un capitulo con tres escenas a medias y no podia cerrarse
     nunca. El delta se aplicaba igual, de modo que el estado del mundo era

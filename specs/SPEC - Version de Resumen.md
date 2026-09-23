@@ -46,7 +46,7 @@ largo plazo, y dos nombres para lo mismo es como `juez LLM` divergio de `juez_ll
 Con `C-1`, los cuatro niveles del contexto son reconstruibles desde el estado en `t` mas
 los identificadores que `SPEC-08` guarda en la traza, sin almacenar el texto. Se cierra la
 decision abierta *"El nivel Resumenes de una traza no es reconstruible todavia"* de
-`Docs/architecture.md`.
+`docs/architecture.md`.
 
 ### C-3 - Migracion
 
@@ -61,8 +61,8 @@ decision abierta *"El nivel Resumenes de una traza no es reconstruible todavia"*
 
 ## Que gobierna esto
 
-`Ficha.version_en_t` de `Docs/definitions.md` como forma a copiar; `SPEC-08` y la seccion
-"La traza de una llamada al modelo" de `Docs/architecture.md`; `M-4` de `SPEC-01`.
+`Ficha.version_en_t` de `docs/definitions.md` como forma a copiar; `SPEC-08` y la seccion
+"La traza de una llamada al modelo" de `docs/architecture.md`; `M-4` de `SPEC-01`.
 
 ## Preguntas que hay que responder al aprobar
 

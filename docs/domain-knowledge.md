@@ -2,7 +2,7 @@
 
 2026-09-21 · @Santiago Espinosa Domínguez
 
-El árbol de la ontología en diagramas Mermaid, partido en vistas de menos de quince nodos para que cada una se lea de un golpe. Las definiciones de cada clase están en `Docs/definitions.md`, que es la fuente: estos diagramas son una vista suya y, ante cualquier discrepancia, manda la definición.
+El árbol de la ontología en diagramas Mermaid, partido en vistas de menos de quince nodos para que cada una se lea de un golpe. Las definiciones de cada clase están en `docs/definitions.md`, que es la fuente: estos diagramas son una vista suya y, ante cualquier discrepancia, manda la definición.
 
 ## Árbol raíz
 
@@ -88,7 +88,7 @@ flowchart TD
   D --> D2["PuntoDeNoRetorno"]
 ```
 
-Desde `SPEC-26` v3 solo quedan las dos ramas que son narrativa general: qué se planta y se cobra, y qué se va perdiendo. La amenaza, la curva de dread, las válvulas y los presagios están obsoletos en `Docs/definitions.md` y ya no se dibujan.
+Desde `SPEC-26` v3 solo quedan las dos ramas que son narrativa general: qué se planta y se cobra, y qué se va perdiendo. La amenaza, la curva de dread, las válvulas y los presagios están obsoletos en `docs/definitions.md` y ya no se dibujan.
 
 ## Proceso y Calidad
 
@@ -166,7 +166,7 @@ Fíjate en el par crítico: `establece` y `revela_a_lector` apuntan al mismo hec
 ## Ciclo de vida de una escena
 
 Los nombres de estado son los literales de la enumeración `estado_de_escena` de
-`Docs/definitions.md`, no una versión bonita de ellos.
+`docs/definitions.md`, no una versión bonita de ellos.
 
 ```mermaid
 stateDiagram-v2

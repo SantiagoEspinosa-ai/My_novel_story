@@ -14,17 +14,17 @@ de decisiones que se toman en otro sitio.
 | Pregunta | Documento que manda | Papel de este documento |
 | --- | --- | --- |
 | Qué tecnología se usa y cuánto contexto cabe | `CLAUDE.md` | No repite sus tablas. Las referencia y explica cómo se implementan |
-| Qué clases, atributos, enumeraciones e invariantes existen | `Docs/definitions.md` | No define ninguna. Dice qué componente ejecuta cada `INV-xx` |
-| Cómo se ve el modelo de un vistazo | `Docs/domain-knowledge.md` | Es una vista del dominio; aquí los diagramas son del sistema |
+| Qué clases, atributos, enumeraciones e invariantes existen | `docs/definitions.md` | No define ninguna. Dice qué componente ejecuta cada `INV-xx` |
+| Cómo se ve el modelo de un vistazo | `docs/domain-knowledge.md` | Es una vista del dominio; aquí los diagramas son del sistema |
 | Cómo se organiza el código y quién habla con quién | **este documento** | Fuente |
 
 Si una tabla de aquí contradice a `CLAUDE.md`, gana `CLAUDE.md` y esta se corrige. Si un
-nombre de clase o de enumeración de aquí no está en `Docs/definitions.md`, es un error de
+nombre de clase o de enumeración de aquí no está en `docs/definitions.md`, es un error de
 este documento, no una extensión del modelo.
 
 ## Qué se ha recogido de los documentos de dominio
 
-El encargo era separar de `Docs/definitions.md` y `Docs/domain-knowledge.md` lo que no es
+El encargo era separar de `docs/definitions.md` y `docs/domain-knowledge.md` lo que no es
 estrictamente definición ni conocimiento de dominio. Esto es lo que se ha identificado y
 se desarrolla aquí.
 
@@ -43,16 +43,16 @@ intacta.
 | `definitions.md` | Párrafo de los "tres mecanismos" (delta, anclas de estilo, ventana de coherencia frente a ventana de continuidad) | Justificación de diseño: explica por qué el sistema está montado así, no qué es verdad en la ficción |
 | `definitions.md` | Sección "Verificadores por tipo" | Reparto de implementación: qué comprueba código, qué comprueba un modelo y qué comprueba una persona |
 | `definitions.md` | "Cada invariante debe tener al menos un caso de prueba negativo" | Política de pruebas del harness |
-| `definitions.md` | Sección "Decisiones abiertas" | Registro de decisiones. Su sitio natural es `Docs/decisions/`, que aún no existe |
+| `definitions.md` | Sección "Decisiones abiertas" | Registro de decisiones. Su sitio natural es `docs/decisions/`, que aún no existe |
 | `definitions.md` | Párrafos de justificación en negrita ("La curva de dread evita el fallo más común…", "El registro de conocimiento merece rango propio") | Argumentan la decisión de modelado; la definición es la fila de la tabla, no el párrafo |
-| `domain-knowledge.md` | Diagrama "Generación de una escena" | Arquitectura pura: `Orquestador`, `Memoria`, `Generador` y `Verificadores` no son clases de `Docs/definitions.md`. Ningún diagrama de dominio debería introducir participantes que el modelo no define |
+| `domain-knowledge.md` | Diagrama "Generación de una escena" | Arquitectura pura: `Orquestador`, `Memoria`, `Generador` y `Verificadores` no son clases de `docs/definitions.md`. Ningún diagrama de dominio debería introducir participantes que el modelo no define |
 | `domain-knowledge.md` | Diagrama "Ciclo de vida de una escena" | Mitad y mitad: los estados **son** dominio (enumeración `estado_de_escena`), pero quién dispara cada transición es orquestación |
 | `domain-knowledge.md` | Nota "La rama de memoria es la que decide si el sistema escala" | Justificación de diseño |
 
-**Defecto corregido.** `Docs/domain-knowledge.md` apuntaba en su segundo párrafo a
+**Defecto corregido.** `docs/domain-knowledge.md` apuntaba en su segundo párrafo a
 `project/697dd43c-600e-4664-a8ce-d8e6c08b6b8f`, un identificador de proyecto externo que
 para cualquiera que leyera el repositorio era un enlace roto. Ahora apunta a
-`Docs/definitions.md` y dice explícitamente que los diagramas son una vista de ese
+`docs/definitions.md` y dice explícitamente que los diagramas son una vista de ese
 documento.
 
 ## El sistema
@@ -208,7 +208,7 @@ trabajos. No hay servicio de vectores aparte ni cola externa.
   eso están los resúmenes. Nunca se manda la obra entera al modelo.
 - El estado del mundo se reconstruye acumulando los deltas de escena en orden. No se relee
   el texto para averiguar qué pasó.
-- Las migraciones se versionan. Un cambio en `Docs/definitions.md` que altere un atributo
+- Las migraciones se versionan. Un cambio en `docs/definitions.md` que altere un atributo
   obligatorio necesita su migración en el mismo commit.
 
 **Decisión: la cola de trabajos es una tabla de esta misma base.** Generar una escena
@@ -268,7 +268,7 @@ duplicación: son dos momentos distintos con dos costes de corrección distintos
 
 Como los dos pueden levantar un `Hallazgo` de `INV-13`, **hay que poder distinguir cuál
 fue**. El dominio ya lo permite: `Hallazgo.verificador` es un atributo obligatorio. Lo que
-faltaba era comprobarlo, y eso es la fila `VER-12` de `Docs/verification.md`.
+faltaba era comprobarlo, y eso es la fila `VER-12` de `docs/verification.md`.
 
 **`INV-05` no es del Verificador.** La tiene el Orquestador —que no deja pasar a la escena
 siguiente sin delta aplicado— y el Consolidador, que es quien lo aplica. La del Verificador
@@ -281,11 +281,11 @@ se queda en `Escena.borrador_aceptado`. No aplica al Escritor: cambiarle el mode
 estilo y eso lo caza `INV-15`; cambiárselo al Juez no lo caza nada. La traza registra qué
 modelo se usó, o la regla no se puede comprobar después.
 
-**Decisión: el Juez no ve las reglas del proyecto.** Ni `Docs/definitions.md`, ni los
+**Decisión: el Juez no ve las reglas del proyecto.** Ni `docs/definitions.md`, ni los
 enunciados de las invariantes, ni este documento: recibe el texto, la rúbrica y nada más. Si
 las viera, su juicio sería un eco del nuestro — y desde `SPEC-04` el Juez es el **desempate**
 de `INV-03`, `INV-11` e `INV-14`. Un desempate que ve lo mismo que la regla no desempata:
-confirma. Es la Regla 3 de `Docs/verification.md` aplicada a un agente en vez de a un
+confirma. Es la Regla 3 de `docs/verification.md` aplicada a un agente en vez de a un
 validador.
 
 **Decisión: el Juez no comparte sesión con el Escritor.** Recibe el texto y la rúbrica, no
@@ -381,7 +381,7 @@ worker: la puerta la cierra alguien.
 
 ### La máquina de estados y quién dispara cada transición
 
-Los estados son los de la enumeración `estado_de_escena` de `Docs/definitions.md`. Lo que
+Los estados son los de la enumeración `estado_de_escena` de `docs/definitions.md`. Lo que
 añade este documento es la columna de quién los mueve.
 
 | Transición | Quién la dispara | Condición |
@@ -453,7 +453,7 @@ Todo hallazgo cita su invariante por identificador (`INV-07`), nunca por descrip
 
 La tabla de trabajos **no es dominio**: no existiría si la novela se escribiera a mano, y
 por eso vive en `commons/trabajos/` y su vocabulario se declara aquí y no en
-`Docs/definitions.md`. Sigue las mismas reglas de nombres —ASCII, `snake_case`— porque es
+`docs/definitions.md`. Sigue las mismas reglas de nombres —ASCII, `snake_case`— porque es
 el mismo código leyendo el mismo tipo de valor, y dos convenciones para lo mismo es como
 `juez LLM` acabó divergiendo de `juez_llm`.
 
@@ -563,7 +563,7 @@ fiel, no para recuperar lo que se mandó. Por eso no sustituye a los identificad
 #### Por qué la traza lleva los tokens en dos campos
 
 `VER-41` reconcilia lo que registra la traza contra lo que declara el modelo, y es **la
-segunda fuente independiente que exige la Regla 3** de `Docs/verification.md`. Si los dos
+segunda fuente independiente que exige la Regla 3** de `docs/verification.md`. Si los dos
 números salen del mismo sitio, `VER-41` compara un número consigo mismo: pasa siempre y es
 un eco. `PC-8` dejaría de ser *"los dos podrían equivocarse igual"* y pasaría a ser *"no
 hay segunda fuente"*, que es peor y que además nadie vería, porque el validador estaría en
@@ -690,7 +690,7 @@ nada. Y `P-5` dice que una llamada del Escritor a tamaño completo agota el tech
 
 El margen de abandono **acota** ese bloqueo, no lo arregla: es el tiempo de recuperación del
 interbloqueo, no su prevención. Quien suba el margen está alargando esa parada, y conviene
-que lo sepa antes de subirlo. Está catalogado como `MF-25` en `Docs/verification.md`.
+que lo sepa antes de subirlo. Está catalogado como `MF-25` en `docs/verification.md`.
 
 Es además la única categoría de fallo de la que no se sale reintentando. Los otros tres
 detienen el trabajo y dejan el estado intacto; este lo corrompe, y a partir de ahí todo lo
@@ -698,7 +698,7 @@ que se genere encima hereda la corrupción sin que nada avise.
 
 ### El harness — validadores que no son tests de una feature
 
-No todo validador de `Docs/verification.md` es un test de código de producción. El criterio
+No todo validador de `docs/verification.md` es un test de código de producción. El criterio
 que decide dónde vive cada uno:
 
 - **Va al backend** si su sujeto es **código de producción**: compara, ejecuta o muta algo
@@ -743,7 +743,7 @@ describen un texto que ya no existe. Lo comprueba `VER-60`.
 ## Pruebas
 
 El plan completo —qué afirmación se prueba con qué metodología, con qué criterio de salida
-y dónde vive cada prueba— está en `Docs/verification.md`. Aquí solo quedan las tres reglas
+y dónde vive cada prueba— está en `docs/verification.md`. Aquí solo quedan las tres reglas
 que condicionan cómo se escribe el código.
 
 - Cada invariante tiene al menos un caso negativo: un fragmento que la viole a propósito.
@@ -758,7 +758,7 @@ que condicionan cómo se escribe el código.
 
 ## Decisiones tomadas
 
-Fijadas en la sesión del 2026-09-21. Se trasladarán a `Docs/decisions/` cuando ese
+Fijadas en la sesión del 2026-09-21. Se trasladarán a `docs/decisions/` cuando ese
 directorio exista.
 
 | # | Decisión | Alternativa descartada y por qué |
@@ -792,7 +792,7 @@ esperando una respuesta que el dato no da.
   relativa entre escenas contiguas? La relativa es más estable entre modelos.
 - [ ] **Umbrales de `INV-15` e `INV-16`.** Sin números concretos el harness las salta en **Se contesta sola** con una traza real.
   silencio. Los números salen de medir, no de estimar. Es la misma decisión "Umbrales" de
-  `Docs/definitions.md` y las filas `VER-32` y `VER-33` de `Docs/verification.md`: las tres se
+  `docs/definitions.md` y las filas `VER-32` y `VER-33` de `docs/verification.md`: las tres se
   cierran a la vez o ninguna.
 - [ ] **Reparto de tokens por agente.** Pendiente de medida real (`VER-34`). **Se contesta sola** con una traza real.
 - [x] ~~**Coste por escena con la decisión `A-03`**~~ — **medido el 2026-09-23 en `PLAN-01` E5, y el número está aquí porque conviene verlo antes de decidir nada.**
@@ -872,7 +872,7 @@ esperando una respuesta que el dato no da.
 - [ ] **Qué valida una persona y cuándo.** Con `A-04` el frontend lo permite; falta decidir
   en qué puertas es obligatorio.
 - [ ] **Limpieza de los documentos de dominio.** Mover lo listado arriba y arreglar el
-  enlace roto de `Docs/domain-knowledge.md`.
+  enlace roto de `docs/domain-knowledge.md`.
 
 ## Los hooks de Claude Code (`SPEC-26` `RF-17`..`RF-19`)
 

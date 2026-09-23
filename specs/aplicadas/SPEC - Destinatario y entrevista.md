@@ -40,7 +40,7 @@ El sistema escribe hoy **una obra de terror sin destinatario**. El brief
 ningún campo que diga **para quién** es la novela. El producto del examen es el
 contrario: una novela para regalar, en la que el destinatario se reconozca.
 
-Faltan cuatro cosas, y ninguna existe en `Docs/definitions.md`:
+Faltan cuatro cosas, y ninguna existe en `docs/definitions.md`:
 
 1. **Quién es el destinatario** y qué hay que contar de él: nombre, edad,
    rasgos, recuerdos, personas y mascotas cercanas, ocasión y dedicatoria.
@@ -226,8 +226,8 @@ el código (`CLAUDE.md`: los vocabularios controlados son `Enum`).
   agentes.
 - `INV-21` (nueva, `bloqueante`, ámbito capítulo): un capítulo aceptado no
   contiene ninguna palabra vetada de ninguno de los tres niveles, tras
-  normalizar. Se añade a `Docs/definitions.md` al aplicar esta spec.
-- `Docs/definitions.md` § `Brief`: `tono` y `prohibiciones` ya existen. Esta spec
+  normalizar. Se añade a `docs/definitions.md` al aplicar esta spec.
+- `docs/definitions.md` § `Brief`: `tono` y `prohibiciones` ya existen. Esta spec
   los concreta y añade el destinatario; no los sustituye.
 
 ## Anexo — Plantilla de la ficha de la entrevista

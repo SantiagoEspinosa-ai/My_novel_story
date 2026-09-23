@@ -1,4 +1,4 @@
-"""`ValoracionDelEditor` de `Docs/definitions.md` (`SPEC-26` `RF-09`)."""
+"""`ValoracionDelEditor` de `docs/definitions.md` (`SPEC-26` `RF-09`)."""
 
 from pydantic import Field, model_validator
 

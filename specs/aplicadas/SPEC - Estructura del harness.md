@@ -17,14 +17,14 @@ version: 1
 
 **No existe ninguna estructura declarada de `harness/`.** La hubo mientras se escribieron
 cinco validadores a modo de prueba, y se borró con la carpeta. `AGENTS.md` reserva la ruta
-y dice para qué es —*"ejecución de los validadores de `Docs/verification.md` y sus
+y dice para qué es —*"ejecución de los validadores de `docs/verification.md` y sus
 fixtures"*— pero no dice qué hay dentro.
 
 La consecuencia es que **ninguna ruta bajo `harness/` se puede juzgar**. Eso es lo que
 `F-2` detectó y no supo cerrar: señalaba que `harness/esquema/` *"no es ninguna de las
 carpetas de la estructura del harness"*, cuando el problema real era que esa estructura no
 está escrita en ninguna parte. Y `VER-45`, que ya resuelve las rutas contra el árbol
-declarado de `Docs/architecture.md`, no tiene contra qué resolver las de `harness/`.
+declarado de `docs/architecture.md`, no tiene contra qué resolver las de `harness/`.
 
 ### Por qué estas seis filas no caben en el backend
 
@@ -47,7 +47,7 @@ pipeline que se pueda ejecutar, probar y romper solo"*, y ninguna de las seis lo
 
 ## Qué tiene que ser verdad al terminar
 
-### C-1 · `harness/` tiene una estructura declarada en `Docs/architecture.md`
+### C-1 · `harness/` tiene una estructura declarada en `docs/architecture.md`
 
 Declarada en el mismo sitio y con la misma forma que la de `backend/`, para que `VER-45`
 resuelva contra ella igual que contra el árbol del backend.

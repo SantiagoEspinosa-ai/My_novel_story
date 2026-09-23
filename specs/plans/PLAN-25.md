@@ -60,7 +60,7 @@ que `backend/config/brief.json` sigue siendo válido tal cual.
 
 ### E1 · El dominio primero
 
-`Docs/definitions.md`: las clases `Destinatario`, `ElementoPersonal` (rasgo,
+`docs/definitions.md`: las clases `Destinatario`, `ElementoPersonal` (rasgo,
 recuerdo, persona o mascota, con `imprescindible`), `FichaDeEntrevista`,
 `HechoPropuesto`, `PalabraVetada` y `DecisionDePolitica`; los vocabularios
 `ocasion`, `genero_de_la_historia`, `tono_de_la_historia`,
@@ -68,7 +68,7 @@ recuerdo, persona o mascota, con `imprescindible`), `FichaDeEntrevista`,
 `tipo_de_decision_de_politica`; e `INV-21` en la tabla de invariantes.
 
 **Prueba:** `test_enumeraciones.py` ya compara los `Enum` con
-`Docs/definitions.md`. Se escriben los `Enum` que faltan y la prueba falla hasta
+`docs/definitions.md`. Se escriben los `Enum` que faltan y la prueba falla hasta
 que cuadran literal a literal, `otro` incluido.
 
 ### E2 · Normalizar y detectar
@@ -221,10 +221,10 @@ este mismo endpoint.
 obra; las vetadas y los hechos siguen ahí; la fila del audit log no contiene
 ningún texto de la conversación; entregar dos veces no falla y no duplica filas.
 
-### E12 · `Docs/` y spec al día
+### E12 · `docs/` y spec al día
 
-`Docs/architecture.md`: las dos features y el agente entrevistador en la tabla de
-agentes. `Docs/verification.md`: las filas nuevas de E13. `Docs/domain-knowledge.md`:
+`docs/architecture.md`: las dos features y el agente entrevistador en la tabla de
+agentes. `docs/verification.md`: las filas nuevas de E13. `docs/domain-knowledge.md`:
 las clases nuevas en el árbol, después de `definitions.md` y nunca antes.
 `AGENTS.md`: las dos features en la fila de `backend/`. Después, `SPEC-25` pasa a
 `aplicada` con su commit propio y se mueve a `specs/aplicadas/`.

@@ -6,7 +6,7 @@ quedan.
 
 `juicios`, `avisos_confirmados` y `vistas` son estado de la conversacion, no de
 la ficha: la ficha es lo que se acuerda con el comprador, y esto es como se
-llego. Por eso no estan en `FichaDeEntrevista` ni en `Docs/definitions.md`.
+llego. Por eso no estan en `FichaDeEntrevista` ni en `docs/definitions.md`.
 """
 
 import json

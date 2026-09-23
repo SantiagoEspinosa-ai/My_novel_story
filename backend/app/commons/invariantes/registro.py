@@ -1,9 +1,9 @@
 """El registro de las invariantes `INV-01`..`INV-27` (`INV-19` e `INV-20` reservadas).
 
-Es la copia en codigo de la tabla de `Docs/definitions.md`, y `VER-38` existe
+Es la copia en codigo de la tabla de `docs/definitions.md`, y `VER-38` existe
 para comprobar que las dos digan lo mismo. Por eso se escribe a mano: si se
 generara leyendo el documento, `VER-38` compararia el documento consigo mismo
-y estaria en verde por construccion (Regla 3 de `Docs/verification.md`).
+y estaria en verde por construccion (Regla 3 de `docs/verification.md`).
 
 `VER-38` es el puesto 1 de la orden de implantacion porque **valida a otros
 tres**: `VER-11`, `VER-12` y `VER-22` pueden estar los tres en verde con una

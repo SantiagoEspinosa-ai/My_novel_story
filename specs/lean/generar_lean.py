@@ -144,7 +144,7 @@ def leer(con: sqlite3.Connection, obra: str) -> dict:
 
 
 # Solo `muerto` saca a un personaje de la ficcion. `desaparecido` **no**, y la
-# diferencia es del dominio, no un descuido: `Docs/definitions.md` dice que en
+# diferencia es del dominio, no un descuido: `docs/definitions.md` dice que en
 # terror "no se sabe si sigue vivo" es material narrativo, y un desaparecido
 # puede volver. Tratarlo como exclusion convertiria el recurso mas comun del
 # genero en una violacion.

@@ -50,7 +50,7 @@ def dato_ausente(inv, escena, campo, para):
 
     QUE CAMPO ES IMPRESCINDIBLE LO DICE EL DOMINIO, NO ESTE MODULO
     ---------------------------------------------------------------
-    `Docs/definitions.md` marca en negrita lo obligatorio: `Escena.pov`,
+    `docs/definitions.md` marca en negrita lo obligatorio: `Escena.pov`,
     `Escena.lugar` y `Borrador.pov_usado` lo son; `personajes_presentes` y
     `longitud_objetivo` no. La ausencia de un opcional es legitima y la
     invariante simplemente no aplica — si no, esto se vuelve ruido y se aprende

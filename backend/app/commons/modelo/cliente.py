@@ -1,6 +1,6 @@
 """Cliente del modelo: quien decide reintentar y quien no.
 
-`O-3` de `SPEC-01` y `Docs/architecture.md`: se reintentan los fallos **de
+`O-3` de `SPEC-01` y `docs/architecture.md`: se reintentan los fallos **de
 transporte** -timeout, corte, limite de tasa- porque se resuelven repitiendo.
 Los **de contrato** -delta fuera de esquema, respuesta sin texto, valor fuera de
 enumeracion- no: repetirlos repite el error y gasta presupuesto en volver a

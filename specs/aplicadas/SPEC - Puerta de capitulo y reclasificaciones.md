@@ -16,7 +16,7 @@ version: 1
 ## Por qué las cuatro cosas van en una sola spec
 
 Son **el mismo tipo de cambio sobre el mismo documento**: añaden o corrigen metadatos de
-`Docs/definitions.md` —un atributo, una enumeración y la columna `Tipo` de tres
+`docs/definitions.md` —un atributo, una enumeración y la columna `Tipo` de tres
 invariantes—. Partirlas en dos specs serían dos commits sobre la misma tabla y, por
 `VER-21`, dos migraciones.
 
@@ -75,7 +75,7 @@ convertirlos en un segundo `mayor`.
 
 ## C-3 · Quién dispara el cierre
 
-`Docs/architecture.md` gana una fila en su tabla de transiciones:
+`docs/architecture.md` gana una fila en su tabla de transiciones:
 
 | Transición | Quién la dispara | Condición |
 | --- | --- | --- |
@@ -178,7 +178,7 @@ desconocida: ya no decide si una escena se detiene, solo los casos que la regla 
 | --- | --- |
 | **`PC-3` encoge mucho** | La única puerta bloqueante que dependía de un juez pasa a depender de una regla |
 | **`VER-35`** | *"Cuando el Juez marca `INV-03` y la regla no ve nada, gana el correcto"* deja de ser hipotético: con las dos ejecutándose, la discrepancia se puede medir |
-| **El desempate juez contra regla** | Esa decisión abierta de `Docs/definitions.md` pasa de teórica a operativa: ahora hay dos resultados que comparar |
+| **El desempate juez contra regla** | Esa decisión abierta de `docs/definitions.md` pasa de teórica a operativa: ahora hay dos resultados que comparar |
 
 ## Migración
 
@@ -214,9 +214,9 @@ Las cinco se respondieron con la propuesta el 2026-09-22, al aprobar.
 
 | Documento | Cambio |
 | --- | --- |
-| `Docs/definitions.md` | `Capitulo.estado` y la enumeración `estado_de_capitulo`; la columna `Tipo` de `INV-03`, `INV-11` e `INV-14`; dos notas bajo la tabla de invariantes —el escalado al juez y que `INV-03` conserva su severidad—; la decisión abierta del desempate, que deja de ser teórica |
-| `Docs/architecture.md` | La tabla de transiciones de capítulo; `INV-03` pasa del Juez de rúbrica al Verificador de reglas y el Juez queda con `INV-10` más los tres desempates; la sección de severidad explica ya cuál es la consecuencia de un `mayor` |
-| `Docs/verification.md` | `PC-3` encoge por segunda vez; `VER-06`, `VER-11` y `VER-35` cambian de criterio; `INV-03` entra en la tabla de juicio-que-era-comparación; se cierran dos decisiones abiertas |
+| `docs/definitions.md` | `Capitulo.estado` y la enumeración `estado_de_capitulo`; la columna `Tipo` de `INV-03`, `INV-11` e `INV-14`; dos notas bajo la tabla de invariantes —el escalado al juez y que `INV-03` conserva su severidad—; la decisión abierta del desempate, que deja de ser teórica |
+| `docs/architecture.md` | La tabla de transiciones de capítulo; `INV-03` pasa del Juez de rúbrica al Verificador de reglas y el Juez queda con `INV-10` más los tres desempates; la sección de severidad explica ya cuál es la consecuencia de un `mayor` |
+| `docs/verification.md` | `PC-3` encoge por segunda vez; `VER-06`, `VER-11` y `VER-35` cambian de criterio; `INV-03` entra en la tabla de juicio-que-era-comparación; se cierran dos decisiones abiertas |
 | `specs/SPEC - Backend.md` | `RF-26` y §2.4 dicen ya que el orden de recorte opera sobre **bloques** y no sobre niveles |
 | `.agents/skills/harness-invariantes/SKILL.md` | El recuento pasa de doce reglas y cuatro jueces a quince y uno |
 
@@ -229,7 +229,7 @@ Las cinco se respondieron con la propuesta el 2026-09-22, al aprobar.
 **el tipo dice quién decide primero**. Añadir un cuarto valor sería un cambio de
 vocabulario controlado, y eso es otra spec.
 
-**La tabla de transiciones de `Docs/architecture.md` es de `estado_de_escena`.** `C-3`
+**La tabla de transiciones de `docs/architecture.md` es de `estado_de_escena`.** `C-3`
 pedía "una fila" en ella, pero `abierto` y `cerrado` no pertenecen a ese vocabulario, así
 que la fila fue a una tabla propia inmediatamente debajo. Mezclarlas invitaría a comparar
 valores de dos enumeraciones distintas.

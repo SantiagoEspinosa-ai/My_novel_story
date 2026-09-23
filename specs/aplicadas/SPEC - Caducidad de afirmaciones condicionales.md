@@ -15,7 +15,7 @@ version: 1
 
 ## Qué problema resuelve
 
-`Docs/verification.md`, `Docs/architecture.md` y dos specs aplicadas contienen **nueve
+`docs/verification.md`, `docs/architecture.md` y dos specs aplicadas contienen **nueve
 afirmaciones que son ciertas porque algo no existe**. Las nueve son correctas hoy. Ninguna
 es un error.
 
@@ -94,7 +94,7 @@ prosa en documentos, y el validador es código en CI.
   copia de un dato que ya vive en dos sitios, se separaría de lo que describe y nada
   apuntaría de la afirmación a su fila. Es el mismo mecanismo que `A-08` y `MF-23`. La
   tabla de arriba es el inventario que justifica esta spec, no el registro permanente: se
-  queda en esta spec y no se traslada a `Docs/`.
+  queda en esta spec y no se traslada a `docs/`.
 - **Detectar afirmaciones condicionales sin marcar.** No hay forma automática razonable;
   es la misma limitación de `PC-13` y se asume igual.
 - **Qué hacer cuando una caduca.** `VER-56` avisa; qué se reescribe es de quien lo lea.
@@ -105,7 +105,7 @@ prosa en documentos, y el validador es código en CI.
 
 `MF-24` (criterio verde por construcción), `PC-13` (un criterio puede remitir a algo que no
 existe), `F-16` (la materialización en `VER-45`), y la Regla 2 y la Regla 3 de
-`Docs/verification.md`.
+`docs/verification.md`.
 
 **Alcance ampliado el 2026-09-22.** `C-2` decía que `VER-56` recorre las marcas de los
 documentos. Al aprobar `PLAN-01` se extendió **al código**: los dos números provisionales de
@@ -125,7 +125,7 @@ de "hay sistema" y disparó tres pasos antes que el hecho. Se reapuntaron a
 `backend/app/features/consolidacion/`, cada una a lo que de verdad la falsifica.
 
 **Lo que deja de ser cierto cada vez que aterriza código no lleva marca.** El bloque de
-recuentos de `Docs/verification.md` tenía una, y una marca **avisa una vez** mientras que
+recuentos de `docs/verification.md` tenía una, y una marca **avisa una vez** mientras que
 una tabla de recuentos caduca **en cada commit**. Se le quitó: se revisa al cerrar cada fase
 de `PLAN-01`. Una condición que se cumple continuamente deja de significar nada, que es
 justo el fallo que las marcas existen para evitar.
@@ -133,9 +133,9 @@ justo el fallo que las marcas existen para evitar.
 **Una marca dentro de un bloque de código de un `.md` es una demostración, no una
 afirmación**, y `VER-56` la exceptúa. Sin eso, esta spec haría fallar el build por contener
 el ejemplo de su propia convención. **La excepción no se generaliza a otros validadores**:
-`VER-45` resuelve rutas contra los árboles de carpetas de `Docs/architecture.md`, que están
+`VER-45` resuelve rutas contra los árboles de carpetas de `docs/architecture.md`, que están
 **dentro** de bloques de código, y `VER-46` caza literales en los diagramas Mermaid de
-`Docs/domain-knowledge.md` —así fue como se encontró *Juez LLM* escrito a mano—. Excluir los
+`docs/domain-knowledge.md` —así fue como se encontró *Juez LLM* escrito a mano—. Excluir los
 bloques de código en los tres los dejaría ciegos justo donde miran.
 
 **Y el techo de la convención, encontrado en el paso B2.** Las seis marcas de medidas se

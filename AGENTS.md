@@ -11,18 +11,18 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | --- | --- | --- |
 | Qué hay que construir y entregar | `EXAMEN.md` | El enunciado del examen: configuración, lectura (web o PDF), harness, memoria, los cuatro tipos de validadores (programáticos, semánticos, Lean 4, TLA+), evaluación con cinco briefs, observabilidad en Langfuse y guardrails; y lo que el repositorio debe incluir (novela de ejemplo en PDF, `/docs` de proceso, vídeo de demo, `.claude/`). **Manda sobre las decisiones del proyecto**: si una lo contradice, gana el enunciado y la decisión se revisa. **Un mínimo suyo no es un techo**: pedir tres roles y tener diez no es un incumplimiento. Dice qué, no cómo |
 | Requisitos técnicos y stack | `CLAUDE.md` | FastAPI, React, límite de contexto de 100.000 tokens, SQLite con soporte vectorial, y el presupuesto de contexto que se deriva de ellos |
-| Definiciones del dominio | `Docs/definitions.md` | Referencia normativa: los seis planos (el sexto, Destinatario, desde `SPEC-25`), clases con atributos, tabla de relaciones, vocabularios controlados e invariantes `INV-01`…`INV-16` |
-| Árbol y diagramas | `Docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
-| Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
-| Plan de verificación del sistema | `Docs/verification.md` | Primero **qué puede salir mal**: 24 modos de fallo `MF-01`…`MF-24` sobre las rejillas de MAST, ConStory-Bench y los fallos silenciosos, **ninguno sin estado**. Después **cómo se detecta**: 54 validadores `VER-01`…`VER-55`, cada uno con su punto ciego, más los 11 asumidos y lo que se aprendió al escribir cinco. Ninguno implementado hoy |
-| Huecos contra el enunciado | `Docs/cobertura-examen.md` | Registro `EX-xx` de lo que `EXAMEN.md` exige y los documentos no recogen o contradicen (de documentación) y de lo documentado que el código no hace (de sistema), cada fila con cita de los dos lados, bloqueante o no, y el recuento por vuelta. No introduce requisitos: lo que decide cómo cerrar un hueco va en una spec |
+| Definiciones del dominio | `docs/definitions.md` | Referencia normativa: los seis planos (el sexto, Destinatario, desde `SPEC-25`), clases con atributos, tabla de relaciones, vocabularios controlados e invariantes `INV-01`…`INV-16` |
+| Árbol y diagramas | `docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
+| Decisiones de sistema, agentes y proceso | `docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
+| Plan de verificación del sistema | `docs/verification.md` | Primero **qué puede salir mal**: 24 modos de fallo `MF-01`…`MF-24` sobre las rejillas de MAST, ConStory-Bench y los fallos silenciosos, **ninguno sin estado**. Después **cómo se detecta**: 54 validadores `VER-01`…`VER-55`, cada uno con su punto ciego, más los 11 asumidos y lo que se aprendió al escribir cinco. Ninguno implementado hoy |
+| Huecos contra el enunciado | `docs/cobertura-examen.md` | Registro `EX-xx` de lo que `EXAMEN.md` exige y los documentos no recogen o contradicen (de documentación) y de lo documentado que el código no hace (de sistema), cada fila con cita de los dos lados, bloqueante o no, y el recuento por vuelta. No introduce requisitos: lo que decide cómo cerrar un hueco va en una spec |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las ocho skills instaladas. Ver la sección "Skills" más abajo |
 | Specs en curso | `specs/` | Un fichero por spec. Hoy `SPEC-01` backend del harness (**`aprobada`**), `SPEC-22` el frontend y el contrato congelado (**`aprobada`**), y en `en_revision` `SPEC-09` versión de `Resumen`, `SPEC-23` qué es regenerar en una obra acumulativa y `SPEC-26`, el pipeline de la novela regalo: planificador con revisor del plan, editor con rúbrica, validadores de personalización y los dos hooks. **`SPEC-24`, dónde se declara una analepsis, está `aprobada` y pendiente de plan**: añade a `MomentoNarrativo` la marca que `INV-08` necesita para distinguir un retroceso deliberado de uno accidental. `SPEC-21`, los usos de un hecho y la cronología de la fábula, está **`aprobada`** y es de la que `SPEC-23` toma qué capítulos hay que regenerar |
 | Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada, con el mismo identificador y su propio estado. Hoy `PLAN-01`, el backend, en `en_revision`, `PLAN-21`, los usos y la cronología, **`aprobada`**, y `PLAN-25`, el destinatario y la entrevista, **`aplicada`**. Es la tercera puerta: sin plan aprobado no se escribe código |
 | Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio, `SPEC-04` puerta de capítulo y reclasificaciones, `SPEC-05` caducidad de las afirmaciones condicionales, `SPEC-06` estructura de `harness/` y `SPEC-07` modelo de fallo del pipeline y `SPEC-08` estados del trabajo y observabilidad `SPEC-10` huecos que la rama `main` ya sufrió `SPEC-11` observabilidad del pipeline, `SPEC-12` formas reducidas del recorte, `SPEC-13` durabilidad de los hechos, `SPEC-14` delegación en vez de API, `SPEC-15` lo que declara el plan, `SPEC-16` revelar es aprender, `SPEC-17` el conocimiento y su instante, `SPEC-18` el POV que nadie declara, `SPEC-19` lo prometido y lo entregado, `SPEC-20` qué se puede editar a mano y `SPEC-25` el destinatario, la entrevista y las palabras vetadas, que abre el examen de la novela para regalar y lleva en su anexo la plantilla de la ficha. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
 | Código del backend | `backend/` | Servicio FastAPI con `app/commons/` y `app/features/`. Features: `escaleta`, `generacion`, `verificacion`, `consolidacion`, `contexto`, `orquestacion`, `auditoria`, `recuperacion`, `edicion`, `brief`, `cronologia` (dónde se usa cada hecho y la cronología de la fábula: `SPEC-21`), `entrevista` (la ficha del destinatario por turnos y el texto libre: `SPEC-25`) y `politica` (las palabras vetadas en tres niveles: `SPEC-25`). Lo que comparten las dos últimas —el detector de vetadas y el audit log— está en `app/commons/politica/`, y los modelos de la ficha en `app/commons/dominio/destinatario.py`. La CLI de la entrevista es `backend/entrevista_cli.py`. Las dependencias en `backend/requirements.txt`; las pruebas con `python -m pytest app -q` desde `backend/` |
-| Revisiones de documentos | `Docs/revisiones/` | Un `REV-NN.md` por documento revisado. Evalúa un documento **existente**; una spec dice qué va a cambiar. Por eso cuelga de `Docs/` y no de `specs/` |
-| Referencias externas | `Docs/referencias.md` | **Consulta, no normativo.** Material de clase sobre métodos de Spec-Driven Development (Spec Kit, OpenSpec, MUSUBI, EasySpecs…) y lenguajes de especificación formal (TLA+, P, Dafny, Alloy…), más una lectura propia de qué se parece a lo que ya hacemos y qué hueco señala. No está en la cadena de precedencia y ninguna `INV-xx`, `VER-xx` ni spec puede citarlo como origen |
+| Revisiones de documentos | `docs/revisiones/` | Un `REV-NN.md` por documento revisado. Evalúa un documento **existente**; una spec dice qué va a cambiar. Por eso cuelga de `docs/` y no de `specs/` |
+| Referencias externas | `docs/referencias.md` | **Consulta, no normativo.** Material de clase sobre métodos de Spec-Driven Development (Spec Kit, OpenSpec, MUSUBI, EasySpecs…) y lenguajes de especificación formal (TLA+, P, Dafny, Alloy…), más una lectura propia de qué se parece a lo que ya hacemos y qué hueco señala. No está en la cadena de precedencia y ninguna `INV-xx`, `VER-xx` ni spec puede citarlo como origen |
 
 > Las rutas de esta tabla son literales del repositorio: se copian tal cual, con su extensión. Si se renombra un documento, hay que actualizar esta tabla, el enlace en `CLAUDE.md` y todas las referencias en el mismo commit. Pasó lo contrario al renombrar `defintions` → `definitions.md` y `SRS.md` → `SPEC - Backend.md`: quedaron setenta referencias rotas.
 
@@ -30,27 +30,27 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 
 1. `EXAMEN.md` — qué hay que construir y entregar. Va primero porque es lo único que puede obligar a revisar una decisión del proyecto; basta con la sección que toque la tarea.
 2. `CLAUDE.md` — restricciones técnicas. Condicionan todo lo demás del proyecto.
-3. `Docs/definitions.md` — el modelo de dominio. Es la fuente de verdad del dominio.
-4. `Docs/architecture.md` — cómo se organiza el código y quién habla con quién. Antes de escribir nada en `backend/` o `frontend/`.
-5. `Docs/domain-knowledge.md` — solo cuando necesites ver la estructura de un vistazo o explicarla.
-6. `Docs/verification.md` — cuando vayas a escribir una prueba o a cerrar una fila `VER-xx`.
+3. `docs/definitions.md` — el modelo de dominio. Es la fuente de verdad del dominio.
+4. `docs/architecture.md` — cómo se organiza el código y quién habla con quién. Antes de escribir nada en `backend/` o `frontend/`.
+5. `docs/domain-knowledge.md` — solo cuando necesites ver la estructura de un vistazo o explicarla.
+6. `docs/verification.md` — cuando vayas a escribir una prueba o a cerrar una fila `VER-xx`.
 
-No cargues los seis enteros por costumbre. Para una tarea de backend suele bastar `CLAUDE.md`, la sección de invariantes de `Docs/definitions.md` y la de backend de `Docs/architecture.md`; para una discusión de arquitectura del dominio, el árbol de `Docs/domain-knowledge.md`.
+No cargues los seis enteros por costumbre. Para una tarea de backend suele bastar `CLAUDE.md`, la sección de invariantes de `docs/definitions.md` y la de backend de `docs/architecture.md`; para una discusión de arquitectura del dominio, el árbol de `docs/domain-knowledge.md`.
 
 ## Precedencia
 
-- **Por encima de todo, `EXAMEN.md` en qué se construye y se entrega.** Su cabecera lo declara: si algo del enunciado contradice a una decisión del proyecto —de `CLAUDE.md`, de `Docs/`, de una spec o de un plan—, gana el enunciado y la decisión se revisa. Revisarla sigue el proceso de siempre: una spec que la cambie, aprobada antes del código. Lo que el enunciado no menciona lo gobiernan las reglas de abajo.
-- En lo técnico manda `CLAUDE.md`. En lo de dominio manda `Docs/definitions.md`. En cómo se organiza el código manda `Docs/architecture.md`.
-- `Docs/architecture.md` no redefine ni el stack ni el dominio: los desarrolla. Si contradice a `CLAUDE.md`, gana `CLAUDE.md`; si usa un nombre de clase o de enumeración que no está en `Docs/definitions.md`, el error es suyo.
-- `Docs/verification.md` no introduce requisitos nuevos. Cada fila `VER-xx` cita el documento del que sale; una fila sin origen sobra.
-- `Docs/domain-knowledge.md` es una vista, no una fuente. Si un diagrama contradice una definición, gana la definición y el diagrama se corrige.
+- **Por encima de todo, `EXAMEN.md` en qué se construye y se entrega.** Su cabecera lo declara: si algo del enunciado contradice a una decisión del proyecto —de `CLAUDE.md`, de `docs/`, de una spec o de un plan—, gana el enunciado y la decisión se revisa. Revisarla sigue el proceso de siempre: una spec que la cambie, aprobada antes del código. Lo que el enunciado no menciona lo gobiernan las reglas de abajo.
+- En lo técnico manda `CLAUDE.md`. En lo de dominio manda `docs/definitions.md`. En cómo se organiza el código manda `docs/architecture.md`.
+- `docs/architecture.md` no redefine ni el stack ni el dominio: los desarrolla. Si contradice a `CLAUDE.md`, gana `CLAUDE.md`; si usa un nombre de clase o de enumeración que no está en `docs/definitions.md`, el error es suyo.
+- `docs/verification.md` no introduce requisitos nuevos. Cada fila `VER-xx` cita el documento del que sale; una fila sin origen sobra.
+- `docs/domain-knowledge.md` es una vista, no una fuente. Si un diagrama contradice una definición, gana la definición y el diagrama se corrige.
 - Nada de lo anterior sustituye al código: si el código contradice a los documentos, es un defecto de uno de los dos y hay que decidir cuál antes de seguir.
 
 ## Reglas de uso del modelo de dominio
 
-- Los nombres de clase, atributo y valor de enumeración de `Docs/definitions.md` son literales. No los traduzcas, no los abrevies, no uses sinónimos.
+- Los nombres de clase, atributo y valor de enumeración de `docs/definitions.md` son literales. No los traduzcas, no los abrevies, no uses sinónimos.
 - Toda comprobación del harness referencia su invariante por identificador (`INV-07`, no "la regla de los beats").
-- Una entidad nueva se define primero en `Docs/definitions.md` y solo después se dibuja en `Docs/domain-knowledge.md`. Nunca al revés.
+- Una entidad nueva se define primero en `docs/definitions.md` y solo después se dibuja en `docs/domain-knowledge.md`. Nunca al revés.
 - Los identificadores publicados no se reutilizan ni se renumeran. Lo que deja de aplicar se marca como obsoleto, no se borra.
 
 ## Proceso de trabajo
@@ -58,23 +58,23 @@ No cargues los seis enteros por costumbre. Para una tarea de backend suele basta
 Tres puertas en cadena. Cada una se abre solo con la anterior cerrada, y ninguna se salta porque el cambio parezca pequeño.
 
 ```
-Docs/  →  spec aprobada  →  plan aprobado  →  código (TDD)  →  spec y Docs/ al día
+docs/  →  spec aprobada  →  plan aprobado  →  código (TDD)  →  spec y docs/ al día
 ```
 
 **Qué cuenta como aprobación.** El frontmatter del propio fichero: `id`, `estado` (`borrador | en_revision | aprobada | aplicada | obsoleta`), `aprobada_por` y `fecha_aprobacion`. Los planes llevan el mismo.
 
-**Una spec aplicada se mueve, no se borra.** Cuando su contenido ya está en `Docs/`, pasa a `estado: aplicada`, se anota `fecha_aplicacion` y `commit_de_aplicacion` —que necesita un commit propio, porque el hash no existe hasta después— y el fichero se mueve con `git mv` a `specs/aplicadas/`. Así `specs/` contiene lo que está en curso y nada más, y sigue siendo posible leer por qué se decidió cada cosa. Las referencias son siempre por identificador (`SPEC-03`), nunca por ruta, así que mover el fichero no rompe nada.
+**Una spec aplicada se mueve, no se borra.** Cuando su contenido ya está en `docs/`, pasa a `estado: aplicada`, se anota `fecha_aplicacion` y `commit_de_aplicacion` —que necesita un commit propio, porque el hash no existe hasta después— y el fichero se mueve con `git mv` a `specs/aplicadas/`. Así `specs/` contiene lo que está en curso y nada más, y sigue siendo posible leer por qué se decidió cada cosa. Las referencias son siempre por identificador (`SPEC-03`), nunca por ruta, así que mover el fichero no rompe nada.
 
 Sin `estado: aprobada` no se pasa, aunque el documento esté escrito entero y aunque se haya hablado. "Lo comentamos ayer" no es una aprobación; el campo sí. `SPEC-NN` es un identificador estable: no se reutiliza ni se renumera, y lo que deja de aplicar pasa a `obsoleta` en vez de borrarse. Los identificadores internos de una spec (`RF-xx`, `O-x`, `M-x`, `P-x`) tampoco se renumeran al reescribirla.
 
-### 1. Actualizar `Docs/`
+### 1. Actualizar `docs/`
 
-`Docs/` es lo normativo permanente. Hay dos clases de cambio y no se tratan igual:
+`docs/` es lo normativo permanente. Hay dos clases de cambio y no se tratan igual:
 
 - **Cambio documental** —corregir un error, aclarar una frase, añadir un diagrama de algo ya decidido—: se hace directamente, sin spec.
 - **Cambio que decide algo nuevo** —una clase, una invariante, una decisión de arquitectura, un umbral—: **necesita spec aprobada primero**. El documento se actualiza después, no antes.
 
-Se mantienen las reglas que ya existen: una entidad se define primero en `Docs/definitions.md` y solo después se dibuja en `Docs/domain-knowledge.md`; un cambio de atributo obligatorio lleva su migración en el mismo commit; los identificadores publicados no se renumeran. Y este archivo se actualiza en el mismo commit que mueve un archivo de contexto.
+Se mantienen las reglas que ya existen: una entidad se define primero en `docs/definitions.md` y solo después se dibuja en `docs/domain-knowledge.md`; un cambio de atributo obligatorio lleva su migración en el mismo commit; los identificadores publicados no se renumeran. Y este archivo se actualiza en el mismo commit que mueve un archivo de contexto.
 
 ### 2. Crear o actualizar una spec
 
@@ -87,10 +87,10 @@ Un fichero propio en `specs/`, con su `SPEC-NN` en el frontmatter. Responde a tr
 
 ### 3. Plan de implementación
 
-Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su propio estado. **No se confunde con `Docs/revisiones/REV-NN.md`**, que revisa el documento antes de aprobarlo: el plan dice cómo se construye el código y nace después de la aprobación.
+Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su propio estado. **No se confunde con `docs/revisiones/REV-NN.md`**, que revisa el documento antes de aprobarlo: el plan dice cómo se construye el código y nace después de la aprobación.
 
 - **No se crea un plan si su spec no está aprobada.** Un plan sin spec aprobada está resolviendo un problema que nadie ha acordado.
-- Dice qué ficheros se tocan, en qué orden, **qué prueba cubre cada paso** y qué filas `VER-xx` de `Docs/verification.md` cierra.
+- Dice qué ficheros se tocan, en qué orden, **qué prueba cubre cada paso** y qué filas `VER-xx` de `docs/verification.md` cierra.
 - Cada paso debe dejar el repositorio funcionando. Un paso que solo tiene sentido con el siguiente son un paso.
 - También se aprueba, y es la tercera puerta.
 
@@ -98,7 +98,7 @@ Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su pr
 
 - **No se escribe código si el plan no está aprobado.** Ni un fichero de andamiaje.
 - **TDD, en este orden:** primero la prueba que falla, después el código mínimo que la pasa, después el refactor. Ningún código de producción nace sin una prueba que haya fallado antes. Esto es la misma exigencia que el proyecto ya tiene para las invariantes: una regla que nunca ha fallado en las pruebas no está verificada, solo declarada.
-- **Al terminar, en el mismo commit:** la spec al día, `Docs/` al día y la fila `VER-xx` actualizada si se ha cerrado alguna.
+- **Al terminar, en el mismo commit:** la spec al día, `docs/` al día y la fila `VER-xx` actualizada si se ha cerrado alguna.
 
 ### Cuando el código descubre que la spec estaba mal
 
@@ -122,7 +122,7 @@ Una rama solo puede estar checkouteada en **un** worktree a la vez. Lo ignorado 
 
 **Y antes de abrir una spec, mirar los identificadores que hay.** Dos sesiones trabajando a la vez eligen el mismo `SPEC-NN` sin enterarse: pasó dos veces seguidas. Si ya está cogido, se renumera el propio —nunca se reutiliza— y conserva el número la spec que ya esté `aprobada`.
 
-**Mirar el último identificador usado no basta con tres sesiones escribiendo.** Entre leer cuál es el último y commitear el propio hay una ventana, y otra sesión publica en ella: es la Regla 6 de `Docs/verification.md` aplicada a la numeración. Pasó con `F-39` y `F-40`, que acabaron duplicados con contenidos distintos —exactamente lo que la regla de no renumerar existe para impedir—. Vale cualquiera de las dos disciplinas, y hace falta una:
+**Mirar el último identificador usado no basta con tres sesiones escribiendo.** Entre leer cuál es el último y commitear el propio hay una ventana, y otra sesión publica en ella: es la Regla 6 de `docs/verification.md` aplicada a la numeración. Pasó con `F-39` y `F-40`, que acabaron duplicados con contenidos distintos —exactamente lo que la regla de no renumerar existe para impedir—. Vale cualquiera de las dos disciplinas, y hace falta una:
 
 - **Reservar antes de escribir**: anunciar el identificador a las otras sesiones y dejarlo escrito en su documento antes de desarrollar el contenido, para que quede ocupado.
 - **Comprobar al commitear**: volver a mirar los publicados justo antes del commit, no al empezar a redactar.
@@ -144,7 +144,7 @@ El contenido real vive en `.agents/skills/` y **se versiona con el repositorio**
 | --- | --- | --- |
 | `spec-and-plan` | Empezar cualquier cambio que decida algo nuevo. Ejecuta las puertas de "Proceso de trabajo" y comprueba si están abiertas | Propia |
 | `fastapi` | Endpoints, dependencias, modelos Pydantic, streaming: los idiomas del framework | Oficial, de `github.com/fastapi/fastapi`, ruta `.agents/skills/fastapi/`. Instalada 2026-09-21, hash `187b2e06` |
-| `coherencia-docs` | Revisar la coherencia entre los documentos de contexto: citas rotas por identificador, contradicciones, deriva de literales y afirmaciones que caducan en silencio. Antes de un merge que toque `Docs/` | Propia. Escrita sobre un borrador del usuario y adaptada al repositorio; ver su § "Procedencia" |
+| `coherencia-docs` | Revisar la coherencia entre los documentos de contexto: citas rotas por identificador, contradicciones, deriva de literales y afirmaciones que caducan en silencio. Antes de un merge que toque `docs/` | Propia. Escrita sobre un borrador del usuario y adaptada al repositorio; ver su § "Procedencia" |
 | `backend-feature` | Decidir dónde va un fichero de `backend/` y de qué puede depender. La contraparte de FSD en el servidor (`A-01`, `A-02`) | Propia |
 | `feature-sliced-design` | Decidir dónde va un fichero del frontend, resolver un cross-import o revisar la estructura de capas (`A-09`) | Oficial de FSD v2.1, de `github.com/feature-sliced/skills`. Instalada 2026-09-21, hash `e2b86275` |
 | `harness-invariantes` | Implementar o revisar una comprobación `INV-xx`: regla o juez, severidad, hallazgo y caso negativo | Propia |
@@ -160,9 +160,9 @@ El contenido real vive en `.agents/skills/` y **se versiona con el repositorio**
 Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuentras una que no está en la tabla de arriba, añádela.
 
 - `frontend/` — aplicación React.
-- `harness/` — ejecución de los validadores de `Docs/verification.md` y sus fixtures, en las tres carpetas que declara `Docs/architecture.md` § "El harness": `documentos/`, `evals/` y `adversarial/`. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `Docs/verification.md` § "Lo que se aprendió al implementar".
-- `Docs/decisions/` — decisiones de arquitectura fechadas.
-- Lo que `EXAMEN.md` exige que el repositorio incluya, y no existe todavía (§ "Los repositorios deben incluir también"): `README.md` en la raíz con un brief de ejemplo reproducible, `.env.example`, `ejemplos/novela-ejemplo.pdf`, `presentacion/` con el vídeo de demo, `.claude/commands/` y la memoria dentro de `.claude/`, y el fichero de configuración MCP con un servidor de inspección de browser. Y la carpeta `/docs` de proceso, cuyo nombre choca con `Docs/`: ver `EX-11` en `Docs/cobertura-examen.md`.
+- `harness/` — ejecución de los validadores de `docs/verification.md` y sus fixtures, en las tres carpetas que declara `docs/architecture.md` § "El harness": `documentos/`, `evals/` y `adversarial/`. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `docs/verification.md` § "Lo que se aprendió al implementar".
+- `docs/decisions/` — decisiones de arquitectura fechadas.
+- Lo que `EXAMEN.md` exige que el repositorio incluya, y no existe todavía (§ "Los repositorios deben incluir también"): `README.md` en la raíz con un brief de ejemplo reproducible, `.env.example`, `ejemplos/novela-ejemplo.pdf`, `presentacion/` con el vídeo de demo, `.claude/commands/` y la memoria dentro de `.claude/`, y el fichero de configuración MCP con un servidor de inspección de browser. Y los seis documentos de proceso que el enunciado pide en `/docs` (`EX-11` en `docs/cobertura-examen.md`).
 
 ## Mantenimiento de este archivo
 

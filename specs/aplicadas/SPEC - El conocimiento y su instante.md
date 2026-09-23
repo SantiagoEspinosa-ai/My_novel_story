@@ -96,8 +96,8 @@ Sí, y es la primera del proyecto que no es gratis: `conocimiento.desde_escena` 
 
 ## Qué gobierna esto
 
-`RegistroDeConocimiento`, `Escaleta` e `INV-03` de `Docs/definitions.md`; `F-32` y `F-33` de
-`Docs/verification.md`; `VER-64`, que no tendrá dato utilizable hasta que esto se aplique; y
+`RegistroDeConocimiento`, `Escaleta` e `INV-03` de `docs/definitions.md`; `F-32` y `F-33` de
+`docs/verification.md`; `VER-64`, que no tendrá dato utilizable hasta que esto se aplique; y
 la Regla 5, de la que `F-33` es una instancia dentro del propio arreglo de `SPEC-16`.
 
 ## Preguntas respondidas al aprobar

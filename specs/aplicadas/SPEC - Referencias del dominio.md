@@ -140,7 +140,7 @@ que nadie intente forzarlo dentro de la tabla.
 
 ### Migración
 
-Ninguna: la tabla es una sección nueva de `Docs/definitions.md`, no un atributo.
+Ninguna: la tabla es una sección nueva de `docs/definitions.md`, no un atributo.
 
 ## C-4 · El delta puede expresar los tres valores de `estado_vital`
 
@@ -213,7 +213,7 @@ referencias no los haría comprobables, los haría pobres.
 
 # 4. Qué queda explícitamente fuera
 
-- **Crear tablas o esquema.** Esta spec cambia `Docs/definitions.md`; la
+- **Crear tablas o esquema.** Esta spec cambia `docs/definitions.md`; la
   persistencia es de `SPEC-01` y de su plan.
 - **`R-1` a `R-12`.** Se listan aquí porque se encontraron buscándolos, pero
   **no se aprueban con esta spec**: son su propio cambio y cada uno tiene su
@@ -244,7 +244,7 @@ con dos añadidos del decisor:
   tercero es el que más importa: la parte determinista de `INV-03` necesita saber
   **de dónde salió** el conocimiento, no solo que existe, e `INV-03` es la única
   puerta bloqueante que hoy depende de un juez. Es lo que más encoge `PC-3`.
-- **Los dos huecos del modelo se anotan en `Docs/definitions.md`**, sin
+- **Los dos huecos del modelo se anotan en `docs/definitions.md`**, sin
   resolverlos: sobrevivir no deja rastro y olvidar no tiene campo. Son cosas que
   la novela puede hacer y el sistema no puede representar.
 
