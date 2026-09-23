@@ -523,3 +523,83 @@ def test_una_escena_sin_resumen_se_dice_en_vez_de_callarse(con):
                           _agentes()[1], Mudo(), techo=1_000_000, hasta=1)
     assert g.escenas_hechas == ["e1"], "la escena se hace igual"
     assert g.sin_resumen == ["e1"], "pero consta que se quedo sin memoria"
+
+
+def test_la_escena_anterior_no_puede_venir_de_otra_obra(con):
+    """`F-40` seguia vivo aqui, y es el bloque que mas pesa del contexto.
+
+    La consulta buscaba `orden - 1` **sin acotar por nada**, con `LIMIT 1`: con
+    dos obras en la misma base, `orden - 1` casa con una escena de cada una y
+    gana la que salga. El Escritor arrancaba leyendo **entera** una escena de
+    otra obra, y nadie lo notaba porque llega texto plausible. Es peor que lo
+    de los resumenes, que llegaban desordenados o vacios.
+    """
+    repo.guardar_escaleta(con, "otra-obra", [
+        {"id": "otra-e1", "orden": 1, "pov": "per-marta", "lugar": "lug-salon",
+         "cambio_de_valor": {"eje": "cordura", "signo": "negativo"},
+         "beats": ["b"], "longitud_objetivo": [10, 5000]}])
+    # Dos borradores: la version 2 gana el `ORDER BY b.version DESC LIMIT 1`.
+    # Es lo que pasa en cuanto una escena de otra obra se reintenta una vez, y
+    # con un solo intento el empate lo resolvia el azar del rowid.
+    repo.guardar_borrador(con, "otra-e1", texto="PRIMERA DE LA OTRA OBRA",
+                          modelo="x", prompt_hash="h")
+    repo.guardar_borrador(con, "otra-e1", texto="TEXTO DE LA OTRA OBRA",
+                          modelo="x", prompt_hash="h")
+
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    material = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
+    assert "OTRA OBRA" not in material["escena_anterior"]
+    assert material["escena_anterior"], "y si trae la de su propia obra"
+
+
+def test_la_escena_anterior_no_cruza_el_corte_de_capitulo(con):
+    """El alcance de la escena anterior es el **capitulo**, no la obra.
+
+    Los resumenes si cruzan el corte -una novela no olvida el capitulo uno al
+    empezar el dos- pero la escena anterior no: **eso es exactamente lo que un
+    corte de capitulo significa**. Son dos bloques con dos alcances distintos,
+    y tratarlos igual es lo que hace que un solo filtro no sirva para los dos.
+    """
+    repo.guardar_escaleta(con, "cap-1", [
+        {"id": "c2-e1", "orden": 4, "capitulo": "cap-2", "pov": "per-marta",
+         "lugar": "lug-salon", "beats": ["b"], "longitud_objetivo": [10, 5000],
+         "cambio_de_valor": {"eje": "cordura", "signo": "negativo"}},
+        {"id": "c2-e2", "orden": 5, "capitulo": "cap-2", "pov": "per-marta",
+         "lugar": "lug-salon", "beats": ["b"], "longitud_objetivo": [10, 5000],
+         "cambio_de_valor": {"eje": "cordura", "signo": "negativo"}}])
+    with con:
+        con.execute("UPDATE escena SET capitulo='cap-1' WHERE id IN ('e1','e2','e3')")
+    # Dos borradores, para que el `ORDER BY version DESC` elija de verdad y no
+    # gane nadie por el azar del rowid.
+    for texto in ("primera", "ULTIMA DEL CAPITULO UNO"):
+        repo.guardar_borrador(con, "e3", texto=texto, modelo="x", prompt_hash="h")
+
+    material = obra.reunir_material(con, repo.escena(con, "c2-e1"), "cap-1")
+    assert "CAPITULO UNO" not in material["escena_anterior"], (
+        "la primera escena de un capitulo no continua desde el anterior")
+
+
+def test_dentro_del_capitulo_la_escena_anterior_si_llega(con):
+    """El caso positivo: sin el, un filtro que devolviera siempre vacio pasaria
+    la prueba de arriba sin hacer nada."""
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    material = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
+    assert material["escena_anterior"], "dentro del capitulo si continua"
+
+
+def test_la_primera_escena_de_un_capitulo_no_es_lo_mismo_que_una_sin_anterior(con):
+    """Regla 8 aplicada al corte de capitulo, y lo aviso la sesion de SPEC-21.
+
+    Que la escena 1 de un capitulo reciba vacio **es correcto**: eso es lo que
+    un corte significa. Que la escena 4 lo reciba es un fallo. Si las dos
+    producen la misma cadena vacia, la segunda no la ve nadie.
+    """
+    with con:
+        con.execute("UPDATE escena SET capitulo='cap-1'")
+    primera = obra.reunir_material(con, repo.escena(con, "e1"), "cap-1")
+    assert primera["escena_anterior"] == ""
+    assert primera["falta_escena_anterior"] is False, "la 1 no tiene anterior y esta bien"
+
+    cuarta = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
+    assert cuarta["escena_anterior"] == ""
+    assert cuarta["falta_escena_anterior"] is True, "la 2 deberia tenerla y no esta"

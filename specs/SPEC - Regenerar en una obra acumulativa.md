@@ -322,4 +322,83 @@ proyecto ya ha elegido tres veces.
 | 2 | **¿Qué se le promete al lector?** ¿«Reescribimos lo que dependía de esto» o «reescribimos de aquí al final»? | `S-1` y `S-3` prometen cosas distintas y las dos son defendibles. La promesa se escribe antes de construirla |
 | 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, `S-2` es el mínimo y `S-3` deja de bastar |
 | 4 | **¿Una obra puede quedar en dos versiones vivas, o la nueva sustituye a la vieja?** | Es `S-4`, y también decide qué significa «se conserva la versión anterior» |
-| 5 | **¿Cuánto arrastra un cambio medio?** No está medido y se puede medir con una obra ya generada, sin pagar ninguna generación nueva | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
+| 5 | **¿Cuánto arrastra un cambio medio?** No está medido, y **hoy no se puede medir aunque haya obra**: ver la nota de abajo | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
+
+### Por qué la pregunta 5 todavía no se puede contestar
+
+Esta spec dijo antes que bastaba con una obra ya generada. **Es falso**, y el motivo es de
+construcción y no de calidad de la obra. Son dos cosas que se suman:
+
+1. **El ensamblador trae los hechos por ámbito, no por escena.** La consulta que los reúne
+   recibe el identificador del ámbito que se está generando —que en la generación real es el
+   **capítulo**, no la obra— y devuelve todos los suyos. Dentro de un capítulo, todas las
+   escenas ven el mismo conjunto: **no hay resolución por debajo del capítulo**.
+2. **Y el guion que genera la obra declara la lista entera de hechos en cada capítulo.** No
+   hay hechos propios de un capítulo: los diez se declaran diez veces. Así que tampoco hay
+   resolución **entre** capítulos.
+
+Juntas, las dos dejan el conjunto de lecturas observado de hechos **constante en toda la
+obra**, y la fracción que mide la pregunta 5 sale **1,0 para cualquier hecho, por
+construcción**. No es un número con ruido: es un número sin resolución.
+
+**Ojo con el orden de los arreglos:** antes de cerrarse `F-39` —la clave global de
+`HechoCanonico`— ese mismo guion dejaba nueve capítulos con la lista **vacía** y todos los
+hechos atribuidos al último, de modo que sus prompts decían *«hechos: (ninguno)»*. Una medida
+de arrastre sacada de esa base sale **baja**, y baja no significa *arrastra poco*: significa
+*se registró poco*. Es exactamente el número que parecería un argumento para elegir `S-1`, y
+sería un argumento falso. Si alguna vez se enseña un número salido de ahí, se enseña **marcado
+como suelo en el mismo sitio en que se enseña**, no en una nota al pie.
+
+**Y lo que lo hace peligroso no es que esté mal: es hacia dónde se equivoca.** Un defecto que
+hace que se registre de menos produce números que recomiendan justo la salida que menos
+trabajo cuesta. La coincidencia entre *lo que el dato roto sugiere* y *lo que apetece hacer*
+es lo que convierte un número malo en un argumento convincente, y es la razón de que un sesgo
+haya que declararlo **con su dirección** y no como una incertidumbre genérica: un sesgo
+conocido y dicho sigue siendo utilizable; uno callado decide por su cuenta.
+
+**Es el cero de `INV-03` con otra cara.** *«`INV-03` bloquea 0 de 6»* también se leía como una
+medida y era la huella de que no había llegado a mirar (`F-30`, Regla 8). Allí el hueco se
+disfrazaba de cero; aquí, de arrastre pequeño. Las dos veces el valor falso es el que
+tranquiliza.
+
+Tres consecuencias que conviene no confundir:
+
+- **El registro no está mal.** `lectura_de_contexto` apunta fielmente lo que entró; lo que
+  entró era todo. Tampoco lo corrompe `F-40` —el defecto del orden de escena—, porque los
+  hechos y el registro de conocimiento no pasaban por el filtro de `orden` que aquel rompía:
+  sus damnificados eran los resúmenes, las fichas y la escena anterior.
+- **La mitad de conocimiento sí tiene señal.** El registro de conocimiento se lee tal como
+  está en ese momento y crece al consolidar, así que varía escena a escena. Pero responde otra
+  pregunta —qué se sabía ya cuando se escribió— y no de qué depende esta escena.
+- **El lado declarado sí es por escena**, porque `acciones` lo es. De modo que, para
+  *decidir qué regenerar*, el observado sigue siendo la dirección correcta; para *medir cuánto
+  se separan el observado y el declarado*, hoy la comparación sería «todo» contra «lo que diga
+  el modelo», que mide el techo y no la separación.
+
+**Dónde sí está la medida.** No en el conjunto observado, sino en `menciona` de `SPEC-21`:
+lo **calcula el código sobre el borrador aceptado**, así que es por escena, varía, y es un
+dato medido y no una afirmación de un modelo. Con él, *«cuántos capítulos añade incluir este
+hecho»* se responde por hecho y a granularidad de capítulo, que es justo la granularidad en la
+que la función promete regenerar. `SPEC-21` ya expone esa consulta. **La pregunta 5 se
+contesta por ahí, sobre la obra repetida con los arreglos, y sin pagar ninguna generación.**
+
+Lo que el conjunto observado sigue aportando es otra cosa, y hay que no confundirla: es el
+único registro de lo que se le **ofreció** al modelo. Sirve para la decisión de `S-5` —qué se
+regenera— y para saber cuándo un hecho estuvo disponible y no se usó. No sirve para medir
+alcance mientras se ofrezca todo a todos.
+
+**Y lo que haría medible también el observado** es que el ensamblador deje de ofrecer todos los
+hechos a todas las escenas. Esa noción ya está escrita en el proyecto: la forma reducida del
+bloque del estado dice *«los hechos permanentes y cualquier hecho que el delta referencie»*.
+Existe, está declarada, y **solo se aplica al recortar** — es decir, nunca, porque el contexto
+real mide tres órdenes de magnitud menos que el techo. Es la misma decisión abierta que el
+reparto por niveles: un mecanismo diseñado que no se ha ejercido ni una vez.
+
+Eso tiene nombre desde que la sesión del backend lo bautizó: es la **Regla 8 a escala de
+diseño**. La `8` dice que una rama que no se ejecuta no es una comprobación que pasa; esto es
+el mismo fallo un nivel arriba —no una rama, un mecanismo entero declarado y no ejercido— y
+con la misma apariencia desde fuera, que es **todo verde**. `MomentoNarrativo.t_discurso`,
+definido, obligatorio, con columna desde `SPEC-21` y sin que nadie lo rellene, es otra
+instancia. Conviene leerlo junto a `MF-26`: allí una comprobación dejó de significar lo que
+dice porque el mundo se movió; aquí un mecanismo nunca llegó a significar nada porque no
+corrió. **Las dos se ven igual desde fuera.**

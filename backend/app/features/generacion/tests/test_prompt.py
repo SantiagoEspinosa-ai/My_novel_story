@@ -17,7 +17,7 @@ def _p(**kw):
 
 def test_lleva_los_identificadores_disponibles():
     """Sin saber que ids existen, se le pide lo imposible."""
-    texto = _p(personajes=["per-marta"], hechos=["hec-reloj"])
+    texto = _p(personajes=["per-marta"], ids_de_hechos=["hec-reloj"])
     assert "per-marta" in texto and "hec-reloj" in texto
 
 
@@ -54,7 +54,7 @@ def test_el_prompt_dice_que_significa_revelar_y_que_significa_actuar():
     texto = prompt.construir(
         parametros={"escena": "e1", "longitud_objetivo": [300, 900]},
         estado={"contexto": []}, objetivo="{}", problemas=None,
-        personajes=["per-marta"], hechos=["hec-llave"])
+        personajes=["per-marta"], ids_de_hechos=["hec-llave"])
     assert "acciones" in texto, "el campo tiene que existir en el contrato"
     minusculas = texto.lower()
     for significado in ("pasa a conocer", "sirviendose"):
@@ -71,7 +71,7 @@ def test_el_prompt_dice_que_pov_se_planifico():
         parametros={"escena": "e1", "longitud_objetivo": [300, 900],
                     "pov": "per-marta"},
         estado={"contexto": []}, objetivo="{}", problemas=None,
-        personajes=["per-marta", "per-ana"], hechos=[])
+        personajes=["per-marta", "per-ana"], ids_de_hechos=[])
     assert "per-marta" in texto
     assert "pov_usado" in texto, "y hay que pedir que lo declare de vuelta"
 
@@ -85,7 +85,7 @@ def test_el_prompt_dice_que_hechos_tiene_que_establecer_esta_escena():
         parametros={"escena": "e2", "longitud_objetivo": [300, 900],
                     "pov": "per-marta"},
         estado={"contexto": []}, objetivo="{}", problemas=None,
-        personajes=["per-marta"], hechos=["hec-sotano", "hec-llave"],
+        personajes=["per-marta"], ids_de_hechos=["hec-sotano", "hec-llave"],
         establece=["hec-sotano"])
     assert "hec-sotano" in texto
     minusculas = texto.lower()
@@ -97,5 +97,5 @@ def test_sin_hechos_que_establecer_el_prompt_no_lo_pide():
     texto = prompt.construir(
         parametros={"escena": "e2", "pov": "per-marta"},
         estado={"contexto": []}, objetivo="{}", problemas=None,
-        personajes=["per-marta"], hechos=["hec-sotano"])
+        personajes=["per-marta"], ids_de_hechos=["hec-sotano"])
     assert "ESTA ESCENA TIENE QUE ESTABLECER" not in texto

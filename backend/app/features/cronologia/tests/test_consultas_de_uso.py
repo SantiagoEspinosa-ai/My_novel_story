@@ -141,3 +141,45 @@ def test_una_fila_observada_entra_en_la_regeneracion_sin_tocar_constantes(con):
          "tipo": U.DEPENDE, "origen": O.REGLA}])
     assert consultas.capitulos_a_regenerar(con, "h-llave") == [
         "cap-1", "cap-3", "cap-9"]
+
+
+# --- La medida que decide si `menciona` entra en la regeneracion ------------
+
+
+def test_el_arrastre_de_incluir_mencion_se_mide_por_hecho(con):
+    """`SPEC-21` C-2: `menciona` entra, **pero medido antes de decidirlo**.
+
+    Excluirlo era elegir el fallo silencioso en el unico eje medido por codigo,
+    y el argumento para excluirlo era una intuicion de coste -"arrastraria media
+    novela"- que nunca se comprobo. El coste se puede medir gratis, asi que esta
+    es la medida y no una estimacion.
+    """
+    r = consultas.arrastre_de_incluir_mencion(con, ["h-llave"])
+    assert r["declarado"] == 2          # cap-1 y cap-3
+    assert r["con_mencion"] == 3        # + cap-2
+    assert r["crecimiento"] == 1
+    assert r["por_hecho"]["h-llave"]["capitulos_que_se_añaden"] == ["cap-2"]
+
+
+def test_un_hecho_sin_menciones_no_arrastra_nada(con):
+    """El caso negativo: si `menciona` no aportara nunca capitulos nuevos, la
+    medida tiene que decir cero y no un numero pequeño cualquiera."""
+    repo.registrar_usos(con, [
+        {"hecho": "h-gato", "escena": "e1", "capitulo": "cap-1",
+         "tipo": U.ESTABLECE, "origen": O.DELTA}])
+    r = consultas.arrastre_de_incluir_mencion(con, ["h-gato"])
+    assert r["crecimiento"] == 0
+
+
+def test_la_mencion_en_un_capitulo_ya_arrastrado_no_cuenta_como_crecimiento(con):
+    """Lo que encarece no es mencionar: es mencionar **donde no se dependia**.
+
+    Un capitulo que ya entraba por `depende` y ademas nombra el hecho no añade
+    trabajo. Contarlo inflaria la medida y haria parecer caro justo lo que no
+    lo es.
+    """
+    repo.registrar_usos(con, [
+        {"hecho": "h-llave", "escena": "e3", "capitulo": "cap-3",
+         "tipo": U.MENCIONA, "origen": O.REGLA}])
+    r = consultas.arrastre_de_incluir_mencion(con, ["h-llave"])
+    assert r["crecimiento"] == 1, "cap-3 ya entraba: no es trabajo nuevo"

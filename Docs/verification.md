@@ -458,6 +458,86 @@ pertenece a la clave. **Y la corrección se demuestra escribiendo las dos filas 
 antes sobrevivía una**: sin ese caso negativo, «he ampliado la clave» no se distingue de un
 cambio cosmético.
 
+### Regla 8 — Una rama que no se ejecuta no es una comprobación que pasa
+
+**Y desde fuera se ven igual.** Un informe que dice *"sin hallazgos"* no distingue entre *se
+comprobó y está bien* y *no se llegó a comprobar*, y la segunda es la que deja pasar el
+defecto que el validador existía para cazar.
+
+Es la familia más numerosa del proyecto y siempre aparece con la misma forma: **un guardia
+que nadie pensó como decisión**.
+
+| Dónde | La guarda | Qué no se ejecutó | Cómo se vio desde fuera |
+| --- | --- | --- | --- |
+| `F-34`, `INV-04` | `if escena.get("pov_usado")` | La comparación del POV planificado con el usado | Verde. El modelo escribió la escena sobre otro personaje y nadie lo marcó |
+| `F-34`, `INV-02` | `if hasta and desde` | La mitad de accesibilidad | Verde, en todas las escenas de todas las ejecuciones |
+| `F-34`, `INV-17` | `palabras is not None` | El contraste contra el rango | Verde |
+| `F-41`, el resumen | `if c.resumen:` | Guardar el resumen de la escena | La escena se dio por buena; cinco de doce se quedaron sin memoria |
+| `F-30`, `INV-03` | — (no había revelaciones que mirar) | La invariante entera, en seis escenas | *"`INV-03` bloquea 0 de 6"*, que se lee como una medida y no lo era |
+
+| La escena anterior | — (el filtro por capítulo, al acotarlo) | Nada: se ejecutó y devolvió vacío | Cadena vacía. La escena 1 de un capítulo **debe** recibir vacío y la 4 nunca; las dos se veían igual |
+| `uso_de_hecho`, `contradice` | — (nadie deduce ese tipo) | Nada: la consulta corre entera | Lista vacía, que se lee como *"no hay contradicciones"* y significa *"nadie ha buscado"* |
+| `edades()` | — (la fecha de nacimiento es opcional) | La comparación, para quien no la tenga | `incoherentes: []`, que se lee como *"las edades cuadran"* |
+
+**Hay una segunda forma, y no es una guarda: es un valor de vuelta ambiguo.** Las tres filas
+de arriba no se saltan ninguna rama —el código corre entero— y aun así producen el mismo
+engaño, porque **el valor que significa *«correctamente vacío»* y el que significa *«no se
+pudo»* son el mismo valor**. Ahí no hay ningún `if` que revisar, así que la pregunta de la
+guarda no las caza.
+
+**La pregunta que sí las caza:** *¿este vacío tiene dos lecturas?* Si un valor legítimo y un
+fallo producen la misma salida, hace falta un segundo campo que los separe —`falta_escena_anterior`,
+`sin_fecha_de_nacimiento`, `cobertura_de_tipos()`— y no basta con documentarlo, porque quien
+lee el resultado no lee la documentación.
+
+**La corrección no es quitar la guarda**, porque muchas son legítimas: una escena sin
+`longitud_objetivo` no tiene rango que comprobar. La corrección es **distinguir los dos
+casos y decir el segundo**: si el dato falta y debería estar, se emite un `sin_veredicto`
+—que el dominio ya tenía para esto— o se deja constancia como `sin_resumen`. Lo que no vale
+es que la ausencia se vea igual que el acierto.
+
+**La pregunta que la cierra, al escribir cualquier `if` que envuelva una comprobación:**
+*¿qué pasa si esta condición es falsa, y quien lea el resultado podrá saber que no se
+comprobó?* Si la respuesta es que no, falta un caso, no una guarda.
+
+**Y la pregunta hermana, para los datos:** un cero no es lo mismo que un hueco. *"Bloqueó
+cero veces"* y *"no llegó a mirar"* son cosas distintas y el segundo no se apunta como cero
+(`F-30`, y la razón de que `VER-64` estuviera tres ejecuciones sin dato utilizable).
+
+### Regla 9 — Una comprobación que depende de un orden necesita al menos dos elementos que lo ejerzan
+
+**Con uno solo, puede pasar por un empate que se resolvió al azar, y entonces está en verde
+sin distinguir nada.**
+
+Apareció dos veces, en sitios que no se parecen:
+
+| Dónde | La prueba | Por qué pasaba sin comprobar |
+| --- | --- | --- |
+| `F-40`, la escena anterior | Una escena de otra obra con **un** borrador | `ORDER BY version DESC LIMIT 1` con un solo candidato por lado: el empate lo resolvía el rowid, y salió a favor. Con **dos** borradores el `ORDER BY` elige de verdad y el fallo aparece siempre |
+| `CE-5` de TLA+ | `VersionesSoloCrecen` sobre dos versiones | Las dos versiones tenían los mismos capítulos, así que **eran el mismo valor**: la propiedad estaba en verde por no poder distinguir nada |
+
+La forma general: **si la comprobación depende de un orden o de una desambiguación, hace
+falta al menos dos elementos que la ejerzan**. Uno la deja pasar por coincidencia, y una
+prueba que pasa por coincidencia es peor que no tenerla, porque se cuenta como cobertura.
+
+Es la Regla 8 en el otro lado del espejo: allí una rama no se ejecutaba, aquí se ejecuta y no
+decide nada. Las dos se ven igual desde fuera: **verde**.
+
+### Regla 10 — Un comentario que afirma lo que la línea de debajo no cumple es peor que no tener comentario
+
+**Porque quien revisa lee el comentario y sigue.**
+
+El caso: al acotar la memoria por obra quedó escrito *"Acotados a la obra"* justo encima de
+tres consultas, y **solo dos lo estaban**. La tercera —la de la escena anterior, la que más
+pesa— se leyó como cubierta durante dos revisiones, la mía al escribirla y la siguiente. Un
+comentario correcto habría dicho *"acotados a la obra"* sobre las dos y nada sobre la
+tercera, y entonces la tercera habría destacado.
+
+No es una regla de estilo: **un comentario es una afirmación sobre el código, y una
+afirmación falsa junto al código es una de las pocas cosas que sobreviven a un `grep`**. La
+prosa que describe lo que el código debería hacer se escribe como lo que hace, o no se
+escribe.
+
 ## Estado de implantación
 
 | | |
@@ -824,9 +904,13 @@ documento, no sobre el código.
 | F-15 | **Un validador que no distingue una cita de un uso marca el texto que explica el defecto.** Vale para los dos soportes, y se descubrió en cada uno por separado: en documentos son los **acentos graves** —un literal equivocado citado entre ellos lo marcan `VER-45` y `VER-46`, así que se cita en cursiva—; en código son los **docstrings** —la prueba que impide el eco de `VER-41` buscaba la cadena `tokens_declarados` y falló contra el docstring que explica por qué ese módulo no la escribe, así que busca **escrituras**—. Era un patrón, no una curiosidad del markdown | Cerrado por convención en los dos |
 | F-29 | **La lista de identificadores se derivaba del registro de conocimiento, que solo crece revelando, que necesita la lista.** Un punto muerto que hizo `INV-03` inejecutable sin que nada fallara. Al arreglar `F-21` puse en el prompt `hechos = los del registro de conocimiento`, y el registro **arranca vacío**: el prompt decía *"hechos: (ninguno)"*, el modelo no citaba ninguno —correctamente—, no había revelaciones, y el registro seguía vacío. Seis escenas reales: **conocimiento 0, fichas 0**. Funcionó en `E5b` solo porque el fixture lo sembraba a mano. La causa de fondo es que **confundí "qué hechos existen" con "quién los sabe"**: lo primero lo declara el plan de la obra —los `HechoCanonico`— y lo segundo es lo que `INV-03` comprueba | Cerrado por `SPEC-15`: los hechos se declaran y el prompt los lleva. **El efecto todavía no se puede medir**, porque arreglarlo destapó `F-31` |
 | F-30 | **Cero bloqueos no es una medida de cero.** La ejecución de seis escenas terminó sin que `INV-03` bloqueara ni una vez, y ese número **no vale**: el mecanismo nunca se ejerció, porque no hubo una sola revelación que comprobar (`F-29`). Apuntarlo como *"`INV-03` bloquea 0 de 6"* sería exactamente el verde falso que este documento persigue — **un validador que no puede dispararse no está midiendo cero** | Abierto: `VER-64` sigue sin dato |
+| F-46 | **`L-4` no puede disparar nunca sobre datos reales: nadie guarda en que evento un personaje deja de poder aparecer.** Una de las cuatro invariantes que el enunciado del examen exige es *nadie aparece tras un evento que lo excluye*, y al escribirla en Lean (`specs/lean/`) resulto que **no hay de donde sacar el dato**: `entidad` guarda el `vital` **actual** y no en que evento cambio, y `cambios_de_estado_vital` del delta se aplica en la consolidacion y no se conserva. El generador deja `Evento.excluye` vacia en todos los eventos, asi que la invariante da cero siempre. **Y un cero aqui no significa que nadie resucite: significa que no se ha mirado**, que es la misma confusion que costo `F-34`. La comprobacion esta escrita y probada contra el fixture, donde si dispara | Abierto. Lo que falta es una fuente: o el delta se persiste con sus cambios de estado vital, o `evento_cronologico` gana una columna que diga a quien excluye. Es esquema y decision de dominio, no una linea de codigo. **Y es exactamente el caso del `DeltaDeEscena`, que hasta hace dos dias tambien se aplicaba y se tiraba** (`G-05`): el patron se repite —un dato que el pipeline usa una vez, no persiste, y deja sin fuente a todo lo que quiera mirar la obra entera despues—, asi que conviene preguntarse que mas se esta aplicando y tirando antes de que lo destape la siguiente invariante |
+| F-47 | **`INV-08` esta declarada, tiene su consulta escrita y no la ejecuta nadie: el orden temporal de una obra no se comprueba en ningun punto del pipeline.** `Docs/definitions.md` la declara de nivel capitulo y severidad `mayor`; `cronologia/consultas.py` tiene `orden_temporal`, que compara fabula y discurso y devuelve las inversiones. Pero **`INV-08` no aparece en `features/verificacion/puertas.py`** y a `orden_temporal` **solo la llaman sus propias pruebas**. Lo destapo escribir la misma regla en Lean como `L-1` y preguntarse contra que contrastarla: contra nada. La verificacion formal la detecto en la obra sembrada -*ev-2 se lee despues de ev-1 y ocurre antes en la fabula, sin declarar analepsis*- y hoy es **lo unico que la mira** | Abierto. Es el patron de `F-34` una vez mas: una invariante que no se ejecuta y una que pasa **se ven igual desde fuera**. Decidir si la cubre la puerta de capitulo, el harness formal, o las dos |
 | F-44 | **`F-38` otra vez, fuera del dominio de las novelas: dos sesiones sobre el mismo indice de Git, y el trabajo preparado se va en el commit de la otra.** Ocurrio **dos veces seguidas** al entregar `specs/tla/`. Con el indice comprobado vacio justo antes, `git add` y `git commit` en llamadas separadas: entre las dos, otra sesion commiteo y se llevo lo preparado. `specs/tla/` entero —README, `.gitignore` y la retirada de los volcados `states/`— acabo dentro de `ccf28b4`, *"SPEC-20: que se puede editar a mano"*; las anotaciones de `Docs/architecture.md` y la propia `F-39`, dentro de `ff354cc`, *"Mover SPEC-20 a aplicadas"*. **El contenido sobrevivio intacto y lo que se perdio fue el porque**: dos commits cuyo mensaje explicaba cada decision no llegaron a existir, y el historial atribuye el trabajo de verificacion formal a commits sobre edicion manual. Nada fallo en ningun momento: los dos `git add` funcionaron, los dos commits ajenos funcionaron, y el segundo `git commit` dijo *"nothing to commit, working tree clean"*, que es la frase de que todo esta bien | **Cerrado en los tres niveles, y los tres hacian falta.** Los worktrees ya estaban montados por otra sesion —cuatro carpetas, una por rama— y `AGENTS.md` ya prohibia `git add -A` y `git commit -a`; **no bastaba**, porque las dos sesiones que chocaron estaban en la **misma** carpeta y ninguna hizo un barrido: el conflicto fue por el indice compartido, no por el alcance del `add`. Lo que lo cierra de verdad es **una carpeta por sesion de verdad, no por rama**, mas `git add <ruta> && git commit -- <ruta>` **en un solo comando**. La causa de fondo quedo como **Regla 6**. **Nacio como `F-40` y se renumero a `F-44`** por la misma colision, y por el mismo criterio: el otro `F-40` ya estaba citado en cinco sitios del codigo |
 | F-43 | **Una version publicada no tiene identidad, asi que "se conserva la version anterior" no es comprobable ni siquiera en principio.** Lo destapo la especificacion TLA+ (`specs/tla/`) por el peor camino posible: la propiedad `VersionesSoloCrecen` **pasaba** con el modelo configurado para que la publicacion **pisara** la version anterior. El motivo es que una version se representaba por el conjunto de sus capitulos, y al regenerar y volver a aprobarlos todos, la version nueva era un valor **identico** a la vieja: pisar algo con una copia exacta no se ve. Con un campo `ronda` que le da identidad, la misma configuracion viola la propiedad en 1.148 estados. En el codigo pasa lo mismo y peor: `copiar_novela()` de la rama `main` guarda `salida-novela-1/`, `salida-novela-2/`… y **el numero de carpeta es lo unico que las distingue** —nada dentro de la novela dice de que ronda es—, y ademas solo se invoca desde `POST /api/ampliar`, asi que cualquier otro camino que regenere se lleva la anterior por delante. Es **una de las invariantes de seguridad que el enunciado del examen exige**, y hoy no hay contra que comprobarla | Abierto. **Es el mismo hueco que `G-07`** de `SPEC - Frontend y contrato congelado.md` —*"la obra no tiene version"*—, alcanzado por el otro lado: alli desde la interfaz que necesita decir que capitulos cambiaron, aqui desde una propiedad que no podia fallar. **Se resuelve una vez, con `G-07`**, y decidir que es una version de la obra es de dominio . **Nacio como `F-39` y se renumero a `F-43`** el mismo dia: otra sesion habia elegido `F-39` para otro hallazgo. Se movio este porque el otro ya tenia cinco referencias en codigo y este una |
-| F-40 | **La memoria mezclaba obras, y cada capítulo arrancaba sin memoria del anterior.** El `orden` de una escena va del 1 al N **dentro de su obra**, así que con diez capítulos en la misma base había diez escenas con orden 1. `resumenes_hasta` y `fichas_en` filtraban **solo por orden**: la escena 4 del segundo capítulo recibía los resúmenes del primero entremezclados y en orden equivocado, y **la escena 1 de cada capítulo recibía cero**. Medido en la obra de diez: tras doce escenas, el contexto que recibiría la siguiente era el mismo que tras siete, y la causa no era que el material no creciera sino que se estaba leyendo mal. **Es el defecto que más de cerca toca lo que el proyecto existe para hacer** —una novela que olvida el capítulo uno al empezar el dos— y ninguna ejecución de menos de dos capítulos podía verlo | **Cerrado**: `resumen` y `ficha` guardan su obra, y las dos consultas se acotan |
+| F-40 | **La memoria mezclaba obras, y cada capítulo arrancaba sin memoria del anterior.** El `orden` de una escena va del 1 al N **dentro de su obra**, así que con diez capítulos en la misma base había diez escenas con orden 1. `resumenes_hasta` y `fichas_en` filtraban **solo por orden**: la escena 4 del segundo capítulo recibía los resúmenes del primero entremezclados y en orden equivocado, y **la escena 1 de cada capítulo recibía cero**. Medido en la obra de diez: tras doce escenas, el contexto que recibiría la siguiente era el mismo que tras siete, y la causa no era que el material no creciera sino que se estaba leyendo mal. **Es el defecto que más de cerca toca lo que el proyecto existe para hacer** —una novela que olvida el capítulo uno al empezar el dos— y **ninguna ejecución de menos de dos capítulos podía verlo**. Llevábamos **cinco**, todas de entre una y seis escenas, y las cinco pasaron por encima de este defecto sin tocarlo. Lo destapó medir el crecimiento del contexto —`VER-37`—, que llevaba cinco intentos sin contestarse y que en cada uno pareció una fila que no daba resultado: **la pregunta valía aunque la respuesta tardara cinco intentos**, y el valor no estuvo en la respuesta sino en lo que hubo que construir para poder medirla. Es el argumento a favor de dejar abiertas las filas que no se contestan, en vez de cerrarlas por cansancio | **Cerrado en tres sitios, y el tercero apareció después.** `resumen` y `ficha` guardan su obra y sus consultas se acotan. Pero la de la **escena anterior** quedó fuera del primer arreglo —lo encontró y reprodujo la sesión que llevaba `SPEC-21`— y era la peor de las tres: es el bloque **Local**, el que lleva la escena anterior **entera**, así que el Escritor arrancaba leyendo una escena de otra obra y **nadie lo notaba, porque llega texto plausible**. Los resumenes al menos llegaban desordenados o vacíos. **Leccion:** arreglar un defecto de alcance en dos de sus tres consultas deja el sistema pareciendo arreglado, y el comentario *"acotados a la obra"* que quedó justo encima de la consulta sin acotar lo hacía peor |
+| F-45 | **La decisión dice que los resúmenes cruzan el corte de capítulo, y con `orden` local al capítulo no pueden.** Medido: una obra con dos capítulos, el primero con dos escenas de `orden` 1 y 2; la escena 1 del **segundo** capítulo pide `resumenes_hasta(orden=1)` y recibe **cero**, cuando debería recibir las dos del primero. Acotar por obra —el arreglo de `F-40`— no lo toca: las escenas son de la misma obra y el problema es que **`orden` no es comparable entre capítulos**. Lo señaló la sesión de `SPEC-22`/`SPEC-23` leyendo el árbol a medias, y tenía razón. **La escena anterior y los resúmenes necesitaban arreglos opuestos**: aquélla acotarse al capítulo, éstos poder cruzarlo, y un mismo filtro no da los dos | Abierto: falta decidir de dónde sale el orden narrativo global. `MomentoNarrativo.t_discurso` está definido para esto y hoy nadie lo rellena |
+| F-48 | **`F-44` otra vez, contra el commit que estaba documentando `F-44`.** Al commitear la regla nueva de `AGENTS.md` —la que dice cómo no perder trabajo entre sesiones— el primer intento falló por un error de sintaxis: `git commit -- <ruta> -m "..."` pone el `-m` después del `--`, así que git lo leyó como ruta y abortó. **Pero el `git add` que iba delante sí se ejecutó**, y dejó el fichero preparado en el índice compartido. Antes del segundo intento, otra sesión commiteó: `AGENTS.md` entero se fue dentro de `beb917f`, *«El alcance de la escena anterior es el capitulo»*, y el segundo intento contestó *«nothing to commit, working tree clean»*. Contenido intacto, **el porqué perdido** — un commit cuyo mensaje explicaba la disciplina de numeración no llegó a existir | **Abierto, y la Regla 6 se afila**: `git add <ruta> && git commit -- <ruta>` en un solo comando **no basta**, porque protege del comando que no se lanza y no del que se lanza y falla a mitad. Un `add` que triunfa seguido de un `commit` que aborta deja el índice cargado durante toda la depuración del error, que es la ventana más larga de todas. Lo que lo cerraría es no preparar hasta tener el comando bueno —`git commit -F -` con el mensaje por la entrada estándar, o `git stash` ante un commit fallido— y, de fondo, la carpeta por sesión que `F-44` ya pedía. **Este hallazgo nació además colisionando**: se escribió como `F-46` tras comprobar que era el siguiente libre, y otra sesión publicó su propio `F-46` y un `F-47` en esa ventana. Pasa a `F-48` porque el primero publicado conserva el número, que es la regla que este mismo commit estaba añadiendo a `AGENTS.md` |
 | F-41 | **Cinco escenas de doce se quedaron sin resumen y nadie lo dijo.** El ciclo guarda el resumen `if c.resumen:`, y cuando el Resumidor no contesta —`RespuestaIlegible`— esa rama simplemente no se ejecuta. La escena se da por buena, las siguientes leen un contexto al que le falta, y **desde fuera es indistinguible de una escena que no tenía nada que resumir**. Es la misma clase de fallo que `F-34` con las invariantes: un dato ausente que se lee como un verde. Lo destapó contar filas: doce escenas consolidadas, siete resúmenes | **Cerrado**: la generación lleva `sin_resumen` y lo dice. Al escribir su prueba apareció además que el doble devolvía `None` donde el proveedor real lanza, así que el doble no era fiel (Regla 3) y `_delegar` reventaba con `AttributeError` en vez de registrar el fallo |
 | F-42 | **El campo que separaba el dato medido de la afirmación no verificada era justo el que se perdía, y no fallaba: pisaba.** La clave de `uso_de_hecho` era `(hecho, escena, tipo)` y dejaba fuera `origen`. Un mismo hecho puede constar como `depende` por dos caminos que **no valen lo mismo**: **observado** —el ensamblador lo metió en el prompt, así que la escena pudo apoyarse en él: sobre-aproxima y falla ruidoso— y **declarado** —el delta dice que se usó: se ajusta más y falla en silencio—. Con esa clave no cabían a la vez: el segundo `INSERT OR REPLACE` pisaba al primero y **cuál sobrevivía dependía del orden de escritura**, dejando una fila creíble. Lo encontró la sesión del frontend al ir a escribir las filas observadas que `SPEC-23` `S-5` necesita, **antes de que existiera ningún dato**. Su coste real no era la fila perdida: era que incorporar lo observado más tarde habría dejado de ser editar una constante para pasar a ser migrar datos, es decir, **volver a decidir algo ya decidido** | **Cerrado**: la clave pasa a `(hecho, escena, tipo, origen)` con la migración 6 y dos casos negativos —que las dos filas convivan, y que repetir la misma con el mismo origen siga siendo una sola—. **Tercera vez con este patrón**, así que la causa de fondo quedó como **Regla 7** |
 | F-39 | **Dos capítulos que declaran el mismo identificador de hecho: el segundo pisa al primero, y el primero se queda sin ninguno.** `hecho_canonico.id` era PRIMARY KEY **global** mientras `hechos_declarados` filtra **por obra**: el código ya trataba el mismo identificador en dos obras como dos hechos y la clave decía lo contrario. Lo destapó la obra de diez capítulos, que declara los diez hechos en los diez: al terminar, **los diez estaban atribuidos a `cap-10`** y los nueve capítulos anteriores tenían la lista vacía, así que su prompt volvía a decir *"hechos: (ninguno)"*. **Es `F-29` otra vez por una puerta nueva**, y del tipo que este documento persigue: no falla, **pisa**. Lo que salvó la ejecución fue `SPEC-19`: los hechos que un beat promete llegan por `establece[]`, que sale de la escena y no de la tabla, así que las cuatro promesas del capítulo uno se cumplieron igual | **Cerrado**: la clave pasa a `(obra, id)` con su migración, y `establecer_hecho` acota por obra, porque marcar uno no dice nada de los demás capítulos |
@@ -920,9 +1004,19 @@ esperando una respuesta que el dato no da.
       el correcto. La decisión tiene dos salidas y hay que elegir una: **o las cifras se
       ajustan a lo que se mide**, y entonces el recorte empieza a ejercerse de verdad, **o se
       declara que describen una obra larga que todavía no existe**, y entonces queda escrito
-      que el mecanismo está en reserva y nadie debe leer su verde como cobertura. **No se
-      contesta sola**: una obra de sesenta escenas dará el dato que informa, pero elegir
-      sigue siendo de alguien.
+      que el mecanismo está en reserva y nadie debe leer su verde como cobertura. sigue siendo de alguien.
+
+      **Y hay una consecuencia que no es de presupuesto sino de diseño, medida por la sesión
+      de `SPEC-23`:** el único criterio de relevancia de hechos que el proyecto tiene escrito
+      vive en la **forma reducida** del bloque de estado, es decir **en el camino del
+      recorte**. Con el contexto real a 1.300 tokens de un techo de 100.000, ese camino **no
+      se ejecuta nunca**, así que el criterio está escrito y no se aplica jamás: el conjunto
+      de hechos que el modelo ve sale **constante**, y cualquier medida de *«qué fracción de
+      la obra tenía este hecho delante»* da 1,0 por construcción. Es la **Regla 8 a escala
+      de diseño**: no una rama que no se ejecuta, sino un **mecanismo entero declarado y no
+      ejercido**, y con la misma apariencia desde fuera —todo en verde—. Esto sube el precio
+      de dejar las cifras como están: no solo el recorte queda sin verificar, también
+      **cualquier pregunta que dependa de qué vio el modelo pierde resolución**.
 - [ ] **Qué comprobador de importaciones** se usa para `VER-13`, `VER-14` y `VER-15`.
 - [ ] **Qué herramienta de FSD** cierra `VER-17`.
 - [ ] **Qué conjunto de escenas** sirve de corpus para los evals de `VER-26`.

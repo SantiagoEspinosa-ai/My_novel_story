@@ -53,7 +53,7 @@ class Cierre:
     menores_que_se_dejan_pasar: list
 
 
-def cerrar(estados_de_escena, hallazgos):
+def cerrar(estados_de_escena, hallazgos, orden_temporal=None):
     a_medias = [e for e in estados_de_escena if e not in COMPLETAS]
     if a_medias:
         raise NoSePuedeCerrar(
@@ -73,6 +73,35 @@ def cerrar(estados_de_escena, hallazgos):
             "hay {0} hallazgos `mayor` abiertos: hay que resolverlos o "
             "descartarlos antes de firmar".format(len(bloquean))
         )
+    # `INV-08` es de **nivel capitulo**, asi que su sitio es esta puerta y no
+    # `verificacion/puertas.py`, que ejecuta las de nivel escena. Estaba
+    # declarada, con su consulta escrita y sus pruebas en verde, y **no la
+    # llamaba nadie** (`F-47`): desde fuera no se distinguia de una que si se
+    # ejecuta. La lo detecto la verificacion formal al escribir la misma regla
+    # en Lean y preguntarse contra que contrastarla.
+    #
+    # El dato lo trae quien compone -`orquestacion/`- porque esta feature no
+    # puede importar de `cronologia/` (`A-02`).
+    if orden_temporal is not None:
+        inversiones = orden_temporal.get("inversiones") or []
+        if inversiones:
+            raise NoSePuedeCerrar(
+                "`INV-08`: el capitulo avanza y el tiempo de la fabula "
+                "retrocede en {0} sitio(s) {1}. Una analepsis es exactamente "
+                "eso y no es un error, pero **hoy no hay donde declararla**, "
+                "asi que toda inversion sale aqui hasta que lo haya".format(
+                    len(inversiones), inversiones[:3]))
+        sin_fecha = orden_temporal.get("sin_fecha_legible") or []
+        if sin_fecha:
+            # Regla 8: *no se pudo comprobar* no es *se comprobo y esta bien*.
+            # Cerrar aqui seria firmar que el orden temporal es correcto
+            # habiendo mirado cero escenas.
+            raise NoSePuedeCerrar(
+                "`INV-08` no se pudo comprobar: {0} escena(s) sin `t_fabula` "
+                "legible {1}. Sin fecha no hay orden temporal que verificar, y "
+                "eso **no es lo mismo que estar en orden**".format(
+                    len(sin_fecha), sin_fecha[:3]))
+
     return Cierre(
         estado="cerrado",
         menores_que_se_dejan_pasar=[h for h in abiertos

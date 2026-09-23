@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.features.auditoria import capitulo
+from app.features.cronologia import consultas
 
 # Una escena en estos estados ya paso por todo: su delta esta aplicado y su
 # texto elegido. Son los mismos que `auditoria/` llama `COMPLETAS` para decidir
@@ -67,15 +68,38 @@ class Generacion:
 def reunir_material(con, escena, obra_id, inmutable=""):
     """Lo que hay disponible para montar el contexto de esta escena."""
     orden = escena["orden"]
+    # Acotada a la obra, como los resumenes y las fichas (`F-40`). Esta era la
+    # que quedaba fuera, y es **el bloque que mas pesa del contexto**: el
+    # bloque Local, que lleva la escena anterior entera. Sin el filtro,
+    # `orden - 1` casaba con una escena de cada obra y `LIMIT 1` se quedaba con
+    # la que saliera — el Escritor arrancaba leyendo una escena de otra obra y
+    # **nadie lo notaba, porque llega texto plausible**. Peor que lo de los
+    # resumenes, que llegaban desordenados o vacios.
+    # **El alcance de la escena anterior es el capitulo, no la obra.** Los
+    # resumenes si cruzan el corte -una novela no olvida el capitulo uno al
+    # empezar el dos- pero esta no: eso es exactamente lo que un corte de
+    # capitulo significa. Dos alcances distintos, y un solo filtro no sirve
+    # para los dos.
+    #
+    # `IS` y no `=` porque compara bien contra NULL: una escaleta anterior a
+    # `SPEC-21` no trae capitulo, y entonces todas las de la obra caen en el
+    # mismo grupo, que es el comportamiento que habia.
     anterior = con.execute(
         "SELECT b.texto FROM borrador b JOIN escena e ON e.id = b.escena "
-        "WHERE e.orden = ? ORDER BY b.version DESC LIMIT 1", (orden - 1,)).fetchone()
+        "WHERE e.orden = ? AND e.obra = ? AND e.capitulo IS ? "
+        "ORDER BY b.version DESC LIMIT 1",
+        (orden - 1, obra_id, escena.get("capitulo"))).fetchone()
     return {
         # Acotados a la obra: el `orden` va del 1 al N **dentro** de ella, asi
         # que sin el filtro dos obras en la misma base se mezclan (`F-40`).
         "resumenes": memoria.resumenes_hasta(con, orden, obra=obra_id),
         "fichas": memoria.fichas_en(con, orden, obra=obra_id),
         "escena_anterior": anterior[0] if anterior else "",
+        # Vacio legitimo y vacio por fallo **no pueden verse igual** (Regla 8).
+        # Que la escena 1 de un capitulo no tenga anterior es lo correcto; que
+        # no la tenga la 4 es un defecto, y con la misma cadena vacia nadie lo
+        # veria.
+        "falta_escena_anterior": orden > 1 and anterior is None,
         "mundo": modulo_mundo.leer(con),
         "problemas": repo.hallazgos_abiertos(con, escena["id"]),
         "hechos": repo.hechos_declarados(con, obra_id),
@@ -237,8 +261,19 @@ def evaluar_cierre(con, obra):
     estados = [EE(e["estado"]) for e in escenas]
     hallazgos = [dict(h, severidad=h["severidad"], estado=h["estado"])
                  for e in escenas for h in repo.hallazgos_abiertos(con, e["id"])]
+    # `INV-08` es de nivel capitulo y su dato vive en `cronologia/`, que
+    # `auditoria/` no puede importar (`A-02`). Componer es de aqui, asi que el
+    # orden temporal se consulta aqui y se le pasa ya resuelto (`F-47`).
     try:
-        cierre = capitulo.cerrar(estados, hallazgos)
+        temporal = consultas.orden_temporal(con, obra)
+    except Exception:
+        # La cronologia puede no estar poblada en una obra que no la use. Que
+        # falte el dato no es lo mismo que estar en orden, pero tampoco puede
+        # tumbar el cierre por un error de infraestructura: se pasa `None`, que
+        # es "no se consulto", y la puerta no afirma nada sobre `INV-08`.
+        temporal = None
+    try:
+        cierre = capitulo.cerrar(estados, hallazgos, orden_temporal=temporal)
     except capitulo.NoSePuedeCerrar as e:
         detalle = "; ".join(sorted({h["invariante"] for h in hallazgos})) or ""
         return {"puede_cerrarse": False, "firmado": False,
@@ -262,7 +297,7 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
         c = ciclo.ejecutar(con, escena["id"], tamanos, escritor, juez, resumidor,
                            material["mundo"], techo=techo,
                            trabajo="obra-{0}-i{1}".format(escena["orden"], numero + 1),
-                           hechos=[h["id"] for h in material["hechos"]],
+                           hechos=material["hechos"],
                            problemas=_problemas_de(intentos),
                            instrucciones=instrucciones,
                            acta=_acta_de_la_escena(escena, obra_id,

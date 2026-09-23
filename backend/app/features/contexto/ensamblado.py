@@ -83,6 +83,27 @@ CONSTRUCTORES = {
 }
 
 
+def lecturas(material: dict) -> dict:
+    """Que hechos y que entradas del registro de conocimiento entraron.
+
+    Es el **conjunto de lecturas observado** de `SPEC-23` `S-5`: lo que el
+    ensamblador metio de verdad en el prompt, no lo que el modelo diga despues
+    que uso. Se eligio esta variante por como se equivoca cada una -sobre-
+    aproximar hace regenerar de mas, que se ve; quedarse corto deja una
+    contradiccion que nadie marca-, y es lo que hace medible cuanto arrastra un
+    cambio.
+
+    **No mira el recorte, y es deliberado.** El bloque 4 no se elimina pero si
+    se reduce, asi que un hecho ofrecido puede acabar fuera del texto truncado
+    y aun asi queda registrado. Afinar esto es cambiar la direccion del error.
+    """
+    mundo = material.get("mundo") or {}
+    conocimiento = [{"sujeto": s, "hecho": h}
+                    for (s, h) in sorted((mundo.get("conocimiento") or {}))]
+    return {
+        "hechos": [h["id"] for h in material.get("hechos") or []],
+        "conocimiento": conocimiento,
+    }
 def montar(material: dict) -> dict:
     """Devuelve `{nombre_de_bloque: texto}` en el orden de 2.4."""
     return {b.nombre: CONSTRUCTORES[b.nombre](material) for b in BLOQUES}
