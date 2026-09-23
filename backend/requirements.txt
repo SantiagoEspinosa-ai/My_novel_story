@@ -1,0 +1,15 @@
+# Dependencias del backend. Todo lo demas que usa es libreria estandar:
+# sqlite3, struct, subprocess, pathlib, json, hashlib, re, ast.
+#
+# No hay cliente de ningun proveedor de modelos, y eso es deliberado: desde
+# `SPEC-14` el harness **delega en sesiones de Claude Code por subproceso** y
+# ningun codigo suyo toca la red. Si algun dia aparece aqui un SDK, es que esa
+# decision cambio y hay que mirar si la spec lo dice.
+fastapi
+uvicorn
+httpx
+pytest
+
+# `CLAUDE.md`: la busqueda por similitud se hace con una extension vectorial de
+# SQLite y **no se añade un servicio aparte**. Verificada con v0.1.9.
+sqlite-vec

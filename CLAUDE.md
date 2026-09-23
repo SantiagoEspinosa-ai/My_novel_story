@@ -62,4 +62,13 @@ Nunca se manda el texto completo de la obra **al modelo**. El límite de 100.000
 
 ## Comandos
 
-Todavía no hay build ni tests. Cuando los haya, van aquí con el comando exacto, no con una descripción.
+El comando exacto, no una descripción de él.
+
+```
+cd backend && pip install -r requirements.txt   # una vez
+cd backend && python -m pytest app -q           # las pruebas
+```
+
+Todavía no hay build: el backend se ejecuta con `uvicorn app.main:app` y el frontend no existe.
+
+**Los guiones de ejecución real gastan dinero** y por eso no están aquí como comando suelto: `backend/f6_seis_escenas.py` delega en sesiones de verdad. Necesitan `HARNESS_MODELO_ESCRITOR`, `HARNESS_MODELO_JUEZ` y `HARNESS_MODELO_RESUMIDOR`, y se lanzan con `python -X utf8` porque la consola de Windows no es UTF-8 por defecto.
