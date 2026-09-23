@@ -33,7 +33,7 @@ from dataclasses import dataclass, field
 
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
-from app.features.auditoria import capitulo
+from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.cronologia import consultas
 
 # Una escena en estos estados ya paso por todo: su delta esta aplicado y su
@@ -141,7 +141,7 @@ def reunir_material(con, escena, obra_id, inmutable=""):
 
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
-                 tope_delegaciones=None, instrucciones=None):
+                 tope_delegaciones=None, instrucciones=None, capitulo=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -165,7 +165,13 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # le pasa a `escaleta/` como valor.
     repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra))
     g = Generacion()
-    for escena in repo.escenas_de(con, obra):
+    # Una obra son **diez capitulos, no diez obras**. Generar de capitulo en
+    # capitulo es lo que permite reintentar uno sin tocar los demas, que es como
+    # el guion de la obra larga se desatasca. Sin `capitulo` se genera la obra
+    # entera, que es lo que quiere una ejecucion de un tiron.
+    escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
+               else repo.escenas_de(con, obra))
+    for escena in escenas:
         if hasta is not None and escena["orden"] > hasta:
             break
 
@@ -252,7 +258,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         _actualizar_fichas(con, escena, c, obra)
         g.escenas_hechas.append(escena["id"])
 
-    g.cierre = evaluar_cierre(con, obra)
+    g.cierre = evaluar_cierre(con, obra, capitulo)
     return g
 
 
@@ -282,7 +288,7 @@ def escenas_que_usan(con, clase, objeto):
     return []
 
 
-def evaluar_cierre(con, obra):
+def evaluar_cierre(con, obra, capitulo=None):
     """Dice si el capitulo **podria** cerrarse. No lo cierra.
 
     La firma es humana y la dispara el cliente de la API, nunca el worker
@@ -294,7 +300,11 @@ def evaluar_cierre(con, obra):
     Lo que si hace el bucle es dejar el veredicto preparado, porque tener que
     ir a buscarlo a mano es la forma mas facil de no mirarlo nunca.
     """
-    escenas = repo.escenas_de(con, obra)
+    # La puerta es **de capitulo**: evaluarla sobre la obra entera preguntaria
+    # si se puede firmar la novela, que es otra pregunta y siempre diria que no
+    # mientras quede un capitulo por escribir.
+    escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
+               else repo.escenas_de(con, obra))
     estados = [EE(e["estado"]) for e in escenas]
     hallazgos = [dict(h, severidad=h["severidad"], estado=h["estado"])
                  for e in escenas for h in repo.hallazgos_abiertos(con, e["id"])]
@@ -310,8 +320,8 @@ def evaluar_cierre(con, obra):
         # es "no se consulto", y la puerta no afirma nada sobre `INV-08`.
         temporal = None
     try:
-        cierre = capitulo.cerrar(estados, hallazgos, orden_temporal=temporal)
-    except capitulo.NoSePuedeCerrar as e:
+        cierre = puerta_capitulo.cerrar(estados, hallazgos, orden_temporal=temporal)
+    except puerta_capitulo.NoSePuedeCerrar as e:
         detalle = "; ".join(sorted({h["invariante"] for h in hallazgos})) or ""
         return {"puede_cerrarse": False, "firmado": False,
                 "motivo": "{0} [{1}]".format(e, detalle)}

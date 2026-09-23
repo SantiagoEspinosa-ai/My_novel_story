@@ -36,6 +36,7 @@ from app.features.consolidacion import deltas
 from app.features.cronologia import repository as usos
 from app.features.observabilidad import repository as observabilidad
 from app.features.consolidacion import aplicar, memoria, mundo
+from app.features.brief import repository as brief
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, obra
 
@@ -58,6 +59,18 @@ ACCESOS = {"lug-salon": ["lug-cocina", "lug-pasillo"],
            "lug-desvan": ["lug-pasillo"]}
 
 PERSONAS = {"per-marta": ("vivo", "lug-salon"), "per-ana": ("vivo", "lug-cocina")}
+
+# LA OBRA ES UNA, Y TIENE DIEZ CAPITULOS DENTRO
+# ----------------------------------------------
+# Antes cada capitulo se daba de alta como **una obra distinta**, y con eso nada
+# de lo construido significaba nada: `escena.capitulo` no tenia a que apuntar,
+# el cierre de capitulo evaluaba una obra de seis escenas, la cronologia no
+# cruzaba ningun corte, y los diez `HechoCanonico` -declarados diez veces, uno
+# por "obra"- colisionaban en la misma clave y acababan **todos bajo `cap-10`**.
+# En la primera ejecucion eso dejo a los siete capitulos que corrieron generando
+# con `hechos: (ninguno)`, de modo que el cero de `INV-03` no decia que la obra
+# estuviera limpia: decia que no habia nada que mirar.
+OBRA = "obra-la-casa"
 
 # Los hechos de la obra entera. `SPEC-15`: los declara el plan, no el texto.
 HECHOS = [
@@ -205,8 +218,24 @@ def preparar(con):
         m.asegurar_tablas(con)
     aplicar.sembrar(con, PERSONAS)
     mundo.sembrar_lugares(con, ACCESOS)
+
+    # El alta de la obra y de sus capitulos, con su orden. Es lo que
+    # `asignar_t_discurso` necesita para numerar el orden de lectura de la obra
+    # entera: sin capitulos registrados no hay forma de saber cual va antes, y
+    # **no se adivina**.
+    brief.asegurar_tablas(con)
+    with con:
+        con.execute(
+            "INSERT OR REPLACE INTO obra (id, titulo, premisa, genero) "
+            "VALUES (?, ?, ?, ?)",
+            (OBRA, "La casa exacta", INMUTABLE.splitlines()[0], "terror"))
+        for posicion, (cap, titulo, _e) in enumerate(CAPITULOS, start=1):
+            con.execute(
+                "INSERT OR REPLACE INTO capitulo (id, obra, orden, estado) "
+                "VALUES (?, ?, ?, 'abierto')", (cap, OBRA, posicion))
+
     for cap, _titulo, escenas in CAPITULOS:
-        repo.guardar_escaleta(con, cap, [
+        repo.guardar_escaleta(con, OBRA, [
             {"id": "{0}-e{1}".format(cap, n), "orden": n,
              # `SPEC-21` C-1 y la decision del autor: el alcance de la escena
              # anterior es el **capitulo**. Sin declararlo, todas las escenas
@@ -217,8 +246,9 @@ def preparar(con):
              "beats": [{"id": "{0}-b{1}".format(cap, n), "establece": establece}],
              "longitud_objetivo": [250, 800]}
             for n, (eje, lugar, _sinopsis, establece) in enumerate(escenas, 1)])
-        repo.declarar_hechos(con, cap, [
-            {"id": h, "enunciado": e} for h, e in HECHOS])
+    # Una sola vez, para la obra entera. Declararlos por capitulo era lo que
+    # los hacia colisionar: son los hechos de **la novela**, no de un capitulo.
+    repo.declarar_hechos(con, OBRA, [{"id": h, "enunciado": e} for h, e in HECHOS])
     mundo.sembrar_conocimiento(con, CONOCIMIENTO_INICIAL)
 
 
@@ -251,9 +281,12 @@ def main():
         print("\n### {0} — {1}".format(cap, titulo), flush=True)
         instrucciones = None
         for vuelta in (1, 2):
-            g = obra.generar_obra(con, cap, escritor, juez, resumidor,
+            # `capitulo=cap` recorre solo ese capitulo y evalua su puerta
+            # sobre el. Sin el, una sola llamada generaria las sesenta escenas
+            # de un tiron y se perderia el reintento por capitulo.
+            g = obra.generar_obra(con, OBRA, escritor, juez, resumidor,
                                   inmutable=INMUTABLE, techo=100_000,
-                                  instrucciones=instrucciones)
+                                  instrucciones=instrucciones, capitulo=cap)
             total["escenas"] += len(g.escenas_hechas)
             total["usd"] += g.coste["usd"]
             total["delegaciones"] += g.coste["delegaciones"]

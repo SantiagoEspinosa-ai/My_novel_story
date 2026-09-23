@@ -659,3 +659,35 @@ def test_las_trazas_de_la_obra_sobreviven_al_proceso(con):
     trazas = obs.trazas_de(con, "e1")
     assert {t["agente"] for t in trazas} == {"escritor", "juez", "resumidor"}, (
         "las tres delegaciones del ciclo, no solo la del Escritor")
+
+
+def test_generar_un_capitulo_dentro_de_una_obra_no_toca_los_demas(con):
+    """Una obra con diez capitulos, no diez obras.
+
+    El guion de la obra larga generaba **una obra por capitulo**, y con eso nada
+    de lo construido significaba nada: `escena.capitulo` no tenia a que apuntar,
+    el cierre de capitulo evaluaba una obra entera, la cronologia no cruzaba
+    ningun corte y los hechos de los diez capitulos colisionaban en la misma
+    clave (`F-39`).
+
+    Con una sola obra hace falta poder generar **capitulo a capitulo**, que es
+    lo que permite reintentar uno sin tocar los demas.
+    """
+    from app.features.brief import repository as brief
+    brief.asegurar_tablas(con)
+    with con:
+        con.execute("UPDATE escena SET capitulo='cap-1'")
+        con.execute("INSERT INTO obra (id, titulo, premisa) VALUES ('cap-1','t','p')")
+        for id_cap, orden in (("cap-1", 1), ("cap-2", 2)):
+            con.execute("INSERT INTO capitulo (id, obra, orden) VALUES (?, ?, ?)",
+                        (id_cap, "cap-1", orden))
+    repo.guardar_escaleta(con, "cap-1", [
+        {"id": "c2-e1", "orden": 1, "capitulo": "cap-2", "pov": "per-marta",
+         "lugar": "lug-salon", "beats": ["b"], "longitud_objetivo": [10, 5000],
+         "cambio_de_valor": {"eje": "cordura", "signo": "negativo"}}])
+
+    g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000,
+                          capitulo="cap-2")
+    assert g.escenas_hechas == ["c2-e1"], (
+        "generar el capitulo dos ha tocado escenas de otro capitulo")
+    assert repo.escena(con, "e1")["estado"] == "planificada"
