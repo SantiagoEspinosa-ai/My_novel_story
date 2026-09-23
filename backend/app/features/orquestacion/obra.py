@@ -39,6 +39,8 @@ from app.features.auditoria import capitulo
 # si un capitulo puede cerrarse, y por el mismo motivo.
 YA_HECHAS = {EE.CONSOLIDADA, EE.ACEPTADA_POR_RENDICION}
 from app.features.consolidacion import memoria, mundo as modulo_mundo
+from app.features.cronologia import extraccion
+from app.features.cronologia import repository as cronologia
 from app.features.contexto import ensamblado, recorte
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, rendicion
@@ -93,6 +95,11 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     """
     tope_intentos = tope_intentos or config.TOPE_INTENTOS_ESCENA
     tope_delegaciones = tope_delegaciones or config.TOPE_DELEGACIONES_OBRA
+    # Las tablas del acta se aseguran **aqui y no al levantarla**: crearlas
+    # abre su propia transaccion, y el acta corre dentro de la del delta.
+    # Anidar transacciones en SQLite hace commit del bloque interno, que es
+    # justo la atomicidad que `SPEC-21` C-4 existe para sostener.
+    cronologia.asegurar_tablas(con)
     g = Generacion()
     for escena in repo.escenas_de(con, obra):
         if hasta is not None and escena["orden"] > hasta:
@@ -129,7 +136,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         g.medidas.append(_medida(escena, tamanos, plan))
 
         c, intentos = _intentar(con, escena, tamanos, escritor, juez, resumidor,
-                                material, techo, tope_intentos, g,
+                                material, obra, techo, tope_intentos, g,
                                 instrucciones)
 
         if c.fallo:
@@ -147,10 +154,16 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
             version = rendicion.menos_malo([(v, h) for v, h, _ in intentos])
             elegido = next(c2 for v, _, c2 in intentos if v == version)
             repo.rendir_escena(con, escena["id"], version)
+            texto_rendido = ciclo.texto_de(con, escena["id"], version)
             c = ciclo.consolidar_y_resumir(
-                elegido, con, escena["id"],
-                ciclo.texto_de(con, escena["id"], version), resumidor,
-                "obra-{0}-rendicion".format(escena["orden"]))
+                elegido, con, escena["id"], texto_rendido, resumidor,
+                "obra-{0}-rendicion".format(escena["orden"]),
+                # Una escena rendida **entra igual al canon**, asi que su acta
+                # se levanta igual. Olvidarla aqui dejaria sin registrar los
+                # usos justo de las escenas que mas falta hace poder revisar.
+                al_consolidar=ciclo._acta_de(
+                    _acta_de_la_escena(escena, obra, material["hechos"]),
+                    texto_rendido, elegido))
             g.rendidas.append((escena["id"], version, len(intentos)))
             if c.fallo:
                 g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -163,7 +176,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                 str(c.resumen.get("texto") or ""),
                 [h for h in (c.resumen.get("hechos_clave") or [])
                  if memoria.IDENTIFICADOR.match(str(h))])
-        _marcar_establecidos(con, escena, c)
+        _marcar_establecidos(con, escena, c, obra)
         _actualizar_fichas(con, escena, c)
         g.escenas_hechas.append(escena["id"])
 
@@ -223,7 +236,7 @@ def evaluar_cierre(con, obra):
             "menores_que_se_dejan_pasar": cierre.menores_que_se_dejan_pasar}
 
 
-def _intentar(con, escena, tamanos, escritor, juez, resumidor, material,
+def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id,
               techo, tope, g, instrucciones=None):
     """Hasta `tope` intentos, y los problemas de uno entran en el siguiente.
 
@@ -240,7 +253,9 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material,
                            trabajo="obra-{0}-i{1}".format(escena["orden"], numero + 1),
                            hechos=[h["id"] for h in material["hechos"]],
                            problemas=_problemas_de(intentos),
-                           instrucciones=instrucciones)
+                           instrucciones=instrucciones,
+                           acta=_acta_de_la_escena(escena, obra_id,
+                                                   material["hechos"]))
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
         _acumular_coste(g, c.trazas)
         if c.generacion is not None and c.generacion.version is not None:
@@ -279,7 +294,47 @@ def _problemas_de(intentos):
             for h in intentos[-1][1]]
 
 
-def _marcar_establecidos(con, escena, c):
+def _acta_de_la_escena(escena, obra_id, hechos):
+    """Lo que esta escena deja escrito ademas de su delta (`SPEC-21` C-4).
+
+    ESTO ES LO QUE FALTABA, Y FALTABA ENTERO
+    ------------------------------------------
+    La tabla de usos de un hecho no estaba a medias: **no la poblaba nadie**.
+    `escena_de_establecimiento` decia donde nace un hecho y no habia forma de
+    preguntar donde se vuelve a usar, que es lo que necesitan los enlaces de
+    una ficha, la regeneracion selectiva, el validador de elementos
+    personalizados y el fichero Lean. Las cuatro colgaban del mismo hueco.
+
+    POR QUE COMPONE ESTE MODULO Y NO `cronologia/`
+    ------------------------------------------------
+    Porque hay que cruzar tres features: la escena y los hechos son de
+    `escaleta/`, el delta viene del ciclo y las tablas son de `cronologia/`.
+    Cruzar es acoplar y acoplar es de `orquestacion/` (`A-02`). `cronologia/`
+    recibe valores y no consulta ninguna tabla ajena.
+
+    Devuelve una funcion `(con, texto, delta)` que se ejecuta **dentro** de la
+    transaccion del delta: si el delta no entra, el acta tampoco, porque una
+    escena que no ocurrio no puede constar como el capitulo donde algo se usa.
+    """
+    def _levantar(con, texto, delta):
+        usos = extraccion.usos_de_la_escena(
+            delta=delta, texto=texto, hechos=hechos,
+            escena=escena["id"], capitulo=escena.get("capitulo"))
+        if usos:
+            cronologia.registrar_usos(con, usos, dentro_de_transaccion=True)
+
+        # La escena sin `t_fabula` no aporta evento, y no se le inventa uno:
+        # una cronologia completa y falsa es peor que una incompleta.
+        situada = extraccion.evento_de_la_escena(escena, obra_id)
+        if situada is not None:
+            evento, participantes = situada
+            cronologia.registrar_evento(con, evento, participantes,
+                                        dentro_de_transaccion=True)
+
+    return _levantar
+
+
+def _marcar_establecidos(con, escena, c, obra):
     """`SPEC-15`: `escena_de_establecimiento` dice donde lo establece el TEXTO.
 
     Un hecho que el plan no previo puede establecerse igual, y **se marca**:
@@ -288,7 +343,9 @@ def _marcar_establecidos(con, escena, c):
     """
     delta = (c.generacion.leida_delta if c.generacion else None) or {}
     for rev in delta.get("revelaciones", []):
-        repo.establecer_hecho(con, rev["hecho"], escena["id"])
+        # La obra acota: el mismo identificador en dos obras son dos hechos
+        # (`F-39`), y establecerlo aqui no dice nada de los demas capitulos.
+        repo.establecer_hecho(con, rev["hecho"], escena["id"], obra=obra)
 
 
 def _actualizar_fichas(con, escena, c):

@@ -151,6 +151,40 @@ TODAS = [
         lambda con: anadir_columnas(
             con, "entidad", {"fecha_de_nacimiento": "TEXT"}),
     ),
+    Migracion(
+        5,
+        "el hecho canonico se identifica por obra e id, no por id solo",
+        # `F-39`. `hechos_declarados` filtra por obra, asi que el codigo ya
+        # trataba el mismo identificador en dos obras como dos hechos; la clave
+        # global decia lo contrario y el segundo declarar **pisaba** al
+        # primero, dejando a la obra anterior sin ningun hecho. SQLite no sabe
+        # cambiar una PRIMARY KEY con ALTER, asi que se recrea y se copia.
+        """
+        CREATE TABLE IF NOT EXISTS hecho_canonico (
+            id                      TEXT PRIMARY KEY,
+            obra                    TEXT NOT NULL,
+            enunciado               TEXT NOT NULL,
+            durabilidad             TEXT NOT NULL DEFAULT 'permanente',
+            escena_de_establecimiento TEXT,
+            previsto_en             TEXT
+        );
+        CREATE TABLE hecho_canonico_nuevo (
+            id                      TEXT NOT NULL,
+            obra                    TEXT NOT NULL,
+            enunciado               TEXT NOT NULL,
+            durabilidad             TEXT NOT NULL DEFAULT 'permanente',
+            escena_de_establecimiento TEXT,
+            previsto_en             TEXT,
+            PRIMARY KEY (obra, id)
+        );
+        INSERT INTO hecho_canonico_nuevo
+            SELECT id, obra, enunciado, durabilidad,
+                   escena_de_establecimiento, previsto_en
+            FROM hecho_canonico;
+        DROP TABLE hecho_canonico;
+        ALTER TABLE hecho_canonico_nuevo RENAME TO hecho_canonico;
+        """,
+    ),
 ]
 
 

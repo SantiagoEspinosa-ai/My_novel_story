@@ -421,3 +421,83 @@ def test_una_escena_sin_consolidar_no_cuenta_como_uso(con):
 def test_una_escena_consolidada_se_usa_a_si_misma(con):
     obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
     assert obra.escenas_que_usan(con, "escena", "e1") == ["e1"]
+
+
+# --- `SPEC-21`: el acta de cada escena, poblada al consolidar ---------------
+
+
+def _con_hechos_y_capitulo(con):
+    """Una obra con hechos declarados, capitulo y momento narrativo."""
+    from app.features.cronologia import repository as cron
+    cron.asegurar_tablas(con)
+    repo.declarar_hechos(con, "cap-1", [
+        {"id": "hec-llave", "enunciado": "La llave del sotano esta en el costurero"},
+        {"id": "hec-pozo", "enunciado": "El pozo del patio no tiene fondo"},
+    ])
+    with con:
+        for i, t in ((1, "1897-11-03T21:00"), (2, "1897-11-04T10:00"),
+                     (3, "1897-11-05T10:00")):
+            con.execute(
+                "UPDATE escena SET capitulo='cap-1', t_fabula=?, "
+                "duracion_ficcional=60, personajes_presentes='[\"per-marta\"]' "
+                "WHERE id=?", (t, "e{0}".format(i)))
+
+
+def test_consolidar_una_escena_deja_escrito_donde_se_usa_cada_hecho(con):
+    """`SPEC-21` C-4. Esto es lo que estaba pendiente: nadie poblaba la tabla.
+
+    El doble del modelo devuelve un delta; de el salen `establece` y `depende`,
+    y `menciona` lo calcula el codigo sobre el texto ya escrito.
+    """
+    from app.features.cronologia import consultas, repository as cron
+    _con_hechos_y_capitulo(con)
+    obra.generar_obra(con, "cap-1", Revela(), *_agentes()[1:],
+                      techo=1_000_000, hasta=1)
+    usos = cron.usos_de_hecho(con, "hec-llave")
+    assert usos, "la tabla de usos sigue vacia: nadie la puebla"
+    assert consultas.capitulos_donde_se_usa(con, "hec-llave") == ["cap-1"]
+
+
+def test_consolidar_una_escena_deja_su_evento_en_la_cronologia(con):
+    from app.features.cronologia import repository as cron
+    _con_hechos_y_capitulo(con)
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    eventos = cron.eventos_de(con, "cap-1")
+    assert [e["escena"] for e in eventos] == ["e1"]
+    assert eventos[0]["lugar"] == "lug-salon"
+    assert cron.participantes_de(con, eventos[0]["id"]) == ["per-marta"]
+
+
+class RevelaYRompe(Revela):
+    """Revela un hecho **y** mueve a alguien que no existe, en el mismo delta.
+
+    Hace falta que haga las dos cosas a la vez: un doble que solo rompiera no
+    tendria acta que escribir, y la prueba pasaria sin comprobar nada. Es la
+    regla 3 otra vez — un doble demasiado limpio no caza lo que el real hace
+    mal — aplicada al caso de la transaccion.
+    """
+
+    nombre = "doble-que-revela-y-rompe"
+
+    def llamar(self, prompt):
+        r = super().llamar(prompt)
+        r["delta"]["movimientos"] = [
+            {"personaje": "per-nadie", "de": "lug-salon", "a": "lug-sotano"}]
+        return r
+
+
+def test_si_el_delta_no_entra_el_acta_tampoco(con):
+    """La otra mitad de C-4, y la que justifica que vaya en la transaccion.
+
+    Una escena cuyo delta es incompatible **no ocurrio**. Si su acta quedara
+    escrita, «en que capitulos se usa este hecho» contestaria citando una
+    escena que no esta en el manuscrito, y la regeneracion selectiva mandaria
+    reescribir un capitulo por un uso que nunca llego a existir.
+    """
+    from app.features.cronologia import repository as cron
+    _con_hechos_y_capitulo(con)
+    g = obra.generar_obra(con, "cap-1", RevelaYRompe(), *_agentes()[1:],
+                          techo=1_000_000, hasta=1)
+    assert g.parada is not None, "el delta tenia que ser incompatible"
+    assert cron.usos_de_hecho(con, "hec-llave") == []
+    assert cron.eventos_de(con, "cap-1") == []

@@ -52,12 +52,19 @@ CREATE TABLE IF NOT EXISTS borrador (
     PRIMARY KEY (escena, version)
 );
 CREATE TABLE IF NOT EXISTS hecho_canonico (
-    id                      TEXT PRIMARY KEY,
+    -- La clave es **(obra, id)** y no `id` solo (`F-39`). `hechos_declarados`
+    -- filtra por obra, asi que el codigo ya trataba el mismo identificador en
+    -- dos obras como dos hechos; la clave global decia lo contrario y el
+    -- segundo `INSERT OR REPLACE` **pisaba** al primero. La obra anterior se
+    -- quedaba sin ningun hecho y su prompt volvia a decir "hechos: (ninguno)",
+    -- que es `F-29` otra vez por una puerta nueva. No fallaba: pisaba.
+    id                      TEXT NOT NULL,
     obra                    TEXT NOT NULL,
     enunciado               TEXT NOT NULL,
     durabilidad             TEXT NOT NULL DEFAULT 'permanente',
     escena_de_establecimiento TEXT,
-    previsto_en             TEXT
+    previsto_en             TEXT,
+    PRIMARY KEY (obra, id)
 );
 CREATE TABLE IF NOT EXISTS hallazgo (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,12 +139,22 @@ def hechos_declarados(con, obra):
                 "WHERE obra = ? ORDER BY id", (obra,))]
 
 
-def establecer_hecho(con, hecho, escena):
-    """Marca donde el texto lo establece. Solo la primera vez."""
+def establecer_hecho(con, hecho, escena, obra=None):
+    """Marca donde el texto lo establece. Solo la primera vez.
+
+    `obra` acota el alcance: el mismo identificador en dos obras son **dos
+    hechos** (`F-39`), y establecerlo en una no dice nada de la otra. Sin el
+    filtro, una obra marcaba como establecidos los hechos de las demas.
+    """
     with con:
-        con.execute("UPDATE hecho_canonico SET escena_de_establecimiento = ? "
-                    "WHERE id = ? AND escena_de_establecimiento IS NULL",
-                    (escena, hecho))
+        if obra is None:
+            con.execute("UPDATE hecho_canonico SET escena_de_establecimiento = ? "
+                        "WHERE id = ? AND escena_de_establecimiento IS NULL",
+                        (escena, hecho))
+        else:
+            con.execute("UPDATE hecho_canonico SET escena_de_establecimiento = ? "
+                        "WHERE id = ? AND obra = ? AND "
+                        "escena_de_establecimiento IS NULL", (escena, hecho, obra))
 
 
 # Las columnas de una escena y como se reconstruye la fila viven en un solo

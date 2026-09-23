@@ -118,9 +118,23 @@ def _delegar(modelo, prompt, agente, escena, trabajo, trazas):
     return r, t
 
 
+def _acta_de(acta, texto, c):
+    """Cierra el acta sobre el texto y el delta de esta escena.
+
+    `aplicar.consolidar` solo sabe pasar la conexion, y el acta necesita ademas
+    el texto -para calcular las menciones- y el delta -para `establece` y
+    `depende`-. Aqui se atan, que es el unico sitio donde los tres estan a la
+    vez, y lo que viaja hacia abajo es ya una funcion de un solo argumento.
+    """
+    if acta is None:
+        return None
+    return lambda conexion: acta(conexion, texto,
+                                 (c.generacion.leida_delta or {}) if c.generacion else {})
+
+
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
              techo=100_000, trabajo="ciclo", hechos=None, problemas=None,
-             instrucciones=None):
+             instrucciones=None, acta=None):
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
@@ -162,14 +176,22 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
     # `YaConsolidada` porque el primero ya habia escrito.
     if c.generacion.hallazgos:
         return c
-    return consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo)
+    return consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo,
+                                al_consolidar=_acta_de(acta, texto, c))
 
 
-def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo"):
+def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo",
+                         al_consolidar=None):
     """Aplica el delta y resume. Se llama cuando la escena **ya esta aceptada**:
-    o porque salio limpia, o porque se rindio y se eligio su mejor intento."""
+    o porque salio limpia, o porque se rindio y se eligio su mejor intento.
+
+    `al_consolidar` viaja hasta `aplicar.consolidar` sin abrirse: es lo que
+    `orquestacion/obra.py` quiere escribir dentro de la misma transaccion que
+    el delta (`SPEC-21` C-4). Este modulo no mira que hay dentro.
+    """
     try:
-        aplicar.consolidar(con, escena_id, c.generacion.leida_delta or {})
+        aplicar.consolidar(con, escena_id, c.generacion.leida_delta or {},
+                           al_consolidar=al_consolidar)
         repo.marcar_consolidada(con, escena_id)
         c.consolidada = True
     except (aplicar.DeltaIncompatible, aplicar.YaConsolidada) as e:
