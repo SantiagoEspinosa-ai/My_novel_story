@@ -158,22 +158,24 @@ def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=No
 
 # --- La novela entera, encadenada ----------------------------------------------
 
-def inmutable(ficha):
+def inmutable(ficha, premisa=None):
     """El bloque 1 del contexto para una novela regalo: lo que no cambia en toda
     la obra. El genero y el tono salen de la ficha, no de la definicion del
-    Escritor (`SPEC-26` `RF-20`)."""
+    Escritor (`SPEC-26` `RF-20`), y **la premisa llega como texto**: sin ella el
+    Escritor no puede sostener la calidad narrativa (`F-58`)."""
     def valor(campo):
         v = getattr(ficha, campo)
         if v is None:
             return "(sin declarar)"
         return ficha.literales_de_otro.get(campo, v.value) if v.value == "otro" else v.value
     d = ficha.destinatario
-    return ("Novela para regalar. Genero: {0}. Tono: {1}. Ocasion: {2}.\n"
+    return ("Premisa: {6}\n"
+            "Novela para regalar. Genero: {0}. Tono: {1}. Ocasion: {2}.\n"
             "La novela es para {3}, de {4} años, que es {5} de la historia.\n"
             "Tercera persona, pasado. La personalizacion se integra con naturalidad; "
             "nunca justifica una mala escritura.").format(
                 valor("genero"), valor("tono"), valor("ocasion"), d.nombre, d.edad,
-                valor("papel").replace("_", " "))
+                valor("papel").replace("_", " "), premisa or "(sin decidir)")
 
 
 def _reglas_del_hook(carpeta, obra, vetadas, nombres):
@@ -230,7 +232,7 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
     for cap in capitulos:
         g = modulo_obra.generar_obra(
             con, obra, agentes["escritor"], agentes["editor"], agentes["resumidor"],
-            inmutable=inmutable(ficha), techo=sistema.presupuesto.techo_de_contexto,
+            inmutable=inmutable(ficha, aprobado.premisa), techo=sistema.presupuesto.techo_de_contexto,
             tope_intentos=1 + sistema.topes.reescrituras_del_editor,
             tope_vetadas=sistema.topes.reescrituras_por_vetada,
             tope_delegaciones=sistema.topes.delegaciones_por_obra,

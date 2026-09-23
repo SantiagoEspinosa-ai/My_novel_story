@@ -170,7 +170,10 @@ class _Fijo:
 
 
 def _agentes():
-    planificador = _Fijo({"titulo": "El mapa de Irene", "premisa": "Irene sigue un mapa.",
+    # La premisa, distinta de la sinopsis del capitulo 1 a proposito: si fueran
+    # la misma frase, una prueba de que llega la premisa pasaria por la sinopsis.
+    planificador = _Fijo({"titulo": "El mapa de Irene",
+                          "premisa": "Un mapa heredado lleva a Irene de vuelta a Lisboa.",
                           "plan": plan_dict()})
     revisor = _Fijo({"aprobado": True, "objeciones": []})
     # El POV del plan de prueba es `per-irene`; el doble de serie declara
@@ -229,3 +232,10 @@ def test_escribir_encadena_plan_montaje_y_primer_capitulo(con, tmp_path):
     assert r["generacion"].escenas_hechas == ["cap-01-e1"]
     prompt = agentes["escritor"].llamadas[0]
     assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt
+
+
+def test_la_premisa_decidida_llega_al_escritor_como_texto(con, tmp_path):
+    agentes = _agentes()
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    assert "Un mapa heredado lleva a Irene de vuelta a Lisboa." in agentes["escritor"].llamadas[0]
