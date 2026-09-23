@@ -1,9 +1,11 @@
 ---
 id: SPEC-20
 titulo: Qué se puede editar a mano sin invalidar lo ya firmado
-estado: aprobada
+estado: aplicada
 aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-23
+fecha_aplicacion: 2026-09-23
+commit_de_aplicacion: 85ebef4
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
 version: 1

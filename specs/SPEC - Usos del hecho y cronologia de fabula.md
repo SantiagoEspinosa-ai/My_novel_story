@@ -81,13 +81,63 @@ migración, porque las cuatro filas ya están escritas. Los valores de partida s
 | Consumidor | Tipos que cuenta | Por qué |
 | --- | --- | --- |
 | Elemento personalizado que debe aparecer | `menciona` | Lo pedido es que **aparezca**, no que la trama dependa de ello |
-| Regeneración selectiva | `establece`, `depende` | Reescribir lo que sólo lo nombra de pasada reescribe media novela por nada |
+| Regeneración selectiva | `establece`, `depende`, **y `menciona` pendiente de medida** | Ver abajo: la decisión es que entre, y el número que la confirma no se ha tomado todavía |
 | Enlaces de la ficha de personaje | `establece`, `menciona`, `depende` | La ficha enlaza a donde el lector encontrará algo |
 | Fichero Lean | los cuatro | Un demostrador necesita el grafo entero, incluida la arista negativa |
+
+### `menciona` en la regeneración selectiva: entra, pendiente de medida
+
+La primera versión de esta spec excluyó `menciona` del conjunto de la regeneración razonando
+que *«reescribir lo que sólo lo nombra de pasada reescribe media novela por nada»*. **Ese
+argumento no se sostiene, por dos motivos.**
+
+El primero es de criterio: `menciona` es **el único de los cuatro tipos que mide el código**.
+Excluirlo elige el fallo silencioso —se omite un capítulo que sí usaba el hecho y nadie lo
+marca— precisamente en el eje donde el dato es más fiable, y este proyecto ha preferido tres
+veces el fallo ruidoso al silencioso (`SPEC-10` C-2, `SPEC-18` C-3, `RF-26`).
+
+El segundo es de método: **era una intuición de coste, y el coste se puede medir gratis.**
+Excluir algo por lo que costaría, sin haber comprobado nunca lo que cuesta, es exactamente
+el tipo de decisión que este proyecto no acepta en ningún otro sitio.
+
+**La decisión es que entre, y la medida es la que lo confirma.** No se toma antes de tenerla:
+
+- **Qué se mide.** `consultas.arrastre_de_incluir_mencion(con, hechos)`, sobre la siguiente
+  generación real. Devuelve cuántos capítulos arrastra hoy el conjunto declarado, cuántos
+  arrastraría añadiendo `menciona`, y el detalle por hecho.
+- **Qué se cuenta.** Capítulos **que se añaden**, no menciones. Un capítulo que ya entraba por
+  `depende` y además nombra el hecho no es trabajo nuevo, y contarlo haría parecer caro justo
+  lo que no lo es.
+- **Qué se hace con el resultado.** Si el arrastre crece en unos pocos capítulos, `menciona`
+  entra sin más discusión. Si crece en decenas, se decide **con el número delante** y no antes.
+
+Mientras tanto `PARA_REGENERACION` se queda en `(establece, depende)`, que es el estado
+*pendiente de medida* y no una elección: cambiarlo es añadir un valor a la constante.
 
 **Cada fila dice quién la afirmó** (`origen_de_uso`: `regla`, `delta`, `juez_llm`,
 `humano`). Una fila calculada por código es un dato medido; una declarada por un modelo es
 una afirmación no verificada, y un demostrador formal no puede tratarlas igual.
+
+**El origen forma parte de la clave, y al implementar se vio que no lo era.** La primera
+versión identificaba una fila por `(hecho, escena, tipo)`, de modo que un `depende`
+**observado** y uno **declarado** sobre el mismo par no cabían a la vez: el segundo pisaba
+al primero y cuál sobrevivía dependía del orden de escritura. Eso borra en silencio la
+distinción que `origen_de_uso` existe para guardar, y deja una fila creíble en su lugar.
+
+No es un detalle de esquema. `SPEC-23` `S-5` compara las dos formas de saber de qué depende
+una escena —**observada**, de lo que el ensamblador metió en el prompt, que sobre-aproxima y
+**falla ruidoso**; **declarada**, de lo que el modelo dice que usó, que se ajusta más y
+**falla en silencio**— y deja escrito que, si hubiera que elegir, la correcta es la
+observada, porque el proyecto ya prefirió tres veces el fallo ruidoso (`SPEC-10` C-2,
+`SPEC-18` C-3, `RF-26`). **Mientras las dos filas quepan, esa elección sigue siendo editar
+una constante.** Sin la clave ampliada, dejaría de serlo.
+
+**Y eso deja el conjunto de la regeneración selectiva a la espera.** Los valores de partida
+—`establece` y `depende`— salen **los dos del delta**, es decir, son declarados: con ellos
+solos, la regeneración selectiva hereda el modo de fallo silencioso. Cuando exista una
+fuente observada (`SPEC-23` la está construyendo, y escribe con `origen_de_uso = regla`),
+incluirla es añadirla al conjunto. Qué conjunto queda es decisión del autor, no de esta
+spec; lo que esta spec garantiza es que la decisión siga siendo barata.
 
 ---
 

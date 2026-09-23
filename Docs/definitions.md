@@ -47,7 +47,7 @@ La **Escena** es la unidad atómica: la unidad que se genera, se verifica y se r
 | Obra | La novela completa como unidad publicable. | **id**, **titulo**, **premisa**, genero, subgenero, extension\_objetivo, guia\_de\_estilo, contrato\_con\_el\_lector |
 | Parte | Agrupación de capítulos con unidad dramática (acto). | **id**, **orden**, funcion\_estructural, valor\_inicial, valor\_final |
 | Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, **estado** → `estado_de_capitulo`, gancho\_de\_cierre, escenas\[\] |
-| Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo, intentos, borrador\_aceptado → Borrador |
+| Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **capitulo** → Capitulo (`SPEC-21` C-1), **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo, intentos, borrador\_aceptado → Borrador |
 | Beat | Micro-unidad de cambio dentro de una escena. | **id**, tipo, valor\_antes, valor\_despues, establece\[\] → HechoCanonico |
 
 **`Beat.establece[]` es opcional, y esa es la decisión** (`SPEC-19` C-1). No todo beat añade algo al canon: muchos mueven tensión, posición o relación. Exigirlo llenaría la escaleta de listas vacías y enseñaría a rellenarlas por inercia, que es la forma más rápida de que un campo deje de significar nada. Los identificadores tienen que existir en `Escaleta.hechos_canonicos[]`: **un beat no inventa hechos, los sitúa.**
@@ -66,13 +66,15 @@ El canon es lo que es verdad dentro de la ficción, con independencia de cómo s
 
 | Clase | Definición | Atributos clave |
 | --- | --- | --- |
-| Personaje | Agente con voluntad dentro de la ficción. | **id**, **nombre\_canonico**, alias\[\], rol\_dramatico → `rol_dramatico`, deseo, necesidad, miedo, herida, voz (léxico, sintaxis, muletillas), rasgos\_fisicos, estado\_vital → `estado_vital` |
+| Personaje | Agente con voluntad dentro de la ficción. | **id**, **nombre\_canonico**, alias\[\], rol\_dramatico → `rol_dramatico`, deseo, necesidad, miedo, herida, voz (léxico, sintaxis, muletillas), rasgos\_fisicos, estado\_vital → `estado_vital`, fecha\_de\_nacimiento (ISO-8601, **opcional**: `SPEC-21` C-3) |
 | Lugar | Espacio donde puede ocurrir una escena. | **id**, **nombre**, tipo, atmosfera, accesos\_y\_salidas\[\] → Lugar, reglas\_locales, contiene\[\] |
 | Objeto | Cosa con relevancia dramática. | **id**, **nombre**, propiedades, poseedor\_actual, ubicacion\_actual |
 | Faccion | Grupo con intereses propios. | **id**, **nombre**, objetivo, miembros\[\], relacion\_con\[\] |
 | HechoCanonico | Proposición verdadera en la ficción. | **id**, **enunciado**, escena\_de\_establecimiento, **durabilidad** → `durabilidad_del_hecho`, certeza → `certeza_canonica`, contradice\[\] |
 | ReglaDelMundo | Restricción estable que gobierna lo que puede pasar. | **id**, **enunciado**, ambito, coste, excepciones\[\] |
-| EventoCronologico | Suceso situado en la fábula, se narre o no. | **id**, **t\_fabula**, participantes\[\], consecuencias\[\] |
+| EventoCronologico | Suceso situado en la fábula, se narre o no. | **id**, **t\_fabula** (fecha absoluta ISO-8601), participantes\[\] → Personaje (+ tipo\_de\_presencia → `tipo_de_presencia`), consecuencias\[\], lugar → Lugar, capitulo → Capitulo, duracion (minutos), escena → Escena |
+
+**La unidad de la cronología es el evento y no el capítulo** (`SPEC-21` C-3). Un capítulo es un intervalo, no un instante: con un instante por capítulo, *«nadie está en dos lugares a la vez»* es falsa por construcción en cuanto un capítulo dure lo bastante para que alguien viaje. Una escena aporta un evento; puede haber más. Y `t_fabula` es **absoluta** porque es lo único que permite demostrar a la vez el orden —que se compara—, la ubicuidad —que necesita intervalos— y la edad, que sólo se puede restar de algo absoluto.
 | EstadoDelMundo | Instantánea del canon en un momento `t`. | **t**, entidades\_vivas\[\], ubicaciones, posesiones, relaciones, hechos\_vigentes\[\] |
 | RegistroDeConocimiento | Quién sabe qué y desde cuándo. | **sujeto**, **hecho**, desde\_escena (**opcional desde `SPEC-17`**: vacío significa *anterior al relato*), tipo\_de\_sujeto → `tipo_de_sujeto`, grado → `grado_de_conocimiento`, **fuente** → Escena \| Personaje \| `anterior_al_relato` |
 
@@ -187,6 +189,7 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 | conoce | Personaje, Narrador, Lector | HechoCanonico | N:M (+ `desde_escena`) | Registro de conocimiento |
 | modifica | Escena | EstadoDelMundo | 1:1 (vía delta) | Reconstrucción de estado |
 | establece | Escena | HechoCanonico | 1:N | Origen del canon |
+| usa | Escena | HechoCanonico | N:M (+ `tipo_de_uso_de_hecho`, `origen_de_uso`) | Dónde se **vuelve a usar** un hecho, que no es dónde nace (`SPEC-21` C-2) |
 | obedece | Amenaza, Evento | ReglaDelMundo | N:M | Consistencia interna |
 | se\_paga\_en | Presagio | Escena | 1:0..1 | Detección de setups huérfanos |
 | escala | Escena | CurvaDeDread | 1:1 | Control de tensión |
@@ -221,6 +224,15 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `estado_vital` | Personaje.estado\_vital | vivo, muerto, desaparecido |
 | `certeza_canonica` | HechoCanonico.certeza | establecido, implicito, disputado |
 | `durabilidad_del_hecho` | HechoCanonico.durabilidad | permanente, efimero |
+| `tipo_de_uso_de_hecho` | relación `usa` | establece, menciona, depende, contradice |
+| `origen_de_uso` | relación `usa` | regla, delta, juez\_llm, humano |
+| `tipo_de_presencia` | EventoCronologico.participantes | presente, mencionado |
+
+**«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —contar también los `menciona` reescribe media novela por una alusión de paso—. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.
+
+**Cuál de los cuatro cuenta lo decide cada consumidor, no esta tabla.** Es deliberado: cambiar de opinión es cambiar el conjunto de tipos que se consulta, y no hay migración detrás porque las cuatro clases de fila ya están escritas.
+
+**`origen_de_uso` distingue lo medido de lo afirmado.** `menciona` lo calcula el código sobre el texto, así que es un dato medido; `establece` y `depende` los declara el delta, así que son afirmaciones no verificadas. Un demostrador formal no puede tratarlas igual, y sin la columna no hay forma de separarlas después. **`contradice` no lo deduce nadie todavía**, de modo que una consulta que no devuelva contradicciones está diciendo que nadie ha mirado, no que no las haya.
 | `fuente_del_miedo` | FuenteDelMiedo.tipo | desconocido, perdida\_de\_control, contaminacion, paranoia, culpa, aislamiento |
 | `estado_de_presagio` | Presagio.estado, SetupYPago.estado | declarado, plantado, pagado, huerfano |
 | `tipo_de_valvula` | Valvula.tipo | humor, ternura, informacion, seguridad\_falsa |

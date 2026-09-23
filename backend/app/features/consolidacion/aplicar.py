@@ -23,7 +23,11 @@ SQL = """
 CREATE TABLE IF NOT EXISTS entidad (
     id       TEXT PRIMARY KEY,
     vital    TEXT NOT NULL,
-    lugar    TEXT NOT NULL
+    lugar    TEXT NOT NULL,
+    -- `SPEC-21` C-3. Opcional: exigirla romperia todas las obras generadas
+    -- hasta hoy. Como es opcional, quien no la tenga **no pasa** la
+    -- comprobacion de edad: la salta, y la consulta lo dice aparte.
+    fecha_de_nacimiento TEXT
 );
 CREATE TABLE IF NOT EXISTS escena_consolidada (
     escena TEXT PRIMARY KEY
@@ -47,10 +51,41 @@ def asegurar_tablas(con):
 
 
 def sembrar(con, entidades):
+    # Las columnas van nombradas y no por posicion. Con `VALUES (?, ?, ?)` a
+    # secas, añadir `fecha_de_nacimiento` rompio esta linea y con ella
+    # diecisiete pruebas de otras tres features: un `INSERT` posicional acopla
+    # cada llamada al **orden** de las columnas, que es justo lo que una
+    # migracion cambia.
     with con:
         for id_e, (vital, lugar) in entidades.items():
-            con.execute("INSERT OR REPLACE INTO entidad VALUES (?, ?, ?)",
-                        (id_e, vital, lugar))
+            con.execute(
+                "INSERT OR REPLACE INTO entidad (id, vital, lugar) "
+                "VALUES (?, ?, ?)", (id_e, vital, lugar))
+
+
+def fijar_fecha_de_nacimiento(con, personaje, fecha):
+    """La fecha de nacimiento de un personaje, en ISO-8601.
+
+    Va en `entidad` y no en una tabla propia porque `entidad.id` **ya es** el
+    identificador de personaje: es el que usan los movimientos y los cambios de
+    estado vital del delta. Una tabla `personaje` en paralelo dejaria dos sitios
+    donde consta quien existe, y la copia que alguien olvide actualizar seria
+    justo la que lea la comprobacion de edad.
+    """
+    with con:
+        con.execute("UPDATE entidad SET fecha_de_nacimiento = ? WHERE id = ?",
+                    (fecha, personaje))
+
+
+def fechas_de_nacimiento(con):
+    """Solo los que la tienen. Quien no aparece es quien no se puede comprobar.
+
+    Devolver `None` para los que faltan obligaria a cada consumidor a acordarse
+    de distinguirlo, y el que se olvide leera "nacio en None" como un dato.
+    """
+    return {f[0]: f[1] for f in con.execute(
+        "SELECT id, fecha_de_nacimiento FROM entidad "
+        "WHERE fecha_de_nacimiento IS NOT NULL")}
 
 
 def estado(con):
@@ -63,8 +98,24 @@ def puede_generarse_la_siguiente(con, escena):
     return fila is not None
 
 
-def consolidar(con, escena, delta, version=None):
-    """Todo en una transaccion. Si algo falla, no queda nada escrito."""
+def consolidar(con, escena, delta, version=None, al_consolidar=None):
+    """Todo en una transaccion. Si algo falla, no queda nada escrito.
+
+    `version` es la del `Borrador` del que vino este delta, si consta. El delta
+    se guarda con ella porque texto y delta son dos mitades del mismo intento
+    (`RF-09`); si no consta se guarda ausente y nunca como cero.
+
+    `al_consolidar` es una funcion que recibe la conexion y corre **dentro** de
+    esta misma transaccion, justo antes de marcar la escena consolidada. Existe
+    para lo que hay que escribir a la vez que el delta y no es del delta: los
+    usos de un hecho y el evento de la cronologia (`SPEC-21` C-4). Escribirlos
+    despues dejaria registrado el acta de una escena que no llego a ocurrir.
+
+    Es una funcion y no un `import` a proposito: `consolidacion/` no tiene por
+    que saber quien escribe ni que. Componer entre features es de
+    `orquestacion/` (`A-02`), y el acoplamiento por SQL no lo delata ningun
+    `import` (`F-28`).
+    """
     if puede_generarse_la_siguiente(con, escena):
         raise YaConsolidada(
             "la escena {0} ya esta consolidada; aplicar su delta dos veces "
@@ -93,8 +144,11 @@ def consolidar(con, escena, delta, version=None):
             modulo_mundo.aplicar_conocimiento(con, escena, delta)
             # El delta se guarda tambien aqui dentro, por el mismo motivo:
             # fuera de la transaccion quedaria escrito el delta de una
-            # escena que no llego a consolidarse.
+            # escena que no llego a consolidarse. Va **antes** del enganche:
+            # primero la fuente, despues lo que se derive de ella.
             modulo_deltas.guardar(con, escena, delta, version)
+            if al_consolidar is not None:
+                al_consolidar(con)
             con.execute("INSERT INTO escena_consolidada VALUES (?)", (escena,))
     except DeltaIncompatible:
         raise

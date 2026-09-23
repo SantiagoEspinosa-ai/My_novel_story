@@ -128,3 +128,19 @@ def test_una_llamada_sin_prompt_hash_se_guarda_ausente_y_no_vacia(con):
     repository.guardar_lecturas(con, "e3", {"hechos": ["hec-llave"], "conocimiento": []})
 
     assert repository.lecturas_de(con, "e3")[0]["prompt_hash"] is None
+
+
+def test_las_lecturas_de_otra_escena_no_se_cuelan(con):
+    """Regla 9: hacen falta dos elementos en el lado que se desambigua.
+
+    Con una sola escena en la tabla, un `lecturas_de` que se olvidara del
+    `WHERE escena = ?` pasaria igual y la prueba no probaria nada. El defecto
+    de la escena anterior de `F-40` sobrevivio exactamente asi: la primera
+    prueba pasaba con un solo borrador porque el empate lo resolvia el rowid.
+    """
+    repository.guardar_lecturas(con, "e1", {"hechos": ["hec-mio"], "conocimiento": []},
+                               prompt_hash="a")
+    repository.guardar_lecturas(con, "e2", {"hechos": ["hec-ajeno"], "conocimiento": []},
+                               prompt_hash="b")
+
+    assert [f["hecho"] for f in repository.lecturas_de(con, "e1")] == ["hec-mio"]

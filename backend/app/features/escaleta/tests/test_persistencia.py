@@ -241,3 +241,26 @@ def test_una_escena_sin_capitulo_no_se_atribuye_a_la_obra(con):
     """
     _sembrar(con)
     assert repo.escena(con, "e1")["capitulo"] is None
+
+
+def test_dos_obras_pueden_declarar_el_mismo_identificador_de_hecho(con):
+    """`F-39`: `hecho_canonico.id` era PRIMARY KEY **global** mientras
+    `hechos_declarados` filtra por obra. Declarar `hec-llave` en dos capitulos
+    dejaba solo el ultimo, y los anteriores se quedaban **sin ningun hecho**:
+    su prompt volvia a decir "hechos: (ninguno)", que es `F-29` por una puerta
+    nueva. No fallaba nada; pisaba.
+    """
+    repo.declarar_hechos(con, "cap-1", [{"id": "hec-llave", "enunciado": "A"}])
+    repo.declarar_hechos(con, "cap-2", [{"id": "hec-llave", "enunciado": "B"}])
+    assert [h["enunciado"] for h in repo.hechos_declarados(con, "cap-1")] == ["A"]
+    assert [h["enunciado"] for h in repo.hechos_declarados(con, "cap-2")] == ["B"]
+
+
+def test_establecer_un_hecho_no_lo_establece_en_las_demas_obras(con):
+    """El mismo identificador en dos obras son **dos hechos**, y establecerlo
+    en una no dice nada de la otra."""
+    repo.declarar_hechos(con, "cap-1", [{"id": "hec-llave", "enunciado": "A"}])
+    repo.declarar_hechos(con, "cap-2", [{"id": "hec-llave", "enunciado": "B"}])
+    repo.establecer_hecho(con, "hec-llave", "cap-1-e1", obra="cap-1")
+    assert repo.hechos_declarados(con, "cap-1")[0]["establecido_en"] == "cap-1-e1"
+    assert repo.hechos_declarados(con, "cap-2")[0]["establecido_en"] is None

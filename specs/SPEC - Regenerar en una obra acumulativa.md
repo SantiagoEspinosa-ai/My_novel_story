@@ -86,6 +86,50 @@ mencionan el hecho»*.
 cambiado».** Y en un modelo acumulativo, el contexto de todo lo posterior ha cambiado, aunque
 sea poco. Esa es la tensión, dicha con precisión.
 
+## El verde heredado, que es lo peor de todo esto — `MF-26`
+
+Va aparte porque **no es una consecuencia de elegir mal entre las salidas: pasa con todas**, y
+porque es peor que el coste de regenerar de más.
+
+> Una escena posterior pasó `INV-02`, `INV-03` e `INV-06` **contra un estado del mundo que ya
+> no existe**. Su verde sigue ahí, guardado, indistinguible de uno que sí vale. **No es una
+> comprobación que falle: es una comprobación que dejó de significar lo que dice, y que nadie
+> ha invalidado.**
+
+Regenerar de más cuesta dinero y se ve en la factura. Esto no cuesta nada y no se ve en ningún
+sitio: la obra se firma con parte de sus puertas evaluadas sobre otra obra, y el cierre de
+capítulo de `RF-28` —que mira si quedan hallazgos abiertos— da por buenos unos resultados cuya
+premisa cambió debajo. Es verificación que ya no verifica.
+
+La causa de fondo es que **un resultado de verificación no guarda contra qué estado se
+evaluó**. Sin ese dato no hay forma de caducarlo, ni siquiera de saber cuáles habría que mirar:
+`Hallazgo` cita su invariante y su verificador, y nada dice en qué mundo se levantó. Por eso
+no es un defecto de la regeneración —la regeneración solo lo **destapa**— sino un hueco del
+modelo de verificación que estaba ahí desde el principio, esperando a que algo moviera el
+estado hacia atrás.
+
+Queda catalogado como **`MF-26`** en `Docs/verification.md`, en la tabla de los fallos
+silenciosos, y es hoy **el único modo de fallo sin ningún validador que lo mire**. Nombrarlo no
+lo arregla; lo que hace es que la elección de salida se tome sabiendo que ninguna lo cierra
+sola:
+
+- `S-1` lo evita **por fuerza bruta**: si se reescribe todo lo posterior, todo vuelve a pasar
+  por la puerta y no queda ningún verde viejo.
+- `S-2` lo ataca de frente y es lo que la hace interesante: reverificar **es** invalidar el
+  verde heredado, y además es barato porque son reglas y no llamadas al modelo. Lo que no
+  alcanza es la prosa, que nunca se reverifica contra nada.
+- `S-3` lo evita porque el estado no se mueve; el verde sigue siendo del mundo en que se
+  evaluó.
+- `S-5` decide **cuántos** verdes hay que invalidar, no si hay que hacerlo.
+
+Y deja una pregunta que sobrevive a esta spec: si un resultado de verificación supiera contra
+qué estado se evaluó, **caducaría solo** —la misma forma que las marcas `Caduca con:`, una
+condición comprobable en lugar de una nota que alguien tiene que acordarse de revisar—. Eso es
+un cambio del modelo de verificación y no se decide aquí: queda **abierta como decisión
+propia** en `Docs/verification.md` § Decisiones abiertas, con lo que habría que elegir —qué
+identifica un estado, y qué se hace con un verde caducado—. Es la única forma conocida de que
+`MF-26` deje de ser silencioso.
+
 ## Una pieza que no es una decisión
 
 **El delta hay que guardarlo se elija lo que se elija** (`G-05`). Las cinco salidas de abajo lo
@@ -187,6 +231,29 @@ el fallo ruidoso sobre el silencioso —`SPEC-10` C-2, el `sin_veredicto` de `SP
 `RF-26` fallando en vez de generar—, y `SPEC-16` es la factura de un contrato que fijó forma
 sin significado.
 
+### Las dos no significan lo mismo, y van bajo el mismo tipo
+
+`SPEC-21` guarda los usos de un hecho con un `tipo_de_uso_de_hecho` y un `origen_de_uso`, y
+las filas observadas de `S-5` entran como `depende` con origen `regla`. **Eso deja dos
+afirmaciones distintas bajo el mismo tipo**, y la frase que las separa tiene que estar escrita
+o alguien las sumará:
+
+| Fila | Qué afirma exactamente |
+| --- | --- |
+| `depende` con origen `delta` | **El modelo dice que se sirvió del hecho.** Es una afirmación suya, no verificada |
+| `depende` con origen `regla` | **Al modelo se le ofreció el hecho en el contexto.** Es un dato medido por código, y no dice que lo usara |
+
+No son lo mismo y no se suman: la segunda **contiene** a la primera casi siempre, y contarlas
+juntas daría un número que no significa nada. Para la regeneración se quieren las dos juntas
+—sobre-aproximar es la decisión—, pero para **medir cuánto se separan**, que es lo que hay que
+saber antes de elegir entre `S-1` y `S-2`, hay que poder pedirlas por separado. `SPEC-21` lo
+permite filtrando por origen.
+
+Queda una pregunta que esta spec no resuelve: si «se le ofreció» merece un valor propio en
+`tipo_de_uso_de_hecho` en vez de viajar como `depende` distinguido solo por su origen. Un
+valor nuevo es un cambio del vocabulario controlado y va en su spec; mientras tanto, la
+distinción vive en esta tabla y en el `origen_de_uso`, no en la intuición de quien consulte.
+
 - **Qué cuesta `S-5`:** es un cambio del dominio con su spec, su migración y su caso negativo,
   y en la variante declarada, además, un contrato de agente nuevo con el riesgo que eso ya
   costó una vez.
@@ -255,4 +322,62 @@ proyecto ya ha elegido tres veces.
 | 2 | **¿Qué se le promete al lector?** ¿«Reescribimos lo que dependía de esto» o «reescribimos de aquí al final»? | `S-1` y `S-3` prometen cosas distintas y las dos son defendibles. La promesa se escribe antes de construirla |
 | 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, `S-2` es el mínimo y `S-3` deja de bastar |
 | 4 | **¿Una obra puede quedar en dos versiones vivas, o la nueva sustituye a la vieja?** | Es `S-4`, y también decide qué significa «se conserva la versión anterior» |
-| 5 | **¿Cuánto arrastra un cambio medio?** No está medido y se puede medir con una obra ya generada, sin pagar ninguna generación nueva | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
+| 5 | **¿Cuánto arrastra un cambio medio?** No está medido, y **hoy no se puede medir aunque haya obra**: ver la nota de abajo | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
+
+### Por qué la pregunta 5 todavía no se puede contestar
+
+Esta spec dijo antes que bastaba con una obra ya generada. **Es falso**, y el motivo es de
+construcción y no de calidad de la obra. Son dos cosas que se suman:
+
+1. **El ensamblador trae los hechos por ámbito, no por escena.** La consulta que los reúne
+   recibe el identificador del ámbito que se está generando —que en la generación real es el
+   **capítulo**, no la obra— y devuelve todos los suyos. Dentro de un capítulo, todas las
+   escenas ven el mismo conjunto: **no hay resolución por debajo del capítulo**.
+2. **Y el guion que genera la obra declara la lista entera de hechos en cada capítulo.** No
+   hay hechos propios de un capítulo: los diez se declaran diez veces. Así que tampoco hay
+   resolución **entre** capítulos.
+
+Juntas, las dos dejan el conjunto de lecturas observado de hechos **constante en toda la
+obra**, y la fracción que mide la pregunta 5 sale **1,0 para cualquier hecho, por
+construcción**. No es un número con ruido: es un número sin resolución.
+
+**Ojo con el orden de los arreglos:** antes de cerrarse `F-39` —la clave global de
+`HechoCanonico`— ese mismo guion dejaba nueve capítulos con la lista **vacía** y todos los
+hechos atribuidos al último, de modo que sus prompts decían *«hechos: (ninguno)»*. Una medida
+de arrastre sacada de esa base sale **baja**, y baja no significa *arrastra poco*: significa
+*se registró poco*. Es exactamente el número que parecería un argumento para elegir `S-1`, y
+sería un argumento falso. Si alguna vez se enseña un número salido de ahí, se enseña **marcado
+como suelo en el mismo sitio en que se enseña**, no en una nota al pie.
+
+Tres consecuencias que conviene no confundir:
+
+- **El registro no está mal.** `lectura_de_contexto` apunta fielmente lo que entró; lo que
+  entró era todo. Tampoco lo corrompe `F-40` —el defecto del orden de escena—, porque los
+  hechos y el registro de conocimiento no pasaban por el filtro de `orden` que aquel rompía:
+  sus damnificados eran los resúmenes, las fichas y la escena anterior.
+- **La mitad de conocimiento sí tiene señal.** El registro de conocimiento se lee tal como
+  está en ese momento y crece al consolidar, así que varía escena a escena. Pero responde otra
+  pregunta —qué se sabía ya cuando se escribió— y no de qué depende esta escena.
+- **El lado declarado sí es por escena**, porque `acciones` lo es. De modo que, para
+  *decidir qué regenerar*, el observado sigue siendo la dirección correcta; para *medir cuánto
+  se separan el observado y el declarado*, hoy la comparación sería «todo» contra «lo que diga
+  el modelo», que mide el techo y no la separación.
+
+**Dónde sí está la medida.** No en el conjunto observado, sino en `menciona` de `SPEC-21`:
+lo **calcula el código sobre el borrador aceptado**, así que es por escena, varía, y es un
+dato medido y no una afirmación de un modelo. Con él, *«cuántos capítulos añade incluir este
+hecho»* se responde por hecho y a granularidad de capítulo, que es justo la granularidad en la
+que la función promete regenerar. `SPEC-21` ya expone esa consulta. **La pregunta 5 se
+contesta por ahí, sobre la obra repetida con los arreglos, y sin pagar ninguna generación.**
+
+Lo que el conjunto observado sigue aportando es otra cosa, y hay que no confundirla: es el
+único registro de lo que se le **ofreció** al modelo. Sirve para la decisión de `S-5` —qué se
+regenera— y para saber cuándo un hecho estuvo disponible y no se usó. No sirve para medir
+alcance mientras se ofrezca todo a todos.
+
+**Y lo que haría medible también el observado** es que el ensamblador deje de ofrecer todos los
+hechos a todas las escenas. Esa noción ya está escrita en el proyecto: la forma reducida del
+bloque del estado dice *«los hechos permanentes y cualquier hecho que el delta referencie»*.
+Existe, está declarada, y **solo se aplica al recortar** — es decir, nunca, porque el contexto
+real mide tres órdenes de magnitud menos que el techo. Es la misma decisión abierta que el
+reparto por niveles: un mecanismo diseñado que no se ha ejercido ni una vez.

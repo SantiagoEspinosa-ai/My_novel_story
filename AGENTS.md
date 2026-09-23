@@ -15,10 +15,10 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
 | Plan de verificación del sistema | `Docs/verification.md` | Primero **qué puede salir mal**: 24 modos de fallo `MF-01`…`MF-24` sobre las rejillas de MAST, ConStory-Bench y los fallos silenciosos, **ninguno sin estado**. Después **cómo se detecta**: 54 validadores `VER-01`…`VER-55`, cada uno con su punto ciego, más los 11 asumidos y lo que se aprendió al escribir cinco. Ninguno implementado hoy |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las ocho skills instaladas. Ver la sección "Skills" más abajo |
-| Specs en curso | `specs/` | Un fichero por spec. Hoy `SPEC-01` backend del harness (**`aprobada`**), y en `en_revision` `SPEC-09` versión de `Resumen` y `SPEC-19` lo prometido y lo entregado |
-| Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada, con el mismo identificador y su propio estado. Hoy `PLAN-01`, el backend, en `en_revision`. Es la tercera puerta: sin plan aprobado no se escribe código |
-| Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio, `SPEC-04` puerta de capítulo y reclasificaciones, `SPEC-05` caducidad de las afirmaciones condicionales, `SPEC-06` estructura de `harness/` y `SPEC-07` modelo de fallo del pipeline y `SPEC-08` estados del trabajo y observabilidad `SPEC-10` huecos que la rama `main` ya sufrió `SPEC-11` observabilidad del pipeline, `SPEC-12` formas reducidas del recorte, `SPEC-13` durabilidad de los hechos, `SPEC-14` delegación en vez de API, `SPEC-15` lo que declara el plan, `SPEC-16` revelar es aprender, `SPEC-17` el conocimiento y su instante y `SPEC-18` el POV que nadie declara. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
-| Código del backend | `backend/` | Servicio FastAPI con `app/commons/` y `app/features/`. Once features: `escaleta`, `generacion`, `verificacion`, `consolidacion`, `contexto`, `orquestacion`, `auditoria`, `recuperacion`, `brief`… Las dependencias en `backend/requirements.txt`; las pruebas con `python -m pytest app -q` desde `backend/` |
+| Specs en curso | `specs/` | Un fichero por spec. Hoy `SPEC-01` backend del harness (**`aprobada`**), y en `en_revision` `SPEC-09` versión de `Resumen`, `SPEC-22` el frontend y el contrato congelado, y `SPEC-23` qué es regenerar en una obra acumulativa. `SPEC-21`, los usos de un hecho y la cronología de la fábula, está **`aprobada`** y es de la que `SPEC-23` toma qué capítulos hay que regenerar |
+| Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada, con el mismo identificador y su propio estado. Hoy `PLAN-01`, el backend, en `en_revision`, y `PLAN-21`, los usos y la cronología, **`aprobada`**. Es la tercera puerta: sin plan aprobado no se escribe código |
+| Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio, `SPEC-04` puerta de capítulo y reclasificaciones, `SPEC-05` caducidad de las afirmaciones condicionales, `SPEC-06` estructura de `harness/` y `SPEC-07` modelo de fallo del pipeline y `SPEC-08` estados del trabajo y observabilidad `SPEC-10` huecos que la rama `main` ya sufrió `SPEC-11` observabilidad del pipeline, `SPEC-12` formas reducidas del recorte, `SPEC-13` durabilidad de los hechos, `SPEC-14` delegación en vez de API, `SPEC-15` lo que declara el plan, `SPEC-16` revelar es aprender, `SPEC-17` el conocimiento y su instante, `SPEC-18` el POV que nadie declara, `SPEC-19` lo prometido y lo entregado y `SPEC-20` qué se puede editar a mano. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
+| Código del backend | `backend/` | Servicio FastAPI con `app/commons/` y `app/features/`. Features: `escaleta`, `generacion`, `verificacion`, `consolidacion`, `contexto`, `orquestacion`, `auditoria`, `recuperacion`, `edicion`, `brief`, `cronologia` (dónde se usa cada hecho y la cronología de la fábula: `SPEC-21`). Las dependencias en `backend/requirements.txt`; las pruebas con `python -m pytest app -q` desde `backend/` |
 | Revisiones de documentos | `Docs/revisiones/` | Un `REV-NN.md` por documento revisado. Evalúa un documento **existente**; una spec dice qué va a cambiar. Por eso cuelga de `Docs/` y no de `specs/` |
 | Referencias externas | `Docs/referencias.md` | **Consulta, no normativo.** Material de clase sobre métodos de Spec-Driven Development (Spec Kit, OpenSpec, MUSUBI, EasySpecs…) y lenguajes de especificación formal (TLA+, P, Dafny, Alloy…), más una lectura propia de qué se parece a lo que ya hacemos y qué hueco señala. No está en la cadena de precedencia y ninguna `INV-xx`, `VER-xx` ni spec puede citarlo como origen |
 
@@ -101,6 +101,34 @@ Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su pr
 Pasa, y es sano que pase. Lo que no vale es seguir.
 
 Se para, se corrige la spec, se vuelve a aprobar, y si el plan cambia de forma, se vuelve a aprobar también. El código nunca avanza por delante de la spec: en cuanto lo hace, la spec deja de gobernar lo que se va a hacer y pasa a describir mal lo que ya se hizo. A las tres semanas es ficción y nadie la lee.
+
+## Varias sesiones a la vez
+
+**Una carpeta por sesión, con `git worktree`.** Dos sesiones en el mismo directorio se pisan: cambian de rama bajo los pies de la otra y se barren los ficheros mutuamente. Cada worktree tiene su carpeta y su rama, y comparten el mismo `.git`.
+
+```
+git worktree add -b <rama-nueva> ../My_novel_story-<nombre> <rama-de-partida>
+git worktree list
+git worktree remove ../My_novel_story-<nombre>
+```
+
+Una rama solo puede estar checkouteada en **un** worktree a la vez. Lo ignorado —`.env`, `*.db`, `salida/`— no viaja a un worktree nuevo y hay que copiarlo a mano; las skills sí, porque `.agents/skills/` está versionado.
+
+**Nunca `git add -A` ni `git commit -a`: se añade por ruta.** Un barrido se lleva lo que otra sesión dejó a medias y lo mete en un commit que no habla de ello; ya pasó, y el fichero acabó dentro de un commit sobre otra cosa. **Un worktree separa carpetas, no costumbres**: con carpetas separadas el barrido sigue arrastrando lo que uno mismo tenía sin terminar.
+
+**Y antes de abrir una spec, mirar los identificadores que hay.** Dos sesiones trabajando a la vez eligen el mismo `SPEC-NN` sin enterarse: pasó dos veces seguidas. Si ya está cogido, se renumera el propio —nunca se reutiliza— y conserva el número la spec que ya esté `aprobada`.
+
+**Mirar el último identificador usado no basta con tres sesiones escribiendo.** Entre leer cuál es el último y commitear el propio hay una ventana, y otra sesión publica en ella: es la Regla 6 de `Docs/verification.md` aplicada a la numeración. Pasó con `F-39` y `F-40`, que acabaron duplicados con contenidos distintos —exactamente lo que la regla de no renumerar existe para impedir—. Vale cualquiera de las dos disciplinas, y hace falta una:
+
+- **Reservar antes de escribir**: anunciar el identificador a las otras sesiones y dejarlo escrito en su documento antes de desarrollar el contenido, para que quede ocupado.
+- **Comprobar al commitear**: volver a mirar los publicados justo antes del commit, no al empezar a redactar.
+
+**Si la colisión ya ocurrió**, el criterio es el mismo que para las specs y aplica a todo identificador publicado (`F-xx`, `MF-xx`, `VER-xx`, `INV-xx`):
+
+1. **El que se publicó primero conserva el número**, y eso lo decide el historial de git, no cuál parezca más importante.
+2. **El segundo pasa al siguiente libre.** No se fusionan ni se borra ninguno: son dos hallazgos distintos.
+3. **Las referencias cruzadas se actualizan en el mismo commit.** Un identificador movido sin sus citas deja el documento apuntando a otra cosa, que es peor que la colisión.
+4. **Lo hace una sola sesión, acordado antes.** Dos renumerando a la vez reproducen el problema que están arreglando.
 
 ## Skills
 

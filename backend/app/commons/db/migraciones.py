@@ -151,6 +151,83 @@ TODAS = [
         lambda con: anadir_columnas(
             con, "entidad", {"fecha_de_nacimiento": "TEXT"}),
     ),
+    Migracion(
+        5,
+        "el hecho canonico se identifica por obra e id, no por id solo",
+        # `F-39`. `hechos_declarados` filtra por obra, asi que el codigo ya
+        # trataba el mismo identificador en dos obras como dos hechos; la clave
+        # global decia lo contrario y el segundo declarar **pisaba** al
+        # primero, dejando a la obra anterior sin ningun hecho. SQLite no sabe
+        # cambiar una PRIMARY KEY con ALTER, asi que se recrea y se copia.
+        """
+        CREATE TABLE IF NOT EXISTS hecho_canonico (
+            id                      TEXT PRIMARY KEY,
+            obra                    TEXT NOT NULL,
+            enunciado               TEXT NOT NULL,
+            durabilidad             TEXT NOT NULL DEFAULT 'permanente',
+            escena_de_establecimiento TEXT,
+            previsto_en             TEXT
+        );
+        CREATE TABLE hecho_canonico_nuevo (
+            id                      TEXT NOT NULL,
+            obra                    TEXT NOT NULL,
+            enunciado               TEXT NOT NULL,
+            durabilidad             TEXT NOT NULL DEFAULT 'permanente',
+            escena_de_establecimiento TEXT,
+            previsto_en             TEXT,
+            PRIMARY KEY (obra, id)
+        );
+        INSERT INTO hecho_canonico_nuevo
+            SELECT id, obra, enunciado, durabilidad,
+                   escena_de_establecimiento, previsto_en
+            FROM hecho_canonico;
+        DROP TABLE hecho_canonico;
+        ALTER TABLE hecho_canonico_nuevo RENAME TO hecho_canonico;
+        """,
+    ),
+    Migracion(
+        6,
+        "el uso de un hecho se identifica tambien por su origen",
+        # `SPEC-21` C-2. La clave era `(hecho, escena, tipo)` y dejaba fuera el
+        # origen, asi que un `depende` **observado** y uno **declarado** sobre
+        # el mismo par no cabian a la vez: el segundo pisaba al primero y cual
+        # sobrevivia dependia del orden de escritura. Eso borra la distincion
+        # que `origen_de_uso` existe para guardar, y la borra en silencio.
+        #
+        # Importa mas de lo que parece: `SPEC-23` compara las dos formas de
+        # saber de que depende una escena y deja escrito que, si hubiera que
+        # elegir, la correcta es la observada -sobre-aproxima y falla ruidoso-.
+        # Mientras las dos filas quepan, esa eleccion sigue siendo editar una
+        # constante; sin esta migracion, seria volver a decidirla.
+        #
+        # SQLite no sabe cambiar una PRIMARY KEY con ALTER, asi que se recrea y
+        # se copia. `INSERT OR IGNORE` porque la tabla vieja no pudo guardar
+        # duplicados: lo que hay ya es unico bajo la clave nueva.
+        """
+        CREATE TABLE IF NOT EXISTS uso_de_hecho (
+            hecho    TEXT NOT NULL,
+            escena   TEXT NOT NULL,
+            capitulo TEXT,
+            tipo     TEXT NOT NULL,
+            origen   TEXT NOT NULL,
+            PRIMARY KEY (hecho, escena, tipo)
+        );
+        CREATE TABLE uso_de_hecho_nuevo (
+            hecho    TEXT NOT NULL,
+            escena   TEXT NOT NULL,
+            capitulo TEXT,
+            tipo     TEXT NOT NULL,
+            origen   TEXT NOT NULL,
+            PRIMARY KEY (hecho, escena, tipo, origen)
+        );
+        INSERT OR IGNORE INTO uso_de_hecho_nuevo
+            SELECT hecho, escena, capitulo, tipo, origen FROM uso_de_hecho;
+        DROP TABLE uso_de_hecho;
+        ALTER TABLE uso_de_hecho_nuevo RENAME TO uso_de_hecho;
+        CREATE INDEX IF NOT EXISTS idx_uso_por_hecho ON uso_de_hecho (hecho, tipo);
+        CREATE INDEX IF NOT EXISTS idx_uso_por_capitulo ON uso_de_hecho (capitulo, tipo);
+        """,
+    ),
 ]
 
 
