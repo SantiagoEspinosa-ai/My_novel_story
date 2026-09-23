@@ -56,13 +56,22 @@ def verificar(escena, delta, mundo):
                                    "{0} esta en {1} y la escena ocurre en {2}, que no es "
                                    "accesible desde alli".format(p, desde, hasta)))
 
-    for rev in (delta or {}).get("revelaciones", []):
-        clave = (rev["sujeto"], rev["hecho"])
+    # `INV-03` mira las **acciones**, no las revelaciones (`SPEC-16` C-1).
+    #
+    # Revelar es **aprender**: es el momento en que el sujeto se entera, y es lo
+    # que escribe el registro de conocimiento en la consolidacion. Mientras esta
+    # puerta las miraba, exigia que el hecho constara **antes** de la escena
+    # para poder aprenderse en ella, y el registro solo se escribe desde esas
+    # mismas revelaciones. Ningun personaje podia llegar a saber nada nunca
+    # (`F-31`). Actuar es **obrar sirviendose de lo ya sabido**, y eso si se
+    # puede comprobar contra lo que consta.
+    for acc in (delta or {}).get("acciones", []):
+        clave = (acc["personaje"], acc["hecho"])
         sabido = mundo["conocimiento"].get(clave)
         if not sabido or sabido["grado"] == "ignora":
             h.append(_hallazgo("INV-03", escena["id"],
                                "{0} actua sobre {1} y no consta que lo conozca en t".format(
-                                   rev["sujeto"], rev["hecho"])))
+                                   acc["personaje"], acc["hecho"])))
 
     if escena.get("pov_usado") and escena.get("pov") != escena["pov_usado"]:
         h.append(_hallazgo("INV-04", escena["id"],

@@ -49,19 +49,25 @@ def test_que_uno_lo_revele_no_hace_que_lo_sepa_otro(con):
     assert ("per-ana", "hec-llave") not in c
 
 
-def test_inv03_deja_de_bloquear_lo_que_ya_se_revelo(con):
-    """La prueba que une F1 y F2: el circuito entero."""
+def test_inv03_deja_de_bloquear_una_accion_cuando_ya_se_revelo(con):
+    """La prueba que une F1 y F2, y el circuito que `F-31` tenia al reves.
+
+    Aprender primero, actuar despues. Antes esta prueba revelaba en las dos
+    escenas y esperaba que la segunda revelacion pasara, lo que escondia el
+    punto muerto: la puerta exigia saber de antes **para poder aprender**.
+    """
     from app.features.verificacion import puertas
 
     escena = {"id": "e2", "cambio_de_valor": {"eje": "vida", "signo": "negativo"},
               "personajes_presentes": ["per-marta"], "lugar": "lug-salon"}
-    delta = {"revelaciones": [{"sujeto": "per-marta", "hecho": "hec-llave"}]}
+    aprender = {"revelaciones": [{"sujeto": "per-marta", "hecho": "hec-llave"}]}
+    actuar = {"acciones": [{"personaje": "per-marta", "hecho": "hec-llave"}]}
 
-    antes = puertas.verificar(escena, delta, mundo.leer(con))
+    antes = puertas.verificar(escena, actuar, mundo.leer(con))
     assert any(h.invariante == "INV-03" for h in antes), "sin registro, bloquea"
 
-    aplicar.consolidar(con, "e1", delta)
-    despues = puertas.verificar(escena, delta, mundo.leer(con))
+    aplicar.consolidar(con, "e1", aprender)
+    despues = puertas.verificar(escena, actuar, mundo.leer(con))
     assert not any(h.invariante == "INV-03" for h in despues), "con registro, pasa"
 
 

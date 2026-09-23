@@ -68,3 +68,37 @@ def test_una_revelacion_con_identificadores_pasa():
                   "revelaciones": [{"sujeto": "per-marta", "hecho": "hec-reloj"}]},
     })
     assert r.delta["revelaciones"][0]["sujeto"] == "per-marta"
+
+
+# --- SPEC-16: `acciones` cruza la misma frontera que `revelaciones` --------
+
+def test_una_accion_en_prosa_es_fallo_de_contrato():
+    """Misma frontera, mismo motivo (Regla 4). Si una frase llega a la puerta,
+    `INV-03` la denuncia como un personaje actuando sobre un hecho que no
+    conoce, y el defecto era de formato."""
+    with pytest.raises(contrato.FalloDeContrato, match="identificador"):
+        contrato.leer({
+            "texto": "x",
+            "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
+                      "acciones": [{"personaje": "la hermana mayor",
+                                    "hecho": "que la llave no aparece"}]},
+        })
+
+
+def test_una_accion_con_identificadores_pasa():
+    r = contrato.leer({
+        "texto": "x",
+        "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
+                  "acciones": [{"personaje": "per-marta", "hecho": "hec-reloj"}]},
+    })
+    assert r.delta["acciones"][0]["personaje"] == "per-marta"
+
+
+def test_un_delta_sin_acciones_sigue_siendo_valido():
+    """La mayoria de las escenas no las tienen, y exigirlas convertiria en
+    fallo de contrato lo que es simplemente una escena sin acciones."""
+    r = contrato.leer({
+        "texto": "x",
+        "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}},
+    })
+    assert r.delta.get("acciones") in (None, [])

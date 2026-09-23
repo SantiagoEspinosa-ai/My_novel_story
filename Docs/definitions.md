@@ -106,7 +106,9 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | GuiaDeEstilo | Reglas de superficie que no deben derivar. | **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, registro, densidad\_sensorial, tics\_prohibidos\[\] (cadenas literales) |
 | Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, **hechos\_canonicos\[\]** → HechoCanonico, cambios\_de\_valor, curva\_de\_dread\_prevista |
 | Borrador | Texto generado de una escena, con versión. | **escena**, **version**, **pov\_usado** (`persona` → `persona_narrativa`, `tiempo_verbal` → `tiempo_verbal`), texto, modelo, prompt\_hash |
-| DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, **cambio\_de\_valor** (`{eje, signo}`), cambios\_de\_estado\_vital\[\] (`{personaje, de, a}`, con `de` y `a` → `estado_vital`), ~~muertes~~ (obsoleto: lo sustituye cambios\_de\_estado\_vital), movimientos, revelaciones, setups\_pagados, cambios\_de\_posesion, deterioros |
+| DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, **cambio\_de\_valor** (`{eje, signo}`), cambios\_de\_estado\_vital\[\] (`{personaje, de, a}`, con `de` y `a` → `estado_vital`), ~~muertes~~ (obsoleto: lo sustituye cambios\_de\_estado\_vital), movimientos, revelaciones (`{sujeto, hecho}`: el sujeto **pasa a conocer** ese hecho desde esta escena), **acciones** (`{personaje, hecho}`: el personaje **obró sirviéndose** de ese hecho), setups\_pagados, cambios\_de\_posesion, deterioros |
+
+**`revelaciones` y `acciones` son cosas distintas, y confundirlas dejó el sistema muerto sin que nada fallara** (`SPEC-16`, `F-31`). Revelar es **aprender**: es el momento en que el sujeto se entera, y es lo que escribe el `RegistroDeConocimiento`. Actuar es **obrar sirviéndose de lo ya sabido**, y es lo único que `INV-03` comprueba. Mientras `INV-03` miró las revelaciones exigía saber de antes para poder aprender, así que **ningún personaje podía llegar a saber nada nunca**.
 | Ficha | Resumen recuperable de una entidad, para inyectar en contexto. | **entidad**, resumen, version\_en\_t |
 | Resumen | Condensación jerárquica: escena → capítulo → parte. | **nivel** → `nivel_de_evaluacion`, **ambito**, texto, hechos\_clave\[\] → HechoCanonico |
 | AnclaDeEstilo | Pasaje ejemplar que fija la voz. | **texto**, que\_ejemplifica |
@@ -292,7 +294,7 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | --- | --- | --- | --- | --- | --- |
 | INV-01 | Toda escena tiene `cambio_de_valor` no nulo | escena | bloqueante | regla | `Escena.cambio_de_valor` |
 | INV-02 | Todo personaje presente tiene `estado_vital = vivo` y es accesible en `EstadoDelMundo(t)` | escena | bloqueante | regla | `Escena.personajes_presentes`, `EstadoDelMundo.entidades_vivas`, `EstadoDelMundo.ubicaciones`, `Lugar.accesos_y_salidas` |
-| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla | `RegistroDeConocimiento`, `HechoCanonico.escena_de_establecimiento`, `MomentoNarrativo.t_fabula`, revelaciones del delta |
+| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla | `RegistroDeConocimiento`, `HechoCanonico.escena_de_establecimiento`, `MomentoNarrativo.t_fabula`, **`acciones` del delta** (no `revelaciones`: `SPEC-16` C-1) |
 | INV-04 | El POV no cambia dentro de una escena | escena | bloqueante | regla | `Escena.pov`, `Borrador.pov_usado` |
 | INV-05 | Toda escena aceptada tiene su delta aplicado antes de la siguiente | escena | bloqueante | regla | `DeltaDeEscena`, `EstadoDelMundo` |
 | INV-06 | Ningún `HechoCanonico` vigente contradice a otro | obra | bloqueante | regla | `HechoCanonico.contradice`, `EstadoDelMundo.hechos_vigentes` |
@@ -341,8 +343,9 @@ que confundir `certeza` con `durabilidad`: dos ejes independientes tratados como
 **La durabilidad decide qué se recorta del estado, no qué necesita una puerta.** Son dos
 ejes que se confunden al escribir y solo se separan cruzando dos tablas. Al implementar
 `PLAN-01` C1 salió el caso: la forma reducida del estado del mundo se quedaba con los hechos
-`permanente`, y `INV-03` necesita la `escena_de_establecimiento` de **cualquier** hecho que
-el delta revele —para comprobar que revelar no precede a establecer— y un hecho `efimero`
+`permanente`, y `INV-03` necesita la `escena_de_establecimiento` de **cualquier** hecho sobre
+el que el delta declare una acción —para comprobar que obrar no precede a conocer; `SPEC-16`
+C-1 retiró de aquí la comparación contra las revelaciones— y un hecho `efimero`
 tiene esa fecha igual que uno permanente. Un dato puede ser perfectamente efímero **y**
 imprescindible para una puerta, y quedarse solo con lo duradero se lo lleva.
 
@@ -435,6 +438,7 @@ Estas son las que conviene fijar antes de escribir esquema o código.
 * [ ] **Umbrales.** Las invariantes `menor` (INV-15, INV-16) necesitan números concretos antes de poder ejecutarse; sin ellos el harness las salta en silencio. **Se contesta sola** con una traza real.
 * [ ] **Corpus de fixtures.** Qué obra o fragmento sirve de caso base para los tests negativos de cada invariante.
 * [ ] **Una invariante para lo declarado y nunca entregado.** `SPEC-15` hizo nombrable un defecto que antes no existía: un `HechoCanonico` declarado y nunca establecido, y un `Presagio` `declarado` y nunca plantado. **No se amplía `INV-09`**, y el motivo es que no son el mismo daño: un presagio nunca plantado **incumple el plan**; uno plantado y no pagado **rompe una promesa al lector**. El segundo lo nota quien lee; el primero, solo quien compara plan y texto. Probablemente sea `menor` — pero desde `SPEC-04` un `menor` **no bloquea el cierre de capítulo**, así que una obra podría firmarse habiendo incumplido su propio plan. Merece mirarse con calma antes de fijar la severidad.
+* [ ] **Una invariante para el conocimiento adquirido sin fuente.** `SPEC-16` decidió que revelar es **aprender**, así que un personaje que se entera de algo que solo sabía otro ya no viola `INV-03`. **Pero sigue siendo un defecto**: no es actuar con conocimiento indebido, es **adquirir conocimiento sin fuente**, y en terror esa es la diferencia entre un misterio y un agujero de guion. Es lo que ocurrió en `F-24`, la única detección real del harness hasta hoy, y dejarlo sin recoger la degradaría a falso positivo. `RegistroDeConocimiento.fuente` existe desde `SPEC-03` **precisamente para esto** y no lo comprueba nadie. La invariante exigiría que toda revelación deje al sujeto sabiendo algo con una fuente que lo explique.
 * [ ] **Si `FraseRecurrente` se convierte en invariante.** La clase guarda la señal; nadie la comprueba todavía. Puede quedarse como material para el Revisor o pasar a ser `INV-18`.
 * [ ] **Los pesos por severidad.** Hacen falta para `Escena.borrador_aceptado`: sin un número no se puede elegir el menos malo. Salen de medir sobre esta implementación, no de copiar los de `main`. **Se contesta sola** con una traza real.
 * [ ] **Desempate juez vs. regla.** Con INV-03 ya de tipo `regla` y el juez como desempate, la pregunta es operativa y no teórica: falta decidir qué gana cuando la regla no ve nada y el juez marca. Aplica igual a INV-11 y a INV-14. **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide. **La traza dirá cuántas veces discrepan y en qué dirección, no quién gana.**

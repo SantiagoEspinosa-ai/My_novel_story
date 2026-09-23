@@ -55,15 +55,21 @@ def leer(bruto: dict) -> Respuesta:
         SignoDeCambio(cv["signo"])
     except (KeyError, ValueError) as e:
         raise FalloDeContrato("`cambio_de_valor` fuera de esquema: {0}".format(e))
-    for i, rev in enumerate(delta.get("revelaciones") or []):
-        for campo in ("sujeto", "hecho"):
-            valor = rev.get(campo)
-            if not isinstance(valor, str) or not IDENTIFICADOR.match(valor):
-                raise FalloDeContrato(
-                    "revelaciones[{0}].{1} tiene que ser un identificador y "
-                    "es {2!r}. `SPEC-03` decidio referencias, no prosa: una "
-                    "frase aqui llega a `INV-03`, que la denuncia como un "
-                    "personaje actuando sobre un hecho que no conoce y le da "
-                    "severidad bloqueante. El defecto es de formato".format(
-                        i, campo, valor))
+    # Las dos listas de referencias del delta cruzan la **misma** frontera, y
+    # por eso se recorren con el mismo bucle: duplicarlo dejaria dos copias de
+    # la misma regla, y la que se olvidara de actualizar seria justo la que
+    # dejaria pasar una frase (`SPEC-16`).
+    for lista, campos in (("revelaciones", ("sujeto", "hecho")),
+                          ("acciones", ("personaje", "hecho"))):
+        for i, entrada in enumerate(delta.get(lista) or []):
+            for campo in campos:
+                valor = entrada.get(campo)
+                if not isinstance(valor, str) or not IDENTIFICADOR.match(valor):
+                    raise FalloDeContrato(
+                        "{0}[{1}].{2} tiene que ser un identificador y es "
+                        "{3!r}. `SPEC-03` decidio referencias, no prosa: una "
+                        "frase aqui llega a `INV-03`, que la denuncia como un "
+                        "personaje actuando sobre un hecho que no conoce y le "
+                        "da severidad bloqueante. El defecto es de "
+                        "formato".format(lista, i, campo, valor))
     return Respuesta(texto=texto, delta=delta)

@@ -42,3 +42,22 @@ def test_el_mismo_contexto_da_el_mismo_hash():
     """Si no fuera determinista, el hash no detectaria nada."""
     assert prompt.hash_de(_p()) == prompt.hash_de(_p())
     assert prompt.hash_de(_p()) != prompt.hash_de(_p(objetivo="otra cosa"))
+
+
+# --- SPEC-16 C-3 / Regla 5: el contrato dice que significan sus campos -----
+
+def test_el_prompt_dice_que_significa_revelar_y_que_significa_actuar():
+    """La causa de fondo de `F-31`: el prompt daba la **forma** de
+    `revelaciones` y no su **significado**, asi que el modelo lo dedujo
+    -correctamente- mientras el codigo suponia lo contrario. Las dos partes
+    cumplian el contrato y el sistema estaba roto."""
+    texto = prompt.construir(
+        parametros={"escena": "e1", "longitud_objetivo": [300, 900]},
+        estado={"contexto": []}, objetivo="{}", problemas=None,
+        personajes=["per-marta"], hechos=["hec-llave"])
+    assert "acciones" in texto, "el campo tiene que existir en el contrato"
+    minusculas = texto.lower()
+    for significado in ("pasa a conocer", "sirviendose"):
+        assert significado in minusculas, (
+            "falta el significado de un campo: dar la forma sin el significado "
+            "es lo que produjo F-31")

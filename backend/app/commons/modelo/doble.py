@@ -70,6 +70,15 @@ class DobleDelModelo:
             return {"texto": "La puerta estaba abierta.",
                     "delta": {"cambio_de_valor": {"eje": "dinero", "signo": "negativo"}},
                     "usage": {"total_tokens": 45}}
+        if paso == "actua_sin_saber":
+            # El caso de `F-24`, que el modelo real produjo solo: un personaje
+            # obra sirviendose de algo que no consta que conozca. Sin este paso
+            # el doble no puede ejercitar `INV-03`, y una invariante que nunca
+            # falla en las pruebas no esta verificada, solo declarada.
+            return {"texto": " ".join(["palabra"] * 1500),
+                    "delta": dict(DELTA_OK, acciones=[
+                        {"personaje": "per-ana", "hecho": "hec-llave"}]),
+                    "usage": {"total_tokens": 2100}}
         if paso == "corto":
             return {"texto": " ".join(["palabra"] * 944), "delta": DELTA_OK,
                     "usage": {"total_tokens": 1300}}

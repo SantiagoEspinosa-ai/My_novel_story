@@ -138,17 +138,15 @@ def test_sin_hechos_declarados_el_prompt_no_inventa_ninguno(con):
     assert "hec-" not in escritor.llamadas[0]
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "F-31: la puerta de INV-03 bloquea la PRIMERA revelacion de la obra, sea "
-    "cual sea. Trata toda revelacion como 'actuar sabiendo ya' y exige que el "
-    "hecho conste en el registro de conocimiento antes de la escena; pero el "
-    "registro solo se escribe DESDE esas revelaciones, en la consolidacion, "
-    "que ocurre despues de la puerta. La obra para en e1 y nunca se llega a "
-    "marcar nada. Que significa `revelaciones` es una decision de dominio y no "
-    "se resuelve ajustando esta prueba. `strict` para que avise cuando pase."))
 def test_una_revelacion_marca_donde_el_texto_establece_el_hecho(con):
     """`SPEC-15` C-1: `escena_de_establecimiento` es donde lo establece el
-    TEXTO, no donde nacio el hecho."""
+    TEXTO, no donde nacio el hecho. Y `SPEC-16` C-4: establecer un hecho **es**
+    su primera revelacion.
+
+    Esta prueba estuvo marcada `xfail(strict)` mientras `F-31` estuvo abierto:
+    la obra paraba en `e1` y no se llegaba a marcar nada. Se retira la marca
+    porque el fallo esta corregido, no porque la prueba se haya ablandado.
+    """
     repo.declarar_hechos(con, "cap-1", [
         {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
     obra.generar_obra(con, "cap-1", Revela(), *_agentes()[1:],
@@ -162,3 +160,19 @@ def test_el_material_de_una_escena_lleva_los_hechos_de_su_obra(con):
         {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
     material = obra.reunir_material(con, repo.escena(con, "e1"), "cap-1")
     assert [h["id"] for h in material["hechos"]] == ["hec-llave"]
+
+
+def test_una_accion_sin_conocimiento_detiene_la_obra(con):
+    """El circuito entero contra el doble, y el caso que `F-24` cazo en real.
+
+    El doble tiene que poder producirlo: si solo sabe portarse bien, el bucle
+    pasa contra el doble y falla contra el proveedor (`F-18`, Regla 3).
+    """
+    from app.commons.modelo.doble import Guion
+
+    escritor = DobleDelModelo(Guion(["actua_sin_saber"]))
+    g = obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                          techo=1_000_000)
+    assert g.escenas_hechas == []
+    assert g.parada["escena"] == "e1"
+    assert any(inv == "INV-03" for inv, _ in g.parada["hallazgos"])

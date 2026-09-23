@@ -59,11 +59,27 @@ no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
 FORMATO DE LA RESPUESTA
 Devuelve un unico objeto JSON con dos claves:
   "texto": la escena, en prosa.
-  "delta": lo que cambia en el mundo, con esta forma:
+  "delta": lo que cambia en el mundo. Cada campo tiene un significado preciso y
+  no son intercambiables:
+
       cambio_de_valor        {{"eje": ..., "signo": ...}}
+          En que se mueve la escena y en que direccion.
+
       movimientos            [{{"personaje": ..., "a": ...}}]
+          Donde queda cada personaje al terminar la escena.
+
       revelaciones           [{{"sujeto": ..., "hecho": ...}}]
+          El sujeto PASA A CONOCER ese hecho en esta escena: es el momento en
+          que se entera. Si ya lo sabia de antes, NO va aqui.
+
+      acciones               [{{"personaje": ..., "hecho": ...}}]
+          El personaje obra SIRVIENDOSE de un hecho que YA conocia. Es lo que
+          hace, no lo que aprende. Si se entera en esta escena y ademas obra
+          con ello, van las dos cosas, cada una en su lista.
+
       cambios_de_estado_vital [{{"personaje": ..., "de": ..., "a": ...}}]
+          Quien pasa a estar vivo, muerto o desaparecido.
+
 No expliques el JSON ni lo envuelvas en vallas de bloque de codigo.
 """
 

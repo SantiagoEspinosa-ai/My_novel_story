@@ -40,12 +40,42 @@ def test_inv02_un_personaje_en_un_lugar_inaccesible():
     assert any(x.invariante == "INV-02" for x in h)
 
 
+def _escena_de_conocimiento():
+    return {"id": "e1", "cambio_de_valor": {"eje": "conocimiento", "signo": "positivo"},
+            "personajes_presentes": ["marta"], "lugar": "salon", "t_fabula": 5}
+
+
 def test_inv03_actuar_sobre_un_hecho_que_no_se_conoce():
-    esc = {"id": "e1", "cambio_de_valor": {"eje": "conocimiento", "signo": "positivo"},
-           "personajes_presentes": ["marta"], "lugar": "salon", "t_fabula": 5}
-    delta = {"revelaciones": [{"sujeto": "ana", "hecho": "hec-9"}]}
-    h = puertas.verificar(esc, delta, _mundo())
+    """`SPEC-16` C-2: lo que `INV-03` comprueba son las **acciones**."""
+    delta = {"acciones": [{"personaje": "ana", "hecho": "hec-9"}]}
+    h = puertas.verificar(_escena_de_conocimiento(), delta, _mundo())
     assert any(x.invariante == "INV-03" and x.severidad is Severidad.BLOQUEANTE for x in h)
+
+
+def test_inv03_actuar_sobre_un_hecho_que_si_se_conoce_no_es_hallazgo():
+    """El caso positivo, que no existia: sin el, una invariante que marcara
+    siempre pasaria su propio caso negativo y nadie lo notaria."""
+    delta = {"acciones": [{"personaje": "marta", "hecho": "hec-1"}]}
+    h = puertas.verificar(_escena_de_conocimiento(), delta, _mundo())
+    assert not any(x.invariante == "INV-03" for x in h)
+
+
+def test_inv03_ya_no_mira_las_revelaciones():
+    """`F-31`: mirarlas exigia saber de antes para poder aprender, asi que
+    **ningun personaje podia llegar a saber nada nunca**. Revelar es aprender,
+    y aprender no se comprueba contra lo ya sabido (`SPEC-16` C-1)."""
+    delta = {"revelaciones": [{"sujeto": "ana", "hecho": "hec-9"}]}
+    h = puertas.verificar(_escena_de_conocimiento(), delta, _mundo())
+    assert not any(x.invariante == "INV-03" for x in h)
+
+
+def test_inv03_un_grado_ignora_no_cuenta_como_conocer():
+    """Constar en el registro no basta: `ignora` es constar que no lo sabe."""
+    mundo = _mundo()
+    mundo["conocimiento"][("ana", "hec-1")] = {"desde": 2, "grado": "ignora"}
+    delta = {"acciones": [{"personaje": "ana", "hecho": "hec-1"}]}
+    h = puertas.verificar(_escena_de_conocimiento(), delta, mundo)
+    assert any(x.invariante == "INV-03" for x in h)
 
 
 def test_inv04_el_pov_cambia_dentro_de_la_escena():
