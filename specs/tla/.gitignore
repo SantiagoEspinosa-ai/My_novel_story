@@ -1,0 +1,5 @@
+# Directorios de trabajo que TLC crea al ejecutarse. Son volcados internos del
+# model checker, no resultados: lo que vale la pena conservar son las salidas
+# `tlc-*.txt`, que si estan versionadas.
+states/
+*.old

@@ -171,6 +171,32 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     return g
 
 
+def escenas_que_usan(con, clase, objeto):
+    """Las escenas **consolidadas** que dependen de un objeto (`SPEC-20` C-3).
+
+    Vive aqui y no en `edicion/` porque cruza las tablas de `escaleta` y de
+    `consolidacion`, y `A-02` deja componer solo a `orquestacion/`. La primera
+    version lo hacia dentro de `edicion/` con SQL directo, que es `A-02` roto
+    por la via que ningun comprobador de importaciones ve (`F-28`, `PC-18`).
+
+    Es una consulta y no un juicio: devuelve **quien** lo usa, no un si o un
+    no. Un "no se puede" sin decir quien lo impide obliga a buscarlo a mano.
+    """
+    completas = tuple(e.value for e in YA_HECHAS)
+    if clase == "escena":
+        fila = con.execute("SELECT estado FROM escena WHERE id = ?",
+                           (objeto,)).fetchone()
+        return [objeto] if fila and fila[0] in completas else []
+    if clase == "hecho":
+        filas = con.execute(
+            "SELECT DISTINCT c.desde_escena FROM conocimiento c "
+            "JOIN escena e ON e.id = c.desde_escena "
+            "WHERE c.hecho = ? AND e.estado IN (?, ?) "
+            "ORDER BY c.desde_escena", (objeto,) + completas)
+        return [f[0] for f in filas if f[0]]
+    return []
+
+
 def evaluar_cierre(con, obra):
     """Dice si el capitulo **podria** cerrarse. No lo cierra.
 

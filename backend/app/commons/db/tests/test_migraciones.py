@@ -16,6 +16,8 @@ import sqlite3
 import pytest
 
 from app.commons.db import migraciones
+from app.features.consolidacion import aplicar
+from app.features.escaleta import repository as repo
 
 
 def test_una_base_nueva_arranca_sin_version():
@@ -76,3 +78,38 @@ def test_la_migracion_2_permite_conocimiento_anterior_al_relato():
                 "fuente) VALUES ('per-ana', 'hec-1', NULL, 'sabe', "
                 "'anterior_al_relato')")
     assert con.execute("SELECT desde_escena FROM conocimiento").fetchone()[0] is None
+
+
+# --- `SPEC-21`: una migracion que añade columnas tiene que ser idempotente --
+
+
+def test_anadir_columnas_funciona_si_la_tabla_no_existe_todavia():
+    """Las tablas las crea su feature con `CREATE TABLE IF NOT EXISTS`, asi que
+    al migrar una base nueva la tabla puede no existir. La migracion no puede
+    reventar por eso: no hay nada que migrar, y eso no es un error."""
+    con = sqlite3.connect(":memory:")
+    assert migraciones.anadir_columnas(con, "escena", {"capitulo": "TEXT"}) == 0
+
+
+def test_anadir_columnas_no_falla_si_la_columna_ya_esta():
+    """El caso que rompe un `ALTER TABLE ADD COLUMN` a secas.
+
+    Si la feature creo la tabla ya con la columna -una instalacion nueva en la
+    que el repositorio corrio antes que el migrador-, repetir el `ALTER` da
+    `duplicate column name` y deja la base sin migrar a partir de ahi.
+    """
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE escena (id TEXT, capitulo TEXT)")
+    assert migraciones.anadir_columnas(con, "escena", {"capitulo": "TEXT"}) == 0
+    assert migraciones.anadir_columnas(
+        con, "escena", {"capitulo": "TEXT", "t_fabula": "TEXT"}) == 1
+
+
+def test_migrar_dos_veces_seguidas_con_las_tablas_ya_creadas():
+    """La base completa: features primero, migrador despues, dos veces."""
+    con = sqlite3.connect(":memory:")
+    repo.asegurar_tablas(con)
+    aplicar.asegurar_tablas(con)
+    migraciones.migrar(con)
+    assert migraciones.migrar(con) == 0
+    assert migraciones.version_aplicada(con) == migraciones.ULTIMA_VERSION

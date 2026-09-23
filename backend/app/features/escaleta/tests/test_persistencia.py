@@ -186,3 +186,58 @@ def test_un_sin_veredicto_tambien_se_puede_cerrar(con):
     ident = repo.hallazgos_abiertos(con, "e1")[0]["id"]
     repo.cerrar_hallazgo(con, ident, EH.RESUELTO, motivo="revisado a mano")
     assert repo.hallazgos_abiertos(con, "e1") == []
+
+
+# --- `SPEC-21` C-1: la relacion `contiene` se materializa -------------------
+
+
+def test_la_escena_guarda_su_capitulo_y_su_momento_narrativo(con):
+    """`SPEC-21` C-1. `contiene` estaba en la tabla de relaciones y no existia.
+
+    `MomentoNarrativo` es ademas atributo **obligatorio** de `Escena` desde el
+    primer dia, y la tabla no tenia ninguna de sus tres columnas: la doble
+    cronologia estaba declarada y era inexpresable.
+    """
+    repo.guardar_escaleta(con, "obra-1", [
+        {"id": "e1", "orden": 1, "capitulo": "cap-1",
+         "pov": "per-marta", "lugar": "lug-salon",
+         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
+         "beats": ["b1"], "longitud_objetivo": [1200, 2200],
+         "t_fabula": "1897-11-03", "t_discurso": 1, "duracion_ficcional": 90,
+         "personajes_presentes": ["per-marta", "per-ubaldo"]},
+    ])
+    e = repo.escena(con, "e1")
+    assert e["capitulo"] == "cap-1"
+    assert e["t_fabula"] == "1897-11-03"
+    assert e["personajes_presentes"] == ["per-marta", "per-ubaldo"]
+
+
+def test_escenas_de_capitulo_filtra_por_capitulo_y_no_por_obra(con):
+    """El caso negativo, y el que motivo `C-1`.
+
+    `orquestacion/router.py` resolvia las escenas de un capitulo con una
+    consulta que filtra por **obra**. Mientras obra y capitulo coincidieran
+    daba el resultado correcto por accidente; con dos capitulos en la misma
+    obra, cerrar el primero miraba tambien las escenas del segundo.
+    """
+    repo.guardar_escaleta(con, "obra-1", [
+        {"id": "e1", "orden": 1, "capitulo": "cap-1", "pov": "p", "lugar": "l",
+         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
+         "beats": ["b1"]},
+        {"id": "e2", "orden": 2, "capitulo": "cap-2", "pov": "p", "lugar": "l",
+         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
+         "beats": ["b2"]},
+    ])
+    assert [e["id"] for e in repo.escenas_de_capitulo(con, "cap-1")] == ["e1"]
+    assert repo.escenas_de_capitulo(con, "cap-9") == []
+
+
+def test_una_escena_sin_capitulo_no_se_atribuye_a_la_obra(con):
+    """Un dato ausente no es un verde.
+
+    Las escaletas anteriores a `SPEC-21` no traen capitulo. Devolver la obra en
+    su lugar haria que «en que capitulos se usa este hecho» contestara con algo
+    que parece un capitulo y no lo es.
+    """
+    _sembrar(con)
+    assert repo.escena(con, "e1")["capitulo"] is None

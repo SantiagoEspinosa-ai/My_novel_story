@@ -1,5 +1,5 @@
 ﻿TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
-Running breadth-first search Model-Checking with fp 73 and seed 3937782322324878150 with 1 worker on 4 cores with 3641MB heap and 64MB offheap memory [pid: 1396] (Windows 11 10.0 amd64, Eclipse Adoptium 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Running breadth-first search Model-Checking with fp 117 and seed -333257443465888476 with 1 worker on 4 cores with 3641MB heap and 64MB offheap memory [pid: 2860] (Windows 11 10.0 amd64, Eclipse Adoptium 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
 Parsing file C:\Users\student\Desktop\My_novel_story\specs\tla\HarnessNovela.tla
 Parsing file C:\Users\student\AppData\Local\Temp\Naturals.tla
 Parsing file C:\Users\student\AppData\Local\Temp\FiniteSets.tla
@@ -8,10 +8,10 @@ Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
 Semantic processing of module HarnessNovela
-Starting... (2026-09-23 16:07:05)
+Starting... (2026-09-23 16:11:46)
 Implied-temporal checking--satisfiability problem has 1 branches.
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-09-23 16:07:05.
+Finished computing initial states: 1 distinct state generated at 2026-09-23 16:11:46.
 Error: Invariant NuncaPierdeCapitulos is violated.
 Error: The behavior up to this point is:
 State 1: <Initial predicate>
@@ -25,7 +25,7 @@ State 1: <Initial predicate>
 /\ estadoCap = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
 /\ intentos = <<0, 0, 0, 0, 0>>
 
-State 2: <Configurar line 109, col 5 to line 112, col 56 of module HarnessNovela>
+State 2: <Configurar line 110, col 5 to line 113, col 56 of module HarnessNovela>
 /\ topeAgotado = FALSE
 /\ versiones = <<>>
 /\ regeneraciones = 0
@@ -36,7 +36,7 @@ State 2: <Configurar line 109, col 5 to line 112, col 56 of module HarnessNovela
 /\ estadoCap = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
 /\ intentos = <<0, 0, 0, 0, 0>>
 
-State 3: <Planificar line 115, col 5 to line 118, col 56 of module HarnessNovela>
+State 3: <Planificar line 116, col 5 to line 119, col 56 of module HarnessNovela>
 /\ topeAgotado = FALSE
 /\ versiones = <<>>
 /\ regeneraciones = 0
@@ -47,7 +47,7 @@ State 3: <Planificar line 115, col 5 to line 118, col 56 of module HarnessNovela
 /\ estadoCap = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
 /\ intentos = <<0, 0, 0, 0, 0>>
 
-State 4: <AgotarTope line 222, col 5 to line 227, col 43 of module HarnessNovela>
+State 4: <AgotarTope line 223, col 5 to line 228, col 43 of module HarnessNovela>
 /\ topeAgotado = TRUE
 /\ versiones = <<>>
 /\ regeneraciones = 0
@@ -58,7 +58,7 @@ State 4: <AgotarTope line 222, col 5 to line 227, col 43 of module HarnessNovela
 /\ estadoCap = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
 /\ intentos = <<0, 0, 0, 0, 0>>
 
-State 5: <Publicar line 274, col 5 to line 283, col 48 of module HarnessNovela>
+State 5: <Publicar line 293, col 5 to line 302, col 48 of module HarnessNovela>
 /\ topeAgotado = TRUE
 /\ versiones = <<[capitulos |-> {}, limpios |-> {}, ronda |-> 0]>>
 /\ regeneraciones = 0
@@ -72,4 +72,4 @@ State 5: <Publicar line 274, col 5 to line 283, col 48 of module HarnessNovela>
 11 states generated, 11 distinct states found, 5 states left on queue.
 The depth of the complete state graph search is 5.
 The average outdegree of the complete state graph is 2 (minimum is 1, the maximum 4 and the 95th percentile is 4).
-Finished in 00s at (2026-09-23 16:07:05)
+Finished in 00s at (2026-09-23 16:11:46)

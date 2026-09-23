@@ -54,3 +54,42 @@ def test_un_hallazgo_valido_se_construye():
         descripcion="la escena no cambia ningun valor",
     )
     assert h.severidad is enums.Severidad.BLOQUEANTE
+
+
+# --- `SPEC-21`: los tres vocabularios de los usos y la cronologia -----------
+
+
+def test_tipo_de_uso_de_hecho_tiene_los_cuatro_valores():
+    """`SPEC-21` C-2: no se colapsan en uno.
+
+    Mencionar, depender y contradecir tienen condiciones de verdad distintas y
+    consumidores distintos. Si alguien redujera la enumeracion a un solo valor
+    "usa", las cuatro capacidades que cuelgan de ella dejarian de poder
+    distinguir lo que necesitan distinguir, y esta prueba es lo que lo impide.
+    """
+    assert [u.value for u in enums.TipoDeUsoDeHecho] == [
+        "establece",
+        "menciona",
+        "depende",
+        "contradice",
+    ]
+
+
+def test_origen_de_uso_distingue_lo_medido_de_lo_afirmado():
+    """Una fila calculada por codigo no es lo mismo que una declarada por un
+    modelo, y un demostrador formal no puede tratarlas igual."""
+    assert [o.value for o in enums.OrigenDeUso] == [
+        "regla",
+        "delta",
+        "juez_llm",
+        "humano",
+    ]
+
+
+def test_tipo_de_presencia_separa_estar_de_ser_nombrado():
+    """`SPEC-21` C-3: un personaje del que se habla no esta en el evento.
+
+    Sin esta separacion, la comprobacion de que nadie esta en dos lugares a la
+    vez se convierte en una fabrica de falsos positivos.
+    """
+    assert [p.value for p in enums.TipoDePresencia] == ["presente", "mencionado"]

@@ -21,14 +21,60 @@ del proyecto: lo que se publica no se borra ni se renumera.
 """
 
 import sqlite3
+from collections.abc import Callable
 from dataclasses import dataclass
+
+
+def tiene_tabla(con: sqlite3.Connection, tabla: str) -> bool:
+    return con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (tabla,)
+    ).fetchone() is not None
+
+
+def anadir_columnas(con: sqlite3.Connection, tabla: str, columnas: dict) -> int:
+    """Añade las que falten y devuelve cuantas añadio. Nunca falla por repetir.
+
+    Si la tabla no existe devuelve 0: la creara su feature, ya con las columnas
+    nuevas, porque el `CREATE TABLE` de la feature es el esquema al dia. Migrar
+    lo que no hay no es un error, es que no habia nada que migrar.
+    """
+    if not tiene_tabla(con, tabla):
+        return 0
+    ya = {f[1] for f in con.execute("PRAGMA table_info({0})".format(tabla))}
+    anadidas = 0
+    for nombre, tipo in columnas.items():
+        if nombre in ya:
+            continue
+        con.execute("ALTER TABLE {0} ADD COLUMN {1} {2}".format(tabla, nombre, tipo))
+        anadidas += 1
+    return anadidas
 
 
 @dataclass(frozen=True)
 class Migracion:
+    """`sql` es un script, o una funcion que recibe la conexion.
+
+    POR QUE UNA MIGRACION PUEDE SER UNA FUNCION
+    --------------------------------------------
+    Porque `ALTER TABLE ... ADD COLUMN` **no es idempotente en SQLite** y no
+    existe `IF NOT EXISTS` para columnas. Y aqui las tablas no las crea el
+    migrador: las crea cada feature con `CREATE TABLE IF NOT EXISTS` cuando le
+    hace falta. Eso deja dos situaciones que un script suelto no sabe cubrir a
+    la vez: la tabla todavia no existe -no hay nada que migrar, y eso no es un
+    error- o la feature ya la creo con las columnas nuevas, y repetir el
+    `ALTER` da `duplicate column name` y deja la base sin migrar de ahi en
+    adelante.
+
+    Decidirlo requiere **leer el esquema antes de escribirlo**, y eso es una
+    consulta, no una sentencia. La alternativa -recrear la tabla entera, como
+    hace la migracion 2- funciona cuando las dos formas tienen las mismas
+    columnas, y aqui no las tienen: copiaria la tabla perdiendo por el camino
+    justo las columnas nuevas.
+    """
+
     version: int
     descripcion: str
-    sql: str
+    sql: str | Callable[[sqlite3.Connection], None]
 
 
 # Ninguna clase del dominio tiene todavia tabla: llegan con la feature que las
@@ -76,6 +122,34 @@ TODAS = [
         DROP TABLE conocimiento;
         ALTER TABLE conocimiento_nuevo RENAME TO conocimiento;
         """,
+    ),
+    Migracion(
+        3,
+        "la escena guarda su capitulo y su momento narrativo",
+        # `SPEC-21` C-1. Las cinco nacen NULL a proposito: las escaletas
+        # anteriores no traen ninguna, y un NULL se puede ver -y decir-
+        # mientras que un valor por defecto inventado se lee como un dato.
+        lambda con: (
+            anadir_columnas(con, "escena", {
+                "capitulo": "TEXT",
+                "t_fabula": "TEXT",
+                "t_discurso": "INTEGER",
+                "duracion_ficcional": "INTEGER",
+                "personajes_presentes": "TEXT",
+            }),
+            con.execute("CREATE INDEX IF NOT EXISTS idx_escena_capitulo "
+                        "ON escena (capitulo, orden)")
+            if tiene_tabla(con, "escena") else None,
+        ),
+    ),
+    Migracion(
+        4,
+        "el personaje guarda su fecha de nacimiento",
+        # `SPEC-21` C-3. Opcional: obligatoria romperia todas las obras ya
+        # generadas. Como es opcional, quien no la tenga **no pasa** la
+        # comprobacion de edad: la salta, y la consulta lo dice por separado.
+        lambda con: anadir_columnas(
+            con, "entidad", {"fecha_de_nacimiento": "TEXT"}),
     ),
 ]
 
@@ -136,7 +210,10 @@ def migrar(con: sqlite3.Connection) -> int:
         if m.version <= desde:
             continue
         with con:
-            con.executescript(m.sql)
+            if callable(m.sql):
+                m.sql(con)
+            else:
+                con.executescript(m.sql)
             con.execute(
                 "INSERT INTO esquema_version (version, descripcion) VALUES (?, ?)",
                 (m.version, m.descripcion),

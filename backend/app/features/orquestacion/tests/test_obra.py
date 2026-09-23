@@ -399,3 +399,25 @@ def test_lo_que_el_beat_promete_llega_al_prompt_y_se_comprueba(con):
     assert any(h["invariante"] == "INV-18" for h in abiertos), (
         "y el doble no lo declara, asi que se detecta en la misma escena")
     assert g.rendidas, "un mayor no detiene: se rinde tras agotar intentos"
+
+
+# --- SPEC-20: quien usa que, calculado por quien puede componer -----------
+
+def test_quien_usa_un_hecho_son_las_escenas_consolidadas_que_lo_revelaron(con):
+    """`A-02`: `edicion/` no consulta tablas ajenas, las recibe. Componer es
+    cosa de `orquestacion/`, y el acoplamiento por SQL tambien cuenta
+    (`F-28`)."""
+    obra.generar_obra(con, "cap-1", Revela(), *_agentes()[1:],
+                      techo=1_000_000, hasta=1)
+    assert obra.escenas_que_usan(con, "hecho", "hec-llave") == ["e1"]
+    assert obra.escenas_que_usan(con, "hecho", "hec-que-nadie-toco") == []
+
+
+def test_una_escena_sin_consolidar_no_cuenta_como_uso(con):
+    """Lo que no esta en el canon no sostiene nada, asi que no bloquea nada."""
+    assert obra.escenas_que_usan(con, "escena", "e1") == []
+
+
+def test_una_escena_consolidada_se_usa_a_si_misma(con):
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    assert obra.escenas_que_usan(con, "escena", "e1") == ["e1"]

@@ -194,9 +194,9 @@ Lo que esta spec fija del lado de la interfaz:
 
 Y lo que esta spec **no** fija, porque no le toca: qué significa que un capítulo *use* un
 hecho, qué le pasa a las escenas posteriores cuya continuidad se construyó sobre el delta
-viejo, y qué es una versión de la obra. Son las piezas más caras de la lista de abajo —`G-06`,
-`G-07`, `G-08`, `G-09`— y **ninguna es un endpoint**: son decisiones de dominio con su propia
-spec. Sin ellas, `C-9` no se puede implementar, y esta spec puede aprobarse igual: declara qué
+viejo, y qué es una versión de la obra. Son las piezas más caras de la lista de abajo —`G-05`
+a `G-09`— y **ninguna es un endpoint**: son una decisión de dominio, y esa decisión es
+**`SPEC-21`**. Sin ella, `C-9` no se puede implementar, y esta spec puede aprobarse igual: declara qué
 tiene que ser verdad, y declara que hoy no lo es.
 
 ---
@@ -225,11 +225,16 @@ acordar antes de escribir nada**, y ninguna de esas se decide aquí.
 | **G-14** | **Los cuerpos de error no tienen forma declarada.** Un conflicto devuelve hoy un diccionario distinto por endpoint, de modo que el esquema congelado no diría nada de él. Lo que `RF-28` y `RF-29` obligan a enseñar —qué escenas faltan, qué `mayor` sigue abierto, qué `menor` se deja pasar— es contrato | `C-3` | API |
 | **G-15** | **El frontend es una pieza desplegable aparte y el backend no declara nada sobre su origen.** Sin esa decisión, la primera llamada real desde el navegador falla por una razón que no tiene nada que ver con el contrato | `C-1` | Decisión menor |
 
-**Tres de estas quince no las desbloquea esta spec y bloquean el alcance entero**: `G-06`
-—qué significa usar un hecho—, `G-07` —qué es una versión de la obra— y `G-08` —qué pasa con
-lo que venía después—. Merecen spec propia y probablemente una sola, porque las tres son la
-misma pregunta vista por tres lados: **qué es regenerar en una obra cuya continuidad es
-acumulativa**.
+**Dos filas de esta tabla ya no viven aquí, y conviene saberlo antes de leerla:**
+
+- **`G-01` no es un hueco, es un defecto activo.** Que la puerta de cierre evalúe la obra
+  entera en vez del capítulo está roto **hoy**, sin frontend de por medio, y contra un
+  requisito ya aprobado (`RF-28`). Va por su cuenta y va antes que esta spec: no decide nada
+  nuevo, así que no necesita spec propia, solo la prueba que lo caza.
+- **`G-05`, `G-06`, `G-07` y `G-08` son una sola pregunta** —qué es regenerar en una obra cuya
+  continuidad es acumulativa— y son **`SPEC-21`**, que las trata juntas y enumera las salidas
+  posibles sin elegir ninguna. Siguen listadas arriba porque `C-9` sigue dependiendo de ellas;
+  lo que ya no hace falta es decidirlas desde aquí.
 
 ## Qué queda explícitamente fuera
 

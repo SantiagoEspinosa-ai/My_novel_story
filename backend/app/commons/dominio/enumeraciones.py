@@ -67,6 +67,65 @@ class DurabilidadDelHecho(_Vocabulario):
     EFIMERO = "efimero"
 
 
+class TipoDeUsoDeHecho(_Vocabulario):
+    """Que relacion tiene una escena con un hecho (`SPEC-21` C-2).
+
+    POR QUE SON CUATRO Y NO UNO
+    ----------------------------
+    "Usar un hecho" parece una sola cosa y son cuatro, con condiciones de
+    verdad distintas y consumidores distintos:
+
+        establece   el texto lo hace verdadero por primera vez;
+        menciona    el enunciado aparece en el texto, y nada mas;
+        depende     alguien obro sirviendose de el: si fuera falso, la escena
+                    no se sostiene;
+        contradice  la escena afirma algo incompatible.
+
+    Colapsarlos rompe las dos puntas a la vez. "Este elemento aparece en algun
+    capitulo" se satisface con `menciona`; exigir `depende` lo daria por
+    incumplido. La regeneracion selectiva necesita `depende`; contar tambien
+    los `menciona` reescribe media novela por una alusion de paso.
+
+    Y `contradice` **no es un uso**: no cuenta como aparicion y no arrastra
+    regeneracion hacia adelante, sino correccion hacia atras. Vive aqui porque
+    es la misma arista del grafo con otro signo, y separarla obligaria a unir
+    dos tablas para preguntar que relacion tiene un capitulo con un hecho.
+    """
+
+    ESTABLECE = "establece"
+    MENCIONA = "menciona"
+    DEPENDE = "depende"
+    CONTRADICE = "contradice"
+
+
+class OrigenDeUso(_Vocabulario):
+    """Quien afirmo la fila, que no es lo mismo que si es verdad.
+
+    Una fila `regla` la calculo el codigo sobre el texto: es un dato medido.
+    Una `delta` o una `juez_llm` la declaro un modelo: es una afirmacion no
+    verificada. Un demostrador formal no puede tratarlas igual, y sin esta
+    columna no hay forma de distinguirlas despues.
+    """
+
+    REGLA = "regla"
+    DELTA = "delta"
+    JUEZ_LLM = "juez_llm"
+    HUMANO = "humano"
+
+
+class TipoDePresencia(_Vocabulario):
+    """Estar en un evento no es que hablen de ti (`SPEC-21` C-3).
+
+    La comprobacion de que nadie esta en dos lugares a la vez solo mira los
+    `presente`. Si un personaje nombrado contara como presente, cada vez que
+    dos personajes se acordaran del mismo ausente el validador diria que ese
+    ausente esta en dos sitios.
+    """
+
+    PRESENTE = "presente"
+    MENCIONADO = "mencionado"
+
+
 class TipoDeSujeto(_Vocabulario):
     PERSONAJE = "personaje"
     NARRADOR = "narrador"

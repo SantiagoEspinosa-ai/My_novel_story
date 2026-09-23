@@ -29,8 +29,20 @@ CREATE TABLE IF NOT EXISTS escena (
     pov                TEXT NOT NULL,
     lugar              TEXT NOT NULL,
     longitud_objetivo  TEXT,
-    borrador_aceptado  INTEGER
+    borrador_aceptado  INTEGER,
+    -- `SPEC-21` C-1. `capitulo` materializa la relacion `contiene`, que estaba
+    -- en la tabla de relaciones y no existia en ninguna tabla. Las tres
+    -- siguientes son `MomentoNarrativo`, atributo **obligatorio** de `Escena`
+    -- desde el primer dia y hasta ahora inexpresable. Nacen NULL porque las
+    -- escaletas anteriores no los traen, y un NULL se puede ver; un valor por
+    -- defecto inventado, no.
+    capitulo             TEXT,
+    t_fabula             TEXT,
+    t_discurso           INTEGER,
+    duracion_ficcional   INTEGER,
+    personajes_presentes TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_escena_capitulo ON escena (capitulo, orden);
 CREATE TABLE IF NOT EXISTS borrador (
     escena      TEXT NOT NULL,
     version     INTEGER NOT NULL,
@@ -71,14 +83,19 @@ def guardar_escaleta(con, obra, escenas):
     asegurar_tablas(con)
     with con:
         for e in escenas:
+            presentes = e.get("personajes_presentes")
             con.execute(
                 "INSERT INTO escena (id, obra, orden, estado, cambio_de_valor, "
-                "beats, pov, lugar, longitud_objetivo) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "beats, pov, lugar, longitud_objetivo, capitulo, t_fabula, "
+                "t_discurso, duracion_ficcional, personajes_presentes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (e["id"], obra, e["orden"], EE.PLANIFICADA.value,
                  json.dumps(e["cambio_de_valor"]), json.dumps(e["beats"]),
                  e.get("pov"), e.get("lugar"),
-                 json.dumps(e.get("longitud_objetivo"))),
+                 json.dumps(e.get("longitud_objetivo")),
+                 e.get("capitulo"), e.get("t_fabula"), e.get("t_discurso"),
+                 e.get("duracion_ficcional"),
+                 json.dumps(presentes) if presentes is not None else None),
             )
 
 
@@ -123,26 +140,49 @@ def establecer_hecho(con, hecho, escena):
                     (escena, hecho))
 
 
+# Las columnas de una escena y como se reconstruye la fila viven en un solo
+# sitio. Antes estaban copiadas en `escenas_de` y en `escena`, y al añadir las
+# cinco de `SPEC-21` habria habido que acertar dos veces: la copia que alguien
+# olvide es justo la que lea quien pregunte por el capitulo.
+_COLUMNAS = ("id, orden, estado, cambio_de_valor, beats, longitud_objetivo, "
+             "borrador_aceptado, pov, lugar, capitulo, t_fabula, t_discurso, "
+             "duracion_ficcional, personajes_presentes")
+
+
+def _fila(f):
+    return {"id": f[0], "orden": f[1], "estado": f[2],
+            "cambio_de_valor": json.loads(f[3]), "beats": json.loads(f[4]),
+            "longitud_objetivo": json.loads(f[5]) if f[5] else None,
+            "borrador_aceptado": f[6], "pov": f[7], "lugar": f[8],
+            # `capitulo` vacio se devuelve vacio. Sustituirlo por la obra daria
+            # una respuesta con forma de capitulo que no es un capitulo.
+            "capitulo": f[9], "t_fabula": f[10], "t_discurso": f[11],
+            "duracion_ficcional": f[12],
+            "personajes_presentes": json.loads(f[13]) if f[13] else None}
+
+
 def escenas_de(con, obra):
-    filas = con.execute(
-        "SELECT id, orden, estado, cambio_de_valor, beats, longitud_objetivo, "
-        "borrador_aceptado, pov, lugar FROM escena WHERE obra = ? ORDER BY orden",
-        (obra,))
-    return [{"id": f[0], "orden": f[1], "estado": f[2],
-             "cambio_de_valor": json.loads(f[3]), "beats": json.loads(f[4]),
-             "longitud_objetivo": json.loads(f[5]) if f[5] else None,
-             "borrador_aceptado": f[6], "pov": f[7], "lugar": f[8]}
-            for f in filas]
+    return [_fila(f) for f in con.execute(
+        "SELECT {0} FROM escena WHERE obra = ? ORDER BY orden".format(_COLUMNAS),
+        (obra,))]
+
+
+def escenas_de_capitulo(con, id_capitulo):
+    """Las escenas de un capitulo, filtrando **por capitulo**.
+
+    `orquestacion/router.py` lo resolvia llamando a `escenas_de`, que filtra
+    por obra: con un solo capitulo por obra daba el resultado correcto por
+    accidente, y con dos, cerrar el primero miraba las escenas del segundo.
+    """
+    return [_fila(f) for f in con.execute(
+        "SELECT {0} FROM escena WHERE capitulo = ? ORDER BY orden".format(_COLUMNAS),
+        (id_capitulo,))]
 
 
 def escena(con, id_escena):
-    for e in con.execute(
-            "SELECT id, orden, estado, cambio_de_valor, beats, longitud_objetivo, "
-            "borrador_aceptado, pov, lugar FROM escena WHERE id = ?", (id_escena,)):
-        return {"id": e[0], "orden": e[1], "estado": e[2],
-                "cambio_de_valor": json.loads(e[3]), "beats": json.loads(e[4]),
-                "longitud_objetivo": json.loads(e[5]) if e[5] else None,
-                "borrador_aceptado": e[6], "pov": e[7], "lugar": e[8]}
+    for f in con.execute(
+            "SELECT {0} FROM escena WHERE id = ?".format(_COLUMNAS), (id_escena,)):
+        return _fila(f)
     return None
 
 

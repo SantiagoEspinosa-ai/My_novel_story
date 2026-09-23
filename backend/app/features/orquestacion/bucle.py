@@ -174,7 +174,7 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
     # con el `pov` del plan. Derivarlo del texto seria un eco de `VER-48`.
     vista["pov_usado"] = leida.pov_usado
     vista["longitud_objetivo"] = tuple(escena["longitud_objetivo"] or ()) or None
-    vista["personajes_presentes"] = escena.get("personajes_presentes", [])
+    vista["personajes_presentes"] = escena.get("personajes_presentes") or []
     hallazgos = puertas.verificar(vista, leida.delta, mundo or _mundo_vacio())
     for h in hallazgos:
         repo.guardar_hallazgo(con, invariante=h.invariante, verificador=h.verificador,

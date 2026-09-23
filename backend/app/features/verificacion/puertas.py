@@ -72,7 +72,7 @@ def verificar(escena, delta, mundo):
         h.append(_hallazgo("INV-01", escena["id"],
                            "la escena no mueve ningun valor dramatico"))
 
-    presentes = escena.get("personajes_presentes", [])
+    presentes = escena.get("personajes_presentes") or []
     if presentes and not escena.get("lugar"):
         # La mitad de accesibilidad se saltaba en silencio. `lugar` es
         # obligatorio en el dominio, y sin el no hay contra que comprobar de
