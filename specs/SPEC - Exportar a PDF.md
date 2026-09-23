@@ -5,11 +5,12 @@ estado: en_revision
 aprobada_por:
 fecha_aprobacion:
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
 
 > **Historial.** v1: redactada con la respuesta del autor sobre el PDF por versión
-> (2026-09-23). El resto son propuestas que esperan confirmación.
+> (2026-09-23), con tres propuestas. v2: el autor confirma `P-1`, `P-2` y `P-3`, que
+> pasan a requisitos conservando su identificador de origen. Sin cuestiones abiertas.
 
 # SPEC-27 — Exportar la novela a PDF
 
@@ -39,20 +40,20 @@ lectura no exporta y que la exportación la cubre `SPEC-27`.
   pide el de ejemplo y que se conserve la versión anterior; un PDF por versión es
   más de lo pedido. Si no sale gratis, basta el de la última versión.
 
-## Propuestas, pendientes de confirmar
+### Confirmado por el autor (v2)
 
-- **P-1. El PDF lleva lo que el enunciado pide en los dos formatos**: portada con
+- **RF-05 (antes `P-1`). El PDF lleva lo que el enunciado pide en los dos formatos**: portada con
   dedicatoria, índice con enlaces internos a cada capítulo, y fichas de
   personajes y lugares con enlaces a los capítulos donde aparecen. *Aparecer*
   significa lo mismo que en la web (`SPEC-22` `RF-44`: `participa_en` y
   `ocurre_en`) y lo calcula el backend.
-- **P-2. El PDF no muestra estados ni hallazgos.** La regla de `CLAUDE.md` —una
+- **RF-06 (antes `P-2`). El PDF no muestra estados ni hallazgos.** La regla de `CLAUDE.md` —una
   escena se muestra siempre con su estado y sus hallazgos— gobierna la interfaz
   de React, donde alguien decide si da un texto por bueno. El PDF es el regalo,
   no una herramienta de revisión, y como solo se exportan versiones que pasaron
   la puerta (`RF-01`), no puede llevar un capítulo rendido ni una `bloqueante`
   abierta.
-- **P-3. Lo genera el backend** desde el dominio, no la impresión de la página
+- **RF-07 (antes `P-3`). Lo genera el backend** desde el dominio, no la impresión de la página
   web. No depende del frontend, que todavía no existe (`EX-13`), y mantiene fuera
   del navegador el cálculo de qué va en cada ficha.
 

@@ -40,11 +40,11 @@ Reservados el 2026-09-23 antes de escribir, según `docs/sesiones-concurrentes.m
 
 | Spec | Para | Estado |
 | --- | --- | --- |
-| `SPEC-27` | Exportar a PDF, y corregir la fila de `SPEC-22` §1.2 (`EX-09`) | Redactada, `en_revision`, con sus cuestiones abiertas |
-| `SPEC-28` | Las tools de los agentes, con schema (`EX-01`) | Preguntas enviadas, sin respuesta: sin redactar |
-| `SPEC-29` | Observabilidad en Langfuse (`EX-02`) | Redactada, `en_revision`, con sus cuestiones abiertas |
-| `SPEC-30` | La puerta de publicación, con Lean (`EX-03`) | Redactada, `en_revision`, con sus cuestiones abiertas |
-| `SPEC-31` | Evaluación: cinco briefs, tabla, tuning, revisión humana y red-team (`EX-05`, `EX-06`) | Redactada, `en_revision`, con sus cuestiones abiertas |
+| `SPEC-27` | Exportar a PDF, y corregir la fila de `SPEC-22` §1.2 (`EX-09`) | v2, `en_revision`, sin cuestiones abiertas: falta la aprobación |
+| `SPEC-28` | Las tools de los agentes, con schema (`EX-01`) | v1, `en_revision`, sin cuestiones abiertas: falta la aprobación |
+| `SPEC-29` | Observabilidad en Langfuse (`EX-02`) | v2, `en_revision`, sin cuestiones abiertas: falta la aprobación |
+| `SPEC-30` | La puerta de publicación, con Lean (`EX-03`) | v2, `en_revision`, sin cuestiones abiertas: falta la aprobación |
+| `SPEC-31` | Evaluación: cinco briefs, tabla, tuning, revisión humana y red-team (`EX-05`, `EX-06`) | v2, `en_revision`, sin cuestiones abiertas: falta la aprobación |
 
 ## Huecos de documentación
 

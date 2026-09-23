@@ -5,12 +5,13 @@ estado: en_revision
 aprobada_por:
 fecha_aprobacion:
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
 
 > **Historial.** v1: redactada con la respuesta del autor sobre el límite de lo
-> que sube (2026-09-23). Quedan abiertas `O-1`, `O-2` y `O-3`; las propuestas
-> marcadas como tales esperan confirmación.
+> que sube (2026-09-23), con `O-1` a `O-3` abiertas. v2: el autor elige la nube,
+> confirma `O-2` y `O-3` y que los prompts vienen del repositorio. Sin cuestiones
+> abiertas.
 
 # SPEC-29 — Observabilidad en Langfuse
 
@@ -85,20 +86,21 @@ entregado.
 - **RF-09.** Si Langfuse no responde, **la generación sigue** y la pérdida queda
   registrada. La observabilidad no puede tumbar una novela.
 
-## Cuestiones abiertas
+### Resuelto por el autor (v2)
 
-- **O-1. ¿Langfuse en la nube o autoalojado, y hay ya una instancia?** Sin
-  propuesta: depende de lo que exista.
-- **O-2. De dónde salen los spans.** *Propuesta:* los envía el backend con los
-  datos del sobre de cada `claude -p`, y la exportación OTEL propia de Claude
-  Code queda apagada. Si se usa, su configuración tiene que respetar el límite, y
-  eso se comprueba mirando Langfuse, no leyendo variables desde un subproceso.
-- **O-3. Qué identifica la sesión**, si la entrevista empieza antes de que exista
-  la obra. *Propuesta:* un identificador que nace con la entrevista y la obra
-  hereda.
-- **Propuesta, pendiente de confirmar: la fuente de los prompts sigue siendo el
-  repositorio**, y Langfuse recibe cada versión. Lo contrario haría que el
-  código dependiera de un servicio externo para arrancar.
+- **RF-10 (antes `O-1`). Langfuse en la nube.** No había instancia; crearla es
+  un paso del plan, con sus claves en `.env` (`RF-08`).
+- **RF-11 (antes `O-2`). Los spans los envía el backend**, con los datos del
+  sobre de cada `claude -p`. La exportación OTEL propia de Claude Code queda
+  apagada; si algún día se enciende, su configuración tiene que respetar el
+  límite, y eso se comprueba mirando Langfuse, no leyendo variables desde un
+  subproceso.
+- **RF-12 (antes `O-3`). La sesión la identifica un valor que nace con la
+  entrevista** y que la obra hereda, porque la entrevista empieza antes de que
+  exista la obra.
+- **RF-13. La fuente de los prompts es el repositorio**, y Langfuse recibe cada
+  versión. Lo contrario haría que el código dependiera de un servicio externo
+  para arrancar.
 
 ## Qué queda explícitamente fuera
 

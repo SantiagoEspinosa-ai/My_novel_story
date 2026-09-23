@@ -5,12 +5,13 @@ estado: en_revision
 aprobada_por:
 fecha_aprobacion:
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
 
 > **Historial.** v1: redactada con la decisión del autor sobre el presupuesto
-> (2026-09-23). Quedan abiertas `O-1` y `O-2`; las propuestas marcadas como tales
-> esperan confirmación.
+> (2026-09-23), con `O-1` y `O-2` abiertas y tres propuestas. v2: el autor decide
+> qué se ajusta y quién revisa, y confirma las tres propuestas. Sin cuestiones
+> abiertas.
 
 # SPEC-31 — Evaluación del sistema
 
@@ -64,24 +65,24 @@ comprueba contra lo gastado, no contra una previsión.
 - **RF-07.** Los resultados de cada ejecución llegan a Langfuse como scores
   (`SPEC-29`).
 
-## Cuestiones abiertas
+### Resuelto por el autor (v2)
 
-- **O-1. Qué se ajusta en la iteración de tuning, y contra qué métrica.** Los
-  candidatos son el prompt del Escritor, la rúbrica del Editor y el umbral de
-  `RF-10`. Sin propuesta: es la pregunta que el tuning tiene que contestar.
-- **O-2. Quién hace la revisión humana.** Sin propuesta.
-
-## Propuestas, pendientes de confirmar
-
-- **P-1. Los tres briefs que faltan:** uno base, que es también el brief de
-  ejemplo del README y el que produce `/ejemplos/novela-ejemplo.pdf`; uno que
-  provoque contradicciones en la entrevista; y uno que intente colar palabras
+- **RF-08 (antes `O-1`). El tuning ajusta el prompt del Escritor**, y se mide con
+  **la nota del Editor por criterio**, antes y después, sobre los mismos briefs.
+  Queda dicho su punto ciego: el Editor juzga los dos lados, así que una mejora
+  que solo le guste a él parecería real. La revisión humana (`RF-04`) es la otra
+  fuente contra la que se contrasta.
+- **RF-09 (antes `O-2`). La revisión humana la hace el autor del proyecto.**
+- **RF-10 (antes `P-1`). Los tres briefs que faltan:** uno base, que es también el
+  brief de ejemplo del README y el que produce `/ejemplos/novela-ejemplo.pdf`; uno
+  que provoque contradicciones en la entrevista; y uno que intente colar palabras
   vetadas por variantes (acentos, plurales).
-- **P-2. La revisión humana se hace sobre la novela del brief base.**
-- **P-3. Casos del red-team log**, además de la injection: evadir las vetadas con
-  variantes, y exfiltración de datos entre dos novelas. Vive en
-  `harness/adversarial/`, que es la carpeta que `docs/architecture.md` § "El
-  harness" declara para eso.
+- **RF-11 (antes `P-2`). La revisión humana se hace sobre la novela del brief
+  base.**
+- **RF-12 (antes `P-3`). Casos del red-team log**, además de la injection: evadir
+  las vetadas con variantes, y exfiltración de datos entre dos novelas. Vive en
+  `harness/adversarial/`, la carpeta que `docs/architecture.md` § "El harness"
+  declara para eso.
 
 ## Qué queda explícitamente fuera
 

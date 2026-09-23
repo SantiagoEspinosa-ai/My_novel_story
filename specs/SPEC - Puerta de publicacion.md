@@ -5,12 +5,13 @@ estado: en_revision
 aprobada_por:
 fecha_aprobacion:
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
 
 > **Historial.** v1: redactada con la decisión del autor sobre la rendición
-> (2026-09-23). Quedan abiertas `O-1` a `O-3`; las propuestas marcadas como tales
-> esperan confirmación.
+> (2026-09-23), con `O-1` a `O-3` abiertas. v2: el autor fija el tope en 2, decide
+> que los hallazgos de obra del Editor bloquean y confirma las tres propuestas. Sin
+> cuestiones abiertas.
 
 # SPEC-30 — La puerta de publicación
 
@@ -47,7 +48,8 @@ capítulo. Cuántas novelas caen ahí está **sin medir**.
   1. todos sus capítulos están aceptados, y **ninguno por rendición**;
   2. no queda abierta ninguna invariante `bloqueante` de nivel capítulo ni de
      nivel obra (`INV-24` entre ellas);
-  3. Lean devuelve `0`.
+  3. Lean devuelve `0`;
+  4. no queda abierto ningún hallazgo de obra del Editor (`RF-07`).
 - **RF-02.** Lean se ejecuta **de forma automática** al llegar a la puerta, sobre
   un fichero generado desde la story bible en SQLite, y su código de salida es el
   veredicto. Nadie lo lanza a mano.
@@ -60,20 +62,23 @@ capítulo. Cuántas novelas caen ahí está **sin medir**.
 - **RF-05.** El veredicto de la puerta y el de Lean se envían como scores
   (`SPEC-29`).
 
-## Cuestiones abiertas
+### Resuelto por el autor (v2)
 
-- **O-1. Qué hace el Editor con el feedback de Lean.** El Editor no reescribe
-  (`SPEC-26` `RF-09`). *Propuesta:* lo convierte en instrucciones para el
-  Escritor sobre los capítulos implicados, que vuelven a escribirse y a pasar por
-  sus puertas. **Sin propuesta sobre el tope de intentos** de ese bucle: es un
-  número que decide cuándo se rinde el sistema, y lo decide el autor.
-- **O-2. ¿Bloquean los hallazgos de obra del Editor** (`SPEC-26` `RF-12`, el
-  juicio del arco y del final)? Sin propuesta: es una política de calidad.
-- **O-3. Qué versiones cubre.** *Propuesta:* la primera versión desde ya, y las
-  que produzca una regeneración cuando `SPEC-23` esté aprobada. Una «versión» con
-  identidad propia todavía no existe en el código (`F-43`, `EX-14`).
-- **Propuesta, pendiente de confirmar: el `2` de Lean bloquea igual que el `1`.**
-  «No había bastante dato para mirar» no es «se miró y está bien» (`F-54`).
+- **RF-06 (antes `O-1`). El Editor convierte el fallo en instrucciones para el
+  Escritor** sobre los capítulos implicados, que vuelven a escribirse y a pasar
+  por sus puertas antes de volver a esta. **Tope: 2 reintentos**, el mismo que
+  `INV-21` e `INV-22` (`SPEC-26` `RF-13`). Las reescrituras por nota del Editor
+  tienen 3 (`SPEC-26` `RF-11`); este bucle no las comparte. Agotado el tope, se
+  aplica `RF-04`.
+- **RF-07 (antes `O-2`). Los hallazgos de obra del Editor** (`SPEC-26` `RF-12`:
+  el arco, la coherencia entre capítulos y el final) **bloquean la
+  publicación**, y se resuelven por el mismo camino y con el mismo tope que
+  `RF-06`.
+- **RF-08 (antes `O-3`). Cubre la primera versión desde ya**, y las que produzca
+  una regeneración cuando `SPEC-23` esté aprobada. Una «versión» con identidad
+  propia todavía no existe en el código (`F-43`, `EX-14`).
+- **RF-09. El `2` de Lean bloquea igual que el `1`.** «No había bastante dato
+  para mirar» no es «se miró y está bien» (`F-54`).
 
 ## Qué queda explícitamente fuera
 
