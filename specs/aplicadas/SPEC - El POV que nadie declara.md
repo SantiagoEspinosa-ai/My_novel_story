@@ -1,9 +1,11 @@
 ---
 id: SPEC-18
 titulo: El POV que nadie declara, y qué hace un sin_veredicto
-estado: aprobada
+estado: aplicada
 aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-23
+fecha_aplicacion: 2026-09-23
+commit_de_aplicacion: d77cc40
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
 version: 1
