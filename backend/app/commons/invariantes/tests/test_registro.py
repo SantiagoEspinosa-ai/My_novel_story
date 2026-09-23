@@ -25,7 +25,12 @@ def test_estan_las_dieciocho_y_sin_huecos():
     """Un hueco significa que se borro una invariante publicada, y en este
     proyecto lo que deja de aplicar se marca obsoleto pero no se quita."""
     ids = sorted(registro.TODAS)
-    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 19)]
+    # `INV-19` e `INV-20` no son un hueco: `SPEC-21` los reserva para la edad y
+    # la ubicuidad sin decidirlos todavia. Por eso `SPEC-25` tomo `INV-21` y no
+    # reutilizo un numero apartado. Cualquier otro hueco sigue fallando aqui.
+    reservadas = {19, 20}
+    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 22)
+                   if i not in reservadas]
 
 
 def test_la_clasificacion_es_la_de_definitions():

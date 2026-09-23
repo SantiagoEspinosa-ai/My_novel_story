@@ -60,7 +60,7 @@ Usa SOLO estos. Son identificadores, no descripciones: si lo que quieres decir
 no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
 {identificadores}
 {establece}
-{problemas}{instrucciones}FORMATO DE LA RESPUESTA
+{problemas}{instrucciones}{vetadas}FORMATO DE LA RESPUESTA
 Devuelve un unico objeto JSON con dos claves:
   "texto": la escena, en prosa.
   "pov_usado": el identificador del personaje desde cuyo punto de vista la
@@ -91,6 +91,13 @@ No expliques el JSON ni lo envuelvas en vallas de bloque de codigo.
 
 SIN_PROBLEMAS = ""
 SIN_INSTRUCCIONES = ""
+SIN_VETADAS = ""
+CON_VETADAS = """PALABRAS QUE NO PUEDEN APARECER
+Ni estas ni sus plurales, femeninos o variantes con o sin acento. Una sola
+aparicion devuelve la escena para reescribirla.
+{lista}
+
+"""
 SIN_ESTABLECER = ""
 CON_ESTABLECER = """
 ESTA ESCENA TIENE QUE ESTABLECER ESTOS HECHOS
@@ -112,7 +119,7 @@ CON_PROBLEMAS = """PROBLEMAS DEL INTENTO ANTERIOR QUE HAY QUE CORREGIR
 
 def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
               personajes=None, ids_de_hechos=None, instrucciones=None,
-              establece=None) -> str:
+              establece=None, vetadas=None) -> str:
     """Los problemas del intento anterior entran en el prompt, no en un aviso.
 
     En la otra rama el aviso de longitud lo leia la sesion orquestadora y no el
@@ -140,6 +147,12 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
     if instrucciones:
         bloque_humano = CON_INSTRUCCIONES.format(
             lista="\n".join("- " + str(i) for i in instrucciones))
+    # `SPEC-25` / Regla 4: `INV-21` rechaza una escena con una vetada, asi que
+    # el Escritor tiene que saber cuales son antes de escribir, no despues.
+    bloque_vetadas = SIN_VETADAS
+    if vetadas:
+        bloque_vetadas = CON_VETADAS.format(
+            lista="\n".join("- " + str(v) for v in vetadas))
     ids = "\n".join([
         "personajes: " + (", ".join(personajes or []) or "(ninguno)"),
         "hechos: " + (", ".join(ids_de_hechos or []) or "(ninguno)"),
@@ -153,6 +166,7 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
         problemas=bloque,
         instrucciones=bloque_humano,
         establece=bloque_establece,
+        vetadas=bloque_vetadas,
     )
 
 

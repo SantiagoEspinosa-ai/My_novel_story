@@ -50,6 +50,7 @@ from app.commons.modelo import proveedor, traza as modulo_traza
 from app.features.consolidacion import aplicar
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import bucle
+from app.features.politica.vetadas import coincidencias
 
 RUBRICA = """Puntua esta escena de terror. Devuelve PASA o FALLO y los problemas
 que encuentres, cada uno con su gravedad y su fragmento literal de evidencia.
@@ -68,6 +69,7 @@ class Ciclo:
     resumen: dict | None = None
     fallo: str | None = None
     trazas: list = field(default_factory=list)
+    vetadas_encontradas: list = field(default_factory=list)
 
 
 def preparar_directorio_aislado(definicion, nombre="juez"):
@@ -141,14 +143,14 @@ def _acta_de(acta, texto, c):
 
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
              techo=100_000, trabajo="ciclo", hechos=None, problemas=None,
-             instrucciones=None, acta=None):
+             instrucciones=None, acta=None, vetadas=None):
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
     c.generacion = bucle.generar(con, escena_id, contexto, escritor, techo=techo,
                                  mundo=mundo, trabajo=trabajo, hechos=hechos,
                                  problemas=problemas,
-                                 instrucciones=instrucciones)
+                                 instrucciones=instrucciones, vetadas=vetadas)
     c.trazas.append(c.generacion.traza)
     if c.generacion.fallo:
         c.fallo = c.generacion.fallo
@@ -156,6 +158,15 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
 
     texto = con.execute("SELECT texto FROM borrador WHERE escena=? AND version=?",
                         (escena_id, c.generacion.version)).fetchone()[0]
+
+    # `INV-21` antes que el Juez: es una regla de codigo, no cuesta nada, y un
+    # texto con una vetada no se va a aceptar diga lo que diga la rubrica. Pagar
+    # la delegacion del Juez sobre el seria pagar por un veredicto que no cuenta.
+    if vetadas:
+        c.vetadas_encontradas = coincidencias(texto, vetadas)
+        if c.vetadas_encontradas:
+            c.fallo = "palabra_vetada"
+            return c
 
     # 2. El Juez, aislado.
     bruto, _ = _delegar(juez, RUBRICA + "\n\nESCENA\n" + texto, "juez",

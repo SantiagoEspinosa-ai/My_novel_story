@@ -116,6 +116,14 @@ _LISTA = [
        "HechoCanonico.escena_de_establecimiento"),
     _r("INV-17", "La longitud de la escena cae dentro de su `longitud_objetivo`",
        "escena", "mayor", "regla", "Borrador.texto, Escena.longitud_objetivo"),
+    # `SPEC-25`: de nivel capitulo porque es el capitulo el que no puede
+    # aceptarse con una vetada. Se comprueba **tambien** en cada escena, antes
+    # de consolidarla, porque esperar al cierre obligaria a reescribir escenas
+    # cuyo delta ya se aplico (`PLAN-25` E4).
+    _r("INV-21", "Ningun capitulo aceptado contiene una palabra vetada de ninguno "
+       "de los tres niveles, tras normalizar",
+       "capitulo", "bloqueante", "regla",
+       "Borrador.texto, PalabraVetada.forma, Destinatario.edad"),
 ]
 
 TODAS = {i.id: i for i in _LISTA}

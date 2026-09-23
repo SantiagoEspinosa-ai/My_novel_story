@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
+from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
 from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.cronologia import consultas
 
@@ -46,6 +47,8 @@ from app.features.cronologia import repository as cronologia
 from app.features.contexto import ensamblado, recorte
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, rendicion
+from app.features.politica import repository as politica
+from app.features.politica.vetadas import coincidencias
 
 
 @dataclass
@@ -59,6 +62,10 @@ class Generacion:
     saltadas: list = field(default_factory=list)
     sin_resumen: list = field(default_factory=list)
     trazas_no_guardadas: list = field(default_factory=list)
+    # `False` no es "sin vetadas encontradas": es que nadie las busco porque no
+    # se dio ninguna lista. El informe lo dice, porque un dato ausente no es
+    # un verde.
+    vetadas_comprobadas: bool = False
     coste: dict = field(default_factory=lambda: {
         "usd": 0.0, "delegaciones": 0, "sin_coste": 0})
 
@@ -141,7 +148,8 @@ def reunir_material(con, escena, obra_id, inmutable=""):
 
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
-                 tope_delegaciones=None, instrucciones=None, capitulo=None):
+                 tope_delegaciones=None, instrucciones=None, capitulo=None,
+                 vetadas=None, tope_vetadas=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -154,6 +162,10 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     """
     tope_intentos = tope_intentos or config.TOPE_INTENTOS_ESCENA
     tope_delegaciones = tope_delegaciones or config.TOPE_DELEGACIONES_OBRA
+    # `is None` y no `or`: un tope de 0 reescrituras es un valor legitimo (parar
+    # a la primera) y `or` lo convertiria en el de por defecto.
+    tope_vetadas = (config.TOPE_REESCRITURAS_POR_VETADA if tope_vetadas is None
+                    else tope_vetadas)
     # Las tablas del acta se aseguran **aqui y no al levantarla**: crearlas
     # abre su propia transaccion, y el acta corre dentro de la del delta.
     # Anidar transacciones en SQLite hace commit del bloque interno, que es
@@ -164,7 +176,9 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # aqui porque componer entre features es de `orquestacion/` (`A-02`), y se
     # le pasa a `escaleta/` como valor.
     repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra))
-    g = Generacion()
+    g = Generacion(vetadas_comprobadas=bool(vetadas))
+    if vetadas:
+        politica.asegurar_tablas(con)
     # Una obra son **diez capitulos, no diez obras**. Generar de capitulo en
     # capitulo es lo que permite reintentar uno sin tocar los demas, que es como
     # el guion de la obra larga se desatasca. Sin `capitulo` se genera la obra
@@ -207,7 +221,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
 
         c, intentos = _intentar(con, escena, tamanos, escritor, juez, resumidor,
                                 material, obra, techo, tope_intentos, g,
-                                instrucciones)
+                                instrucciones, vetadas=vetadas,
+                                tope_vetadas=tope_vetadas)
 
         if c.fallo:
             g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -258,7 +273,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         _actualizar_fichas(con, escena, c, obra)
         g.escenas_hechas.append(escena["id"])
 
-    g.cierre = evaluar_cierre(con, obra, capitulo)
+    g.cierre = evaluar_cierre(con, obra, capitulo, vetadas=vetadas)
     return g
 
 
@@ -314,7 +329,7 @@ def inversiones_del_capitulo(temporal, capitulo_de_cada_evento, capitulo):
     return dict(temporal, inversiones=del_capitulo)
 
 
-def evaluar_cierre(con, obra, capitulo=None):
+def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
     """Dice si el capitulo **podria** cerrarse. No lo cierra.
 
     La firma es humana y la dispara el cliente de la API, nunca el worker
@@ -332,6 +347,16 @@ def evaluar_cierre(con, obra, capitulo=None):
     escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
                else repo.escenas_de(con, obra))
     estados = [EE(e["estado"]) for e in escenas]
+    # `INV-21`, segunda linea: cada escena ya se comprobo antes de consolidarse,
+    # pero un texto puede llegar por otro camino -una edicion a mano- y el
+    # capitulo es lo que no puede aceptarse con una vetada (`SPEC-25` `RF-18`).
+    if vetadas:
+        con_vetada = sorted({e["id"] for e in escenas
+                             if coincidencias(_texto_elegido(con, e) or "", vetadas)})
+        if con_vetada:
+            return {"puede_cerrarse": False, "firmado": False,
+                    "motivo": "hay palabras vetadas en {0} [INV-21]".format(
+                        ", ".join(con_vetada))}
     hallazgos = [dict(h, severidad=h["severidad"], estado=h["estado"])
                  for e in escenas for h in repo.hallazgos_abiertos(con, e["id"])]
     # `INV-08` es de nivel capitulo y su dato vive en `cronologia/`, que
@@ -360,36 +385,85 @@ def evaluar_cierre(con, obra, capitulo=None):
 
 
 def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id,
-              techo, tope, g, instrucciones=None):
+              techo, tope, g, instrucciones=None, vetadas=None, tope_vetadas=0):
     """Hasta `tope` intentos, y los problemas de uno entran en el siguiente.
 
     Se para en cuanto sale limpia, y **tambien en cuanto una `bloqueante`
     aparece**: reintentar ante una `bloqueante` no es mas seguro, es mas caro.
     Lo que no se puede rendir tampoco se puede arreglar insistiendo, porque el
     modelo no sabe cual de las quince reglas ha roto — solo lo que le digamos.
+
+    **La excepcion es `INV-21`** (`SPEC-25` `RF-18`): una palabra vetada si se
+    arregla insistiendo, porque aqui si se le dice al modelo exactamente que
+    escribio. Tiene su propio contador, `tope_vetadas`, que no gasta `tope`: si
+    compartieran contador, una escena podria agotar sus intentos en vetadas y
+    rendirse con un problema de calidad que nadie llego a mirar. Y una version
+    con una vetada **nunca entra en `intentos`**, que es de donde sale la
+    rendicion: el menos malo de tres textos con el nombre de una expareja sigue
+    llevando el nombre de la expareja.
     """
     intentos = []
     c = None
-    for numero in range(tope):
+    numero = 0
+    reescrituras = 0
+    problemas_de_vetadas = None
+    while numero < tope:
         c = ciclo.ejecutar(con, escena["id"], tamanos, escritor, juez, resumidor,
                            material["mundo"], techo=techo,
-                           trabajo="obra-{0}-i{1}".format(escena["orden"], numero + 1),
+                           trabajo="obra-{0}-i{1}-r{2}".format(
+                               escena["orden"], numero + 1, reescrituras),
                            hechos=material["hechos"],
-                           problemas=_problemas_de(intentos),
+                           problemas=problemas_de_vetadas or _problemas_de(intentos),
                            instrucciones=instrucciones,
                            acta=_acta_de_la_escena(escena, obra_id,
-                                                   material["hechos"]))
+                                                   material["hechos"]),
+                           vetadas=vetadas)
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
         # `F-49`: la traza sobrevive al proceso. Es lo que hace que la
         # contencion de `PC-9` -saber que bloques quedaron fuera- valga
         # tambien para el diagnostico de despues, que es cuando se hace.
         g.trazas_no_guardadas.extend(ciclo.guardar_trazas(con, c))
         _acumular_coste(g, c.trazas)
+        if c.fallo == "palabra_vetada":
+            for co in c.vetadas_encontradas:
+                politica.registrar_decision(
+                    con, TD.COINCIDENCIA_VETADA, obra_id,
+                    {"vetada": co.vetada, "fragmento": co.fragmento,
+                     "escena": escena["id"], "reescritura": reescrituras})
+            if reescrituras >= tope_vetadas:
+                politica.registrar_decision(
+                    con, TD.PARADA_POR_VETADA, obra_id,
+                    {"escena": escena["id"], "reescrituras": reescrituras})
+                break
+            reescrituras += 1
+            politica.registrar_decision(
+                con, TD.REESCRITURA_PEDIDA, obra_id,
+                {"escena": escena["id"], "reescritura": reescrituras})
+            problemas_de_vetadas = [
+                {"invariante": "INV-21",
+                 "descripcion": "escribiste «{0}», que no puede aparecer "
+                                "(vetada: {1})".format(co.fragmento, co.vetada)}
+                for co in c.vetadas_encontradas]
+            continue
+        problemas_de_vetadas = None
         if c.generacion is not None and c.generacion.version is not None:
             intentos.append((c.generacion.version, c.generacion.hallazgos, c))
         if c.fallo or not c.generacion.hallazgos:
             break
+        numero += 1
     return c, intentos
+
+
+def _texto_elegido(con, escena):
+    """El borrador aceptado de la escena, o el ultimo si nadie eligio."""
+    if escena.get("borrador_aceptado") is not None:
+        fila = con.execute("SELECT texto FROM borrador WHERE escena = ? AND version = ?",
+                           (escena["id"], escena["borrador_aceptado"])).fetchone()
+        if fila:
+            return fila[0]
+    fila = con.execute("SELECT texto FROM borrador WHERE escena = ? "
+                       "ORDER BY version DESC LIMIT 1", (escena["id"],)).fetchone()
+    return fila[0] if fila else None
 
 
 def _acumular_coste(g, trazas):
@@ -512,6 +586,9 @@ def informe(g: Generacion) -> str:
     if g.medidas:
         crecio = g.medidas[-1]["total"] > g.medidas[0]["total"]
         lineas.append("el contexto {0}".format("CRECE" if crecio else "NO crece"))
+    if not g.vetadas_comprobadas:
+        lineas.append("INV-21 no se comprobo: no se dio ninguna lista de "
+                      "palabras vetadas")
     if g.parada:
         lineas.append("PARADA en {0}: {1}".format(
             g.parada["escena"], g.parada["motivo"]))

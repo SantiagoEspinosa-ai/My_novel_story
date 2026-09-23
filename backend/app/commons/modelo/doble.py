@@ -30,6 +30,7 @@ class Guion:
         "mudo"          respuesta vacia
         "corto"         texto de 944 palabras, el caso real de la otra rama
         "timeout"       levanta un fallo de transporte
+        "vetada"        texto correcto con la palabra vetada «zoquete»
     """
 
     pasos: list
@@ -89,6 +90,13 @@ class DobleDelModelo:
             return {"texto": " ".join(["palabra"] * 1500), "pov_usado": POV,
                     "delta": dict(DELTA_OK, acciones=[
                         {"personaje": "per-ana", "hecho": "hec-llave"}]),
+                    "usage": {"total_tokens": 2100}}
+        if paso == "vetada":
+            # `SPEC-25`: el texto trae una palabra de la lista de prueba. Sin
+            # este paso `INV-21` no tendria ningun caso que la ejercite contra
+            # el bucle, y una invariante que nunca falla no esta verificada.
+            return {"texto": " ".join(["palabra"] * 1499 + ["zoquete"]),
+                    "pov_usado": POV, "delta": DELTA_OK,
                     "usage": {"total_tokens": 2100}}
         if paso == "corto":
             return {"texto": " ".join(["palabra"] * 944), "pov_usado": POV,
