@@ -705,19 +705,26 @@ tapa nada nuevo no va primero por ser barato.
 
 ## Decisiones abiertas
 
+**Dos etiquetas, y la diferencia importa.** Las decisiones marcadas **«se contesta sola»**
+esperan un dato y el dato las resuelve. Las marcadas **«deja de ser ciega»** esperan un dato
+que las informa y **no las decide**: seguirán necesitando que alguien elija, solo que ya no
+a oscuras. Estaban todas escritas en el mismo tono, y eso prometía que ejecutar las
+resolvería todas — el día que llegue la primera traza, alguien miraría las segundas
+esperando una respuesta que el dato no da.
+
 - [ ] **Qué comprobador de importaciones** se usa para `VER-13`, `VER-14` y `VER-15`.
 - [ ] **Qué herramienta de FSD** cierra `VER-17`.
 - [ ] **Qué conjunto de escenas** sirve de corpus para los evals de `VER-26`.
 - [ ] **Qué defecto planta el canario** de `VER-40`, y cada cuánto se cambia para
       que el Juez no acabe acertándolo por memorización.
 - [ ] **Quién genera prompts nuevos** para el corpus de `VER-30` y cada cuánto.
-- [ ] **Dónde viven las trazas** de `VER-24` y quién las mira.
+- [ ] **Dónde viven las trazas** de `VER-24` y quién las mira. **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
 - [ ] **El tope de ciclos de regeneración** de `VER-43`. Sale de observar cuántas
-      veces regenera de verdad una escena problemática.
+      veces regenera de verdad una escena problemática. **Se contesta sola** con una traza real.
 - [ ] **Umbrales de `INV-15` e `INV-16`** (`VER-32`, `VER-33`). Es la misma
-      decisión "Umbrales" de `Docs/definitions.md`: se cierran las tres a la vez.
+      decisión "Umbrales" de `Docs/definitions.md`: se cierran las tres a la vez. **Se contesta sola** con una traza real.
 - [ ] **Coste por escena** (`VER-36`) y **suficiencia del reparto por niveles**
-      (`VER-37`). Nacen aquí y hay que abrirlas en `Docs/architecture.md`.
+      (`VER-37`). Nacen aquí y hay que abrirlas en `Docs/architecture.md`. **Se contesta sola** con una traza real.
 - [x] ~~Cómo se comprueba que el cambio de valor entregado es el planificado~~
       — **cerrada por `SPEC-03`**: el delta lo declara y la tabla de
       correspondencia lo contrasta.
@@ -737,8 +744,8 @@ tapa nada nuevo no va primero por ser barato.
       medida: las marcas de medidas caducaron dos veces antes de tiempo, en `PLAN-01` A1 y
       B2. La salida sería una condición sobre datos —*"cuando exista una traza con
       `tokens_declarados`"*— y reapuntar solo acerca el proxy. **Se decide cuando haya
-      dato**, que es dentro de poco.
+      dato**, que es dentro de poco. **Se contesta sola** con una traza real.
 - [ ] **Los umbrales de `VER-48` y `VER-51`.** Las dos series se registran desde
-      el primer día; los números salen de mirarlas, como en `VER-32`.
+      el primer día; los números salen de mirarlas, como en `VER-32`. **Se contesta sola** con una traza real.
 - [x] ~~Bajar `INV-14` a `regla` y `INV-11` a `regla` con juez de desempate~~
       — **cerradas por `SPEC-04` C-4 y C-5**.

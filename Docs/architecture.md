@@ -715,23 +715,30 @@ directorio exista.
 
 Sin cerrar. Afectan al código, así que conviene fijarlas antes de escribirlo.
 
-- [ ] **Granularidad de generación.** ¿La unidad que se le pide al modelo es la escena
+**Dos etiquetas, y la diferencia importa.** Las decisiones marcadas **«se contesta sola»**
+esperan un dato y el dato las resuelve. Las marcadas **«deja de ser ciega»** esperan un dato
+que las informa y **no las decide**: seguirán necesitando que alguien elija, solo que ya no
+a oscuras. Estaban todas escritas en el mismo tono, y eso prometía que ejecutar las
+resolvería todas — el día que llegue la primera traza, alguien miraría las segundas
+esperando una respuesta que el dato no da.
+
+- [ ] **Granularidad de generación.** ¿La unidad que se le pide al modelo es la escena **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
   completa o el beat? Cambia el tamaño del delta y el coste de revisión.
-- [ ] **Persistencia del estado.** ¿Los deltas son la fuente de verdad, o se materializa
+- [ ] **Persistencia del estado.** ¿Los deltas son la fuente de verdad, o se materializa **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
   el `EstadoDelMundo` en cada `t`? Lo primero es más fiel, lo segundo más barato de consultar.
-- [ ] **Escala de la curva de dread.** ¿Presión absoluta 0–100 anotada por un juez, o
+- [ ] **Escala de la curva de dread.** ¿Presión absoluta 0–100 anotada por un juez, o **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
   relativa entre escenas contiguas? La relativa es más estable entre modelos.
-- [ ] **Umbrales de `INV-15` e `INV-16`.** Sin números concretos el harness las salta en
+- [ ] **Umbrales de `INV-15` e `INV-16`.** Sin números concretos el harness las salta en **Se contesta sola** con una traza real.
   silencio. Los números salen de medir, no de estimar. Es la misma decisión "Umbrales" de
   `Docs/definitions.md` y las filas `VER-32` y `VER-33` de `Docs/verification.md`: las tres se
   cierran a la vez o ninguna.
-- [ ] **Reparto de tokens por agente.** Pendiente de medida real (`VER-34`).
-- [ ] **Coste por escena con la decisión `A-03`.** Una llamada por agente sale más caro que
+- [ ] **Reparto de tokens por agente.** Pendiente de medida real (`VER-34`). **Se contesta sola** con una traza real.
+- [ ] **Coste por escena con la decisión `A-03`.** Una llamada por agente sale más caro que **Se contesta sola** con una traza real.
   agrupar por fase, y nadie ha medido cuánto. Si el coste resultara insostenible, `A-03` es
   la decisión que habría que revisar (`VER-36`).
-- [ ] **Suficiencia del reparto por niveles de `CLAUDE.md`.** Nunca se ha ensamblado el
+- [ ] **Suficiencia del reparto por niveles de `CLAUDE.md`.** Nunca se ha ensamblado el **Se contesta sola** con una traza real.
   contexto de una escena real para ver si los niveles caben (`VER-37`).
-- [ ] **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla`, la pregunta deja
+- [ ] **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla`, la pregunta deja **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide. **La traza dirá cuántas veces discrepan y en qué dirección, no quién gana.**
   de ser teórica: hay dos resultados que comparar en cada escena. Falta decidir qué gana
   cuando la regla no ve nada y el Juez marca. Lo mismo para `INV-11` e `INV-14`.
 - [ ] **Quién detecta un trabajo abandonado.** `SPEC-07` decidió qué se hace con él —se

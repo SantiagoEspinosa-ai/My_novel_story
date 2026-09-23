@@ -403,14 +403,14 @@ Si la contiene, es prosa y se queda.
 Estas son las que conviene fijar antes de escribir esquema o código.
 
 - [ ] **Formalización.** No hace falta OWL salvo que quieras razonamiento automático (inferir contradicciones, clasificar instancias). Un grafo de propiedades o un esquema JSON versionado suele bastar y tiene la ventaja de ser directamente el estado que consume el sistema.
-- [ ] **Granularidad de generación.** ¿La unidad que se pide al modelo es la escena completa o el beat? Afecta al tamaño del delta y al coste de revisión.
-- [ ] **Persistencia del estado.** ¿Los deltas son la fuente de verdad (event sourcing) o se materializa el `EstadoDelMundo` en cada `t`? Lo primero es más fiel, lo segundo más barato de consultar.
-- [ ] **Escala de la curva de dread.** ¿Presión absoluta 0–100 anotada por un juez, o relativa entre escenas contiguas? La relativa es más estable entre modelos.
+- [ ] **Granularidad de generación.** ¿La unidad que se pide al modelo es la escena completa o el beat? Afecta al tamaño del delta y al coste de revisión. **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
+- [ ] **Persistencia del estado.** ¿Los deltas son la fuente de verdad (event sourcing) o se materializa el `EstadoDelMundo` en cada `t`? Lo primero es más fiel, lo segundo más barato de consultar. **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
+- [ ] **Escala de la curva de dread.** ¿Presión absoluta 0–100 anotada por un juez, o relativa entre escenas contiguas? La relativa es más estable entre modelos. **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
 - [ ] **Qué valida un humano y cuándo.** Sin esta decisión las puertas se vuelven teatro: todo pasa porque nadie las cierra.
 - [ ] **Multi-obra (cerrado: una sola novela).** ¿La ontología describe una novela o una serie con canon compartido? Si es lo segundo, `Obra` dejaría de ser la raíz; con una sola novela se mantiene y el árbol no cambia.
 
-* [ ] **Umbrales.** Las invariantes `menor` (INV-15, INV-16) necesitan números concretos antes de poder ejecutarse; sin ellos el harness las salta en silencio.
+* [ ] **Umbrales.** Las invariantes `menor` (INV-15, INV-16) necesitan números concretos antes de poder ejecutarse; sin ellos el harness las salta en silencio. **Se contesta sola** con una traza real.
 * [ ] **Corpus de fixtures.** Qué obra o fragmento sirve de caso base para los tests negativos de cada invariante.
 * [ ] **Si `FraseRecurrente` se convierte en invariante.** La clase guarda la señal; nadie la comprueba todavía. Puede quedarse como material para el Revisor o pasar a ser `INV-18`.
-* [ ] **Los pesos por severidad.** Hacen falta para `Escena.borrador_aceptado`: sin un número no se puede elegir el menos malo. Salen de medir sobre esta implementación, no de copiar los de `main`.
-* [ ] **Desempate juez vs. regla.** Con INV-03 ya de tipo `regla` y el juez como desempate, la pregunta es operativa y no teórica: falta decidir qué gana cuando la regla no ve nada y el juez marca. Aplica igual a INV-11 y a INV-14.
+* [ ] **Los pesos por severidad.** Hacen falta para `Escena.borrador_aceptado`: sin un número no se puede elegir el menos malo. Salen de medir sobre esta implementación, no de copiar los de `main`. **Se contesta sola** con una traza real.
+* [ ] **Desempate juez vs. regla.** Con INV-03 ya de tipo `regla` y el juez como desempate, la pregunta es operativa y no teórica: falta decidir qué gana cuando la regla no ve nada y el juez marca. Aplica igual a INV-11 y a INV-14. **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide. **La traza dirá cuántas veces discrepan y en qué dirección, no quién gana.**
