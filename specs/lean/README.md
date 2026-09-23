@@ -44,7 +44,7 @@ nadie ejecutaría en CI.
 
 | | Dice | Espejo en Python |
 | --- | --- | --- |
-| **L-1** | El orden de la fábula se respeta salvo analepsis declarada | `INV-08` — **declarada y nunca ejecutada**: ver abajo |
+| **L-1** | El orden de la fábula se respeta salvo analepsis declarada | `INV-08` — enchufada en `b2f097c` tras `F-47`. **Las dos coinciden**: ver abajo |
 | **L-2** | Nadie está presente en un evento anterior a su nacimiento | Nada. `consultas.edades` existe y no la llama ninguna puerta |
 | **L-3** | Nadie está en dos lugares en el mismo momento | La mitad de accesibilidad de `INV-02`, pero escena a escena |
 | **L-4** | Nadie aparece después de un evento que lo excluye | La mitad de `estado_vital` de `INV-02`, también escena a escena |
@@ -106,9 +106,27 @@ misma comparación—; lo que hace es **ejecutarse**. Y ejecutarse es lo que
 destapó que el orden temporal de una obra no se comprueba en ningún punto del
 pipeline, cosa que ninguna lectura del repositorio había revelado en semanas.
 
-Registrado como `F-47`. **Enchufarla es trabajo del backend, no de este
-proyecto Lean**: es una llamada en la puerta de capítulo, y la consulta que
-necesita ya existe.
+Registrado como `F-47`, y **cerrado**: la sesión de backend la enchufó en
+`b2f097c`, en la puerta de cierre de `features/auditoria/capitulo.py` —es de
+nivel capítulo, así que ese y no `verificacion/puertas.py` era su sitio—.
+
+**La medida que lo cierra del todo: la puerta y Lean coinciden.** Sobre la
+misma base, `orden_temporal` devuelve `inversiones: [('ev-1','ev-2')]` y `L-1`
+levanta esa misma pareja. La redundancia es real: dos caminos independientes
+llegando al mismo veredicto, que es lo que la Regla 3 pide de una segunda
+fuente. Con una diferencia **medida y no supuesta**: la puerta compara solo
+pares adyacentes y Lean todos los pares, así que sobre una obra con varias
+inversiones pueden no coincidir en el recuento aunque coincidan en el
+veredicto.
+
+Y queda una decisión abierta que es del autor, no del código (`F-50`):
+**`INV-08` dice «salvo analepsis declarada» y no hay dónde declararla.**
+`MomentoNarrativo` tiene `t_fabula`, `t_discurso` y `duracion_ficcional`, y
+ningún campo de analepsis. Tener los dos ejes no basta, y el motivo es lógico:
+una analepsis *es* que la fábula retroceda mientras el discurso avanza, que es
+la forma exacta de la violación — deducirla de los dos ejes la haría
+indistinguible de lo que la invariante persigue. Hasta que exista una marca
+aparte, toda inversión sale, y en terror eso no es un caso raro.
 
 ### Lo que este caso todavía no es
 
@@ -128,12 +146,13 @@ impide leer una ausencia como un cero.
 
 Hoy hay dos huecos declarados:
 
-- **`L-4` no puede disparar sobre datos reales.** `Evento.excluye` llega
-  siempre vacía porque **no hay de dónde sacarla**: `entidad` guarda el estado
-  vital *actual* y no en qué evento cambió, y `cambios_de_estado_vital` del
-  delta se aplica y no se conserva. Registrado como `F-46`. La invariante está
-  escrita y probada contra el fixture: lo que falta es el dato, no la
-  comprobación.
+- **`L-4` ya dispara sobre datos reales** (`F-46`, cerrado). El generador lee
+  `cambios_de_estado_vital` de `delta_de_escena`, donde el delta entero se
+  persiste desde el merge de `specs-frontend`. **Solo `muerto` excluye**:
+  `desaparecido` no, porque el dominio dice que en terror «no se sabe si sigue
+  vivo» es material narrativo y un desaparecido puede volver — tratarlo como
+  exclusión convertiría el recurso más común del género en una violación.
+  Medido: `per-luis queda excluido en ev-3b y aparece en ev-4`.
 - **`L-2` se salta a quien no tiene fecha de nacimiento.** Es opcional a
   propósito (`SPEC-21` C-3): exigirla rompería todas las obras generadas hasta
   hoy. El informe lo cuenta aparte.

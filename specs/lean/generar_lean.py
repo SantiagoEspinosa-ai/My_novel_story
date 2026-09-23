@@ -35,6 +35,7 @@ lexicografico y no hace falta calendario.
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
 from datetime import datetime
@@ -89,8 +90,44 @@ def leer(con: sqlite3.Connection, obra: str) -> dict:
     for fila in con.execute("SELECT id, fecha_de_nacimiento FROM entidad"):
         nacimientos[fila["id"]] = fila["fecha_de_nacimiento"]
 
+    # `delta_de_escena` guarda el delta entero como JSON, por escena y version
+    # (`SPEC-01` 3.2.2). De ahi salen las exclusiones: ver `exclusiones_de`.
+    deltas = {}
+    for fila in con.execute(
+            "SELECT escena, contenido FROM delta_de_escena ORDER BY orden"):
+        deltas.setdefault(fila["escena"], []).append(fila["contenido"])
+
     return {"eventos": eventos, "participaciones": participaciones,
-            "nacimientos": nacimientos}
+            "nacimientos": nacimientos, "deltas": deltas}
+
+
+# Solo `muerto` saca a un personaje de la ficcion. `desaparecido` **no**, y la
+# diferencia es del dominio, no un descuido: `Docs/definitions.md` dice que en
+# terror "no se sabe si sigue vivo" es material narrativo, y un desaparecido
+# puede volver. Tratarlo como exclusion convertiria el recurso mas comun del
+# genero en una violacion.
+ESTADOS_QUE_EXCLUYEN = ("muerto",)
+
+
+def exclusiones_de(contenidos):
+    """A quien sacan de la ficcion los deltas de una escena.
+
+    Cada delta trae `cambios_de_estado_vital` con la forma
+    `{"personaje": ..., "de": ..., "a": ...}` (ver `generacion/prompt.py`).
+    Un delta ilegible no revienta y no se cuenta como "nadie muere": se
+    devuelve aparte para que el informe lo diga.
+    """
+    fuera, ilegibles = [], 0
+    for contenido in contenidos:
+        try:
+            delta = json.loads(contenido)
+        except (TypeError, ValueError):
+            ilegibles += 1
+            continue
+        for cambio in (delta or {}).get("cambios_de_estado_vital", []) or []:
+            if cambio.get("a") in ESTADOS_QUE_EXCLUYEN and cambio.get("personaje"):
+                fuera.append(cambio["personaje"])
+    return sorted(set(fuera)), ilegibles
 
 
 def generar(datos: dict, obra: str) -> tuple[str, dict]:
@@ -102,6 +139,7 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
     significa que la obra sea coherente.
     """
     eventos, sin_fecha_legible, personajes = [], [], {}
+    eventos_con_exclusion, deltas_ilegibles = 0, 0
 
     # El orden de discurso es el mismo criterio que usa `consultas.orden_temporal`:
     # por capitulo y luego por identificador de evento. Se guarda como rango y no
@@ -111,6 +149,11 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
         if t is None:
             sin_fecha_legible.append(e["id"])
             continue
+
+        fuera, ilegibles = exclusiones_de(datos["deltas"].get(e["escena"], []))
+        deltas_ilegibles += ilegibles
+        if fuera:
+            eventos_con_exclusion += 1
 
         presentes = datos["participaciones"].get(e["id"], [])
         for p in presentes:
@@ -125,11 +168,12 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
         eventos.append(
             "    {{ id := {id}, tFabula := {fecha}, inicioMin := {min}, "
             "duracionMin := {dur}, lugar := {lugar}, tDiscurso := {disc}, "
-            "capitulo := {cap}, analepsis := false, excluye := [], "
+            "capitulo := {cap}, analepsis := false, excluye := [{excluye}], "
             "participan := [{partes}] }}".format(
                 id=_txt(e["id"]), fecha=_fecha_lean(t), min=_minutos(t),
                 dur=int(e["duracion_min"] or 0), lugar=_txt(e["lugar"]),
-                disc=discurso, cap=_txt(e["capitulo"]), partes=partes))
+                disc=discurso, cap=_txt(e["capitulo"]),
+                excluye=", ".join(_txt(x) for x in fuera), partes=partes))
 
     sin_nacimiento = sorted(p for p, n in personajes.items() if not _instante(n))
     filas_personaje = []
@@ -155,8 +199,11 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
         "eventos_sin_fecha_legible": sin_fecha_legible,
         "personajes": len(personajes),
         "personajes_sin_fecha_de_nacimiento": sin_nacimiento,
-        # Siempre vacio hoy, y por eso se informa en vez de callarse: ver F-46.
-        "eventos_con_exclusion": 0,
+        # Ya no es siempre cero: sale de `cambios_de_estado_vital` del delta
+        # persistido. Si vale 0 en una obra donde alguien muere, el fallo esta
+        # aqui o en el delta, no en la invariante (`F-46`).
+        "eventos_con_exclusion": eventos_con_exclusion,
+        "deltas_ilegibles": deltas_ilegibles,
     }
 
 
