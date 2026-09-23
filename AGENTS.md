@@ -15,8 +15,10 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Árbol y diagramas | `docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
 | Decisiones de sistema, agentes y proceso | `docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
 | Plan de verificación del sistema | `docs/verification.md` | Primero **qué puede salir mal**: 24 modos de fallo `MF-01`…`MF-24` sobre las rejillas de MAST, ConStory-Bench y los fallos silenciosos, **ninguno sin estado**. Después **cómo se detecta**: 54 validadores `VER-01`…`VER-55`, cada uno con su punto ciego, más los 11 asumidos y lo que se aprendió al escribir cinco. Ninguno implementado hoy |
+| Briefs de evaluación | `harness/evals/` | Los briefs de prueba del enunciado y sus resultados esperados. Hoy uno de cinco, el de incoherencia temporal, sin ejecutar (`EX-06`) |
+| Sesiones concurrentes | `docs/sesiones-concurrentes.md` | Cómo reservar un identificador con varias sesiones escribiendo, y qué hacer si dos colisionan |
 | Huecos contra el enunciado | `docs/cobertura-examen.md` | Registro `EX-xx` de lo que `EXAMEN.md` exige y los documentos no recogen o contradicen (de documentación) y de lo documentado que el código no hace (de sistema), cada fila con cita de los dos lados, bloqueante o no, y el recuento por vuelta. No introduce requisitos: lo que decide cómo cerrar un hueco va en una spec |
-| Skills del proyecto | `.agents/skills/` | Contenido real de las ocho skills instaladas. Ver la sección "Skills" más abajo |
+| Skills del proyecto | `.agents/skills/` | Contenido real de las ocho skills instaladas, y en su `README.md` cuándo usar cada una y de dónde viene |
 | Specs en curso | `specs/` | Un fichero por spec. Hoy `SPEC-01` backend del harness (**`aprobada`**), `SPEC-22` el frontend y el contrato congelado (**`aprobada`**), y en `en_revision` `SPEC-09` versión de `Resumen`, `SPEC-23` qué es regenerar en una obra acumulativa y `SPEC-26`, el pipeline de la novela regalo: planificador con revisor del plan, editor con rúbrica, validadores de personalización y los dos hooks. **`SPEC-24`, dónde se declara una analepsis, está `aprobada` y pendiente de plan**: añade a `MomentoNarrativo` la marca que `INV-08` necesita para distinguir un retroceso deliberado de uno accidental. `SPEC-21`, los usos de un hecho y la cronología de la fábula, está **`aprobada`** y es de la que `SPEC-23` toma qué capítulos hay que regenerar |
 | Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada, con el mismo identificador y su propio estado. Hoy `PLAN-01`, el backend, en `en_revision`, `PLAN-21`, los usos y la cronología, **`aprobada`**, y `PLAN-25`, el destinatario y la entrevista, **`aplicada`**. Es la tercera puerta: sin plan aprobado no se escribe código |
 | Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio, `SPEC-04` puerta de capítulo y reclasificaciones, `SPEC-05` caducidad de las afirmaciones condicionales, `SPEC-06` estructura de `harness/` y `SPEC-07` modelo de fallo del pipeline y `SPEC-08` estados del trabajo y observabilidad `SPEC-10` huecos que la rama `main` ya sufrió `SPEC-11` observabilidad del pipeline, `SPEC-12` formas reducidas del recorte, `SPEC-13` durabilidad de los hechos, `SPEC-14` delegación en vez de API, `SPEC-15` lo que declara el plan, `SPEC-16` revelar es aprender, `SPEC-17` el conocimiento y su instante, `SPEC-18` el POV que nadie declara, `SPEC-19` lo prometido y lo entregado, `SPEC-20` qué se puede editar a mano y `SPEC-25` el destinatario, la entrevista y las palabras vetadas, que abre el examen de la novela para regalar y lleva en su anexo la plantilla de la ficha. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
@@ -122,45 +124,18 @@ Una rama solo puede estar checkouteada en **un** worktree a la vez. Lo ignorado 
 
 **Y antes de abrir una spec, mirar los identificadores que hay.** Dos sesiones trabajando a la vez eligen el mismo `SPEC-NN` sin enterarse: pasó dos veces seguidas. Si ya está cogido, se renumera el propio —nunca se reutiliza— y conserva el número la spec que ya esté `aprobada`.
 
-**Mirar el último identificador usado no basta con tres sesiones escribiendo.** Entre leer cuál es el último y commitear el propio hay una ventana, y otra sesión publica en ella: es la Regla 6 de `docs/verification.md` aplicada a la numeración. Pasó con `F-39` y `F-40`, que acabaron duplicados con contenidos distintos —exactamente lo que la regla de no renumerar existe para impedir—. Vale cualquiera de las dos disciplinas, y hace falta una:
-
-- **Reservar antes de escribir**: anunciar el identificador a las otras sesiones y dejarlo escrito en su documento antes de desarrollar el contenido, para que quede ocupado.
-- **Comprobar al commitear**: volver a mirar los publicados justo antes del commit, no al empezar a redactar.
-
-**Si la colisión ya ocurrió**, el criterio es el mismo que para las specs y aplica a todo identificador publicado (`F-xx`, `MF-xx`, `VER-xx`, `INV-xx`):
-
-1. **El que se publicó primero conserva el número**, y eso lo decide el historial de git, no cuál parezca más importante.
-2. **El segundo pasa al siguiente libre.** No se fusionan ni se borra ninguno: son dos hallazgos distintos.
-3. **Las referencias cruzadas se actualizan en el mismo commit.** Un identificador movido sin sus citas deja el documento apuntando a otra cosa, que es peor que la colisión.
-4. **Lo hace una sola sesión, acordado antes.** Dos renumerando a la vez reproducen el problema que están arreglando.
+**Con varias sesiones escribiendo, mirar el último identificador no basta**: hay que reservarlo antes de escribir o volver a comprobarlo justo antes del commit, y si dos colisionan conserva el número el primero publicado según git. El procedimiento completo, con su porqué, está en `docs/sesiones-concurrentes.md`.
 
 ## Skills
 
-El contenido real vive en `.agents/skills/` y **se versiona con el repositorio**. Claude Code lee esa carpeta directamente, así que tras clonar no hay que hacer nada: las skills están disponibles. `.claude/skills/` sigue en `.gitignore` porque `npx skills add` crea allí enlaces que git en Windows no guarda como tales, y no hacen falta.
-
-**Ninguna skill se actualiza sola, y no hay lockfile.** Las dos de upstream se actualizan a mano: se reinstalan con `npx skills add <repo> --skill <nombre>` y se revisa el diff antes de aceptarlo. Su origen y el hash con el que entraron están en la tabla de arriba, que es donde hay que mirar para saber qué se instaló y desde dónde.
-
-| Skill | Cuándo usarla | Procedencia |
-| --- | --- | --- |
-| `spec-and-plan` | Empezar cualquier cambio que decida algo nuevo. Ejecuta las puertas de "Proceso de trabajo" y comprueba si están abiertas | Propia |
-| `fastapi` | Endpoints, dependencias, modelos Pydantic, streaming: los idiomas del framework | Oficial, de `github.com/fastapi/fastapi`, ruta `.agents/skills/fastapi/`. Instalada 2026-09-21, hash `187b2e06` |
-| `coherencia-docs` | Revisar la coherencia entre los documentos de contexto: citas rotas por identificador, contradicciones, deriva de literales y afirmaciones que caducan en silencio. Antes de un merge que toque `docs/` | Propia. Escrita sobre un borrador del usuario y adaptada al repositorio; ver su § "Procedencia" |
-| `backend-feature` | Decidir dónde va un fichero de `backend/` y de qué puede depender. La contraparte de FSD en el servidor (`A-01`, `A-02`) | Propia |
-| `feature-sliced-design` | Decidir dónde va un fichero del frontend, resolver un cross-import o revisar la estructura de capas (`A-09`) | Oficial de FSD v2.1, de `github.com/feature-sliced/skills`. Instalada 2026-09-21, hash `e2b86275` |
-| `harness-invariantes` | Implementar o revisar una comprobación `INV-xx`: regla o juez, severidad, hallazgo y caso negativo | Propia |
-| `verification-plan` | Escribir o revisar un `verification.md` (también llamado `validation.md` o `evaluation.md`), decidir cómo se prueba una afirmación o clasificarla en T/A/I/D/U | Propia. Construida sobre una hoja de referencia de 19 metodologías; el flujo, la plantilla y los criterios de selección son nuestros |
-| `sqlite-vec` | Crear tablas `vec0`, hacer consultas KNN o serializar embeddings al implementar la persistencia | **Vendorizada y sin mantenimiento.** Su autor la borró del repositorio original; se recuperó del historial de git. Ver `.agents/skills/sqlite-vec/PROCEDENCIA.md` |
-
-**Por qué se versiona el contenido y no basta con `skills-lock.json`.** Un lockfile fija una versión, pero no garantiza que siga existiendo: si el upstream borra el contenido, no hay nada que reinstalar. Es exactamente lo que pasó con `sqlite-vec`. La única garantía es tener el contenido en el repositorio.
-
-**Cuidado con `sqlite-vec`.** Está abandonada y describe una librería viva, así que envejece en silencio: con el tiempo dirá cosas de `vec0` que ya no son ciertas y nada avisará. Contrástala con la documentación oficial de `asg017/sqlite-vec` antes de confiar en ella, y actualiza la fecha de revisión de su `PROCEDENCIA.md` cada vez que lo hagas.
+El contenido real vive en `.agents/skills/`, se versiona con el repositorio y Claude Code lo lee directamente. **Qué skill usar y cuándo, su procedencia y cómo se actualizan** —ninguna se actualiza sola, y `sqlite-vec` está abandonada y hay que contrastarla antes de fiarse— está en `.agents/skills/README.md`.
 
 ## Todavía no existe
 
 Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuentras una que no está en la tabla de arriba, añádela.
 
 - `frontend/` — aplicación React.
-- `harness/` — ejecución de los validadores de `docs/verification.md` y sus fixtures, en las tres carpetas que declara `docs/architecture.md` § "El harness": `documentos/`, `evals/` y `adversarial/`. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `docs/verification.md` § "Lo que se aprendió al implementar".
+- `harness/documentos/` y `harness/adversarial/` — dos de las tres carpetas que declara `docs/architecture.md` § "El harness". La tercera, `harness/evals/`, ya existe y tiene su fila arriba. Se escribieron cinco validadores a modo de prueba y se retiraron; lo que enseñaron está en `docs/verification.md` § "Lo que se aprendió al implementar".
 - `docs/decisions/` — decisiones de arquitectura fechadas.
 - Lo que `EXAMEN.md` exige que el repositorio incluya, y no existe todavía (§ "Los repositorios deben incluir también"): `README.md` en la raíz con un brief de ejemplo reproducible, `.env.example`, `ejemplos/novela-ejemplo.pdf`, `presentacion/` con el vídeo de demo, `.claude/commands/` y la memoria dentro de `.claude/`, y el fichero de configuración MCP con un servidor de inspección de browser. Y los seis documentos de proceso que el enunciado pide en `/docs` (`EX-11` en `docs/cobertura-examen.md`).
 

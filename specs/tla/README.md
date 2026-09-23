@@ -2,6 +2,12 @@
 
 2026-09-23 · Verificada con TLC 2.19 sobre OpenJDK 21.0.12.1
 
+> **Pendiente para quien lleve esta especificación — `EX-07` de `docs/cobertura-examen.md`.**
+> El usuario decidió (2026-09-23) que el entregable es `backend/`, no `main`. La tabla
+> "Qué implementa cada acción" tiene que rehacerse contra `backend/`, y el modelo también:
+> la escalera `haiku → sonnet → opus` de `Reintentar` desaparece, porque `backend/` usa un
+> modelo por agente (`backend/config/sistema.json`). Va a plan, y es de esta especificación.
+
 Modelo formal del flujo de generación de una novela: **configuración →
 planificación → escritura → validación → publicación**, más los tres caminos que
 lo complican (reintentos, reanudación desde checkpoint y regeneración pedida por
