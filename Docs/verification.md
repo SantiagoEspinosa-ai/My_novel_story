@@ -537,6 +537,25 @@ comprobó?* Si la respuesta es que no, falta un caso, no una guarda.
 cero veces"* y *"no llegó a mirar"* son cosas distintas y el segundo no se apunta como cero
 (`F-30`, y la razón de que `VER-64` estuviera tres ejecuciones sin dato utilizable).
 
+**Y la instancia que más caro sale: la Regla 8 dentro del informe.** La sección
+`=== EL CANON ===` del guion de generación ha salido **en blanco tres veces, por tres causas
+distintas**: `F-39`, la clave global de `HechoCanonico`, que atribuyó los diez hechos al
+último capítulo y dejó vacíos los nueve anteriores; el arreglo incompleto que la dejó
+apuntando al capítulo equivocado; y la consulta que pedía los hechos de la obra pasando un
+identificador de capítulo, encontrada antes de la tercera ejecución.
+
+Tres veces la misma sección muda por tres motivos que no se parecen **ya no es mala suerte**:
+es que esa sección **no tiene forma de distinguir «vacío porque no hubo» de «vacío porque
+pregunté mal»**. Y pesa más que en cualquier otro sitio, porque **el informe es lo que se usa
+para juzgar todo lo demás**: un validador mudo deja un hueco en una tabla; un informe mudo
+deja una obra entera dada por buena o por mala sin nada detrás.
+
+La corrección tiene la forma de siempre y no es un arreglo por instancia: **una respuesta
+vacía tiene que llevar consigo la pregunta que se hizo.** *«0 hechos»* no dice nada; *«0 de
+los 10 hechos declarados para `obra-la-casa`»* distingue las dos situaciones sin que nadie
+tenga que acordarse de sospechar. Mientras el informe imprima cantidades sin su ámbito,
+seguirá habiendo una cuarta causa.
+
 ### Regla 9 — Una comprobación que depende de un orden necesita al menos dos elementos que lo ejerzan
 
 **Con uno solo, puede pasar por un empate que se resolvió al azar, y entonces está en verde
@@ -594,10 +613,17 @@ escenas no basta si las dos están en la misma obra y esa obra es el capítulo.
 Dos consecuencias prácticas:
 
 1. **Un dato de prueba que hace coincidir dos identificadores distintos apaga todas las
-   comprobaciones que los distinguen.** Si `obra` y `capitulo` valen `"cap-1"`, ninguna
-   prueba de esa base puede detectar que se confunden. Los identificadores de un fixture se
-   eligen **distintos a propósito**, y distintos entre sí, no solo distintos de los de al
-   lado.
+   comprobaciones que los distinguen.** Dicho del derecho: **una suite donde `obra` y
+   `capitulo` son la misma cadena no puede detectar que se confunden.** No hay revisión que
+   lo encuentre ni validador que lo cace, porque desde dentro el código que se mira sí tiene
+   su filtro. Por eso los identificadores de un fixture se eligen **distintos a propósito**,
+   y distintos entre sí, no solo distintos de los de al lado.
+
+   **Y los que ya existen se cambian al tocarlos, no todos de golpe.** Hoy hay una docena de
+   fixtures que usan `"cap-1"` como identificador de obra. No están rotos y una migración
+   masiva solo añadiría riesgo sin cerrar nada; lo que hay que evitar es que el terreno
+   vuelva a crecer, así que cada uno se corrige la próxima vez que alguien entre en él por
+   otro motivo.
 2. **Cuando una suposición de datos cambia —un guion, un esquema, un formato— hay que ir a
    buscar lo que la coincidencia estaba tapando**, en vez de esperar a que aparezca. Aquí,
    buscar todas las consultas que reciben un capítulo y filtran por obra encontró dos
