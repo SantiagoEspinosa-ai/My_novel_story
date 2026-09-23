@@ -111,3 +111,14 @@ def test_un_plan_sin_titulo_propio_ya_no_gasta_una_ronda(con):
     r = service.planificar(con, "obra-x", ficha(), Agente([{"plan": plan_dict()}]),
                            Agente([APROBADO]))
     assert r.version == 1
+
+
+def test_el_prompt_dice_que_no_hay_campos_extra_y_que_los_accesos_son_ids(con):
+    """`F-62`, Regla 4: en la ejecucion real el Planificador invento un campo y
+    escribio los accesos como texto. El esquema los rechaza; el prompt tiene que
+    haberlo pedido antes."""
+    planificador = Agente([_plan()])
+    service.planificar(con, "obra-x", ficha(), planificador, Agente([APROBADO]))
+    prompt = planificador.llamadas[0]
+    assert "campo" in prompt and "rechaza" in prompt
+    assert "accesos" in prompt and "identificadores" in prompt

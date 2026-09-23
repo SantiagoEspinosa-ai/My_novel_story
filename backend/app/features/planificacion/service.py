@@ -44,6 +44,10 @@ Devuelve un unico objeto JSON: {{"plan": {{...}}}}, con el plan de esta forma:
     sale de la historia.
 Ejes validos: seguridad, conocimiento, control, vinculo, cordura, vida.
 Signos: positivo, negativo. Ninguna palabra ni nombre vetado en el plan.
+No anadas ningun campo que no este en esta forma: el sistema rechaza el plan
+entero si trae un campo de mas. Los `accesos` de un lugar son identificadores
+de otros lugares declarados en `lugares` (por ejemplo "lug-cocina"), nunca una
+descripcion.
 """
 
 PROMPT_REVISOR = """Revisa si este plan es fiel a lo que pidio el comprador.

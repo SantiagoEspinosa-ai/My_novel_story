@@ -23,6 +23,10 @@ Reglas que no se discuten:
 - Declaras cuando ocurre cada capitulo (`t_fabula`) y la fecha de nacimiento de
   cada personaje si la sabes o la puedes deducir de la ficha.
 
+- No añadas campos que no pida el mensaje: un campo de más hace que el sistema
+  rechace el plan entero. Los `accesos` de un lugar son identificadores de otros
+  lugares declarados, nunca una descripción.
+
 Si te llegan objeciones a un plan anterior, corrigelas todas y no rompas lo que
 ya estaba bien.
 
