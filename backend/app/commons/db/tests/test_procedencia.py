@@ -65,3 +65,37 @@ def test_una_base_sin_procedencia_no_es_lo_mismo_que_una_coincidente(con):
     aviso = procedencia.comprobar(con, version="aaaaaaa")
     assert aviso is not None
     assert "no consta" in aviso.lower()
+
+
+# --- La otra mitad del par: con que BRIEF se genero -----------------------
+
+def test_la_base_registra_con_que_brief_se_genero(con):
+    """`procedencia` ya decia **con que codigo**. Con el brief dice tambien
+    **con que forma de obra**, y con las dos una tanda se puede repetir
+    exactamente en vez de aproximadamente."""
+    procedencia.registrar(con, version="aaaaaaa", brief="huella123456")
+    p = procedencia.leer(con)
+    assert p["version"] == "aaaaaaa"
+    assert p["brief"] == "huella123456"
+
+
+def test_una_base_sin_brief_lo_dice(con):
+    """Las anteriores a esto no lo llevan, y leer esa ausencia como "el mismo
+    brief" seria el silencio de siempre (Regla 8)."""
+    procedencia.registrar(con, version="aaaaaaa")
+    assert procedencia.leer(con)["brief"] is None
+
+
+def test_se_avisa_si_la_tanda_corrio_con_otro_brief(con):
+    """Mismo codigo y distinta forma de obra **no es la misma tanda**, y
+    comparar sus numeros seria comparar dos novelas distintas."""
+    procedencia.registrar(con, version="aaaaaaa", brief="huella-A")
+    aviso = procedencia.comprobar(con, version="aaaaaaa", brief="huella-B")
+    assert aviso is not None
+    assert "huella-A" in aviso and "huella-B" in aviso
+
+
+def test_el_brief_tampoco_se_pisa(con):
+    procedencia.registrar(con, version="aaaaaaa", brief="huella-A")
+    procedencia.registrar(con, version="aaaaaaa", brief="huella-B")
+    assert procedencia.leer(con)["brief"] == "huella-A"

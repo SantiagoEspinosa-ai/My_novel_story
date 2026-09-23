@@ -1,0 +1,19 @@
+{
+  "modelos": {
+    "escritor": "fable",
+    "juez": "opus",
+    "resumidor": "haiku"
+  },
+
+  "topes": {
+    "intentos_por_escena": 3,
+    "delegaciones_por_obra": 540,
+    "reintentos_de_transporte": 3
+  },
+
+  "presupuesto": {
+    "techo_de_contexto": 100000
+  },
+
+  "ruta_de_la_base": "obra.db"
+}

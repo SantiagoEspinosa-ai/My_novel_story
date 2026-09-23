@@ -58,8 +58,16 @@ def version_del_arbol(cwd=None) -> str:
     return salida if r.returncode == 0 and salida else SIN_DETERMINAR
 
 
-def registrar(con: sqlite3.Connection, version="__del_arbol__", cwd=None):
-    """Deja constancia de con que codigo se creo esta base. **No pisa.**"""
+def registrar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
+              brief=None):
+    """Con que codigo **y con que brief** se creo esta base. **No pisa.**
+
+    Son las dos mitades del mismo par. El commit dice que **codigo** escribio
+    las filas; la huella del brief dice que **forma de obra** se le pidio. Con
+    una sola, una tanda se puede repetir aproximadamente; con las dos, se puede
+    repetir exactamente — y dos tandas con el mismo codigo y distinto brief
+    dejan de parecer comparables, porque no lo son: son dos novelas.
+    """
     if version == "__del_arbol__":
         version = version_del_arbol(cwd)
     with con:
@@ -67,19 +75,27 @@ def registrar(con: sqlite3.Connection, version="__del_arbol__", cwd=None):
         con.execute("INSERT OR IGNORE INTO procedencia (clave, valor) "
                     "VALUES ('version_del_harness', ?)",
                     (version or SIN_DETERMINAR,))
+        if brief:
+            con.execute("INSERT OR IGNORE INTO procedencia (clave, valor) "
+                        "VALUES ('huella_del_brief', ?)", (brief,))
 
 
 def leer(con: sqlite3.Connection):
     with con:
         con.executescript(SQL)
-    fila = con.execute("SELECT valor, cuando FROM procedencia "
-                       "WHERE clave = 'version_del_harness'").fetchone()
-    if fila is None:
-        return {"version": None, "creada_en": None}
-    return {"version": fila[0], "creada_en": fila[1]}
+    filas = dict((f[0], (f[1], f[2])) for f in con.execute(
+        "SELECT clave, valor, cuando FROM procedencia"))
+    v = filas.get("version_del_harness")
+    b = filas.get("huella_del_brief")
+    return {"version": v[0] if v else None,
+            "creada_en": v[1] if v else None,
+            # `None` y no una cadena vacia: las bases anteriores a esto no lo
+            # llevan, y hay que poder distinguir "no consta" de "sin brief".
+            "brief": b[0] if b else None}
 
 
-def comprobar(con: sqlite3.Connection, version="__del_arbol__", cwd=None):
+def comprobar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
+              brief=None):
     """Devuelve el aviso si la base se escribio con otro codigo, o `None`.
 
     **Una base sin procedencia no es una base conforme** (Regla 8): las
@@ -99,4 +115,11 @@ def comprobar(con: sqlite3.Connection, version="__del_arbol__", cwd=None):
         return ("esta base se escribio con {0} y el proceso actual corre con "
                 "{1}. Una medida sobre ella contesta sobre el codigo de "
                 "entonces, no sobre el de ahora".format(guardada, version))
+    if brief:
+        guardado = leer(con)["brief"]
+        if guardado and guardado != brief:
+            return ("esta base se genero con el brief {0} y ahora se pide {1}. "
+                    "Mismo codigo y distinta forma de obra **no es la misma "
+                    "tanda**: comparar sus numeros seria comparar dos novelas "
+                    "distintas".format(guardado, brief))
     return None
