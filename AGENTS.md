@@ -118,6 +118,18 @@ Una rama solo puede estar checkouteada en **un** worktree a la vez. Lo ignorado 
 
 **Y antes de abrir una spec, mirar los identificadores que hay.** Dos sesiones trabajando a la vez eligen el mismo `SPEC-NN` sin enterarse: pasó dos veces seguidas. Si ya está cogido, se renumera el propio —nunca se reutiliza— y conserva el número la spec que ya esté `aprobada`.
 
+**Mirar el último identificador usado no basta con tres sesiones escribiendo.** Entre leer cuál es el último y commitear el propio hay una ventana, y otra sesión publica en ella: es la Regla 6 de `Docs/verification.md` aplicada a la numeración. Pasó con `F-39` y `F-40`, que acabaron duplicados con contenidos distintos —exactamente lo que la regla de no renumerar existe para impedir—. Vale cualquiera de las dos disciplinas, y hace falta una:
+
+- **Reservar antes de escribir**: anunciar el identificador a las otras sesiones y dejarlo escrito en su documento antes de desarrollar el contenido, para que quede ocupado.
+- **Comprobar al commitear**: volver a mirar los publicados justo antes del commit, no al empezar a redactar.
+
+**Si la colisión ya ocurrió**, el criterio es el mismo que para las specs y aplica a todo identificador publicado (`F-xx`, `MF-xx`, `VER-xx`, `INV-xx`):
+
+1. **El que se publicó primero conserva el número**, y eso lo decide el historial de git, no cuál parezca más importante.
+2. **El segundo pasa al siguiente libre.** No se fusionan ni se borra ninguno: son dos hallazgos distintos.
+3. **Las referencias cruzadas se actualizan en el mismo commit.** Un identificador movido sin sus citas deja el documento apuntando a otra cosa, que es peor que la colisión.
+4. **Lo hace una sola sesión, acordado antes.** Dos renumerando a la vez reproducen el problema que están arreglando.
+
 ## Skills
 
 El contenido real vive en `.agents/skills/` y **se versiona con el repositorio**. Claude Code lee esa carpeta directamente, así que tras clonar no hay que hacer nada: las skills están disponibles. `.claude/skills/` sigue en `.gitignore` porque `npx skills add` crea allí enlaces que git en Windows no guarda como tales, y no hacen falta.

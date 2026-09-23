@@ -326,12 +326,28 @@ proyecto ya ha elegido tres veces.
 
 ### Por qué la pregunta 5 todavía no se puede contestar
 
-Esta spec dijo antes que bastaba con una obra ya generada. **Es falso, y el motivo no es la
-calidad de la obra:** el ensamblador ofrece a **todas** las escenas **todos** los hechos
-declarados de la obra —la consulta que los trae filtra por obra y no por escena—, así que el
-conjunto de lecturas observado de hechos **es el mismo para toda la obra**. La fracción que
-mide la pregunta 5 sale **1,0 para cualquier hecho, por construcción**. No es un número con
-ruido: es un número sin resolución.
+Esta spec dijo antes que bastaba con una obra ya generada. **Es falso**, y el motivo es de
+construcción y no de calidad de la obra. Son dos cosas que se suman:
+
+1. **El ensamblador trae los hechos por ámbito, no por escena.** La consulta que los reúne
+   recibe el identificador del ámbito que se está generando —que en la generación real es el
+   **capítulo**, no la obra— y devuelve todos los suyos. Dentro de un capítulo, todas las
+   escenas ven el mismo conjunto: **no hay resolución por debajo del capítulo**.
+2. **Y el guion que genera la obra declara la lista entera de hechos en cada capítulo.** No
+   hay hechos propios de un capítulo: los diez se declaran diez veces. Así que tampoco hay
+   resolución **entre** capítulos.
+
+Juntas, las dos dejan el conjunto de lecturas observado de hechos **constante en toda la
+obra**, y la fracción que mide la pregunta 5 sale **1,0 para cualquier hecho, por
+construcción**. No es un número con ruido: es un número sin resolución.
+
+**Ojo con el orden de los arreglos:** antes de cerrarse `F-39` —la clave global de
+`HechoCanonico`— ese mismo guion dejaba nueve capítulos con la lista **vacía** y todos los
+hechos atribuidos al último, de modo que sus prompts decían *«hechos: (ninguno)»*. Una medida
+de arrastre sacada de esa base sale **baja**, y baja no significa *arrastra poco*: significa
+*se registró poco*. Es exactamente el número que parecería un argumento para elegir `S-1`, y
+sería un argumento falso. Si alguna vez se enseña un número salido de ahí, se enseña **marcado
+como suelo en el mismo sitio en que se enseña**, no en una nota al pie.
 
 Tres consecuencias que conviene no confundir:
 
@@ -347,9 +363,21 @@ Tres consecuencias que conviene no confundir:
   se separan el observado y el declarado*, hoy la comparación sería «todo» contra «lo que diga
   el modelo», que mide el techo y no la separación.
 
-**Lo que haría medible la pregunta 5** es que el ensamblador deje de ofrecer todos los hechos
-a todas las escenas. Y esa noción ya está escrita en el proyecto: la forma reducida del bloque
-del estado dice *«los hechos permanentes y cualquier hecho que el delta referencie»*. Existe,
-está declarada, y **solo se aplica al recortar** — es decir, nunca, porque el contexto real
-mide tres órdenes de magnitud menos que el techo. Es la misma decisión abierta que el reparto
-por niveles: un mecanismo diseñado que no se ha ejercido ni una vez.
+**Dónde sí está la medida.** No en el conjunto observado, sino en `menciona` de `SPEC-21`:
+lo **calcula el código sobre el borrador aceptado**, así que es por escena, varía, y es un
+dato medido y no una afirmación de un modelo. Con él, *«cuántos capítulos añade incluir este
+hecho»* se responde por hecho y a granularidad de capítulo, que es justo la granularidad en la
+que la función promete regenerar. `SPEC-21` ya expone esa consulta. **La pregunta 5 se
+contesta por ahí, sobre la obra repetida con los arreglos, y sin pagar ninguna generación.**
+
+Lo que el conjunto observado sigue aportando es otra cosa, y hay que no confundirla: es el
+único registro de lo que se le **ofreció** al modelo. Sirve para la decisión de `S-5` —qué se
+regenera— y para saber cuándo un hecho estuvo disponible y no se usó. No sirve para medir
+alcance mientras se ofrezca todo a todos.
+
+**Y lo que haría medible también el observado** es que el ensamblador deje de ofrecer todos los
+hechos a todas las escenas. Esa noción ya está escrita en el proyecto: la forma reducida del
+bloque del estado dice *«los hechos permanentes y cualquier hecho que el delta referencie»*.
+Existe, está declarada, y **solo se aplica al recortar** — es decir, nunca, porque el contexto
+real mide tres órdenes de magnitud menos que el techo. Es la misma decisión abierta que el
+reparto por niveles: un mecanismo diseñado que no se ha ejercido ni una vez.

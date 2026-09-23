@@ -74,16 +74,31 @@ def reunir_material(con, escena, obra_id, inmutable=""):
     # la que saliera — el Escritor arrancaba leyendo una escena de otra obra y
     # **nadie lo notaba, porque llega texto plausible**. Peor que lo de los
     # resumenes, que llegaban desordenados o vacios.
+    # **El alcance de la escena anterior es el capitulo, no la obra.** Los
+    # resumenes si cruzan el corte -una novela no olvida el capitulo uno al
+    # empezar el dos- pero esta no: eso es exactamente lo que un corte de
+    # capitulo significa. Dos alcances distintos, y un solo filtro no sirve
+    # para los dos.
+    #
+    # `IS` y no `=` porque compara bien contra NULL: una escaleta anterior a
+    # `SPEC-21` no trae capitulo, y entonces todas las de la obra caen en el
+    # mismo grupo, que es el comportamiento que habia.
     anterior = con.execute(
         "SELECT b.texto FROM borrador b JOIN escena e ON e.id = b.escena "
-        "WHERE e.orden = ? AND e.obra = ? "
-        "ORDER BY b.version DESC LIMIT 1", (orden - 1, obra_id)).fetchone()
+        "WHERE e.orden = ? AND e.obra = ? AND e.capitulo IS ? "
+        "ORDER BY b.version DESC LIMIT 1",
+        (orden - 1, obra_id, escena.get("capitulo"))).fetchone()
     return {
         # Acotados a la obra: el `orden` va del 1 al N **dentro** de ella, asi
         # que sin el filtro dos obras en la misma base se mezclan (`F-40`).
         "resumenes": memoria.resumenes_hasta(con, orden, obra=obra_id),
         "fichas": memoria.fichas_en(con, orden, obra=obra_id),
         "escena_anterior": anterior[0] if anterior else "",
+        # Vacio legitimo y vacio por fallo **no pueden verse igual** (Regla 8).
+        # Que la escena 1 de un capitulo no tenga anterior es lo correcto; que
+        # no la tenga la 4 es un defecto, y con la misma cadena vacia nadie lo
+        # veria.
+        "falta_escena_anterior": orden > 1 and anterior is None,
         "mundo": modulo_mundo.leer(con),
         "problemas": repo.hallazgos_abiertos(con, escena["id"]),
         "hechos": repo.hechos_declarados(con, obra_id),
