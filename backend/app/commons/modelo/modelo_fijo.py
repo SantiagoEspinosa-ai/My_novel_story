@@ -27,15 +27,23 @@ declarado en `VER-62` y no se tapa aqui.
 from dataclasses import dataclass
 
 
+# El identificador declarado es corto -"fable"- y el reportado es canonico
+# -"claude-fable-5-1"-. **El canonico manda**: es el que sale de la respuesta y
+# el unico que no depende de como se escribio la configuracion.
+def canonico(modelos):
+    """El conjunto canonico de una delegacion, ordenado y sin repetidos."""
+    return tuple(sorted(set(modelos or ())))
+
+
 @dataclass(frozen=True)
 class Discrepancia:
     trabajo: str
-    esperado: str
-    encontrado: str
+    esperado: tuple
+    encontrado: tuple
 
     def __str__(self):
-        return ("el trabajo {0} uso `{1}` y la obra declaro `{2}`"
-                .format(self.trabajo, self.encontrado, self.esperado))
+        return ("el trabajo {0} uso {1} y el resto de la obra {2}"
+                .format(self.trabajo, list(self.encontrado), list(self.esperado)))
 
 
 class ModeloCambiado(Exception):
@@ -49,29 +57,35 @@ class ModeloCambiado(Exception):
         )
 
 
-def comprobar(declarado: str, trazas) -> list:
-    """Devuelve las discrepancias. Lista vacia es que no hubo ninguna.
+def comprobar(trazas):
+    """El conjunto de modelos es estable entre delegaciones de la misma obra.
 
-    Una traza **sin modelo registrado** no cuenta como discrepancia pero
+    **No se compara contra lo declarado**: el declarado es corto y el reportado
+    canonico, asi que nunca coincidirian. Se compara cada delegacion contra la
+    primera que reporto algo, que es la que fija el conjunto de la obra.
+
+    Una traza **sin modelos registrados** no cuenta como discrepancia pero
     tampoco como conformidad: se devuelve aparte, porque decir que todo cuadra
-    cuando media muestra esta vacia es exactamente lo que `RF-25` prohibe.
+    cuando media muestra esta vacia es lo que `RF-25` prohibe.
     """
-    discrepancias, sin_registrar = [], []
+    discrepancias, sin_registrar, referencia = [], [], None
     for t in trazas:
-        usado = getattr(t, "modelo", None)
-        if usado is None:
-            sin_registrar.append(getattr(t, "trabajo", "sin-id"))
+        usados = canonico(getattr(t, "modelos", None))
+        trabajo = getattr(t, "trabajo", "sin-id")
+        if not usados:
+            sin_registrar.append(trabajo)
             continue
-        if usado != declarado:
+        if referencia is None:
+            referencia = usados
+        elif usados != referencia:
             discrepancias.append(Discrepancia(
-                trabajo=getattr(t, "trabajo", "sin-id"),
-                esperado=declarado, encontrado=usado))
+                trabajo=trabajo, esperado=referencia, encontrado=usados))
     return discrepancias, sin_registrar
 
 
-def exigir(declarado: str, trazas):
-    """Levanta si hubo cambio. Para usarlo como puerta y no como informe."""
-    discrepancias, _ = comprobar(declarado, trazas)
+def exigir(trazas):
+    """Levanta si el conjunto cambio. Para usarlo como puerta, no como informe."""
+    discrepancias, _ = comprobar(trazas)
     if discrepancias:
         raise ModeloCambiado(discrepancias)
     return True

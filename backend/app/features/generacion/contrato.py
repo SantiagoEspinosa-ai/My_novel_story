@@ -11,7 +11,16 @@ porque repetirlo repite el error. Lo ve una persona.
 
 from dataclasses import dataclass
 
+import re
+
 from app.commons.dominio.enumeraciones import EjeDeValor, SignoDeCambio
+
+# Un identificador del dominio: ASCII, sin espacios y sin acentos. Lo que no
+# encaja aqui es prosa, y la prosa en un campo de referencia es un fallo de
+# **contrato**: si llega a la puerta, `INV-03` lo denunciara como "actua sobre
+# un hecho que no conoce", que describe mal el defecto y hereda una severidad
+# `bloqueante` que no le corresponde (Regla 4 de `Docs/verification.md`).
+IDENTIFICADOR = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 
 
 class FalloDeContrato(Exception):
@@ -46,4 +55,15 @@ def leer(bruto: dict) -> Respuesta:
         SignoDeCambio(cv["signo"])
     except (KeyError, ValueError) as e:
         raise FalloDeContrato("`cambio_de_valor` fuera de esquema: {0}".format(e))
+    for i, rev in enumerate(delta.get("revelaciones") or []):
+        for campo in ("sujeto", "hecho"):
+            valor = rev.get(campo)
+            if not isinstance(valor, str) or not IDENTIFICADOR.match(valor):
+                raise FalloDeContrato(
+                    "revelaciones[{0}].{1} tiene que ser un identificador y "
+                    "es {2!r}. `SPEC-03` decidio referencias, no prosa: una "
+                    "frase aqui llega a `INV-03`, que la denuncia como un "
+                    "personaje actuando sobre un hecho que no conoce y le da "
+                    "severidad bloqueante. El defecto es de formato".format(
+                        i, campo, valor))
     return Respuesta(texto=texto, delta=delta)

@@ -310,6 +310,34 @@ el manuscrito con los tres validadores conformes**. La longitud es un número, y
 pedirle a un juez que compruebe un número es lo que dejó el hueco. Es la misma
 lección que la Regla 3 por otra puerta: lo que se puede contar, se cuenta.
 
+### Regla 4 — Una violación de contrato se detecta en la frontera, no en la puerta
+
+**Si llega a la puerta, la puerta juzga lo que puede y se equivoca de diagnóstico.**
+
+Se midió en la primera generación real. El delta volvió con frases donde el dominio quiere
+identificadores —`{"sujeto": "casa familiar", "hecho": "el reloj de pared funciona sin que
+nadie le haya dado cuerda"}`— y `INV-03` levantó tres `bloqueante` diciendo que **un
+personaje actúa sobre un hecho que no conoce**. Es lo único que esa invariante sabe decir, y
+la causa era otra: el delta no usaba referencias.
+
+Las consecuencias se acumulan:
+
+- **El hallazgo describe mal el defecto**, así que quien lo lea busca donde no es.
+- **Hereda la severidad de la puerta**, no la del defecto real. Un fallo de formato pasa a
+  ser `bloqueante`.
+- Y como una `bloqueante` **no admite rendición**, eso **detiene la novela** por una causa
+  que el hallazgo no nombra.
+
+**Es la misma lección que el bug de `is`** (`F-19`): un dato que entra al dominio sin pasar
+por su frontera hace que algo más adentro falle o acierte por accidente. `SPEC-03` decidió
+*"referencias, no prosa"* para el dominio; la frontera que lo hace cumplir es el **contrato**,
+no la invariante.
+
+**Y el contrato no basta solo.** Si el prompt no dice qué identificadores existen, se está
+pidiendo lo imposible y el rechazo es merecido pero inútil. Las dos mitades: el prompt lleva
+los identificadores disponibles y el contrato comprueba que la respuesta los use, porque
+**un prompt bien construido no garantiza una respuesta bien formada.**
+
 ### Regla 3 — Un validador no comparte implementación con lo que valida
 
 **Si el validador usa la misma pieza que la cosa validada, no está verificando:
@@ -421,7 +449,7 @@ implantación".
 | VER-08 | El texto completo de una escena se guarda pero no se recupera por similitud | T | integration testing | La búsqueda vectorial solo devuelve fichas, resúmenes y presagios | Comprueba el **índice**, no el **camino de lectura**: leer el texto por clave primaria lo esquiva *(lo cubre `VER-07`)* | `commons/db/tests/` |
 | VER-09 | El estado del mundo se reconstruye acumulando deltas en orden, **contrastado con una implementación de referencia** | T | property-based testing | Reconstruir con el aplicador de producción y con un **aplicador de referencia ingenuo escrito solo para la prueba** da el mismo estado (Regla 3) | Comprueba que el estado **se construye bien desde el delta**, no que el **delta sea cierto** *(lo cubre parcialmente `VER-39`)* | `features/consolidacion/tests/` |
 | **VER-61** | El contador de delegaciones **no está por debajo del suelo reconstruible** desde los artefactos de la obra | T | integration testing | Se reconstruye desde los artefactos cuántas delegaciones hicieron falta **como mínimo** y se compara con el contador. **Tres resultados con significado distinto**: contador > suelo es normal —hay reintentos sin artefacto—; contador = suelo es sospechoso en una obra con reescrituras; contador < suelo es **error**, se perdieron delegaciones que sí produjeron trabajo | **Compara contra un suelo, no contra una medida.** No ve las delegaciones que no dejaron ningún artefacto, y sin los intentos conservados en disco no puede calcular el suelo: entonces lo dice y no concluye, en vez de dar por bueno un suelo de cero | `commons/trabajos/tests/` |
-| **VER-62** | El modelo registrado en cada delegación de una obra coincide con el declarado al empezarla | A | static analysis | Se recorren las trazas de la obra y se comparan con el modelo declarado. Cero discrepancias. Las trazas **sin modelo registrado** se devuelven aparte: no cuentan como conformidad | **No ve el enrutado si la traza registra lo que se pidió en vez de lo que respondió.** Entonces estaría en verde mientras el cambio ocurre, y sería un eco: la Regla 3 otra vez. Cerrarlo pide que el registro venga de la respuesta |
+| **VER-62** | El **conjunto** de modelos es estable entre las delegaciones de una misma obra | A | static analysis | Se recorren las trazas y se compara el conjunto canónico de cada una contra el de la primera que reportó algo. Cero discrepancias. **No se compara contra lo declarado**: el declarado es corto —`fable`— y el reportado canónico —`claude-fable-5-1`—, así que no coincidirían nunca. Las trazas **sin modelo registrado** se devuelven aparte: no cuentan como conformidad | **Vigila la estabilidad, no la identidad**: si toda la obra usa un conjunto equivocado pero el mismo, pasa. Y no ve el enrutado si la traza registra lo que se pidió en vez de lo que respondió. Entonces estaría en verde mientras el cambio ocurre, y sería un eco: la Regla 3 otra vez. Cerrarlo pide que el registro venga de la respuesta |
 | **VER-60** | El texto de una escena en el manuscrito es byte a byte el del `Borrador` que se auditó | T | integration testing | Se ensambla un manuscrito con escenas `aceptada` y `aceptada_por_rendicion` y se compara cada una con su `Borrador`. Cero diferencias | Compara el **texto**, no el **orden ni lo que falta**: un manuscrito al que le falte una escena entera, o que las ponga desordenadas, pasa |
 | VER-10 | Ninguna escena pasa a `consolidada` sin su delta aplicado (`INV-05`) | T | unit testing | Intentar consolidar sin delta aplicado falla; la escena siguiente no se puede generar | Comprueba que el delta **se aplicó**, no que se aplicara **entero** *(lo cubre `VER-42`)* | `features/consolidacion/tests/` |
 | VER-11 | `bloqueante` detiene la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir, y un `mayor` abierto impide cerrar el capítulo | T | unit testing | Un hallazgo de cada severidad produce exactamente el comportamiento declarado, **incluida la diferencia entre `mayor` y `menor` en la puerta de cierre de capítulo** (`SPEC-04` C-2) | Comprueba el comportamiento **dada** una severidad, no que la **asignada sea la correcta** *(lo cubre `VER-38`)* | `commons/invariantes/tests/` |
@@ -670,7 +698,7 @@ repositorio. Encontraron dos el primer día:
 | `VER-59` | Una forma reducida del bloque de estado que retire `ubicaciones` | Falla: `INV-02` la lee y es `bloqueante` de escena |
 | `VER-60` | Un ensamblador que normaliza comillas al montar el manuscrito | Falla: el informe describiría un texto que ya no es el entregado |
 | `VER-61` | Una delegación que se emitió, dejó artefacto y no se anotó | Falla: el contador queda por debajo del suelo |
-| `VER-62` | Una delegación enrutada a otro modelo por las salvaguardas del primero | Falla: dos puntuaciones de modelos distintos no son comparables |
+| `VER-62` | La escena 3 usa `{fable, haiku}` y la 40 usa `{opus}` | Falla: dos puntuaciones de conjuntos distintos no son comparables |
 
 ### Lo que el documento no aguantó al llevarlo a código
 

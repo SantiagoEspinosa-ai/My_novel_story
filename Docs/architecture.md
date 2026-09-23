@@ -735,9 +735,32 @@ esperando una respuesta que el dato no da.
   `Docs/definitions.md` y las filas `VER-32` y `VER-33` de `Docs/verification.md`: las tres se
   cierran a la vez o ninguna.
 - [ ] **Reparto de tokens por agente.** Pendiente de medida real (`VER-34`). **Se contesta sola** con una traza real.
-- [ ] **Coste por escena con la decisión `A-03`.** Una llamada por agente sale más caro que **Se contesta sola** con una traza real.
-  agrupar por fase, y nadie ha medido cuánto. Si el coste resultara insostenible, `A-03` es
-  la decisión que habría que revisar (`VER-36`).
+- [x] ~~**Coste por escena con la decisión `A-03`**~~ — **medido el 2026-09-23 en `PLAN-01` E5, y el número está aquí porque conviene verlo antes de decidir nada.**
+
+  **0,2508 $** por una escena de 325 palabras, en 22 segundos, con **un solo agente**. El
+  desglose dice dónde se va: 1.188 tokens de salida —la escena— contra **9.476 de creación
+  de caché**. **Lo que cuesta es montar el contexto, no escribir.**
+
+  Y `A-03` dice *un agente = una llamada con contexto propio*, así que **cada agente paga su
+  propia creación de caché**. La proyección a una obra —10 agentes × 60 escenas = 600
+  delegaciones, sin reintentos ni rendición— usando una tarifa mezclada de 0,0235 $/1k
+  tokens derivada de esa única medida:
+
+  | Contexto por delegación | Por delegación | Obra completa |
+  | --- | --- | --- |
+  | El medido (138 tokens) | 0,25 $ | **150 $** |
+  | 50.000 tokens | 1,20 $ | **722 $** |
+  | El techo de 100.000 | 2,38 $ | **1.428 $** |
+
+  **Lo que hace esto provisional, y hay que decirlo alto:** el contexto de esa escena fueron
+  **138 tokens**, así que el coste lo domina un arranque que con estado real será otra cosa,
+  y **no sabemos en qué dirección**. Puede subir —más contexto por delegación— o bajar
+  mucho, porque en la medida `cache_read` fue **cero**: era la primera llamada y nada se
+  amortizó. Si el caché se reutiliza entre delegaciones, la columna de la derecha se cae.
+  **Una sola medida no distingue las dos cosas.**
+
+  `A-03` **no se revisa todavía**: revisarla con este número sería decidir sobre un arranque
+  en frío. Lo que sí queda es que la pregunta dejó de ser abstracta.
 - [ ] **Suficiencia del reparto por niveles de `CLAUDE.md`.** Nunca se ha ensamblado el **Se contesta sola** con una traza real.
   contexto de una escena real para ver si los niveles caben (`VER-37`).
 - [ ] **Desempate juez contra regla.** Con `INV-03` ya de tipo `regla`, la pregunta deja **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide. **La traza dirá cuántas veces discrepan y en qué dirección, no quién gana.**

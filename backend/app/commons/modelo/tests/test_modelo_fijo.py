@@ -10,30 +10,41 @@ import pytest
 from app.commons.modelo import modelo_fijo, traza as modulo_traza
 
 
-def _t(trabajo, modelo):
-    return modulo_traza.nueva(agente="escritor", escena="e1", trabajo=trabajo,
-                              modelo=modelo)
+def _t(trabajo, modelos):
+    t = modulo_traza.nueva(agente="escritor", escena="e1", trabajo=trabajo)
+    t.modelos = modelos
+    return t
 
 
-def test_todas_con_el_mismo_modelo_no_hay_discrepancia():
-    disc, sin = modelo_fijo.comprobar("fable", [_t("t1", "fable"), _t("t2", "fable")])
-    assert disc == [] and sin == []
+FABLE = ["claude-fable-5-1", "claude-haiku-4-5-20251001"]
 
 
-def test_caso_negativo_una_delegacion_enrutada_a_otro_modelo():
-    """Lo que las salvaguardas del modelo pueden hacer sin avisar."""
-    disc, _ = modelo_fijo.comprobar("fable", [_t("t1", "fable"), _t("t2", "opus")])
+def test_el_mismo_conjunto_en_todas_no_hay_discrepancia():
+    """Una delegacion usa un conjunto, no un modelo: se midio `fable` + `haiku`."""
+    disc, sin = modelo_fijo.comprobar([_t("t1", FABLE), _t("t2", list(reversed(FABLE)))])
+    assert disc == [] and sin == [], "el orden no importa, el conjunto si"
+
+
+def test_caso_negativo_el_conjunto_cambia_a_mitad_de_obra():
+    """Si la escena 3 usa un conjunto y la 40 otro, dejan de ser comparables."""
+    disc, _ = modelo_fijo.comprobar([_t("t1", FABLE), _t("t2", ["claude-opus-5"])])
     assert len(disc) == 1
-    assert disc[0].encontrado == "opus" and disc[0].esperado == "fable"
+    assert disc[0].encontrado == ("claude-opus-5",)
+
+
+def test_no_se_compara_contra_el_declarado_porque_nunca_coincidiria():
+    """El declarado es `fable` y el reportado `claude-fable-5-1`: manda el canonico."""
+    disc, _ = modelo_fijo.comprobar([_t("t1", FABLE), _t("t2", FABLE)])
+    assert disc == []
 
 
 def test_exigir_levanta_y_dice_por_que_importa():
     with pytest.raises(modelo_fijo.ModeloCambiado, match="no son comparables"):
-        modelo_fijo.exigir("fable", [_t("t1", "opus")])
+        modelo_fijo.exigir([_t("t1", FABLE), _t("t2", ["claude-opus-5"])])
 
 
 def test_una_traza_sin_modelo_no_cuenta_como_conformidad():
     """Decir que todo cuadra con media muestra vacia es lo que `RF-25` prohibe."""
-    disc, sin = modelo_fijo.comprobar("fable", [_t("t1", "fable"), _t("t2", None)])
+    disc, sin = modelo_fijo.comprobar([_t("t1", FABLE), _t("t2", None)])
     assert disc == []
     assert sin == ["t2"], "se devuelve aparte, no se da por bueno"

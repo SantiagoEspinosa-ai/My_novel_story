@@ -6,6 +6,17 @@ Texto **y** delta en la misma respuesta (`RF-15`, `A-03`). Extraer el delta
 despues, releyendo la escena, es mas caro y menos fiel: el modelo tendria que
 deducir lo que el mismo acaba de decidir.
 
+QUE SI LLEVA: LOS IDENTIFICADORES DISPONIBLES
+----------------------------------------------
+Sin saber que ids existen, el modelo no puede citarlos y se le esta pidiendo lo
+imposible: en la primera generacion real devolvio `"sujeto": "casa familiar"`
+porque nadie le habia dicho que los sujetos son identificadores ni cuales hay.
+El rechazo del contrato habria sido merecido e inutil.
+
+Es la mitad del arreglo. La otra la hace el contrato, que comprueba que la
+respuesta los use: **un prompt bien construido no garantiza una respuesta bien
+formada.**
+
 QUE NO LLEVA, Y ESO IMPORTA MAS
 --------------------------------
 No lleva las reglas del proyecto ni los enunciados de las invariantes. El
@@ -39,6 +50,11 @@ LO QUE YA ES VERDAD EN LA FICCION
 LO QUE ESTA ESCENA TIENE QUE HACER
 {objetivo}
 
+IDENTIFICADORES QUE PUEDES CITAR EN EL DELTA
+Usa SOLO estos. Son identificadores, no descripciones: si lo que quieres decir
+no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
+{identificadores}
+
 {problemas}
 FORMATO DE LA RESPUESTA
 Devuelve un unico objeto JSON con dos claves:
@@ -58,7 +74,8 @@ CON_PROBLEMAS = """PROBLEMAS DEL INTENTO ANTERIOR QUE HAY QUE CORREGIR
 """
 
 
-def construir(parametros: dict, estado: dict, objetivo: str, problemas=None) -> str:
+def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
+              personajes=None, hechos=None) -> str:
     """Los problemas del intento anterior entran en el prompt, no en un aviso.
 
     En la otra rama el aviso de longitud lo leia la sesion orquestadora y no el
@@ -71,7 +88,12 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None) -> 
         bloque = CON_PROBLEMAS.format(
             lista="\n".join("- [{0}] {1}".format(p["invariante"], p["descripcion"])
                             for p in problemas))
+    ids = "\n".join([
+        "personajes: " + (", ".join(personajes or []) or "(ninguno)"),
+        "hechos: " + (", ".join(hechos or []) or "(ninguno)"),
+    ])
     return PLANTILLA.format(
+        identificadores=ids,
         parametros=json.dumps(parametros, ensure_ascii=False, sort_keys=True),
         estado=json.dumps(estado, ensure_ascii=False, sort_keys=True),
         objetivo=objetivo,
