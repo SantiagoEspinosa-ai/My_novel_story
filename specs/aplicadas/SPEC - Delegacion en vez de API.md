@@ -1,9 +1,11 @@
 ---
 id: SPEC-14
 titulo: El harness delega en sesiones, no llama a una API
-estado: aprobada
+estado: aplicada
 aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-23
+fecha_aplicacion: 2026-09-23
+commit_de_aplicacion: d0d849e
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
 version: 1
@@ -136,3 +138,24 @@ saberse: entra en `PC-17`, que ya dice que nadie comprueba esa regla.
 | 2 | ¿`VER-41` se reescribe o se retira? | **Se retira y se quema.** El nuevo afirma otra cosa; reutilizar el id haría mentir a su historial |
 | 3 | ¿`tokens_reservados` desaparece? | **Sí.** Un nombre que dice "reservado" sin reservar es peor que no tenerlo |
 | 4 | ¿El transporte se adopta o se reescribe? | **Se adopta**, con su parseo defensivo. Los hallazgos 13 y 14 están pagados |
+
+
+# Qué se tocó al aplicarla
+
+`CLAUDE.md`, `SPEC-01` (§2.4 y `RNF-P`), `Docs/verification.md` y
+`Docs/architecture.md`. En código: `commons/modelo/proveedor.py` reescrito entero,
+`features/orquestacion/bucle.py` sin reserva, y las pruebas que dependían de ella.
+
+## Lo que la spec no previó
+
+**`MF-25` dejó de ser posible, y con él `VER-57`.** El interbloqueo del presupuesto salía de
+cruzar `P-2` —la reserva se libera al volver— con `P-5` —la llamada del Escritor es
+exclusiva—. Al retirar la reserva en `C-1`, **no queda nada que retener**. No es un modo de
+fallo que se tape: es uno que desaparece con su causa, que es la primera vez que pasa en
+este proyecto. Los dos identificadores quedan quemados y la sección de `architecture.md`
+tachada, porque el razonamiento sigue enseñando algo: era un fallo que no salía de ningún
+error, sino de cruzar dos decisiones correctas por separado.
+
+Lo destapó una prueba, no una relectura: `test_el_presupuesto_se_libera_tambien_cuando_falla`
+dejó de tener sentido al quitar la reserva, y preguntarse qué la sustituía fue lo que llevó
+a ver que no la sustituía nada.
