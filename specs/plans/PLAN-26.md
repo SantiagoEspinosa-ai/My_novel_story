@@ -2,9 +2,9 @@
 id: PLAN-26
 spec: SPEC-26
 titulo: Implementación del pipeline de la novela regalo
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión (sustituir por su identificador)"
+fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
 version: 1
 ---
