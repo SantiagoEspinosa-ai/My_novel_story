@@ -63,3 +63,11 @@ TOPE_REVISIONES_DE_PLAN = 3
 # primer intento. Agotadas, el capitulo se acepta por rendicion con sus
 # hallazgos visibles.
 TOPE_REESCRITURAS_DEL_EDITOR = 3
+
+# Provisional: elegido por razonamiento, **pendiente de medida** (`SPEC-26`
+# `RF-10`). La medida esta definida: comparar las notas del Editor con la
+# revision humana de una novela completa con la misma rubrica, y mover el umbral
+# a donde las dos coincidan. Hasta entonces, «menos de 3 en cualquier criterio»
+# obliga a reescribir.
+# Caduca con: harness/evals/revision_humana/
+UMBRAL_DEL_EDITOR = 3

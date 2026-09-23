@@ -52,6 +52,8 @@ from app.features.escaleta import repository as repo
 from app.features.orquestacion import bucle
 from app.commons.dominio.enumeraciones import EstadoDeHallazgo
 from app.commons.dominio.modelos import Hallazgo
+from app.commons import config
+from app.commons.dominio.edicion import ValoracionesDelEditor
 from app.commons.invariantes.registro import TODAS
 from app.commons.politica.personalizacion import claves_ausentes, nombres_mal_escritos
 from app.commons.politica.vetadas import coincidencias
@@ -61,6 +63,13 @@ que encuentres, cada uno con su gravedad y su fragmento literal de evidencia.
 
 Mira: si la escena mueve un valor dramatico, si la tension escala, si el punto
 de vista se sostiene, y si la prosa evita la explicacion de lo que ya se ve.
+"""
+
+
+RUBRICA_DEL_EDITOR = """Juzga este capitulo de una novela para regalar con tu rubrica.
+Una nota de 1 a 5 por criterio -continuidad, tono, arco,
+coherencia_de_personajes, ritmo, personalizacion-, cada una con su justificacion
+y, si es baja, una instruccion concreta para el escritor.
 """
 
 
@@ -101,6 +110,51 @@ def juez_aislado(modelo=None, definicion=None):
     return proveedor.SesionDelegada(
         modelo=modelo or os.environ.get(proveedor.VARIABLES["modelo_juez"]),
         agente="juez", cwd=preparar_directorio_aislado(definicion))
+
+
+def editor_aislado(modelo=None, definicion=None):
+    """El Editor, aislado como el Juez (`A-06`): un directorio con su agente y
+    sin `CLAUDE.md`, y sin herramientas."""
+    definicion = definicion or (pathlib.Path(__file__).resolve().parents[4]
+                                / ".claude" / "agents" / "editor.md")
+    return proveedor.SesionDelegada(
+        modelo=modelo, agente="editor",
+        cwd=preparar_directorio_aislado(definicion, nombre="editor"))
+
+
+def _hallazgo_del_editor(con, escena_id, estado, descripcion):
+    h = Hallazgo(invariante="INV-26", verificador="editor", escena=escena_id,
+                 severidad=TODAS["INV-26"].severidad, estado=EstadoDeHallazgo(estado),
+                 descripcion=descripcion)
+    repo.guardar_hallazgo(con, invariante=h.invariante, verificador=h.verificador,
+                          escena=h.escena, severidad=h.severidad, estado=h.estado,
+                          descripcion=h.descripcion)
+    return h
+
+
+def _editar(con, c, editor, escena_id, texto, trabajo, umbral):
+    """`INV-26`. Una nota bajo el umbral es un hallazgo `mayor` que entra en el
+    siguiente intento con la instruccion del Editor. Una respuesta ilegible es
+    `sin_veredicto`: se guarda, pero **no** entra en los hallazgos del intento,
+    porque un juicio que no llego no es una violacion (`SPEC-18` C-3)."""
+    bruto, _ = _delegar(editor, RUBRICA_DEL_EDITOR + "\n\nCAPITULO\n" + texto,
+                        "editor", escena_id, trabajo, c.trazas)
+    try:
+        leidas = ValoracionesDelEditor.model_validate(bruto or {})
+    except Exception as e:
+        _hallazgo_del_editor(con, escena_id, "sin_veredicto",
+                             "el Editor no devolvio una valoracion legible: {0}".format(
+                                 str(e)[:300]))
+        c.veredicto = {"veredicto": "SIN_VEREDICTO"}
+        return
+    c.veredicto = leidas.model_dump(mode="json")
+    for v in leidas.valoraciones:
+        if v.nota < umbral:
+            c.generacion.hallazgos.append(_hallazgo_del_editor(
+                con, escena_id, "abierto",
+                "{0}: nota {1} (umbral {2}). {3} Instruccion: {4}".format(
+                    v.criterio.value, v.nota, umbral, v.justificacion,
+                    v.instruccion or "(ninguna)")))
 
 
 def _delegar(modelo, prompt, agente, escena, trabajo, trazas):
@@ -149,7 +203,7 @@ def _acta_de(acta, texto, c):
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
              techo=100_000, trabajo="ciclo", hechos=None, problemas=None,
              instrucciones=None, acta=None, vetadas=None, nombres=None,
-             imprescindibles=None):
+             imprescindibles=None, es_editor=False, umbral=None):
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
@@ -195,12 +249,19 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
         c.generacion.hallazgos.append(h)
 
     # 2. El Juez, aislado.
-    bruto, _ = _delegar(juez, RUBRICA + "\n\nESCENA\n" + texto, "juez",
-                        escena_id, trabajo, c.trazas)
-    c.veredicto = bruto if bruto else {"veredicto": "SIN_VEREDICTO"}
-    if bruto is None:
-        # `SPEC-10` C-2: la ausencia de juicio no es un pase.
-        c.veredicto = {"veredicto": "SIN_VEREDICTO", "problemas": []}
+    if es_editor:
+        # `SPEC-26`: con un fallo determinista (`INV-23`) el intento ya se va a
+        # repetir; pagar al Editor sobre el seria pagar un juicio que no cuenta.
+        if not c.generacion.hallazgos:
+            _editar(con, c, juez, escena_id, texto, trabajo,
+                    config.UMBRAL_DEL_EDITOR if umbral is None else umbral)
+    else:
+        bruto, _ = _delegar(juez, RUBRICA + "\n\nESCENA\n" + texto, "juez",
+                            escena_id, trabajo, c.trazas)
+        c.veredicto = bruto if bruto else {"veredicto": "SIN_VEREDICTO"}
+        if bruto is None:
+            # `SPEC-10` C-2: la ausencia de juicio no es un pase.
+            c.veredicto = {"veredicto": "SIN_VEREDICTO", "problemas": []}
 
     # 3. Consolidar: despues de las puertas, antes de resumir.
     # Quien decide es `severidad.py`, una vez (`D-4`), y desde `SPEC-18` C-3

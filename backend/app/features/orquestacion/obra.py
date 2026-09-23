@@ -155,7 +155,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
                  vetadas=None, tope_vetadas=None, genero=None, nombres=None,
-                 imprescindibles=None):
+                 imprescindibles=None, editor=False):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -229,7 +229,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                                 material, obra, techo, tope_intentos, g,
                                 instrucciones, vetadas=vetadas,
                                 tope_vetadas=tope_vetadas, nombres=nombres,
-                                imprescindibles=(imprescindibles or {}).get(escena["id"]))
+                                imprescindibles=(imprescindibles or {}).get(escena["id"]),
+                                es_editor=editor)
 
         if c.fallo:
             g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -394,7 +395,7 @@ def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
 
 def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id,
               techo, tope, g, instrucciones=None, vetadas=None, tope_vetadas=0,
-              nombres=None, imprescindibles=None):
+              nombres=None, imprescindibles=None, es_editor=False):
     """Hasta `tope` intentos, y los problemas de uno entran en el siguiente.
 
     Se para en cuanto sale limpia, y **tambien en cuanto una `bloqueante`
@@ -427,7 +428,7 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                            acta=_acta_de_la_escena(escena, obra_id,
                                                    material["hechos"]),
                            vetadas=vetadas, nombres=nombres,
-                           imprescindibles=imprescindibles)
+                           imprescindibles=imprescindibles, es_editor=es_editor)
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
         # `F-49`: la traza sobrevive al proceso. Es lo que hace que la
         # contencion de `PC-9` -saber que bloques quedaron fuera- valga
