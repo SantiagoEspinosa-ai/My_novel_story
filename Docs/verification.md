@@ -494,6 +494,9 @@ que nadie pensó como decisión**.
 | `uso_de_hecho`, `contradice` | — (nadie deduce ese tipo) | Nada: la consulta corre entera | Lista vacía, que se lee como *"no hay contradicciones"* y significa *"nadie ha buscado"* |
 | `edades()` | — (la fecha de nacimiento es opcional) | La comparación, para quien no la tenga | `incoherentes: []`, que se lee como *"las edades cuadran"* |
 
+> **De las tres, la tercera es la peor. Las otras dos callan; ésta habla y dice otra cosa, y
+> eso cuesta más que un silencio porque manda a depurar al sitio equivocado.**
+
 **Y hay una tercera, que es la peor: el error que ni siquiera dice qué se rompió.** Un
 parámetro llamado `capitulo` tapó el módulo `capitulo` que su fichero importaba, así que dentro
 de esa función `capitulo.cerrar` dejó de ser el módulo y pasó a ser el argumento —`None`—. El
@@ -1069,6 +1072,27 @@ Qué mide, y por qué ninguna de las anteriores podía medirlo:
 | `VER-64` | ~29% con `n=7` | Una frecuencia con `n=60`, y sobre escenas que **no son todas primeras escenas de capítulo** |
 | `F-38` | Probado contra dobles | Si la reanudación aguanta cuando lo que se salta son diez capítulos y no dos escenas |
 | `VER-36` | Coste por escena de dos ejecuciones cortas | El coste de una obra, que es la cifra que decide si esto es viable |
+
+### Lo que la repetición tiene que contestar
+
+La primera ejecución no pudo contestar nada de esto, y no por poco: le faltaban las tablas.
+La repetición se lanza con **todo puesto** —migraciones al día, procedencia con commit y
+huella de configuración, deltas persistidos, capítulos de verdad y un brief que siembre
+material— y tiene que salir de ella con estas cuatro respuestas:
+
+| Pregunta | Con qué se contesta | Qué decide |
+| --- | --- | --- |
+| **¿El contexto crece entre capítulos?** | Las medidas por escena que el guion ya acumula, agrupadas por capítulo. Lo que hay que mirar es si la primera escena de cada capítulo arranca donde acabó el anterior o vuelve a empezar | `VER-37`. Y ahora sí se puede: hasta `F-45`, los resúmenes no cruzaban el corte, así que un estancamiento entre capítulos habría sido del filtro y no del sistema |
+| **¿Cuántas `acciones` se declaran en toda la obra?** | `delta_de_escena`, que ya se persiste, contando el campo `acciones` | Si el cero de `INV-03` significa algo. **Cero acciones y cero bloqueos es `F-30`; cien acciones y cero bloqueos es una medida.** Sin este número el otro no se puede interpretar |
+| **¿Se llena `evento_cronologico`?** | La tabla, tras la obra: cuántos eventos, cuántos con `t_fabula` legible, cuántos participantes `presente` | Si la verificación formal puede correr sobre una obra real. Hoy `generar_lean.py` muere con `no such table`, que es el comportamiento correcto pero deja las cuatro invariantes sin ejercitar |
+| **¿Cuánto arrastra un cambio, por hecho?** | `consultas.capitulos_a_regenerar` y `arrastre_de_incluir_mencion`, sobre los diez hechos | La elección entre `S-1` y `S-2` de `SPEC-23`, y de paso si `menciona` entra en el conjunto de la regeneración, que `SPEC-21` C-2 dejó **pendiente de medida** |
+
+**Y la ejecución queda registrada con su commit y su huella de configuración**, que es lo que
+`MF-27` existe para exigir: un artefacto que no dice con qué código y con qué configuración se
+produjo es indistinguible de uno producido por los de ahora. `procedencia.registrar()` guarda
+las dos mitades, y **las dos hacen falta**: el mismo código con otro brief produce otra obra, y
+comparar las dos tandas sin saberlo sería comparar dos cosas distintas creyendo que son la
+misma.
 
 **El desatasco automático solo dice cosas del contrato.** Cuando un capítulo se para, el
 guion reintenta **una vez** con una instrucción que recuerda la diferencia entre revelar y
