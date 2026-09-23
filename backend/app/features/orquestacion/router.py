@@ -32,6 +32,7 @@ from app.commons.dominio.enumeraciones import Severidad
 from app.commons.trabajos import cola
 from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.escaleta import repository as repo
+from app.features.orquestacion import entrega
 
 router = APIRouter(tags=["ciclo"])
 
@@ -127,3 +128,13 @@ def consultar_trabajo(id_trabajo: str, con: sqlite3.Connection = Depends(conexio
     return {"id": t.id, "tipo": t.tipo, "estado": t.estado.value,
             "resultado": t.resultado, "motivo": t.motivo_ultimo_fallo,
             "volvio_tras_abandono": t.volvio_tras_abandono}
+
+
+@router.post("/obras/{id_obra}/entregar")
+def entregar(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-25` `RF-21`: borra la entrevista y conserva la novela, sus vetadas y
+    sus hechos. Devuelve cuantas filas se borraron, nunca que contenian."""
+    try:
+        return entrega.entregar(con, id_obra)
+    except entrega.NoSePuedeEntregar as e:
+        raise HTTPException(409, str(e))

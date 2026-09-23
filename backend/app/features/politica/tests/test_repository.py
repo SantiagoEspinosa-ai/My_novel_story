@@ -50,7 +50,7 @@ def test_nivel_franja_de_edad_depende_del_destinatario(con):
 
 
 def test_nivel_novela_solo_en_su_obra(con):
-    repo.vetar_en_novela(con, "obra-a", ["Luis Pérez"])
+    repo.vetar_en_novela(con, "obra-a", nombres=["Luis Pérez"])
     assert "Luis Pérez" in _formas(con, "obra-a", 40)
     assert "Luis" in _formas(con, "obra-a", 40)
     assert "Luis" not in _formas(con, "obra-b", 40)
@@ -63,16 +63,21 @@ def test_variante_con_acento_y_plural_contra_la_lista_guardada(con):
 
 
 def test_cada_vetada_dice_su_nivel(con):
-    repo.vetar_en_novela(con, "obra-a", ["Nala"])
+    repo.vetar_en_novela(con, "obra-a", nombres=["Nala"])
     niveles = {v.forma: v.nivel for v in repo.vetadas_para(con, "obra-a", 8, FRANJAS)}
     assert niveles == {"zoquete": NV.GLOBAL, "calavera": NV.FRANJA_DE_EDAD,
                        "Nala": NV.NOVELA}
 
 
+def test_una_expresion_vetada_no_se_parte_como_un_nombre(con):
+    repo.vetar_en_novela(con, "obra-a", palabras=["tema de familia"])
+    assert _formas(con, "obra-a", 40) == ["zoquete", "tema de familia"]
+
+
 def test_cargar_dos_veces_no_duplica(con):
     repo.cargar_listas(con, LISTAS)
-    repo.vetar_en_novela(con, "obra-a", ["Nala"])
-    repo.vetar_en_novela(con, "obra-a", ["Nala"])
+    repo.vetar_en_novela(con, "obra-a", nombres=["Nala"])
+    repo.vetar_en_novela(con, "obra-a", nombres=["Nala"])
     assert len(repo.vetadas_para(con, "obra-a", 8, FRANJAS)) == 3
 
 

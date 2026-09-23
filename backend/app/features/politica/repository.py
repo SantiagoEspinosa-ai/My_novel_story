@@ -58,9 +58,17 @@ def cargar_listas(con, listas):
                 _insertar(con, forma, NV.FRANJA_DE_EDAD, franja=franja)
 
 
-def vetar_en_novela(con, obra, nombres):
-    """El nivel por novela. Cada entrada se veta en todas sus formas (`RF-15`)."""
+def vetar_en_novela(con, obra, palabras=(), nombres=()):
+    """El nivel por novela.
+
+    Las palabras y expresiones se vetan tal cual; los nombres propios, ademas,
+    por su nombre de pila (`RF-15`). Van separados porque partir una expresion
+    como si fuera un nombre vetaria su primera palabra: «tema de familia»
+    acabaria vetando «tema» en toda la novela.
+    """
     with con:
+        for palabra in palabras:
+            _insertar(con, palabra, NV.NOVELA, obra=obra)
         for nombre in nombres:
             for forma in formas_de_nombre(nombre):
                 _insertar(con, forma, NV.NOVELA, obra=obra)
