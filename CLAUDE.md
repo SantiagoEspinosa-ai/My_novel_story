@@ -10,7 +10,7 @@ La línea de arriba importa `AGENTS.md` entero: Claude Code la expande al arranc
 | --- | --- | --- |
 | Backend | FastAPI | Único servicio HTTP. Nada de lógica de dominio en el frontend |
 | Frontend | React | Consume la API, no toca la base de datos |
-| Contexto del modelo | 100.000 tokens | Límite duro por llamada, incluida la salida |
+| Contexto del modelo | 100.000 tokens | Límite duro **sobre lo que el harness manda** en una delegación, incluida la reserva de salida |
 | Persistencia | SQLite con soporte vectorial | Una sola base. Sin servicio de vectores externo |
 
 ### FastAPI
@@ -25,6 +25,13 @@ La línea de arriba importa `AGENTS.md` entero: Claude Code la expande al arranc
 - Una escena se muestra siempre con su estado (`planificada`…`consolidada`) y con los hallazgos abiertos que tenga. Un texto sin ese contexto induce a darlo por bueno.
 
 ### Límite de contexto: 100.000 tokens
+
+**Es un límite sobre lo que mandamos, no sobre la ventana del otro lado.** El harness delega
+en sesiones de Claude Code y no administra su contexto: puede medir lo que ensambla y no
+puede reservar nada sobre un techo ajeno. Sigue siendo un límite real sobre algo real —lo
+que sale de nuestro lado— y lo que desaparece es la garantía sobre lo que pasa al recibirlo.
+El reparto por niveles, el orden de recorte y `RF-26` no cambian: mandar menos sigue siendo
+mejor (`SPEC-14` C-1).
 
 El presupuesto se reparte por niveles de memoria y se comprueba antes de cada llamada. Si no cabe, se recorta por el nivel de menor prioridad, nunca truncando por el final.
 

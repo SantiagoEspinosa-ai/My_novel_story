@@ -364,23 +364,24 @@ tiene derecho a distinguirlos.
 **Quien defina el bloque siguiente no debería preguntarse *"¿qué cosas vienen de aquí?"*
 sino *"¿qué de lo que hay aquí lo lee una puerta?"*.**
 
-#### Tres números, no uno
+#### Dos números, y el segundo es un suelo
 
-| Número | Quién lo calcula | Para qué | Cuándo |
-| --- | --- | --- | --- |
-| `tokens_para_recortar` | El ensamblador | Decidir si hace falta otra vuelta | En cada iteración |
-| `tokens_reservados` | El control de presupuesto | Apartar el techo por `P-2` | Una vez, antes de salir |
-| `tokens_estimados` | El contador propio | Reconciliar contra el `usage` del proveedor | Una vez, al registrar la traza |
+`SPEC-14` C-3 retiró el tercero: `tokens_reservados` decía "reservado" sin reservar nada,
+porque el harness no administra la ventana del subagente.
+
+| Número | Quién lo calcula | Qué garantiza |
+| --- | --- | --- |
+| `tokens_para_recortar` | El ensamblador, en cada vuelta | Estimación conservadora: decide si hay que recortar |
+| `tokens_estimados` | Lo que reporta la sesión que delegó | **Es un suelo, no una medida.** Una delegación anotada sin cifras deja el total corto, y eso se dice donde se enseñe el número |
 
 El primero es **una estimación conservadora con su margen declarado**, no una cuenta exacta:
 lo que decide es *"me paso o no"*, no *"por cuánto"*, y contar exacto en cada vuelta del
 bucle paga el tokenizador sin ganar nada. Los otros dos son exactos.
 
-**Mezclar dos cualesquiera rompe la Regla 3 de `Docs/verification.md`.** Si el ensamblador y
-la reserva comparten número, la reserva hereda el margen de una estimación barata. Si la
-reserva y la traza lo comparten, `VER-41` compara un número consigo mismo y vuelve a ser el
-eco que `SPEC-08` cerró. **Es justo lo que alguien unifica al refactorizar creyendo que
-simplifica.**
+**Mezclarlos rompe la Regla 3 de `Docs/verification.md`, y ahora más que antes.** Si el
+número que reporta la sesión y el que estima el ensamblador salieran del mismo sitio,
+`VER-61` compararía uno consigo mismo y volvería a ser el eco que `SPEC-08` cerró. **Es
+justo lo que alguien unifica al refactorizar creyendo que simplifica.**
 
 #### El orden se cambia por spec, nunca por configuración
 
@@ -601,6 +602,10 @@ Los identificadores `O-`, `M-`, `P-` y `T-` se conservan de la versión 1. No se
 
 ### Presupuesto concurrente (`RNF-P`)
 
+> **`SPEC-14` C-1: estos cinco pierden la reserva y conservan la estimación.** El harness no
+> administra la ventana del subagente, así que "reservar" y "liberar" dejan de ser
+> operaciones sobre un techo propio. Lo que queda es medir lo que se manda y no pasarse.
+
 - **P-1.** Los 100.000 tokens son un techo para **todo lo que está en vuelo a la vez**, no
   solo por llamada. **Esto modifica `CLAUDE.md`**, y esa modificación forma parte de esta
   spec.
@@ -610,6 +615,11 @@ Los identificadores `O-`, `M-`, `P-` y `T-` se conservan de la versión 1. No se
   contexto para que quepa: degradar la calidad en silencio para ganar velocidad es
   exactamente el fallo que el sistema intenta evitar.
 - **P-4.** "Esperando presupuesto" es un estado visible y distinguible de "en curso".
+- **P-5.** **Ya no se puede hacer cumplir.** Describía una consecuencia de administrar el
+  techo: si dos delegaciones concurrentes saturan algo, **nos enteramos por fallo y no por
+  control**. Se conserva porque la expectativa sigue siendo válida —el Escritor a tamaño
+  completo es efectivamente exclusivo— pero es una **expectativa, no una garantía**, y quien
+  lo lea mañana tiene que saberlo. El texto original, para no perder el razonamiento:
 - **P-5.** Se asume y se deja escrito el efecto secundario: como el reparto por niveles
   suma exactamente 100.000, una llamada del Escritor a tamaño completo agota el techo
   global y es, de hecho, **exclusiva**. Los agentes que reciben menos niveles —Juez,
