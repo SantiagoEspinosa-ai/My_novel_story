@@ -1,5 +1,5 @@
 ---
-id: SPEC-20
+id: SPEC-22
 titulo: El frontend, y el contrato que nadie comprueba
 estado: en_revision
 aprobada_por:
@@ -9,7 +9,7 @@ fecha: 2026-09-23
 version: 1
 ---
 
-# SPEC-20 — El frontend, y el contrato que nadie comprueba
+# SPEC-22 — El frontend, y el contrato que nadie comprueba
 
 ## Qué problema resuelve
 
@@ -196,7 +196,7 @@ Y lo que esta spec **no** fija, porque no le toca: qué significa que un capítu
 hecho, qué le pasa a las escenas posteriores cuya continuidad se construyó sobre el delta
 viejo, y qué es una versión de la obra. Son las piezas más caras de la lista de abajo —`G-05`
 a `G-09`— y **ninguna es un endpoint**: son una decisión de dominio, y esa decisión es
-**`SPEC-21`**. Sin ella, `C-9` no se puede implementar, y esta spec puede aprobarse igual: declara qué
+**`SPEC-23`**. Sin ella, `C-9` no se puede implementar, y esta spec puede aprobarse igual: declara qué
 tiene que ser verdad, y declara que hoy no lo es.
 
 ---
@@ -232,7 +232,7 @@ acordar antes de escribir nada**, y ninguna de esas se decide aquí.
   requisito ya aprobado (`RF-28`). Va por su cuenta y va antes que esta spec: no decide nada
   nuevo, así que no necesita spec propia, solo la prueba que lo caza.
 - **`G-05`, `G-06`, `G-07` y `G-08` son una sola pregunta** —qué es regenerar en una obra cuya
-  continuidad es acumulativa— y son **`SPEC-21`**, que las trata juntas y enumera las salidas
+  continuidad es acumulativa— y son **`SPEC-23`**, que las trata juntas y enumera las salidas
   posibles sin elegir ninguna. Siguen listadas arriba porque `C-9` sigue dependiendo de ellas;
   lo que ya no hace falta es decidirlas desde aquí.
 

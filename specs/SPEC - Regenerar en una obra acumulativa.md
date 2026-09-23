@@ -1,5 +1,5 @@
 ---
-id: SPEC-21
+id: SPEC-23
 titulo: Qué es regenerar en una obra cuya continuidad es acumulativa
 estado: en_revision
 aprobada_por:
@@ -9,7 +9,7 @@ fecha: 2026-09-23
 version: 1
 ---
 
-# SPEC-21 — Regenerar en una obra acumulativa
+# SPEC-23 — Regenerar en una obra acumulativa
 
 ## La tensión de fondo
 
@@ -37,9 +37,9 @@ esto después es el orden que el proyecto ya decidió no seguir.
 
 ## Es una pregunta, no cuatro huecos
 
-`SPEC-20` levantó cuatro carencias del backend y las listó por separado. Son la misma:
+`SPEC-22` levantó cuatro carencias del backend y las listó por separado. Son la misma:
 
-| Hueco de `SPEC-20` | Qué preguntaba en realidad |
+| Hueco de `SPEC-22` | Qué preguntaba en realidad |
 | --- | --- |
 | `G-05` · el `DeltaDeEscena` no se guarda | Con qué se calcula qué cambió |
 | `G-06` · no existe la relación hecho → capítulos | **Qué significa que un capítulo dependa de algo** |
@@ -211,7 +211,7 @@ delegación por escena— y de dónde sale cada coste.
 
 ## Qué decide esta spec
 
-Nada del reparto. **Decide que la decisión existe, que es previa a `SPEC-20` `C-9` y que se
+Nada del reparto. **Decide que la decisión existe, que es previa a `SPEC-22` `C-9` y que se
 toma con estas cinco salidas delante.** Al aprobarla tiene que quedar escrito:
 
 1. Cuál de las salidas se toma, y con qué combinación (`S-4` se combina con cualquiera).
@@ -225,7 +225,7 @@ Y una cosa que no depende de la elección: **guardar el delta** (`G-05`) se hace
 
 ## Qué queda explícitamente fuera
 
-- **La interfaz.** Qué se le enseña al lector y cuándo es de `SPEC-20`, y depende de lo que se
+- **La interfaz.** Qué se le enseña al lector y cuándo es de `SPEC-22`, y depende de lo que se
   decida aquí, no al revés.
 - **`G-01`** —que ninguna escena sepa a qué capítulo pertenece—. Es un defecto activo del
   cierre de capítulo, va por su cuenta y va antes.
@@ -242,7 +242,7 @@ Y una cosa que no depende de la elección: **guardar el delta** (`G-05`) se hace
 acumulando los deltas de escena en orden*— y su tabla de transiciones; `DeltaDeEscena`,
 `Borrador`, `EstadoDelMundo`, `HechoCanonico`, `Capitulo` y `estado_de_escena` de
 `Docs/definitions.md`; `INV-02`, `INV-03`, `INV-05`, `INV-06`; `RF-09`, `RF-12`, `RF-19`,
-`RF-30` y §3.2.2 de `SPEC-01`; `SPEC-20` `C-9` y sus huecos `G-05`…`G-09`; `MF-11`, `MF-18`,
+`RF-30` y §3.2.2 de `SPEC-01`; `SPEC-22` `C-9` y sus huecos `G-05`…`G-09`; `MF-11`, `MF-18`,
 `PC-5` y `VER-09` de `Docs/verification.md`; las **Reglas 4 y 5**; y el criterio de
 `SPEC-10` C-2, `SPEC-18` C-3 y `RF-26`: entre fallar ruidoso y fallar en silencio, el
 proyecto ya ha elegido tres veces.
