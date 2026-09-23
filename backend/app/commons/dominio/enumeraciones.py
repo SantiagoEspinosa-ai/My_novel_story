@@ -328,3 +328,15 @@ class TipoDeDecisionDePolitica(_Vocabulario):
     CONTRADICCION_DETECTADA = "contradiccion_detectada"
     CONTRADICCION_RESUELTA = "contradiccion_resuelta"
     BORRADO_AL_ENTREGAR = "borrado_al_entregar"
+
+
+class CriterioDeEdicion(_Vocabulario):
+    """Los criterios del Editor (`SPEC-26` `RF-09`). Ninguno es de terror: la
+    rubrica del Juez de terror sigue existiendo para las obras de terror."""
+
+    CONTINUIDAD = "continuidad"
+    TONO = "tono"
+    ARCO = "arco"
+    COHERENCIA_DE_PERSONAJES = "coherencia_de_personajes"
+    RITMO = "ritmo"
+    PERSONALIZACION = "personalizacion"

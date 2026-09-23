@@ -127,3 +127,10 @@ def test_los_vocabularios_de_la_politica_son_los_de_definitions():
         "coincidencia_vetada", "reescritura_pedida", "parada_por_vetada",
         "instruccion_en_texto_libre", "contradiccion_detectada",
         "contradiccion_resuelta", "borrado_al_entregar"]
+
+
+def test_los_criterios_del_editor_son_los_de_definitions():
+    """`SPEC-26` `RF-09`: los seis criterios del enunciado, y ninguno de terror."""
+    assert [c.value for c in enums.CriterioDeEdicion] == [
+        "continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
+        "personalizacion"]

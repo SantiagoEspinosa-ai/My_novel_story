@@ -108,7 +108,7 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | --- | --- | --- |
 | Brief | Contrato inicial de la obra: qué se va a escribir y bajo qué reglas. | **premisa**, **tono**, extension, referentes, prohibiciones, contrato\_con\_el\_lector |
 | GuiaDeEstilo | Reglas de superficie que no deben derivar. | **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, registro, densidad\_sensorial, tics\_prohibidos\[\] (cadenas literales) |
-| Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, **hechos\_canonicos\[\]** → HechoCanonico, **conocimiento\_inicial\[\]** (`{sujeto, hecho, grado}`: quién sabe qué **antes de la escena 1**), cambios\_de\_valor, curva\_de\_dread\_prevista |
+| Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, **hechos\_canonicos\[\]** → HechoCanonico, **conocimiento\_inicial\[\]** (`{sujeto, hecho, grado}`: quién sabe qué **antes de la escena 1**), cambios\_de\_valor, curva\_de\_dread\_prevista (solo en obras de terror: `SPEC-26` `RF-20`), imprescindibles\[\] (`{elemento, capitulo, palabras_clave[]}`: dónde aparece cada elemento imprescindible de la ficha y qué palabras lo delatan, `SPEC-26` `RF-03`), exclusiones\_previstas\[\] (`{personaje, capitulo, estado_vital}`: quién sale de la historia y dónde, `RF-04`) |
 
 **El plan declara quién sabe qué al empezar, y no solo qué hechos existen** (`SPEC-17` C-1). Sin esto el `RegistroDeConocimiento` arranca vacío y **ninguna acción es posible en la primera escena de una obra** (`F-32`): un personaje llega sabiendo cosas de antes del relato —Ana heredó la casa— y eso no es una revelación de ninguna escena.
 | Borrador | Texto generado de una escena, con versión. | **escena**, **version**, **pov\_usado** (`persona` → `persona_narrativa`, `tiempo_verbal` → `tiempo_verbal`), texto, modelo, prompt\_hash |
@@ -165,6 +165,7 @@ La novela se escribe **para alguien** (`SPEC-25`). Estas clases recogen quién e
 | Hallazgo | Defecto detectado, con localización. | **invariante** (`INV-xx`), **verificador**, **escena**, severidad → `severidad`, estado → `estado_de_hallazgo`, descripcion |
 | AntiPatron | Fallo recurrente que se vigila explícitamente. | **id**, **sintoma**, senal\_detectable, correccion |
 | Rubrica | Criterios y escala que usa un juez LLM. | **dimension**, niveles\[\], ejemplos\_ancla\[\] |
+| ValoracionDelEditor | La nota del Editor a un criterio de un capítulo (`SPEC-26` `RF-09`). No reescribe: juzga y da una instrucción. | **criterio** → `criterio_de_edicion`, **nota** (1 a 5), **justificacion**, instruccion |
 
 **`Invariante` y `Hallazgo` guardan cosas distintas.** `invariante` dice **qué regla se violó** y `verificador` **quién lo detectó**: la misma `INV-03` puede marcarla un juez o una regla de continuidad, y saber cuál de los dos fue es lo que permite resolver el desempate. Por eso `Hallazgo` lleva los dos y ninguno sustituye al otro.
 
@@ -255,6 +256,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `nivel_de_veto` | PalabraVetada.nivel | global, franja\_de\_edad, novela |
 | `tipo_de_contradiccion` | FichaDeEntrevista.contradicciones\_resueltas | edad\_frente\_a\_genero, edad\_frente\_a\_ocasion, recuerdo\_frente\_a\_edad, juicio\_del\_modelo |
 | `tipo_de_decision_de_politica` | DecisionDePolitica.tipo | coincidencia\_vetada, reescritura\_pedida, parada\_por\_vetada, instruccion\_en\_texto\_libre, contradiccion\_detectada, contradiccion\_resuelta, borrado\_al\_entregar |
+| `criterio_de_edicion` | ValoracionDelEditor.criterio | continuidad, tono, arco, coherencia\_de\_personajes, ritmo, personalizacion |
 
 **«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —contar también los `menciona` reescribe media novela por una alusión de paso—. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.
 
@@ -357,6 +359,12 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-17 | La longitud de la escena cae dentro de su `longitud_objetivo` | escena | mayor | regla | `Borrador.texto`, `Escena.longitud_objetivo` |
 | INV-18 | Todo hecho que los `beats` de una escena prometían establecer aparece en su delta | escena | mayor | regla | `Beat.establece[]`, `revelaciones` del delta, `HechoCanonico.escena_de_establecimiento` |
 | INV-21 | Ningún capítulo aceptado contiene una palabra vetada de ninguno de los tres niveles, tras normalizar mayúsculas, acentos, plurales y género gramatical | capitulo | bloqueante | regla | `Borrador.texto`, `PalabraVetada.forma`, `Destinatario.edad` |
+| INV-22 | Los nombres del destinatario y de los personajes aparecen escritos exactamente como en la story bible: ningún nombre parecido que no sea igual | escena | bloqueante | regla | `Borrador.texto`, `Personaje.nombre_canonico`, `Destinatario.nombre` |
+| INV-23 | Las palabras clave de cada imprescindible aparecen en su capítulo previsto | escena | mayor | regla | `Borrador.texto`, `Escaleta.imprescindibles` |
+| INV-24 | Cada imprescindible aparece en al menos un capítulo de la novela | obra | bloqueante | regla | `Escaleta.imprescindibles`, relación `usa` |
+| INV-25 | La prosa no se repite: el nombre del destinatario no supera su umbral por capítulo y ninguna frase larga se repite entre capítulos | obra | menor | regla | `Borrador.texto`, `FraseRecurrente` |
+| INV-26 | El Editor da a cada criterio de un capítulo al menos la nota umbral | escena | mayor | juez\_llm | `Borrador.texto`, `ValoracionDelEditor` |
+| INV-27 | El juicio de obra no encuentra un arco roto ni un final abrupto | obra | mayor | juez\_llm | resúmenes de capítulo, `Borrador.texto` del último capítulo |
 
 **La columna «Qué lee» existe para hacer verificable una regla del recorte.** `SPEC-12`
 fija que la forma reducida de un bloque de contexto **nunca puede llevarse lo que lee una
