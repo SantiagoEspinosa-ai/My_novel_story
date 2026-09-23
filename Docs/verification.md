@@ -800,6 +800,29 @@ tapa nada nuevo no va primero por ser barato.
 
 ---
 
+## La obra de diez capítulos
+
+**Es la primera ejecución con longitud, y por eso es la primera que puede contestar lo que
+las anteriores no.** Sesenta escenas en diez capítulos, con el estado del mundo compartido
+entre ellos, `SPEC-15` a `SPEC-20` aplicadas y la reanudación de `F-38` en uso real.
+
+Qué mide, y por qué ninguna de las anteriores podía medirlo:
+
+| Fila | Qué se sabía | Qué añade la longitud |
+| --- | --- | --- |
+| `VER-37` | Cinco medidas y las cinco de sobra, ninguna con más de tres escenas | Si el contexto **se estanca o sigue creciendo**: las condensaciones y las fichas se acumulan por escena, así que el crecimiento solo se ve con decenas |
+| `VER-64` | ~29% con `n=7` | Una frecuencia con `n=60`, y sobre escenas que **no son todas primeras escenas de capítulo** |
+| `F-38` | Probado contra dobles | Si la reanudación aguanta cuando lo que se salta son diez capítulos y no dos escenas |
+| `VER-36` | Coste por escena de dos ejecuciones cortas | El coste de una obra, que es la cifra que decide si esto es viable |
+
+**El desatasco automático solo dice cosas del contrato.** Cuando un capítulo se para, el
+guion reintenta **una vez** con una instrucción que recuerda la diferencia entre revelar y
+actuar (`SPEC-16`). **No inventa revelaciones ni toca el estado**: si un personaje sabe algo
+que no debería, eso es una decisión sobre la ficción y la toma una persona. Que la
+intervención automática esté acotada a lo que es materia de contrato es lo que permite que
+`VER-64` siga midiendo algo — si el guion desatascara decidiendo sobre la novela, estaría
+contando paradas de un sistema que él mismo va corrigiendo.
+
 ## Decisiones abiertas
 
 **Dos etiquetas, y la diferencia importa.** Las decisiones marcadas **«se contesta sola»**
