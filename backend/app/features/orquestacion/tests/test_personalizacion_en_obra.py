@@ -95,4 +95,6 @@ def test_la_clave_presente_deja_su_uso_en_la_tabla(con):
 def test_el_prompt_lleva_los_nombres_y_las_claves(con):
     _, escritor = _generar(con, ["con_clave", "bien"], imprescindibles=IMPRESCINDIBLES)
     assert "Irene Valdés" in escritor.llamadas[0] and "mapa" in escritor.llamadas[0]
-    assert "mapa" not in escritor.llamadas[1], "las claves son de su capitulo"
+    # «mapa» si puede llegar al segundo prompt dentro de la escena anterior
+    # (desde `F-58` el contexto llega como texto); el bloque de claves no.
+    assert "ESTE CAPITULO TIENE QUE CONTAR" not in escritor.llamadas[1],         "las claves son de su capitulo"

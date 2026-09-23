@@ -52,7 +52,8 @@ def montar(con, obra, ficha, aprobado):
             "id": "{0}-e1".format(c.id), "orden": 1, "capitulo": c.id,
             "cambio_de_valor": {"eje": e.eje, "signo": e.signo},
             "pov": e.pov, "lugar": e.lugar, "t_fabula": e.t_fabula,
-            "beats": [{"id": "{0}-b1".format(c.id), "establece": e.establece}],
+            "beats": [{"id": "{0}-b1".format(c.id), "texto": e.sinopsis,
+                       "establece": e.establece}],
             "longitud_objetivo": [minimo, maximo]}])
     # Los imprescindibles son hechos de la novela: es lo que deja que `INV-24`
     # los busque en la relacion `usa` como cualquier otro hecho.

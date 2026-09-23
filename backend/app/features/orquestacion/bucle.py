@@ -46,6 +46,7 @@ from app.commons.modelo import presupuesto, traza as modulo_traza
 from app.features.contexto import ensamblado, repository as lecturas_repo
 from app.commons.modelo.doble import FalloDeTransporte
 from app.features.contexto import recorte
+from app.features.contexto.bloques import BLOQUES
 from app.features.escaleta import repository as repo
 from app.features.generacion import contrato, prompt
 from app.features.verificacion import puertas
@@ -62,9 +63,43 @@ class Resultado:
     fallo: str | None = None
 
 
+# `F-58`: el orden de los bloques es el de `SPEC-01` 2.4. Los problemas del
+# intento anterior tienen su propio bloque en el prompt y la reserva de salida no
+# es texto, asi que no se repiten aqui.
+_FUERA_DEL_ESTADO = {"problemas_del_intento_anterior", "reserva_de_salida"}
+
+
+def _estado_en_texto(textos):
+    """El contexto como texto, bloque a bloque. Un bloque vacio se dice vacio: en
+    la primera escena no hay escena anterior, y eso es correcto. Sin textos se
+    dice tambien, en vez de mandar numeros."""
+    if textos is None:
+        return "(sin contexto: quien llamo no paso el texto de los bloques)"
+    partes = []
+    for b in BLOQUES:
+        if b.nombre in _FUERA_DEL_ESTADO:
+            continue
+        partes.append("[{0}]\n{1}".format(b.nombre, (textos.get(b.nombre) or "").strip()
+                                          or "(vacio)"))
+    return "\n\n".join(partes)
+
+
+def _objetivo(escena):
+    """El cambio de valor **y lo que pasa**: la sinopsis del plan viaja como texto
+    de los beats. Antes solo llegaban el eje y el signo (`F-58`)."""
+    que_pasa = []
+    for b in escena.get("beats") or []:
+        texto = b.get("texto") if isinstance(b, dict) else b
+        if texto:
+            que_pasa.append("- " + str(texto))
+    return "cambio de valor: {0}\nque pasa:\n{1}".format(
+        json.dumps(escena.get("cambio_de_valor"), sort_keys=True),
+        "\n".join(que_pasa) or "(el plan no lo dice)")
+
+
 def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None,
             instrucciones=None, vetadas=None, nombres=None,
-            imprescindibles=None):
+            imprescindibles=None, textos=None):
     """Usa la plantilla real, con los identificadores disponibles dentro.
 
     Sin ellos el modelo no puede citarlos y se le esta pidiendo lo imposible:
@@ -77,8 +112,8 @@ def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None,
                     "longitud_objetivo": escena.get("longitud_objetivo"),
                     # `SPEC-18` C-2: el POV es del plan, no del modelo.
                     "pov": escena.get("pov")},
-        estado={"contexto": sorted(contexto.items())},
-        objetivo=json.dumps(escena.get("cambio_de_valor"), sort_keys=True),
+        estado=_estado_en_texto(textos),
+        objetivo=_objetivo(escena),
         problemas=problemas,
         personajes=sorted(mundo.get("entidades_vivas") or {}),
         # Los hechos que el plan declaro, **no** los del registro de
@@ -119,7 +154,7 @@ def _prometidos(escena):
 def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,
             mundo=None, trabajo="sin-trabajo", hechos=None, problemas=None,
             instrucciones=None, vetadas=None, nombres=None,
-            imprescindibles=None):
+            imprescindibles=None, textos=None):
     escena = repo.escena(con, escena_id)
     t = modulo_traza.nueva(agente="escritor", escena=escena_id, trabajo=trabajo,
                            modelo=modelo.nombre)
@@ -139,7 +174,7 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
     texto_prompt = _prompt(escena, contexto, mundo, problemas=problemas,
                            hechos=hechos, instrucciones=instrucciones,
                            vetadas=vetadas, nombres=nombres,
-                           imprescindibles=imprescindibles)
+                           imprescindibles=imprescindibles, textos=textos)
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
         texto_prompt.encode("utf-8")).hexdigest()[:12])
     # Lo que esta llamada tuvo delante del canon, registrado **antes** de

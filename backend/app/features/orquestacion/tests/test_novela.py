@@ -186,11 +186,9 @@ def _agentes():
             "editor": editor, "resumidor": resumidor}
 
 
-@__import__("pytest").mark.xfail(strict=True, reason=(
-    "F-58: el Escritor recibe los tamaños de los bloques de contexto, no su texto, "
-    "asi que el genero y el tono del bloque inmutable no llegan al prompt. "
-    "Estricto: se pondra en rojo el dia que se arregle."))
 def test_escribir_encadena_plan_montaje_y_generacion(con, tmp_path):
+    """Fue un xfail estricto mientras existio `F-58`: el genero y el tono del
+    bloque inmutable no llegaban porque el Escritor recibia tamaños."""
     agentes = _agentes()
     r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                         carpeta_de_reglas=str(tmp_path))
@@ -199,6 +197,7 @@ def test_escribir_encadena_plan_montaje_y_generacion(con, tmp_path):
     prompt = agentes["escritor"].llamadas[0]
     assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt
     assert "aventura" in prompt and "divertido" in prompt
+    assert "Irene sigue un mapa." in prompt, "la sinopsis del plan llega"
 
 
 def test_escribir_deja_las_reglas_del_hook_al_escritor(con, tmp_path):

@@ -52,6 +52,13 @@ ejercitan con techos artificiales, lo que comprueba que el algoritmo funciona y 
 reparto sea el correcto. Está abierto en `Docs/verification.md` con dos salidas: ajustar las
 cifras a lo que se mide, o declarar que describen una obra larga que todavía no existe.
 
+**Y esa cifra medía lo que se montaba, no lo que se enviaba** (`F-58`). Hasta el arreglo, el
+Escritor recibía la lista de tamaños de los bloques en vez de su texto, en todas las
+escenas: lo enviado era mucho menos que 1.339 tokens y no llevaba ni la premisa. Desde el
+arreglo lo montado y lo enviado coinciden, pero **el contexto enviado está sin medir**: se
+mide en la primera ejecución real de la novela regalo, y hasta entonces 1.339 no dice cuánto
+sobra.
+
 Nunca se manda el texto completo de la obra **al modelo**. El límite de 100.000 tokens es sobre **lo que se envía en una llamada**, no sobre lo que el código lee de la base: una comprobación determinista puede leer el texto de un capítulo para medirlo —`INV-15` calcula así la distancia estilométrica— sin tocar el presupuesto. Si una **llamada al modelo** parece necesitar la obra entera, el fallo está en los resúmenes o en la recuperación, no en el presupuesto.
 
 ### SQLite con soporte vectorial

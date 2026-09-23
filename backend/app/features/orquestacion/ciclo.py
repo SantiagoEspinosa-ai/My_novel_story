@@ -211,7 +211,7 @@ def _acta_de(acta, texto, c):
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
              techo=100_000, trabajo="ciclo", hechos=None, problemas=None,
              instrucciones=None, acta=None, vetadas=None, nombres=None,
-             imprescindibles=None, es_editor=False, umbral=None):
+             imprescindibles=None, es_editor=False, umbral=None, textos=None):
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
@@ -219,7 +219,8 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
                                  mundo=mundo, trabajo=trabajo, hechos=hechos,
                                  problemas=problemas,
                                  instrucciones=instrucciones, vetadas=vetadas,
-                                 nombres=nombres, imprescindibles=imprescindibles)
+                                 nombres=nombres, imprescindibles=imprescindibles,
+                                 textos=textos)
     c.trazas.append(c.generacion.traza)
     if c.generacion.fallo:
         c.fallo = c.generacion.fallo
