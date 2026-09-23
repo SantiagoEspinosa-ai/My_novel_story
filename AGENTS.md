@@ -17,8 +17,8 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 | Skills del proyecto | `.agents/skills/` | Contenido real de las ocho skills instaladas. Ver la sección "Skills" más abajo |
 | Specs en curso | `specs/` | Un fichero por spec. Hoy `SPEC-01` backend del harness (**`aprobada`**), y en `en_revision` `SPEC-09` versión de `Resumen` y `SPEC-19` lo prometido y lo entregado |
 | Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada, con el mismo identificador y su propio estado. Hoy `PLAN-01`, el backend, en `en_revision`. Es la tercera puerta: sin plan aprobado no se escribe código |
-| Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio, `SPEC-04` puerta de capítulo y reclasificaciones, `SPEC-05` caducidad de las afirmaciones condicionales, `SPEC-06` estructura de `harness/` y `SPEC-07` modelo de fallo del pipeline y `SPEC-08` estados del trabajo y observabilidad `SPEC-10` huecos que la rama `main` ya sufrió `SPEC-11` observabilidad del pipeline, `SPEC-12` formas reducidas del recorte, `SPEC-13` durabilidad de los hechos, `SPEC-14` delegación en vez de API, `SPEC-15` lo que declara el plan, `SPEC-16` revelar es aprender, `SPEC-17` el conocimiento y su instante y `SPEC-18` el POV que nadie declara. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
-| Código del backend | `backend/` | Servicio FastAPI con `app/commons/` y `app/features/`. Once features: `escaleta`, `generacion`, `verificacion`, `consolidacion`, `contexto`, `orquestacion`, `auditoria`, `recuperacion`, `brief`… Las dependencias en `backend/requirements.txt`; las pruebas con `python -m pytest app -q` desde `backend/` |
+| Specs ya aplicadas | `specs/aplicadas/` | Las que terminaron en `estado: aplicada`, con su `commit_de_aplicacion` en el frontmatter. Hoy `SPEC-03` referencias del dominio, `SPEC-04` puerta de capítulo y reclasificaciones, `SPEC-05` caducidad de las afirmaciones condicionales, `SPEC-06` estructura de `harness/` y `SPEC-07` modelo de fallo del pipeline y `SPEC-08` estados del trabajo y observabilidad `SPEC-10` huecos que la rama `main` ya sufrió `SPEC-11` observabilidad del pipeline, `SPEC-12` formas reducidas del recorte, `SPEC-13` durabilidad de los hechos, `SPEC-14` delegación en vez de API, `SPEC-15` lo que declara el plan, `SPEC-16` revelar es aprender, `SPEC-17` el conocimiento y su instante, `SPEC-18` el POV que nadie declara, `SPEC-19` lo prometido y lo entregado y `SPEC-20` qué se puede editar a mano. **`SPEC-02`, vocabularios, no está**: se aplicó y su fichero se retiró antes de existir esta carpeta, y no se puede recuperar porque nunca llegó a commitearse. Es la única excepción y no se repite |
+| Código del backend | `backend/` | Servicio FastAPI con `app/commons/` y `app/features/`. Features: `escaleta`, `generacion`, `verificacion`, `consolidacion`, `contexto`, `orquestacion`, `auditoria`, `recuperacion`, `edicion`, `brief`. Las dependencias en `backend/requirements.txt`; las pruebas con `python -m pytest app -q` desde `backend/` |
 | Revisiones de documentos | `Docs/revisiones/` | Un `REV-NN.md` por documento revisado. Evalúa un documento **existente**; una spec dice qué va a cambiar. Por eso cuelga de `Docs/` y no de `specs/` |
 | Referencias externas | `Docs/referencias.md` | **Consulta, no normativo.** Material de clase sobre métodos de Spec-Driven Development (Spec Kit, OpenSpec, MUSUBI, EasySpecs…) y lenguajes de especificación formal (TLA+, P, Dafny, Alloy…), más una lectura propia de qué se parece a lo que ya hacemos y qué hueco señala. No está en la cadena de precedencia y ninguna `INV-xx`, `VER-xx` ni spec puede citarlo como origen |
 
@@ -101,6 +101,22 @@ Vive en `specs/plans/PLAN-NN.md`, con el mismo identificador que su spec y su pr
 Pasa, y es sano que pase. Lo que no vale es seguir.
 
 Se para, se corrige la spec, se vuelve a aprobar, y si el plan cambia de forma, se vuelve a aprobar también. El código nunca avanza por delante de la spec: en cuanto lo hace, la spec deja de gobernar lo que se va a hacer y pasa a describir mal lo que ya se hizo. A las tres semanas es ficción y nadie la lee.
+
+## Varias sesiones a la vez
+
+**Una carpeta por sesión, con `git worktree`.** Dos sesiones en el mismo directorio se pisan: cambian de rama bajo los pies de la otra y se barren los ficheros mutuamente. Cada worktree tiene su carpeta y su rama, y comparten el mismo `.git`.
+
+```
+git worktree add -b <rama-nueva> ../My_novel_story-<nombre> <rama-de-partida>
+git worktree list
+git worktree remove ../My_novel_story-<nombre>
+```
+
+Una rama solo puede estar checkouteada en **un** worktree a la vez. Lo ignorado —`.env`, `*.db`, `salida/`— no viaja a un worktree nuevo y hay que copiarlo a mano; las skills sí, porque `.agents/skills/` está versionado.
+
+**Nunca `git add -A` ni `git commit -a`: se añade por ruta.** Un barrido se lleva lo que otra sesión dejó a medias y lo mete en un commit que no habla de ello; ya pasó, y el fichero acabó dentro de un commit sobre otra cosa. **Un worktree separa carpetas, no costumbres**: con carpetas separadas el barrido sigue arrastrando lo que uno mismo tenía sin terminar.
+
+**Y antes de abrir una spec, mirar los identificadores que hay.** Dos sesiones trabajando a la vez eligen el mismo `SPEC-NN` sin enterarse: pasó dos veces seguidas. Si ya está cogido, se renumera el propio —nunca se reutiliza— y conserva el número la spec que ya esté `aprobada`.
 
 ## Skills
 

@@ -393,6 +393,14 @@ nunca: el delta de una escena rendida entra al canon igual que el de una limpia,
 falsedad en el canon la heredan todas las escenas siguientes. `Escena.intentos` cuenta y se
 enseña, y la salida es humana.
 
+> **Primera de las dos salidas por las que algo sin verificar podría llegar al canon.** La
+> otra es el tope de presupuesto, en § "Los estados de un trabajo". Las dos se leen juntas
+> o no se entiende ninguna: **cada una por separado parece razonable, y juntas, si se
+> relajan, hacen inalcanzable la garantía de que nada se publique sin haber pasado las
+> puertas.** Esta se mantiene cerrada con la condición de arriba —ninguna `bloqueante`
+> abierta—; la otra, no publicando lo que quedó a medias. Quien toque una tiene que mirar
+> la otra en el mismo cambio.
+
 La transición que importa es `aceptada → consolidada`. Hasta que el delta no está
 aplicado, el estado del mundo no ha cambiado y la escena siguiente **no puede generarse**:
 es ahí donde se corta la propagación del error.
@@ -450,6 +458,21 @@ el mismo código leyendo el mismo tipo de valor, y dos convenciones para lo mism
 | `abandonado` | Un worker lo tomó y no se supo más de él. **No se sabe si llegó a pasar** |
 | `detenido_por_presupuesto` | No arrancó porque el tope global de llamadas estaba alcanzado. **No falló nada** |
 
+> **Segunda de las dos salidas por las que algo sin verificar podría llegar al canon.** La
+> otra es la rendición de escena, en § "La máquina de estados y quién dispara cada
+> transición". Aquí se mantiene cerrada porque `detenido_por_presupuesto` **no publica
+> nada**: el trabajo no arrancó, no falló nada, y lo hecho hasta ahí se queda como está.
+>
+> **La tentación concreta que hay que resistir es "ya que paramos, entreguemos lo que
+> haya".** Suena a cortesía y es la brecha: entregar media obra la convierte en una obra
+> entregada a la que le faltan escenas, y nadie distingue después una obra corta de una
+> obra truncada. El harness de la rama `main` sí cae en ella —`EJECUCION.md` regla 6
+> ensambla lo que haya cuando salta el freno—, y combinada con su regla 1, que rinde
+> capítulos sin condición, publica una novela que no pasó las puertas. **Las dos reglas
+> están escritas en sitios distintos de aquel documento y no se referencian**, que es
+> exactamente por lo que nadie las vio juntas: `CE-1` y `CE-2` de `specs/tla/README.md`
+> las encontraron al formalizarlas.
+
 **`fallido` y `abandonado` no son el mismo hecho**, y por eso son dos estados y no un
 estado con un campo. Uno significa que sabemos qué pasó; el otro, que no sabemos si llegó
 a pasar. La consecuencia práctica está en el tope: un `abandonado` no cuenta contra él,
@@ -473,6 +496,30 @@ a mano creyendo que falló, que es pagar dos veces por otra puerta.
 Se vuelve a `en_cola` y no a `en_curso` al reintentar porque se reintenta **el trabajo
 entero desde el ensamblado del contexto**: entre un intento y el siguiente el estado del
 mundo pudo cambiar.
+
+#### Reanudar no duplica ni pierde porque el estado se re-deriva, no se recuerda
+
+Esta es la propiedad que hace segura la reanudación, y hasta ahora solo estaba escrita en
+un docstring del código: **al volver de una caída, lo que toca hacer se deduce mirando qué
+hay guardado, nunca un cursor que alguien apuntó antes de caerse.** Se pregunta qué escenas
+están `consolidada` y qué borradores existen, y de ahí sale la siguiente; no se lee un
+«iba por la escena 4».
+
+La diferencia no es de estilo. Un cursor y el disco pueden desincronizarse en la ventana
+entre escribir el artefacto y actualizar el cursor, y esa ventana existe siempre: si la
+caída cae dentro, el cursor apunta antes de lo hecho —y se reescribe algo ya hecho, que es
+`F-38`— o después —y se salta algo sin hacer, que deja un hueco permanente en la obra—. Un
+conjunto reconstruido del estado no tiene esa ventana, porque no hay nada que actualizar.
+
+Por eso las dos mitades de la garantía se sostienen solas: **no duplica** porque lo ya
+cerrado se reconoce como cerrado mirándolo, y **no pierde** porque lo que no dejó rastro
+sigue pendiente por definición. Lo comprueba `VER-28`, y la especificación TLA+ de
+`specs/tla/` modela las dos reanudaciones —la del disco y la del cursor— justamente para
+poder romper la segunda: con cursor, TLC encuentra una ejecución que se queda parada para
+siempre (`CE-4` de `specs/tla/README.md`).
+
+**Quien reimplemente esto no puede sustituirlo por un contador «por dónde iba» aunque
+parezca equivalente y más rápido.** No lo es: es el mecanismo, no una optimización de él.
 
 ### La traza de una llamada al modelo
 
