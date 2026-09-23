@@ -86,6 +86,46 @@ mencionan el hecho»*.
 cambiado».** Y en un modelo acumulativo, el contexto de todo lo posterior ha cambiado, aunque
 sea poco. Esa es la tensión, dicha con precisión.
 
+## El verde heredado, que es lo peor de todo esto — `MF-26`
+
+Va aparte porque **no es una consecuencia de elegir mal entre las salidas: pasa con todas**, y
+porque es peor que el coste de regenerar de más.
+
+> Una escena posterior pasó `INV-02`, `INV-03` e `INV-06` **contra un estado del mundo que ya
+> no existe**. Su verde sigue ahí, guardado, indistinguible de uno que sí vale. **No es una
+> comprobación que falle: es una comprobación que dejó de significar lo que dice, y que nadie
+> ha invalidado.**
+
+Regenerar de más cuesta dinero y se ve en la factura. Esto no cuesta nada y no se ve en ningún
+sitio: la obra se firma con parte de sus puertas evaluadas sobre otra obra, y el cierre de
+capítulo de `RF-28` —que mira si quedan hallazgos abiertos— da por buenos unos resultados cuya
+premisa cambió debajo. Es verificación que ya no verifica.
+
+La causa de fondo es que **un resultado de verificación no guarda contra qué estado se
+evaluó**. Sin ese dato no hay forma de caducarlo, ni siquiera de saber cuáles habría que mirar:
+`Hallazgo` cita su invariante y su verificador, y nada dice en qué mundo se levantó. Por eso
+no es un defecto de la regeneración —la regeneración solo lo **destapa**— sino un hueco del
+modelo de verificación que estaba ahí desde el principio, esperando a que algo moviera el
+estado hacia atrás.
+
+Queda catalogado como **`MF-26`** en `Docs/verification.md`, en la tabla de los fallos
+silenciosos, y es hoy **el único modo de fallo sin ningún validador que lo mire**. Nombrarlo no
+lo arregla; lo que hace es que la elección de salida se tome sabiendo que ninguna lo cierra
+sola:
+
+- `S-1` lo evita **por fuerza bruta**: si se reescribe todo lo posterior, todo vuelve a pasar
+  por la puerta y no queda ningún verde viejo.
+- `S-2` lo ataca de frente y es lo que la hace interesante: reverificar **es** invalidar el
+  verde heredado, y además es barato porque son reglas y no llamadas al modelo. Lo que no
+  alcanza es la prosa, que nunca se reverifica contra nada.
+- `S-3` lo evita porque el estado no se mueve; el verde sigue siendo del mundo en que se
+  evaluó.
+- `S-5` decide **cuántos** verdes hay que invalidar, no si hay que hacerlo.
+
+Y deja una pregunta que sobrevive a esta spec: si un resultado de verificación supiera contra
+qué estado se evaluó, **caducaría solo**. Eso es un cambio del modelo de verificación y no se
+decide aquí, pero es la única forma conocida de que `MF-26` deje de ser silencioso.
+
 ## Una pieza que no es una decisión
 
 **El delta hay que guardarlo se elija lo que se elija** (`G-05`). Las cinco salidas de abajo lo
