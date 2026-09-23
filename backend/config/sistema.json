@@ -2,7 +2,8 @@
   "modelos": {
     "escritor": "fable",
     "juez": "opus",
-    "resumidor": "haiku"
+    "resumidor": "haiku",
+    "entrevistador": "sonnet"
   },
 
   "topes": {

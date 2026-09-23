@@ -296,6 +296,11 @@ class ModelosPorAgente(_DelDominio):
     escritor: str
     juez: str
     resumidor: str
+    entrevistador: str | None = Field(
+        default=None,
+        description="`SPEC-25`. Opcional para que una maquina que solo genera "
+                    "siga cargando; la entrevista falla de forma visible si "
+                    "falta")
 
 
 class Topes(_DelDominio):
