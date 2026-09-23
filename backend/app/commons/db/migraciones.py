@@ -228,7 +228,50 @@ TODAS = [
         CREATE INDEX IF NOT EXISTS idx_uso_por_capitulo ON uso_de_hecho (capitulo, tipo);
         """,
     ),
+    Migracion(
+        7,
+        "la memoria se ordena por el discurso y no por el orden de la escena",
+        # `F-45`. `resumen.orden` y `ficha.orden` guardaban el `orden` de la
+        # escena, que es **local al capitulo**: no ordena nada que cruce el
+        # corte, y los resumenes tienen que cruzarlo. Pasan a `t_discurso`.
+        #
+        # QUE PUEDE Y QUE NO PUEDE ARREGLAR ESTA MIGRACION
+        # -------------------------------------------------
+        # Renombrar conserva los valores, y en una obra de **un solo capitulo**
+        # el valor viejo ya era correcto porque alli `orden` y `t_discurso`
+        # coinciden. En una obra de varios **no lo era**, asi que se recalcula
+        # desde `escena.t_discurso` cuando consta. Lo que no conste se queda con
+        # el valor viejo, que es chapucero y **se dice aqui en vez de fingir que
+        # la migracion lo arregla todo**: esas filas hay que regenerarlas.
+        lambda con: _migrar_memoria_a_t_discurso(con),
+    ),
 ]
+
+
+def _migrar_memoria_a_t_discurso(con):
+    """Renombra `orden` a `t_discurso` y recalcula lo que se pueda."""
+    for tabla in ("resumen", "ficha"):
+        if not tiene_tabla(con, tabla):
+            continue
+        columnas = {f[1] for f in con.execute("PRAGMA table_info({0})".format(tabla))}
+        if "orden" in columnas and "t_discurso" not in columnas:
+            con.execute(
+                "ALTER TABLE {0} RENAME COLUMN orden TO t_discurso".format(tabla))
+    if not tiene_tabla(con, "escena"):
+        return 0
+    # `resumen.escena` y `ficha.version_en_t` son los dos el id de la escena.
+    recalculadas = 0
+    for tabla, columna in (("resumen", "escena"), ("ficha", "version_en_t")):
+        if not tiene_tabla(con, tabla):
+            continue
+        cur = con.execute(
+            "UPDATE {0} SET t_discurso = ("
+            "  SELECT e.t_discurso FROM escena e WHERE e.id = {0}.{1}"
+            ") WHERE EXISTS ("
+            "  SELECT 1 FROM escena e WHERE e.id = {0}.{1} "
+            "  AND e.t_discurso IS NOT NULL)".format(tabla, columna))
+        recalculadas += cur.rowcount
+    return recalculadas
 
 
 def validar_secuencia(migraciones):

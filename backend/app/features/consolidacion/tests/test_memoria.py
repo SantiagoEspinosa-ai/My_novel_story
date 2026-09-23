@@ -112,3 +112,42 @@ def test_las_fichas_tampoco_mezclan_obras(con):
     memoria.actualizar_fichas(con, "a-e1", 1, {"per-marta": "en A"}, obra="obra-a")
     memoria.actualizar_fichas(con, "b-e1", 1, {"per-ana": "en B"}, obra="obra-b")
     assert [f["entidad"] for f in memoria.fichas_en(con, 9, obra="obra-a")] == ["per-marta"]
+
+
+# --- `F-45`: la memoria se ordena por el discurso, no por el orden ----------
+
+
+def test_los_resumenes_se_ordenan_por_el_discurso_y_cruzan_el_capitulo(con):
+    """`F-45`. El `orden` es local al capitulo y los resumenes tienen que
+    cruzarlo: una novela no olvida el capitulo uno al empezar el dos.
+
+    Con `orden`, la escena 1 del capitulo dos preguntaba por «lo anterior a 1» y
+    recibia **cero**. Con `t_discurso`, que numera la obra entera, recibe las
+    dos del capitulo uno.
+    """
+    memoria.guardar_resumen(con, "c1-e1", 1, "la primera", obra="obra-1")
+    memoria.guardar_resumen(con, "c1-e2", 2, "la segunda", obra="obra-1")
+    memoria.guardar_resumen(con, "c2-e1", 3, "la tercera", obra="obra-1")
+    anteriores = memoria.resumenes_hasta(con, 3, obra="obra-1")
+    assert [r["texto"] for r in anteriores] == ["la primera", "la segunda"]
+
+
+def test_un_resumen_sin_posicion_en_el_discurso_no_se_guarda_en_silencio(con):
+    """Frontera (Regla 4), y fallo ruidoso.
+
+    Una escena que no se ha podido situar en el orden de lectura no tiene donde
+    caer entre los resumenes. Guardarla con la posicion vacia la dejaria fuera
+    de toda consulta ordenada **sin que nadie lo note**, que es la Regla 8 otra
+    vez: el hueco se veria igual que no tener resumen.
+    """
+    with pytest.raises(memoria.SinPosicionEnElDiscurso):
+        memoria.guardar_resumen(con, "e1", None, "texto", obra="obra-1")
+
+
+def test_dos_obras_distintas_siguen_sin_mezclarse(con):
+    """Lo que `F-40` cerro no se afloja: `t_discurso` numera **dentro** de una
+    obra, asi que dos obras vuelven a tener las dos su posicion 1."""
+    memoria.guardar_resumen(con, "a-e1", 1, "de la obra A", obra="obra-A")
+    memoria.guardar_resumen(con, "b-e1", 1, "de la obra B", obra="obra-B")
+    assert [r["texto"] for r in memoria.resumenes_hasta(con, 2, obra="obra-A")] == [
+        "de la obra A"]

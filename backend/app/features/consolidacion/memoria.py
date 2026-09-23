@@ -40,7 +40,12 @@ SQL = """
 CREATE TABLE IF NOT EXISTS resumen (
     escena       TEXT NOT NULL,
     obra         TEXT,
-    orden        INTEGER NOT NULL,
+    -- `F-45`. Era `orden`, que es **local al capitulo**, asi que no ordenaba
+    -- nada que cruzara el corte -y los resumenes tienen que cruzarlo-. Es
+    -- `MomentoNarrativo.t_discurso`: la posicion en el orden de lectura de la
+    -- obra entera. El nombre importa: uno que dice `orden` invita a pasarle el
+    -- `orden` de la escena, que es justo lo que rompio esto.
+    t_discurso   INTEGER NOT NULL,
     version_en_t TEXT NOT NULL,
     nivel        TEXT NOT NULL,
     texto        TEXT NOT NULL,
@@ -50,7 +55,7 @@ CREATE TABLE IF NOT EXISTS resumen (
 CREATE TABLE IF NOT EXISTS ficha (
     entidad      TEXT NOT NULL,
     obra         TEXT,
-    orden        INTEGER NOT NULL,
+    t_discurso   INTEGER NOT NULL,
     version_en_t TEXT NOT NULL,
     resumen      TEXT NOT NULL,
     PRIMARY KEY (entidad, version_en_t)
@@ -62,14 +67,34 @@ class HechoNoEsIdentificador(Exception):
     pass
 
 
+class SinPosicionEnElDiscurso(Exception):
+    """La escena no se ha podido situar en el orden de lectura de la obra.
+
+    Se levanta en la frontera (Regla 4) y **no se guarda la fila**. Guardarla
+    con la posicion vacia la dejaria fuera de toda consulta ordenada sin que
+    nadie lo notara, y eso es la Regla 8: el hueco se veria igual que no tener
+    resumen. Mejor ruidoso aqui que silencioso doce escenas despues.
+    """
+
+
 def asegurar_tablas(con: sqlite3.Connection):
     with con:
         con.executescript(SQL)
 
 
-def guardar_resumen(con, escena, orden, texto, hechos_clave=None,
+def guardar_resumen(con, escena, t_discurso, texto, hechos_clave=None,
                     nivel="escena", obra=None):
-    """`version_en_t` es la escena: el `t` en el que ese resumen es cierto."""
+    """`version_en_t` es la escena: el `t` en el que ese resumen es cierto.
+
+    `t_discurso` es la posicion de la escena en el orden de lectura de la obra
+    entera, no su `orden` dentro del capitulo (`F-45`).
+    """
+    if t_discurso is None:
+        raise SinPosicionEnElDiscurso(
+            "la escena {0} no tiene `t_discurso`, asi que no hay donde colocar "
+            "su resumen entre los demas. Arreglo: llamar antes a "
+            "`escaleta.asignar_t_discurso`, y declarar el orden de los "
+            "capitulos si la obra tiene mas de uno".format(escena))
     hechos_clave = list(hechos_clave or [])
     for h in hechos_clave:
         if not isinstance(h, str) or not IDENTIFICADOR.match(h):
@@ -79,14 +104,14 @@ def guardar_resumen(con, escena, orden, texto, hechos_clave=None,
                 "frontera, no mas adentro".format(h))
     asegurar_tablas(con)
     with con:
-        con.execute("INSERT OR REPLACE INTO resumen (escena, obra, orden, "
+        con.execute("INSERT OR REPLACE INTO resumen (escena, obra, t_discurso, "
                     "version_en_t, nivel, texto, hechos_clave) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (escena, obra, orden, escena, nivel, texto,
+                    (escena, obra, t_discurso, escena, nivel, texto,
                      json.dumps(hechos_clave)))
 
 
-def resumenes_hasta(con, orden_actual, obra=None):
+def resumenes_hasta(con, t_discurso_actual, obra=None):
     """Los resumenes de las escenas anteriores **de esta obra**, en orden.
 
     El `t` de una obra es su orden narrativo, no el reloj de quien la genero.
@@ -102,16 +127,16 @@ def resumenes_hasta(con, orden_actual, obra=None):
     if obra is None:
         filas = con.execute(
             "SELECT escena, texto, hechos_clave FROM resumen "
-            "WHERE orden < ? ORDER BY orden", (orden_actual,))
+            "WHERE t_discurso < ? ORDER BY t_discurso", (t_discurso_actual,))
     else:
         filas = con.execute(
             "SELECT escena, texto, hechos_clave FROM resumen "
-            "WHERE orden < ? AND obra = ? ORDER BY orden", (orden_actual, obra))
+            "WHERE t_discurso < ? AND obra = ? ORDER BY t_discurso", (t_discurso_actual, obra))
     return [{"escena": f[0], "texto": f[1], "hechos_clave": json.loads(f[2])}
             for f in filas]
 
 
-def actualizar_fichas(con, escena, orden, entidades, obra=None):
+def actualizar_fichas(con, escena, t_discurso, entidades, obra=None):
     """Una version nueva por entidad tocada, no una sobrescritura.
 
     Sobrescribir haria irreconstruible el contexto de una escena pasada, que es
@@ -120,12 +145,16 @@ def actualizar_fichas(con, escena, orden, entidades, obra=None):
     asegurar_tablas(con)
     with con:
         for entidad, resumen in entidades.items():
-            con.execute("INSERT OR REPLACE INTO ficha (entidad, obra, orden, "
+            if t_discurso is None:
+                raise SinPosicionEnElDiscurso(
+                    "la escena {0} no tiene `t_discurso`: su ficha no se puede "
+                    "situar entre las demas".format(escena))
+            con.execute("INSERT OR REPLACE INTO ficha (entidad, obra, t_discurso, "
                         "version_en_t, resumen) VALUES (?, ?, ?, ?, ?)",
-                        (entidad, obra, orden, escena, resumen))
+                        (entidad, obra, t_discurso, escena, resumen))
 
 
-def fichas_en(con, orden_actual, obra=None):
+def fichas_en(con, t_discurso_actual, obra=None):
     """La version mas reciente de cada ficha **en o antes** de este orden.
 
     Acotada a la obra por lo mismo que `resumenes_hasta` (`F-40`).
@@ -134,11 +163,11 @@ def fichas_en(con, orden_actual, obra=None):
     if obra is None:
         filas = con.execute(
             "SELECT entidad, resumen, version_en_t FROM ficha "
-            "WHERE orden <= ? ORDER BY orden", (orden_actual,))
+            "WHERE t_discurso <= ? ORDER BY t_discurso", (t_discurso_actual,))
     else:
         filas = con.execute(
             "SELECT entidad, resumen, version_en_t FROM ficha "
-            "WHERE orden <= ? AND obra = ? ORDER BY orden", (orden_actual, obra))
+            "WHERE t_discurso <= ? AND obra = ? ORDER BY t_discurso", (t_discurso_actual, obra))
     ultimas = {}
     for entidad, resumen, version in filas:
         ultimas[entidad] = {"entidad": entidad, "resumen": resumen,

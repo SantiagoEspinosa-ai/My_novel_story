@@ -28,6 +28,7 @@ la medida**.
 """
 
 import json
+import sqlite3
 from dataclasses import dataclass, field
 
 from app.commons import config
@@ -65,9 +66,33 @@ class Generacion:
         return self.parada is None
 
 
+def _orden_de_capitulos(con, obra):
+    """`{id_capitulo: posicion}` segun `brief/`, o vacio si no consta.
+
+    Vacio no es un problema cuando la obra tiene un solo capitulo: entonces el
+    orden de lectura **es** el `orden` de la escena y no hay nada que declarar.
+    Con varios y sin este dato, las escenas se quedan sin situar y
+    `asignar_t_discurso` lo dice en vez de colocarlas a ojo.
+    """
+    try:
+        filas = con.execute(
+            "SELECT id, orden FROM capitulo WHERE obra = ? ORDER BY orden", (obra,))
+        return {f[0]: f[1] for f in filas}
+    except sqlite3.OperationalError:
+        # La tabla la crea `brief/` cuando se da de alta una obra. Si no existe,
+        # es que nadie la dio de alta por esa via.
+        return {}
+
+
 def reunir_material(con, escena, obra_id, inmutable=""):
     """Lo que hay disponible para montar el contexto de esta escena."""
     orden = escena["orden"]
+    t_discurso = escena.get("t_discurso")
+    if t_discurso is None:
+        raise memoria.SinPosicionEnElDiscurso(
+            "la escena {0} no tiene `t_discurso`, asi que no se puede saber que "
+            "resumenes van antes que ella. Arreglo: `asignar_t_discurso` antes "
+            "de reunir material".format(escena["id"]))
     # Acotada a la obra, como los resumenes y las fichas (`F-40`). Esta era la
     # que quedaba fuera, y es **el bloque que mas pesa del contexto**: el
     # bloque Local, que lleva la escena anterior entera. Sin el filtro,
@@ -92,8 +117,14 @@ def reunir_material(con, escena, obra_id, inmutable=""):
     return {
         # Acotados a la obra: el `orden` va del 1 al N **dentro** de ella, asi
         # que sin el filtro dos obras en la misma base se mezclan (`F-40`).
-        "resumenes": memoria.resumenes_hasta(con, orden, obra=obra_id),
-        "fichas": memoria.fichas_en(con, orden, obra=obra_id),
+        # `F-45`: por `t_discurso` y no por `orden`. El `orden` es local al
+        # capitulo, asi que la escena 1 del capitulo dos preguntaba por "lo
+        # anterior a 1" y recibia cero: arrancaba sin memoria de todo lo
+        # anterior. Los resumenes **tienen** que cruzar el corte de capitulo;
+        # la escena anterior no. Son dos alcances distintos y por eso no puede
+        # servir el mismo campo para los dos.
+        "resumenes": memoria.resumenes_hasta(con, t_discurso, obra=obra_id),
+        "fichas": memoria.fichas_en(con, t_discurso, obra=obra_id),
         "escena_anterior": anterior[0] if anterior else "",
         # Vacio legitimo y vacio por fallo **no pueden verse igual** (Regla 8).
         # Que la escena 1 de un capitulo no tenga anterior es lo correcto; que
@@ -127,6 +158,11 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # Anidar transacciones en SQLite hace commit del bloque interno, que es
     # justo la atomicidad que `SPEC-21` C-4 existe para sostener.
     cronologia.asegurar_tablas(con)
+    # `F-45`: sin esto la memoria no se puede ordenar a lo largo de la obra.
+    # El orden de los capitulos sale de `brief/`, que es otra feature: se lee
+    # aqui porque componer entre features es de `orquestacion/` (`A-02`), y se
+    # le pasa a `escaleta/` como valor.
+    repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra))
     g = Generacion()
     for escena in repo.escenas_de(con, obra):
         if hasta is not None and escena["orden"] > hasta:
@@ -199,7 +235,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
 
         if c.resumen:
             memoria.guardar_resumen(
-                con, escena["id"], escena["orden"],
+                con, escena["id"], escena["t_discurso"],
                 str(c.resumen.get("texto") or ""),
                 [h for h in (c.resumen.get("hechos_clave") or [])
                  if memoria.IDENTIFICADOR.match(str(h))],
@@ -402,7 +438,7 @@ def _actualizar_fichas(con, escena, c, obra):
     if not tocadas:
         return
     m = modulo_mundo.leer(con)
-    memoria.actualizar_fichas(con, escena["id"], escena["orden"], obra=obra, entidades={
+    memoria.actualizar_fichas(con, escena["id"], escena["t_discurso"], obra=obra, entidades={
         e: "en {0}, {1}".format(m["ubicaciones"].get(e, "?"),
                                 m["entidades_vivas"].get(e, "?"))
         for e in sorted(tocadas)})
