@@ -52,6 +52,7 @@ from pydantic import Field, field_validator, model_validator
 
 from app.commons import config
 from app.commons.dominio import enumeraciones as enums
+from app.commons.dominio.destinatario import FichaDeEntrevista
 from app.commons.dominio.modelos import _DelDominio
 
 
@@ -237,6 +238,11 @@ class BriefDeObra(_DelDominio):
         description="El bloque 1 del contexto: premisa, estilo y reglas del "
                     "mundo tal como las lee el Escritor")
     plan: PlanDeLaObra | None = None
+    destinatario: FichaDeEntrevista | None = Field(
+        default=None,
+        description="Para quien es la novela (`SPEC-25`). Opcional: una obra "
+                    "sin destinatario sigue siendo un brief valido, que es lo "
+                    "que permite que el de hoy cargue sin cambios")
 
     @model_validator(mode="after")
     def _la_forma_cuadra_con_el_plan(self):

@@ -141,10 +141,10 @@ La novela se escribe **para alguien** (`SPEC-25`). Estas clases recogen quién e
 
 | Clase | Definición | Atributos clave |
 | --- | --- | --- |
-| FichaDeEntrevista | Lo acordado con el comprador: el único canal entre él y el Escritor. | **destinatario** → Destinatario, **ocasion** → `ocasion`, **genero** → `genero_de_la_historia`, **tono** → `tono_de_la_historia`, **papel** → `papel_del_destinatario`, literales\_de\_otro, regalado\_por, vetadas\[\] (cadenas), dedicatoria, hechos\_propuestos\[\] → HechoPropuesto, contradicciones\_resueltas\[\] |
+| FichaDeEntrevista | Lo acordado con el comprador: el único canal entre él y el Escritor. | **destinatario** → Destinatario, **ocasion** → `ocasion`, **genero** → `genero_de_la_historia`, **tono** → `tono_de_la_historia`, **papel** → `papel_del_destinatario`, literales\_de\_otro, regalado\_por, vetadas\[\] (cadenas), nombres\_vetados\[\] (cadenas: se vetan completos y por su nombre de pila), dedicatoria, hechos\_propuestos\[\] → HechoPropuesto, contradicciones\_resueltas\[\] |
 | Destinatario | La persona que recibe la novela. | **nombre**, **edad**, elementos\[\] → ElementoPersonal |
-| ElementoPersonal | Un rasgo, recuerdo, persona o mascota del destinatario. | **tipo** → `tipo_de_elemento_personal`, **descripcion**, nombre, relacion, momento, imprescindible |
-| HechoPropuesto | Hecho extraído del texto libre, pendiente de que el comprador lo confirme. | **texto**, **estado** → `estado_de_hecho_propuesto` |
+| ElementoPersonal | Un rasgo, recuerdo, persona o mascota del destinatario. | **tipo** → `tipo_de_elemento_personal`, **descripcion**, nombre, relacion, momento (`{anio, edad}`: cuándo pasó un recuerdo), imprescindible |
+| HechoPropuesto | Hecho extraído del texto libre, pendiente de que el comprador lo confirme. | **id**, **texto**, **estado** → `estado_de_hecho_propuesto` |
 | PalabraVetada | Palabra o expresión que no puede aparecer en un capítulo aceptado. | **forma**, **nivel** → `nivel_de_veto`, franja, obra |
 | DecisionDePolitica | Una fila del audit log del policy engine. | **tipo** → `tipo_de_decision_de_politica`, **momento**, obra, detalle |
 
