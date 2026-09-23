@@ -98,8 +98,12 @@ def main(argv=None):
     con.row_factory = sqlite3.Row
     migraciones.migrar(con)
     procedencia.registrar(con, sistema=sistema.huella)
+    registro_hooks = os.path.join(tempfile.gettempdir(), "hooks-{0}.jsonl".format(args.obra))
+    if os.path.exists(registro_hooks):
+        os.remove(registro_hooks)
     ag = agentes(sistema, {"HARNESS_DB": os.path.abspath(args.base),
-                           "HARNESS_OBRA": args.obra})
+                           "HARNESS_OBRA": args.obra,
+                           "HARNESS_REGISTRO_HOOKS": registro_hooks})
 
     arranque = time.time()
     r = novela.escribir(con, args.obra, ficha, ag, hasta_capitulo=args.capitulos,
@@ -131,6 +135,16 @@ def main(argv=None):
     print("coste leido: {0:.4f} USD{1}".format(
         usd, " (SUELO: hay delegaciones sin coste)" if sin_coste else ""))
     print("tiempo: {0:.0f} s".format(time.time() - arranque))
+    print("
+=== HOOKS (lo que Claude Code ejecuto de verdad) ===")
+    if os.path.exists(registro_hooks):
+        with open(registro_hooks, encoding="utf-8") as f:
+            filas = [json.loads(l) for l in f if l.strip()]
+        for fila in filas:
+            print("  {hook} sobre {agente}: codigo {codigo}".format(**fila))
+    else:
+        print("  NINGUNO: los hooks no dejaron constancia. O Claude Code no los "
+              "lanzo, o no les llego HARNESS_REGISTRO_HOOKS.")
     if r["cierre"]:
         print("\n=== CIERRE ===")
         print(r["cierre"]["estado"], r["cierre"]["faltan"] or "")

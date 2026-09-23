@@ -99,5 +99,18 @@ def main():
     return 2
 
 
+def registrar(hook, codigo):
+    """Deja constancia de que el hook se ejecuto y de que decidio. Sin esto, una
+    ejecucion real en la que nada falla no demuestra que se disparara."""
+    ruta = os.environ.get("HARNESS_REGISTRO_HOOKS")
+    if not ruta or not os.environ.get("HARNESS_AGENTE"):
+        return
+    with open(ruta, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"hook": hook, "agente": os.environ["HARNESS_AGENTE"],
+                            "codigo": codigo}) + "\n")
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    _codigo = main()
+    registrar("validar_capitulo", _codigo)
+    sys.exit(_codigo)

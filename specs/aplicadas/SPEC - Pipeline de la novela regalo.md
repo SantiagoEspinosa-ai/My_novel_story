@@ -7,7 +7,7 @@ fecha_aprobacion: 2026-09-23
 fecha_aplicacion: 2026-09-23
 commit_de_aplicacion: b68c505
 fecha: 2026-09-23
-version: 3
+version: 4
 enmienda_aprobada: 2026-09-23
 ---
 
@@ -19,6 +19,8 @@ enmienda_aprobada: 2026-09-23
 > Terror se conserva como género, y el brief y los guiones de las mediciones
 > antiguas se quedan: *«son la evidencia de lo medido y /docs los va a necesitar
 > para el registro de iteraciones»*.
+> v4 (decisión del autor, 2026-09-23): *«el escritor recibe el capítulo anterior
+> completo para que tenga continuidad»* (`RF-22`).
 
 # SPEC-26 — El pipeline de la novela regalo
 
@@ -156,6 +158,12 @@ Faltan cinco cosas:
   ejes, los ejes de valor, el registro de conocimiento, los roles dramáticos y el
   bloque `fichas_y_setups`. **No se borran** el brief de terror ni los guiones de
   las mediciones antiguas.
+
+- **RF-22 (nuevo en v4). El capítulo anterior completo.** El Escritor recibe el
+  texto aceptado del capítulo anterior entero, además de los resúmenes. En la
+  novela regalo cada capítulo es una escena, así que con el alcance de `SPEC-21`
+  —la escena anterior no cruza el capítulo— no le llegaba nunca. La obra de
+  terror, con varias escenas por capítulo, conserva el alcance de `SPEC-21`.
 
 ## Cuestiones resueltas
 

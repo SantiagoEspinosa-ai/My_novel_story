@@ -92,3 +92,44 @@ def test_un_bloque_eliminado_por_el_recorte_no_llega(con, monkeypatch):
     llamadas = _generar(con)
     assert "Resumen: Marta abre el faro." not in llamadas[2]
     assert PREMISA in llamadas[2], "lo que no se recorta sigue llegando"
+
+
+# --- `SPEC-26` v4: el capitulo anterior completo, en la novela regalo ------------
+
+def _dos_capitulos(con):
+    repo.guardar_escaleta(con, "obra-r", [
+        {"id": "cap-{0}-e1".format(n), "orden": 1, "capitulo": "cap-{0}".format(n),
+         "cambio_de_valor": {"eje": "vinculo", "signo": "positivo"},
+         "pov": "per-marta", "lugar": "lug-salon",
+         "beats": [{"id": "b", "texto": "pasa algo", "establece": []}],
+         "longitud_objetivo": [10, 5000]} for n in (1, 2)])
+    from app.features.brief import repository as brief
+    brief.alta_de_obra(con, "obra-r", {"titulo": "t", "premisa": "p"}, ["cap-1", "cap-2"])
+
+
+def test_con_anterior_que_cruza_el_capitulo_llega_el_capitulo_anterior_entero(con):
+    """El autor: *«el escritor recibe el capitulo anterior completo para que tenga
+    continuidad»*. Con un capitulo por escena, sin esto no le llegaba nunca."""
+    _dos_capitulos(con)
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "obra-r", escritor,
+                      Devuelve({"veredicto": "PASA", "problemas": []}),
+                      Devuelve({"texto": "Resumen.", "hechos_clave": []}),
+                      inmutable=PREMISA, techo=1_000_000, anterior_cruza_capitulo=True)
+    [_, segundo] = escritor.llamadas
+    bloque = segundo[segundo.index("[escena_anterior]"):segundo.index("[estado_y_conocimiento]")]
+    assert "palabra palabra" in bloque
+
+
+def test_sin_la_opcion_la_obra_de_terror_sigue_como_estaba(con):
+    """`SPEC-21`: para las obras de varias escenas por capitulo, el alcance de la
+    escena anterior sigue siendo el capitulo."""
+    _dos_capitulos(con)
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "obra-r", escritor,
+                      Devuelve({"veredicto": "PASA", "problemas": []}),
+                      Devuelve({"texto": "Resumen.", "hechos_clave": []}),
+                      inmutable=PREMISA, techo=1_000_000)
+    segundo = escritor.llamadas[1]
+    bloque = segundo[segundo.index("[escena_anterior]"):segundo.index("[estado_y_conocimiento]")]
+    assert "(vacio)" in bloque

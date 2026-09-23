@@ -237,7 +237,7 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
             tope_vetadas=sistema.topes.reescrituras_por_vetada,
             tope_delegaciones=sistema.topes.delegaciones_por_obra,
             capitulo=cap, vetadas=vetadas, nombres=nombres,
-            imprescindibles=imprescindibles, editor=True,
+            imprescindibles=imprescindibles, editor=True, anterior_cruza_capitulo=True,
             genero=ficha.genero.value if ficha.genero else None)
         for campo in ("escenas_hechas", "rendidas", "saltadas", "sin_resumen",
                       "medidas", "trazas_no_guardadas"):

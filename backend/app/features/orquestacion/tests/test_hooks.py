@@ -139,3 +139,16 @@ def test_el_directorio_aislado_lleva_el_hook_de_policy(tmp_path):
     comando = ajustes["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
     assert str(HOOKS / "policy.py") in comando
     assert "Stop" not in ajustes["hooks"]
+
+
+def test_cada_hook_deja_constancia_de_que_se_ejecuto(tmp_path):
+    """Sin esto, una ejecucion real en la que el hook no falla no demuestra que
+    se disparara: el de validacion solo actua cuando algo esta mal."""
+    registro = tmp_path / "hooks.jsonl"
+    _lanzar("validar_capitulo.py", _respuesta(BIEN), HARNESS_AGENTE="escritor",
+            HARNESS_REGLAS=_reglas(tmp_path), HARNESS_REGISTRO_HOOKS=str(registro))
+    _lanzar("policy.py", {"tool_name": "Bash"}, HARNESS_AGENTE="editor",
+            HARNESS_REGISTRO_HOOKS=str(registro))
+    filas = [json.loads(l) for l in registro.read_text(encoding="utf-8").splitlines()]
+    assert [(f["hook"], f["agente"], f["codigo"]) for f in filas] == [
+        ("validar_capitulo", "escritor", 0), ("policy", "editor", 2)]

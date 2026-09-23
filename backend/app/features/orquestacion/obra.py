@@ -97,7 +97,7 @@ def _orden_de_capitulos(con, obra):
         return {}
 
 
-def reunir_material(con, escena, obra_id, inmutable=""):
+def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=False):
     """Lo que hay disponible para montar el contexto de esta escena."""
     orden = escena["orden"]
     t_discurso = escena.get("t_discurso")
@@ -127,6 +127,18 @@ def reunir_material(con, escena, obra_id, inmutable=""):
         "WHERE e.orden = ? AND e.obra = ? AND e.capitulo IS ? "
         "ORDER BY b.version DESC LIMIT 1",
         (orden - 1, obra_id, escena.get("capitulo"))).fetchone()
+    # `SPEC-26` v4, decision del autor: en la novela regalo cada capitulo es
+    # una escena, asi que con el alcance de `SPEC-21` el Escritor no recibia
+    # nunca el capitulo anterior. Con esta opcion recibe el ultimo texto
+    # aceptado de la obra antes de este punto del discurso. La obra de terror,
+    # con varias escenas por capitulo, sigue con el alcance del capitulo.
+    if anterior is None and anterior_cruza_capitulo:
+        previa = con.execute(
+            "SELECT id, borrador_aceptado FROM escena WHERE obra = ? AND t_discurso < ? "
+            "ORDER BY t_discurso DESC LIMIT 1", (obra_id, t_discurso)).fetchone()
+        if previa is not None:
+            texto = _texto_elegido(con, {"id": previa[0], "borrador_aceptado": previa[1]})
+            anterior = (texto,) if texto else None
     return {
         # Acotados a la obra: el `orden` va del 1 al N **dentro** de ella, asi
         # que sin el filtro dos obras en la misma base se mezclan (`F-40`).
@@ -155,7 +167,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
                  vetadas=None, tope_vetadas=None, genero=None, nombres=None,
-                 imprescindibles=None, editor=False):
+                 imprescindibles=None, editor=False, anterior_cruza_capitulo=False):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -212,7 +224,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                                    "persona y no un bucle"}
             return g
 
-        material = reunir_material(con, escena, obra, inmutable)
+        material = reunir_material(con, escena, obra, inmutable,
+                                   anterior_cruza_capitulo=anterior_cruza_capitulo)
         bloques = ensamblado.montar(material)
         tamanos = ensamblado.tamanos(bloques)
 
