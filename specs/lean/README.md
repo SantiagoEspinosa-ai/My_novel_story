@@ -13,7 +13,7 @@ de la misma SQLite que usa el harness. Si alguna falla, el ejecutable devuelve
 | `Cronologia/Fixture.lean` | Dos obras escritas a mano: una limpia y una que viola las cuatro |
 | `Cronologia/Generado.lean` | **Generado**, no editar. Lo reescribe `generar_lean.py` desde SQLite |
 | `Main.lean` → `verificar` | Corre el fixture. **Tiene que dar 0 siempre** |
-| `MainReal.lean` → `verificar-real` | Corre la obra real. **Puede dar 1**, y eso es su trabajo |
+| `MainReal.lean` → `verificar-real` | Corre la obra real. **Tres salidas**: `0` limpio, `1` con violaciones, `2` sin veredicto |
 | `generar_lean.py` | SQLite → Lean, con informe de cobertura |
 
 ## Cómo se ejecuta
@@ -32,8 +32,40 @@ Y desde `specs/lean/`:
 lake build
 lake exe verificar                                  # el fixture: debe dar 0
 python generar_lean.py ..\..\backend\f6.db obra-x   # SQLite -> Generado.lean
-lake build ; lake exe verificar-real                # la obra: 0 o 1
+lake build ; lake exe verificar-real                # la obra: 0, 1 o 2
 ```
+
+### Las tres salidas, y por qué no son dos
+
+| | Significa | ¿Se publica? |
+| --- | --- | --- |
+| `0` | Se miró y no hay incoherencias | Sí |
+| `1` | Hay incoherencias | No |
+| `2` | **Sin veredicto**: no había bastante dato para mirar | No |
+
+El `2` es la Regla 8 aplicada a este validador, y cierra un hueco real
+(`F-54`). Antes, una obra que llegaba con cero eventos —porque sus escenas no
+declaran `t_fabula`, o porque la tabla estaba vacía— producía cero violaciones
+y el programa decía «puede publicarse». **El veredicto era correcto y la
+conclusión falsa.**
+
+El caso hermano se midió en `F-52`: allí `evento_cronologico` **no existía** y
+el generador murió con `no such table`, lo que evitó el verde falso. Pero lo
+evitó **por accidente del caso**: una tabla presente y vacía es un escenario
+más probable que una ausente, y ahí no moría nadie. Lo único que avisaba era
+el informe de cobertura del generador, que depende de que alguien lo lea — y
+una salvaguarda que depende de eso no es una salvaguarda.
+
+Ahora el generador emite una `Cobertura` junto a la obra y **Lean decide con
+ella**, así que la negativa a dar veredicto vive en el verificador. Medido en
+las dos direcciones:
+
+```
+base de demo (5 eventos)     → 3 violaciones               EXIT 1
+tablas presentes y vacías    → SIN VEREDICTO: cero eventos EXIT 2
+```
+
+Es la misma decisión que la puerta de capítulo tomó con `sin_fecha_legible`.
 
 **Sin Mathlib a propósito.** Estas invariantes son comparaciones sobre listas
 finitas: no hacen falta ni reales ni tácticas pesadas. Mathlib son varios GB y
