@@ -53,3 +53,13 @@ TOPE_DELEGACIONES_OBRA = 540
 # se arregle insistiendo, y si compartieran contador una escena podria gastar
 # sus intentos en vetadas y rendirse con un problema de calidad sin mirar.
 TOPE_REESCRITURAS_POR_VETADA = 2
+
+# **Contrato, no estimacion.** `SPEC-26` `O-1`: el autor lo fijo en 3, igual
+# que las reescrituras del Editor. Cuenta rondas enteras -Planificador y, si no
+# hay huecos, Revisor-, y cualquier rechazo gasta una.
+TOPE_REVISIONES_DE_PLAN = 3
+
+# **Contrato, no estimacion.** `SPEC-26` `RF-11`: tres reescrituras despues del
+# primer intento. Agotadas, el capitulo se acepta por rendicion con sus
+# hallazgos visibles.
+TOPE_REESCRITURAS_DEL_EDITOR = 3
