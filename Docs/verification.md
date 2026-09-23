@@ -428,6 +428,36 @@ que mire un paso.**
 
 ---
 
+### Regla 7 — Una clave que omite el campo que distingue dos filas no falla: pisa
+
+**Basta con esto: dos filas que no significan lo mismo, y una clave de unicidad que deja
+fuera justo el campo por el que se diferencian.** La segunda escritura no da error: sustituye
+a la primera, la tabla se queda con una fila perfectamente creíble y **cuál sobrevive depende
+del orden de escritura**. No hay excepción que capturar, no hay recuento que se descuadre, y
+lo que desaparece no deja hueco.
+
+**Es la hermana de la Regla 6 y no es la misma.** Allí hay dos actores y una ventana entre
+dos operaciones; aquí basta un actor y una clave mal elegida. Lo que comparten es el desenlace,
+y es lo que las hace difíciles: el sistema queda en un estado válido que no es el que nadie
+quiso.
+
+**Se ha manifestado tres veces, y las tres sobre el campo que guardaba la procedencia del
+dato.** Esa coincidencia no es casual: los campos que dicen *de quién es esto* o *quién lo
+afirma* se añaden después, cuando la clave ya está escrita, y casi nunca se revisa la clave al
+añadirlos.
+
+| Dónde | Las dos filas que no cabían | El campo que faltaba en la clave | Qué se perdió |
+| --- | --- | --- | --- |
+| `F-39`, `hecho_canonico` | El mismo identificador de hecho en dos obras | `obra` | Los nueve capítulos anteriores se quedaron con la lista de hechos vacía |
+| `F-42`, `uso_de_hecho` | El mismo `depende` observado y declarado | `origen` | La distinción entre dato medido y afirmación no verificada, que era para lo que existía la columna |
+| `hallazgos_abiertos` | Un `mayor` como cadena y como miembro de su enumeración | — (la frontera de deserialización) | Un `mayor` leído de la base no bloqueaba el cierre de capítulo |
+
+**La pregunta que la cierra, al escribir cualquier clave:** *¿qué dos filas distintas podrían
+colisionar aquí, y hay algún campo que diga de dónde viene el dato?* Si lo hay, casi siempre
+pertenece a la clave. **Y la corrección se demuestra escribiendo las dos filas y enseñando que
+antes sobrevivía una**: sin ese caso negativo, «he ampliado la clave» no se distingue de un
+cambio cosmético.
+
 ## Estado de implantación
 
 | | |
