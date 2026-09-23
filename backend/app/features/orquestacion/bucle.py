@@ -71,7 +71,9 @@ def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None):
     mundo = mundo or {}
     return prompt.construir(
         parametros={"escena": escena["id"],
-                    "longitud_objetivo": escena.get("longitud_objetivo")},
+                    "longitud_objetivo": escena.get("longitud_objetivo"),
+                    # `SPEC-18` C-2: el POV es del plan, no del modelo.
+                    "pov": escena.get("pov")},
         estado={"contexto": sorted(contexto.items())},
         objetivo=json.dumps(escena.get("cambio_de_valor"), sort_keys=True),
         problemas=problemas,
@@ -85,7 +87,7 @@ def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None):
 
 
 def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,
-            mundo=None, trabajo="sin-trabajo", hechos=None):
+            mundo=None, trabajo="sin-trabajo", hechos=None, problemas=None):
     escena = repo.escena(con, escena_id)
     t = modulo_traza.nueva(agente="escritor", escena=escena_id, trabajo=trabajo,
                            modelo=modelo.nombre)
@@ -102,7 +104,8 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
         modulo_traza.registrar_recorte(t, paso.bloque, paso.clase.value)
 
     t.tokens_para_recortar = sum(contexto.values())
-    texto_prompt = _prompt(escena, contexto, mundo, hechos=hechos)
+    texto_prompt = _prompt(escena, contexto, mundo, problemas=problemas,
+                           hechos=hechos)
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
         texto_prompt.encode("utf-8")).hexdigest()[:12])
 

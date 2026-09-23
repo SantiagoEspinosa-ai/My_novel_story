@@ -178,3 +178,106 @@ def test_una_accion_sin_conocimiento_detiene_la_obra(con):
     assert g.escenas_hechas == []
     assert g.parada["escena"] == "e1"
     assert any(inv == "INV-03" for inv, _ in g.parada["hallazgos"])
+
+
+# --- Los intentos, la rendicion y el tope global --------------------------
+
+class SiempreCorto:
+    """Produce siempre una escena fuera de rango: `INV-17`, `mayor`.
+
+    Molesta y no corrompe, asi que es exactamente lo que se rinde.
+    """
+
+    nombre = "doble-corto"
+
+    def __init__(self):
+        self.llamadas = []
+
+    def llamar(self, prompt):
+        self.llamadas.append(prompt)
+        return {"texto": " ".join(["palabra"] * 3), "pov_usado": "per-marta",
+                "delta": {"cambio_de_valor": {"eje": "cordura", "signo": "negativo"}},
+                "usage": {"total_tokens": 100}}
+
+
+def test_una_escena_con_un_mayor_se_reintenta_y_acaba_rindiendose(con):
+    """`RF-24`: los intentos se agotan y la escena pasa a
+    `aceptada_por_rendicion`, no a `aceptada`. Quien lea el manuscrito tiene
+    que poder distinguirlas."""
+    escritor = SiempreCorto()
+    g = obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                          techo=1_000_000, hasta=1, tope_intentos=3)
+    assert len(escritor.llamadas) == 3, "se agotan los intentos antes de rendirse"
+    assert g.escenas_hechas == ["e1"]
+    # Acaba en `consolidada`, no en `aceptada_por_rendicion`: la tabla de
+    # transiciones de `Docs/architecture.md` tiene `aceptada_por_rendicion ->
+    # consolidada`, asi que ese estado es de paso. Lo que deja constancia de
+    # que se rindio es `borrador_aceptado` -que dice cual de los intentos se
+    # eligio- y los hallazgos que siguen abiertos.
+    assert repo.escena(con, "e1")["estado"] == "consolidada"
+    assert repo.escena(con, "e1")["borrador_aceptado"] is not None
+    # Los tres intentos empatan -el doble falla siempre igual-, y a igualdad
+    # gana el primero: la rendicion tiene que ser reproducible.
+    assert g.rendidas == [("e1", 1, 3)]
+
+
+def test_los_problemas_del_intento_anterior_llegan_al_siguiente(con):
+    """Si no, el escritor no sabe nada del fallo y vuelve a cometerlo. Es lo
+    que le paso a la otra rama con el aviso de longitud."""
+    escritor = SiempreCorto()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                      techo=1_000_000, hasta=1, tope_intentos=2)
+    assert "INV-17" in escritor.llamadas[1], "el segundo intento ve el problema"
+    assert "INV-17" not in escritor.llamadas[0], "y el primero no, porque no habia"
+
+
+def test_una_bloqueante_no_se_rinde_por_muchos_intentos_que_queden(con):
+    """La falsedad entraria al canon y la heredarian todas las siguientes."""
+    from app.commons.modelo.doble import Guion
+
+    escritor = DobleDelModelo(Guion(["actua_sin_saber"]))
+    g = obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                          techo=1_000_000, tope_intentos=3)
+    assert g.parada["escena"] == "e1"
+    assert repo.escena(con, "e1")["estado"] != "aceptada_por_rendicion"
+
+
+def test_el_tope_global_de_delegaciones_detiene_la_obra(con):
+    """Acota el gasto, no el error: la parada dice cuantas llevaba."""
+    g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000,
+                          tope_delegaciones=2)
+    assert g.parada["motivo"] == "tope_delegaciones"
+    assert g.parada["delegaciones"] >= 2
+    assert len(g.escenas_hechas) < 3, "no llego al final"
+
+
+# --- La puerta de capitulo, al terminar la obra ---------------------------
+
+def test_al_terminar_se_evalua_el_cierre_pero_no_se_firma(con):
+    """La firma es **humana** y la dispara el cliente de la API, nunca el
+    worker (`Docs/architecture.md`). Lo que hace el bucle al terminar es decir
+    si el capitulo **podria** cerrarse, que es distinto de cerrarlo."""
+    g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000)
+    assert g.llego_al_final
+    assert g.cierre["puede_cerrarse"] is True
+    assert g.cierre["firmado"] is False, "el bucle no firma"
+
+
+def test_una_escena_rendida_deja_el_capitulo_sin_poder_cerrarse(con):
+    """El control no desaparecio al dejar pasar un `mayor`: se movio aqui."""
+    g = obra.generar_obra(con, "cap-1", SiempreCorto(), *_agentes()[1:],
+                          techo=1_000_000, tope_intentos=2)
+    assert g.rendidas, "las tres escenas se rindieron"
+    assert g.cierre["puede_cerrarse"] is False
+    assert "INV-17" in g.cierre["motivo"] or "mayor" in g.cierre["motivo"]
+
+
+def test_si_la_obra_se_detiene_no_se_evalua_el_cierre(con):
+    """Un capitulo con escenas a medias no es un capitulo, y preguntarselo a
+    la puerta seria pedirle que juzgue algo que no ha terminado."""
+    from app.commons.modelo.doble import Guion
+
+    g = obra.generar_obra(con, "cap-1", DobleDelModelo(Guion(["actua_sin_saber"])),
+                          *_agentes()[1:], techo=1_000_000)
+    assert g.parada is not None
+    assert g.cierre is None

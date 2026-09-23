@@ -158,6 +158,33 @@ def guardar_borrador(con, escena, texto, modelo, prompt_hash):
     return version
 
 
+def marcar_consolidada(con, escena):
+    """`aceptada` -> `consolidada`, la transicion del Consolidador.
+
+    Existia en la tabla de `Docs/architecture.md` y **no la aplicaba nadie**:
+    las escenas se quedaban en `generada` para siempre, asi que la puerta de
+    capitulo veia un capitulo con tres escenas a medias y no podia cerrarse
+    nunca. El delta se aplicaba igual, de modo que el estado del mundo era
+    correcto y el de la escena mentia.
+    """
+    with con:
+        con.execute("UPDATE escena SET estado = ? WHERE id = ?",
+                    (EE.CONSOLIDADA.value, escena))
+
+
+def rendir_escena(con, escena, version):
+    """`aceptada_por_rendicion`, y **no** `aceptada` (`RF-24`).
+
+    Son dos estados y no uno porque quien lea el manuscrito tiene que poder
+    distinguir una escena limpia de una que paso con hallazgos abiertos.
+    `borrador_aceptado` dice **cual** de los intentos se eligio, que es la otra
+    mitad: sin eso, "se eligio el menos malo" no es comprobable.
+    """
+    with con:
+        con.execute("UPDATE escena SET estado = ?, borrador_aceptado = ? "
+                    "WHERE id = ?", (EE.ACEPTADA_POR_RENDICION.value, version, escena))
+
+
 def intentos_de(con, escena):
     """No hay contador aparte: es cuantos borradores hay."""
     return con.execute("SELECT COUNT(*) FROM borrador WHERE escena = ?",

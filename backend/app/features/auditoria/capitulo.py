@@ -15,7 +15,7 @@ from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.commons.dominio.enumeraciones import EstadoDeHallazgo as EH
 from app.commons.dominio.enumeraciones import Severidad as S
 from app.commons.invariantes.severidad import (
-    impide_cerrar_el_capitulo,
+    impide_cerrar_el_capitulo_por,
     se_lista_al_firmar,
 )
 
@@ -28,6 +28,23 @@ CUENTAN_COMO_ABIERTOS = {EH.ABIERTO, EH.SIN_VEREDICTO}
 
 class NoSePuedeCerrar(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class _Vista:
+    """Adaptador: la puerta recibe diccionarios y `severidad.py` decide sobre
+    objetos con `severidad` y `estado`. La decision vive en un solo sitio
+    (`D-4`) y esto solo le da la forma que espera."""
+
+    fila: dict
+
+    @property
+    def severidad(self):
+        return self.fila["severidad"]
+
+    @property
+    def estado(self):
+        return self.fila["estado"]
 
 
 @dataclass(frozen=True)
@@ -44,7 +61,13 @@ def cerrar(estados_de_escena, hallazgos):
             "a medias no es un capitulo".format(len(a_medias))
         )
     abiertos = [h for h in hallazgos if h["estado"] in CUENTAN_COMO_ABIERTOS]
-    bloquean = [h for h in abiertos if impide_cerrar_el_capitulo(h["severidad"])]
+    # Se mira el **hallazgo entero**, no solo su severidad (`SPEC-18` C-3):
+    # un `sin_veredicto` impide cerrar sea cual sea la severidad que habria
+    # tenido la violacion, porque lo que falta es el juicio. Mirando solo la
+    # severidad, un `menor` sin veredicto pasaba — y eso es justo un hueco en
+    # la auditoria colandose por la puerta que existe para taparlo.
+    bloquean = [h for h in abiertos
+                if impide_cerrar_el_capitulo_por(_Vista(h))]
     if bloquean:
         raise NoSePuedeCerrar(
             "hay {0} hallazgos `mayor` abiertos: hay que resolverlos o "

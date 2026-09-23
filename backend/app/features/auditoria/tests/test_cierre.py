@@ -82,3 +82,15 @@ def test_un_mayor_leido_de_la_base_tambien_bloquea():
     assert leidos[0]["severidad"] is S.MAYOR, "el repositorio devuelve el tipo del dominio"
     with pytest.raises(capitulo.NoSePuedeCerrar):
         capitulo.cerrar([EE.CONSOLIDADA], leidos)
+
+
+def test_un_sin_veredicto_menor_tambien_impide_cerrar():
+    """`SPEC-18` C-3: quien no se dejo auditar no gana por defecto, y eso no
+    depende de la severidad que habria tenido la violacion. Mirar solo la
+    severidad dejaba pasar un `menor` sin veredicto, que es precisamente un
+    hueco en la auditoria."""
+    with pytest.raises(capitulo.NoSePuedeCerrar):
+        capitulo.cerrar(
+            [EE.CONSOLIDADA],
+            [{"invariante": "INV-16", "severidad": S.MENOR,
+              "estado": EH.SIN_VEREDICTO}])

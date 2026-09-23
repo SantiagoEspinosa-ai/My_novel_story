@@ -48,6 +48,7 @@ from dataclasses import dataclass, field
 from app.commons.invariantes import severidad
 from app.commons.modelo import proveedor, traza as modulo_traza
 from app.features.consolidacion import aplicar
+from app.features.escaleta import repository as repo
 from app.features.orquestacion import bucle
 
 RUBRICA = """Puntua esta escena de terror. Devuelve PASA o FALLO y los problemas
@@ -118,12 +119,13 @@ def _delegar(modelo, prompt, agente, escena, trabajo, trazas):
 
 
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
-             techo=100_000, trabajo="ciclo", hechos=None):
+             techo=100_000, trabajo="ciclo", hechos=None, problemas=None):
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
     c.generacion = bucle.generar(con, escena_id, contexto, escritor, techo=techo,
-                                 mundo=mundo, trabajo=trabajo, hechos=hechos)
+                                 mundo=mundo, trabajo=trabajo, hechos=hechos,
+                                 problemas=problemas)
     c.trazas.append(c.generacion.traza)
     if c.generacion.fallo:
         c.fallo = c.generacion.fallo
@@ -149,18 +151,38 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
     if bloqueantes:
         c.fallo = "bloqueante"
         return c
+
+    # Un `mayor` o un `menor` abierto dejan la escena en `en_revision`, y
+    # `Docs/architecture.md` solo consolida desde `aceptada` o desde
+    # `aceptada_por_rendicion`. Consolidar aqui meteria en el canon el delta de
+    # un intento que todavia puede descartarse **y el canon no se deshace**.
+    # Se descubrio al conectar los reintentos: el segundo intento moria con
+    # `YaConsolidada` porque el primero ya habia escrito.
+    if c.generacion.hallazgos:
+        return c
+    return consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo)
+
+
+def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo"):
+    """Aplica el delta y resume. Se llama cuando la escena **ya esta aceptada**:
+    o porque salio limpia, o porque se rindio y se eligio su mejor intento."""
     try:
         aplicar.consolidar(con, escena_id, c.generacion.leida_delta or {})
+        repo.marcar_consolidada(con, escena_id)
         c.consolidada = True
     except (aplicar.DeltaIncompatible, aplicar.YaConsolidada) as e:
         c.fallo = "delta:" + type(e).__name__
         return c
 
-    # 4. Resumir la escena ya consolidada.
     bruto, _ = _delegar(resumidor, "Condensa esta escena.\n\nESCENA\n" + texto,
                         "resumidor", escena_id, trabajo, c.trazas)
     c.resumen = bruto
     return c
+
+
+def texto_de(con, escena_id, version):
+    return con.execute("SELECT texto FROM borrador WHERE escena=? AND version=?",
+                       (escena_id, version)).fetchone()[0]
 
 
 def coste_total(trazas):

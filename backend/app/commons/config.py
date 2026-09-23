@@ -29,3 +29,20 @@ TOPE_REINTENTOS_TRANSPORTE = 3
 # comprueba su estado antes de escribir.
 # Caduca con: backend/app/features/orquestacion/
 MARGEN_ABANDONO_SEGUNDOS = 15 * 60
+
+# Provisional: elegido por razonamiento, no medido. `VER-43` lo hace depender
+# de observar cuantas veces regenera de verdad una escena problematica, y
+# todavia no hay serie que observar. Tres intentos: el primero es el intento,
+# el segundo corrige con los problemas del anterior en el prompt, y el tercero
+# es la ultima oportunidad antes de rendirse. Un cuarto no cambia de estrategia,
+# solo repite, y cada uno es una delegacion pagada.
+# Caduca con: harness/evals/
+TOPE_INTENTOS_ESCENA = 3
+
+# Provisional: elegido por razonamiento, no medido. Es el freno de mano de una
+# obra entera: seis escenas reales costaron tres delegaciones cada una, asi que
+# sesenta escenas limpias son ciento ochenta. Se pone al triple para que una
+# obra normal no lo roce y una que se ha ido de madre se pare antes de gastarse
+# el presupuesto de alguien. **Lo que acota es el gasto, no el error.**
+# Caduca con: harness/evals/
+TOPE_DELEGACIONES_OBRA = 540
