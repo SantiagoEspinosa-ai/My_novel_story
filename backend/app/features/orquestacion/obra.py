@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.features.auditoria import capitulo
+from app.features.cronologia import consultas
 
 # Una escena en estos estados ya paso por todo: su delta esta aplicado y su
 # texto elegido. Son los mismos que `auditoria/` llama `COMPLETAS` para decidir
@@ -260,8 +261,19 @@ def evaluar_cierre(con, obra):
     estados = [EE(e["estado"]) for e in escenas]
     hallazgos = [dict(h, severidad=h["severidad"], estado=h["estado"])
                  for e in escenas for h in repo.hallazgos_abiertos(con, e["id"])]
+    # `INV-08` es de nivel capitulo y su dato vive en `cronologia/`, que
+    # `auditoria/` no puede importar (`A-02`). Componer es de aqui, asi que el
+    # orden temporal se consulta aqui y se le pasa ya resuelto (`F-47`).
     try:
-        cierre = capitulo.cerrar(estados, hallazgos)
+        temporal = consultas.orden_temporal(con, obra)
+    except Exception:
+        # La cronologia puede no estar poblada en una obra que no la use. Que
+        # falte el dato no es lo mismo que estar en orden, pero tampoco puede
+        # tumbar el cierre por un error de infraestructura: se pasa `None`, que
+        # es "no se consulto", y la puerta no afirma nada sobre `INV-08`.
+        temporal = None
+    try:
+        cierre = capitulo.cerrar(estados, hallazgos, orden_temporal=temporal)
     except capitulo.NoSePuedeCerrar as e:
         detalle = "; ".join(sorted({h["invariante"] for h in hallazgos})) or ""
         return {"puede_cerrarse": False, "firmado": False,

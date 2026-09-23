@@ -94,3 +94,37 @@ def test_un_sin_veredicto_menor_tambien_impide_cerrar():
             [EE.CONSOLIDADA],
             [{"invariante": "INV-16", "severidad": S.MENOR,
               "estado": EH.SIN_VEREDICTO}])
+
+
+# --- F-47: INV-08 deja de estar declarada y sin ejecutar ------------------
+
+def test_inv08_una_inversion_de_tiempo_impide_cerrar_el_capitulo():
+    """`F-47`: la invariante estaba declarada, su consulta escrita y sus
+    pruebas en verde, y **no la llamaba nadie en el pipeline**. Desde fuera
+    -documento, codigo, pruebas- no se distinguia de una que si se ejecuta."""
+    with pytest.raises(capitulo.NoSePuedeCerrar, match="INV-08"):
+        capitulo.cerrar([EE.CONSOLIDADA], [],
+                        orden_temporal={"inversiones": [("ev-1", "ev-2")],
+                                        "sin_fecha_legible": []})
+
+
+def test_inv08_sin_inversiones_no_impide_nada():
+    c = capitulo.cerrar([EE.CONSOLIDADA], [],
+                        orden_temporal={"inversiones": [], "sin_fecha_legible": []})
+    assert c.estado == "cerrado"
+
+
+def test_inv08_sin_fechas_legibles_no_es_un_verde():
+    """Regla 8: no se pudo comprobar **no es** se comprobo y esta bien. Una
+    obra sin `t_fabula` no tiene orden temporal que verificar, y eso tiene que
+    verse distinto de una que lo tiene y esta en orden."""
+    with pytest.raises(capitulo.NoSePuedeCerrar, match="INV-08"):
+        capitulo.cerrar([EE.CONSOLIDADA], [],
+                        orden_temporal={"inversiones": [],
+                                        "sin_fecha_legible": ["ev-1", "ev-2"]})
+
+
+def test_sin_el_dato_de_cronologia_el_cierre_sigue_funcionando():
+    """Compatibilidad: quien no lo pase cierra como antes. El parametro se
+    añade, no se exige."""
+    assert capitulo.cerrar([EE.CONSOLIDADA], []).estado == "cerrado"
