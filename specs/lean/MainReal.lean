@@ -34,6 +34,14 @@ def main : IO UInt32 := do
   IO.println s!"cobertura: {coberturaReal.comoTexto}"
   IO.println informe.comoTexto
   IO.println ""
+  -- Bloque legible por maquina, para que `comparar_con_la_puerta.py` no tenga
+  -- que parsear la prosa de arriba. Un mensaje se reescribe cualquier dia; un
+  -- prefijo fijo, no.
+  IO.println s!"#COBERTURA eventos={coberturaReal.eventos} no_ordenables={coberturaReal.capitulosNoOrdenables}"
+  for (antes, despues) in paresL1 obraReal do
+    IO.println s!"#PAR L-1 {antes} {despues}"
+  IO.println ""
+
   match veredictoDe coberturaReal informe with
   | Veredicto.sinVeredicto =>
       if coberturaReal.eventos == 0 then

@@ -6,6 +6,34 @@ Comprueba cuatro invariantes temporales sobre la cronología de una obra, leída
 de la misma SQLite que usa el harness. Si alguna falla, el ejecutable devuelve
 1 y la versión no se publica.
 
+---
+
+## Lo que esto destapó: no faltaban tablas, el modelado impedía que Lean dijera nada
+
+La primera obra de diez capítulos no pudo ser verificada formalmente, y la
+razón no es la que parecía. `evento_cronologico` no existía en su base — pero
+**aunque hubiera existido, no habría servido**.
+
+El guion modelaba **una obra por capítulo**: la base tiene diez obras de seis
+escenas, `obra='cap-01'`…`obra='cap-10'`. Y la cronología se consulta con
+`WHERE obra = ?`. Así que **cada capítulo era su propia cronología y no había
+un solo par que comparar** entre capítulos, que es exactamente lo que estas
+cuatro invariantes miran.
+
+Dicho de otro modo: con todas las tablas puestas y todos los datos rellenos,
+`L-1`…`L-4` habrían devuelto cero violaciones sobre diez cronologías de un
+capítulo cada una, y ese cero no habría significado nada.
+
+**Por eso el cambio del guion —una obra con diez capítulos en vez de diez
+obras— no es un ajuste: es lo que desbloquea la verificación formal.** Hasta
+que los capítulos pertenezcan a la misma obra, la cronología de la fábula no
+tiene sobre qué existir. Registrado en `F-52`.
+
+Es también la razón de que `escena.capitulo` esté a `None` en toda esa base:
+la identidad del capítulo viajaba en la columna `obra`.
+
+---
+
 | Archivo | Qué es |
 | --- | --- |
 | `Cronologia/Basic.lean` | El modelo: `Fecha`, `Evento`, `Participacion`, `Personaje`, `Obra` |

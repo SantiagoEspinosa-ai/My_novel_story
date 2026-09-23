@@ -63,6 +63,22 @@ def orden (o : Obra) : Informe :=
     else acc) []
   { violaciones := malos }
 
+/-- Los pares que `L-1` levanta, en crudo y en el mismo orden en que los
+    nombra la puerta de capitulo: `(antes, despues)` por **discurso**.
+
+    Existe para que la comparacion con `INV-08` sea una **igualdad de
+    conjuntos** y no una lectura de dos textos parecidos. Sin esto habria que
+    parsear la prosa del informe, que es exactamente la clase de acoplamiento
+    que se rompe el dia que alguien mejore un mensaje. -/
+def paresL1 (o : Obra) : List (String × String) :=
+  (paresDe o.eventos).foldr (fun (par : Evento × Evento) acc =>
+    let (a, b) := par
+    let (antes, despues) := if a.tDiscurso ≤ b.tDiscurso then (a, b) else (b, a)
+    if antes.tDiscurso == despues.tDiscurso then acc
+    else if despues.tFabula.menorQue antes.tFabula && !despues.analepsis then
+      (antes.id, despues.id) :: acc
+    else acc) []
+
 /-- **L-2 · La edad es coherente con la fecha de nacimiento.**
 
     Un personaje presente en un evento anterior a su nacimiento es imposible.
