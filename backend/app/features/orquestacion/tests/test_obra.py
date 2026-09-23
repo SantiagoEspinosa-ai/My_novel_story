@@ -56,6 +56,7 @@ def test_genera_las_tres_escenas_en_orden(con):
 def test_el_material_de_la_escena_2_incluye_lo_que_dejo_la_1(con):
     """El encadenado: sin esto la 2 genera contra el mundo de la 1."""
     obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    repo.asignar_t_discurso(con, "cap-1", {"cap-1": 1, "cap-2": 2})
     material = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
     assert material["resumenes"], "el resumen de la 1 esta disponible en la 2"
     assert material["escena_anterior"], "y el texto de la 1 tambien"
@@ -160,6 +161,7 @@ def test_una_revelacion_marca_donde_el_texto_establece_el_hecho(con):
 def test_el_material_de_una_escena_lleva_los_hechos_de_su_obra(con):
     repo.declarar_hechos(con, "cap-1", [
         {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
+    repo.asignar_t_discurso(con, "cap-1", {"cap-1": 1, "cap-2": 2})
     material = obra.reunir_material(con, repo.escena(con, "e1"), "cap-1")
     assert [h["id"] for h in material["hechos"]] == ["hec-llave"]
 
@@ -547,6 +549,7 @@ def test_la_escena_anterior_no_puede_venir_de_otra_obra(con):
                           modelo="x", prompt_hash="h")
 
     obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    repo.asignar_t_discurso(con, "cap-1", {"cap-1": 1, "cap-2": 2})
     material = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
     assert "OTRA OBRA" not in material["escena_anterior"]
     assert material["escena_anterior"], "y si trae la de su propia obra"
@@ -574,6 +577,7 @@ def test_la_escena_anterior_no_cruza_el_corte_de_capitulo(con):
     for texto in ("primera", "ULTIMA DEL CAPITULO UNO"):
         repo.guardar_borrador(con, "e3", texto=texto, modelo="x", prompt_hash="h")
 
+    repo.asignar_t_discurso(con, "cap-1", {"cap-1": 1, "cap-2": 2})
     material = obra.reunir_material(con, repo.escena(con, "c2-e1"), "cap-1")
     assert "CAPITULO UNO" not in material["escena_anterior"], (
         "la primera escena de un capitulo no continua desde el anterior")
@@ -583,6 +587,7 @@ def test_dentro_del_capitulo_la_escena_anterior_si_llega(con):
     """El caso positivo: sin el, un filtro que devolviera siempre vacio pasaria
     la prueba de arriba sin hacer nada."""
     obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    repo.asignar_t_discurso(con, "cap-1", {"cap-1": 1, "cap-2": 2})
     material = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
     assert material["escena_anterior"], "dentro del capitulo si continua"
 
@@ -596,6 +601,7 @@ def test_la_primera_escena_de_un_capitulo_no_es_lo_mismo_que_una_sin_anterior(co
     """
     with con:
         con.execute("UPDATE escena SET capitulo='cap-1'")
+    repo.asignar_t_discurso(con, "cap-1", {"cap-1": 1, "cap-2": 2})
     primera = obra.reunir_material(con, repo.escena(con, "e1"), "cap-1")
     assert primera["escena_anterior"] == ""
     assert primera["falta_escena_anterior"] is False, "la 1 no tiene anterior y esta bien"
@@ -603,3 +609,122 @@ def test_la_primera_escena_de_un_capitulo_no_es_lo_mismo_que_una_sin_anterior(co
     cuarta = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
     assert cuarta["escena_anterior"] == ""
     assert cuarta["falta_escena_anterior"] is True, "la 2 deberia tenerla y no esta"
+
+
+def test_el_capitulo_dos_arranca_con_la_memoria_del_capitulo_uno(con):
+    """`F-45` de punta a punta, que es donde importa.
+
+    Es el defecto que mas de cerca toca lo que el proyecto existe para hacer:
+    una novela que **olvida el capitulo uno al empezar el dos**. Con `orden`
+    -local al capitulo- la escena 1 del capitulo dos preguntaba por «lo anterior
+    a 1» y recibia cero resumenes. Con `t_discurso`, que numera la obra entera,
+    recibe los del capitulo anterior.
+
+    Y la otra mitad de la decision sigue en pie: la escena anterior **no** cruza
+    el corte, porque eso es lo que un corte de capitulo significa. Son dos
+    alcances distintos sobre el mismo material.
+    """
+    # Los capitulos registrados, que es lo que tiene una obra de verdad. Sin
+    # ellos `generar_obra` **se para en vez de adivinar** el orden de lectura:
+    # colocar los capitulos a ojo seria inventarse el orden de una novela.
+    from app.features.brief import repository as brief
+    brief.asegurar_tablas(con)
+    with con:
+        con.execute("UPDATE escena SET capitulo='cap-1'")
+        con.execute("INSERT INTO obra (id, titulo, premisa) VALUES ('cap-1', 't', 'p')")
+        for id_cap, orden in (("cap-1", 1), ("cap-2", 2)):
+            con.execute("INSERT INTO capitulo (id, obra, orden) VALUES (?, ?, ?)",
+                        (id_cap, "cap-1", orden))
+    repo.guardar_escaleta(con, "cap-1", [
+        {"id": "c2-e1", "orden": 1, "capitulo": "cap-2", "pov": "per-marta",
+         "lugar": "lug-salon", "beats": ["b"], "longitud_objetivo": [10, 5000],
+         "cambio_de_valor": {"eje": "cordura", "signo": "negativo"}}])
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=2)
+
+    material = obra.reunir_material(con, repo.escena(con, "c2-e1"), "cap-1")
+    assert material["resumenes"], (
+        "la primera escena del capitulo dos arranca sin memoria del uno")
+    assert not material["escena_anterior"], (
+        "pero la escena anterior si se queda en su capitulo")
+
+
+def test_las_trazas_de_la_obra_sobreviven_al_proceso(con):
+    """`F-49`: la traza se construia en memoria y **nadie la escribia**, asi
+    que la contencion de `PC-9` -saber que bloques quedaron fuera cuando un
+    agente inventa- solo valia dentro de la misma ejecucion. Y el diagnostico
+    siempre se hace despues."""
+    from app.features.observabilidad import repository as obs
+
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    trazas = obs.trazas_de(con, "e1")
+    assert {t["agente"] for t in trazas} == {"escritor", "juez", "resumidor"}, (
+        "las tres delegaciones del ciclo, no solo la del Escritor")
+
+
+def test_generar_un_capitulo_dentro_de_una_obra_no_toca_los_demas(con):
+    """Una obra con diez capitulos, no diez obras.
+
+    El guion de la obra larga generaba **una obra por capitulo**, y con eso nada
+    de lo construido significaba nada: `escena.capitulo` no tenia a que apuntar,
+    el cierre de capitulo evaluaba una obra entera, la cronologia no cruzaba
+    ningun corte y los hechos de los diez capitulos colisionaban en la misma
+    clave (`F-39`).
+
+    Con una sola obra hace falta poder generar **capitulo a capitulo**, que es
+    lo que permite reintentar uno sin tocar los demas.
+    """
+    from app.features.brief import repository as brief
+    brief.asegurar_tablas(con)
+    with con:
+        con.execute("UPDATE escena SET capitulo='cap-1'")
+        con.execute("INSERT INTO obra (id, titulo, premisa) VALUES ('cap-1','t','p')")
+        for id_cap, orden in (("cap-1", 1), ("cap-2", 2)):
+            con.execute("INSERT INTO capitulo (id, obra, orden) VALUES (?, ?, ?)",
+                        (id_cap, "cap-1", orden))
+    repo.guardar_escaleta(con, "cap-1", [
+        {"id": "c2-e1", "orden": 1, "capitulo": "cap-2", "pov": "per-marta",
+         "lugar": "lug-salon", "beats": ["b"], "longitud_objetivo": [10, 5000],
+         "cambio_de_valor": {"eje": "cordura", "signo": "negativo"}}])
+
+    g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000,
+                          capitulo="cap-2")
+    assert g.escenas_hechas == ["c2-e1"], (
+        "generar el capitulo dos ha tocado escenas de otro capitulo")
+    assert repo.escena(con, "e1")["estado"] == "planificada"
+
+
+def test_cerrar_un_capitulo_no_mira_el_orden_temporal_de_los_demas(con):
+    """El patron que predijo la sesion de frontend: una consulta que recibe un
+    capitulo y filtra por obra **pasa mientras los dos identificadores
+    coincidan**. `evaluar_cierre` filtraba las escenas por capitulo y pedia el
+    orden temporal de la obra entera, asi que una inversion en el capitulo
+    siete habria impedido cerrar el tres.
+
+    Dos capitulos, por la Regla 9: con uno solo, la consulta equivocada sigue
+    devolviendo lo correcto.
+    """
+    inversiones = {"inversiones": [("ev-c7-a", "ev-c7-b")], "sin_fecha_legible": []}
+    de_otro = obra.inversiones_del_capitulo(inversiones, {"ev-c7-a": "cap-7",
+                                                          "ev-c7-b": "cap-7"},
+                                            "cap-3")
+    assert de_otro["inversiones"] == [], "las del siete no bloquean el tres"
+
+    del_mismo = obra.inversiones_del_capitulo(inversiones, {"ev-c7-a": "cap-7",
+                                                            "ev-c7-b": "cap-7"},
+                                              "cap-7")
+    assert del_mismo["inversiones"] == [("ev-c7-a", "ev-c7-b")]
+
+
+def test_una_inversion_que_cruza_dos_capitulos_bloquea_el_posterior(con):
+    """Si el tiempo retrocede al pasar del capitulo tres al cuatro, el defecto
+    es del cuatro: es donde el lector lo encuentra."""
+    inv = {"inversiones": [("ev-c3", "ev-c4")], "sin_fecha_legible": []}
+    caps = {"ev-c3": "cap-3", "ev-c4": "cap-4"}
+    assert obra.inversiones_del_capitulo(inv, caps, "cap-4")["inversiones"]
+    assert not obra.inversiones_del_capitulo(inv, caps, "cap-3")["inversiones"]
+
+
+def test_sin_capitulo_se_mira_la_obra_entera(con):
+    """Cerrar la obra si pregunta por todo, que es otra pregunta."""
+    inv = {"inversiones": [("a", "b")], "sin_fecha_legible": []}
+    assert obra.inversiones_del_capitulo(inv, {}, None) is inv

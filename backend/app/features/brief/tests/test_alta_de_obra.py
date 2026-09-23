@@ -18,6 +18,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
+from app.features.brief import repository as repositorio
 from app.main import app, preparar_base
 
 
@@ -95,3 +96,40 @@ def test_una_feature_no_importa_de_otra_feature(cliente):
             if m.group(1) != feature:
                 fallos.append("{0} importa de {1}".format(py.name, m.group(1)))
     assert fallos == []
+
+
+# --- El alta con sus capitulos, en un solo sitio ---------------------------
+
+
+def test_alta_de_obra_registra_la_obra_y_sus_capitulos_con_su_orden():
+    """Una sola funcion da de alta una obra, la llame quien la llame.
+
+    La forma de la obra vive en el brief. Darla de alta desde dos sitios -el
+    guion por un lado con `INSERT` a mano, la API por otro- es exactamente como
+    vuelven a divergir: el dia que una de las dos aprenda algo, la otra no.
+
+    El orden de los capitulos no es decorativo: es lo que
+    `escaleta.asignar_t_discurso` necesita para numerar el orden de lectura de
+    la obra entera, y sin el las escenas se quedan sin situar.
+    """
+    con = sqlite3.connect(":memory:")
+    repositorio.alta_de_obra(
+        con, "obra-1",
+        {"titulo": "La casa", "premisa": "Una casa exacta", "genero": "terror"},
+        ["cap-01", "cap-02", "cap-03"])
+    obra = repositorio.leer(con, "obra-1")
+    assert obra["titulo"] == "La casa"
+    assert obra["capitulos"] == ["cap-01", "cap-02", "cap-03"]
+    assert [f[0] for f in con.execute(
+        "SELECT orden FROM capitulo WHERE obra='obra-1' ORDER BY orden")] == [1, 2, 3]
+
+
+def test_dar_de_alta_dos_veces_no_duplica_ni_renumera():
+    """Idempotente: el guion la llama en cada arranque, y repetir un arranque
+    no puede dejar la obra con veinte capitulos."""
+    con = sqlite3.connect(":memory:")
+    datos = {"titulo": "La casa", "premisa": "p", "genero": "terror"}
+    for _ in range(2):
+        repositorio.alta_de_obra(con, "obra-1", datos, ["cap-01", "cap-02"])
+    assert con.execute(
+        "SELECT COUNT(*) FROM capitulo WHERE obra='obra-1'").fetchone()[0] == 2

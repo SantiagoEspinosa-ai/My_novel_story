@@ -30,8 +30,15 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from app.commons.configuracion import carga
+from app.commons.db import migraciones, procedencia
 from app.commons.modelo import proveedor
+from app.features.consolidacion import deltas
+from app.features.cronologia import consultas
+from app.features.cronologia import repository as usos
+from app.features.observabilidad import repository as observabilidad
 from app.features.consolidacion import aplicar, memoria, mundo
+from app.features.brief import repository as brief
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, obra
 
@@ -41,10 +48,16 @@ from app.features.orquestacion import ciclo, obra
 RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                     os.environ.get("HARNESS_BASE", "obra10.db"))
 
-INMUTABLE = """Terror domestico. Tercera persona limitada sobre Marta, pasado.
-Prosa seca; el miedo viene de lo que no se explica. Nada de sangre.
-La casa heredada no es hostil: es exacta, y eso es lo que asusta.
-Las escenas son cortas. Se corta antes de explicar."""
+# LA FORMA Y EL TONO SALEN DE `config/brief.json`; LA MAQUINA, DE `sistema.json`
+# ------------------------------------------------------------------------------
+# Estaban aqui dentro, y por eso nadie noto durante diez capitulos que se
+# estaban modelando **diez obras** (`F-53`, `F-56`). Lo que sigue en el guion es
+# el plan concreto -las sinopsis, los hechos, el mundo-; lo que se puede cambiar
+# sin tocar codigo esta en los dos ficheros.
+BRIEF = carga.cargar_brief()
+SISTEMA = carga.cargar_sistema()
+
+INMUTABLE = BRIEF.inmutable
 
 ACCESOS = {"lug-salon": ["lug-cocina", "lug-pasillo"],
            "lug-cocina": ["lug-salon"],
@@ -54,6 +67,18 @@ ACCESOS = {"lug-salon": ["lug-cocina", "lug-pasillo"],
            "lug-desvan": ["lug-pasillo"]}
 
 PERSONAS = {"per-marta": ("vivo", "lug-salon"), "per-ana": ("vivo", "lug-cocina")}
+
+# LA OBRA ES UNA, Y TIENE DIEZ CAPITULOS DENTRO
+# ----------------------------------------------
+# Antes cada capitulo se daba de alta como **una obra distinta**, y con eso nada
+# de lo construido significaba nada: `escena.capitulo` no tenia a que apuntar,
+# el cierre de capitulo evaluaba una obra de seis escenas, la cronologia no
+# cruzaba ningun corte, y los diez `HechoCanonico` -declarados diez veces, uno
+# por "obra"- colisionaban en la misma clave y acababan **todos bajo `cap-10`**.
+# En la primera ejecucion eso dejo a los siete capitulos que corrieron generando
+# con `hechos: (ninguno)`, de modo que el cero de `INV-03` no decia que la obra
+# estuviera limpia: decia que no habia nada que mirar.
+OBRA = "obra-la-casa"
 
 # Los hechos de la obra entera. `SPEC-15`: los declara el plan, no el texto.
 HECHOS = [
@@ -175,12 +200,52 @@ INSTRUCCION_DE_CONTRATO = [
 
 
 def preparar(con):
-    for m in (repo, aplicar, memoria):
+    """Deja la base **completa** antes de escribir la primera escena.
+
+    La primera ejecucion no hacia esto y acabo con **diez de las veintitres
+    tablas del arbol** (`F-52`): faltaban `delta_de_escena`, `uso_de_hecho`,
+    `evento_cronologico`, `lectura_de_contexto` y hasta `esquema_version`. La
+    consecuencia no fue un numero equivocado sino algo peor: **la base se quedo
+    sin las columnas que harian falta para saber si sus numeros significan
+    algo**. Sin `delta_de_escena` no hay forma de saber si `INV-03` tuvo una
+    sola accion que comprobar, asi que su cero no se puede interpretar; y sin
+    `evento_cronologico` la verificacion formal no puede correr en absoluto.
+
+    Tres cosas que la primera no hizo, en este orden:
+
+        migrar          lleva el esquema a la ultima version y deja
+                        `esquema_version`, sin la cual ni siquiera consta por
+                        donde va la base
+        procedencia     con que commit se escribio. Es lo que `MF-27` pide y
+                        lo que la primera base no puede tener ya nunca
+        asegurar        todas las features que van a escribir, no solo tres
+    """
+    # La forma la manda el brief: si el plan de este guion no cuadra con ella,
+    # se para **aqui** y no en la escena treinta y siete (`comprobar_forma`).
+    carga.comprobar_forma(BRIEF, capitulos=len(CAPITULOS),
+                          escenas_por_capitulo=len(CAPITULOS[0][2]))
+    migraciones.migrar(con)
+    # Con que codigo **y con que brief**: las dos mitades del par que permite
+    # repetir una tanda exactamente en vez de aproximadamente.
+    procedencia.registrar(con, brief=BRIEF.huella,
+                          sistema=SISTEMA.huella)
+    for m in (repo, aplicar, memoria, deltas, usos, observabilidad):
         m.asegurar_tablas(con)
     aplicar.sembrar(con, PERSONAS)
     mundo.sembrar_lugares(con, ACCESOS)
+
+    # El alta la hace **una sola funcion**, no este guion con `INSERT` a mano.
+    # La forma de la obra vive en el brief; darla de alta desde dos sitios es
+    # como vuelven a divergir (`F-56`). Los valores salen del brief y el orden
+    # de los capitulos es el de `CAPITULOS`, que es lo que
+    # `asignar_t_discurso` necesita para numerar el orden de lectura.
+    brief.alta_de_obra(
+        con, OBRA,
+        {"titulo": BRIEF.titulo, "premisa": BRIEF.premisa, "genero": BRIEF.genero},
+        [cap for cap, _t, _e in CAPITULOS])
+
     for cap, _titulo, escenas in CAPITULOS:
-        repo.guardar_escaleta(con, cap, [
+        repo.guardar_escaleta(con, OBRA, [
             {"id": "{0}-e{1}".format(cap, n), "orden": n,
              # `SPEC-21` C-1 y la decision del autor: el alcance de la escena
              # anterior es el **capitulo**. Sin declararlo, todas las escenas
@@ -189,19 +254,22 @@ def preparar(con):
              "cambio_de_valor": {"eje": eje, "signo": "negativo"},
              "pov": "per-marta", "lugar": lugar,
              "beats": [{"id": "{0}-b{1}".format(cap, n), "establece": establece}],
-             "longitud_objetivo": [250, 800]}
+             # Del brief: `INV-17` compara contra esto, asi que cambiar el
+             # rango en el fichero cambia lo que la invariante exige.
+             "longitud_objetivo": list(BRIEF.forma.palabras_por_escena)}
             for n, (eje, lugar, _sinopsis, establece) in enumerate(escenas, 1)])
-        repo.declarar_hechos(con, cap, [
-            {"id": h, "enunciado": e} for h, e in HECHOS])
+    # Una sola vez, para la obra entera. Declararlos por capitulo era lo que
+    # los hacia colisionar: son los hechos de **la novela**, no de un capitulo.
+    repo.declarar_hechos(con, OBRA, [{"id": h, "enunciado": e} for h, e in HECHOS])
     mundo.sembrar_conocimiento(con, CONOCIMIENTO_INICIAL)
 
 
 def agentes():
-    return (proveedor.SesionDelegada(agente="escritor"),
+    return (proveedor.SesionDelegada(modelo=SISTEMA.modelos.escritor,
+                                     agente="escritor"),
             ciclo.juez_aislado(),
-            proveedor.SesionDelegada(
-                modelo=os.environ.get("HARNESS_MODELO_RESUMIDOR", "haiku"),
-                agente="resumidor"))
+            proveedor.SesionDelegada(modelo=SISTEMA.modelos.resumidor,
+                                     agente="resumidor"))
 
 
 def main():
@@ -225,9 +293,15 @@ def main():
         print("\n### {0} — {1}".format(cap, titulo), flush=True)
         instrucciones = None
         for vuelta in (1, 2):
-            g = obra.generar_obra(con, cap, escritor, juez, resumidor,
-                                  inmutable=INMUTABLE, techo=100_000,
-                                  instrucciones=instrucciones)
+            # `capitulo=cap` recorre solo ese capitulo y evalua su puerta
+            # sobre el. Sin el, una sola llamada generaria las sesenta escenas
+            # de un tiron y se perderia el reintento por capitulo.
+            g = obra.generar_obra(con, OBRA, escritor, juez, resumidor,
+                                  inmutable=INMUTABLE,
+                                  techo=SISTEMA.presupuesto.techo_de_contexto,
+                                  tope_intentos=SISTEMA.topes.intentos_por_escena,
+                                  tope_delegaciones=SISTEMA.topes.delegaciones_por_obra,
+                                  instrucciones=instrucciones, capitulo=cap)
             total["escenas"] += len(g.escenas_hechas)
             total["usd"] += g.coste["usd"]
             total["delegaciones"] += g.coste["delegaciones"]
@@ -268,6 +342,29 @@ def main():
     print("escenas SIN resumen (F-41): {0}{1}".format(
         len(sin_resumen), " -> " + ", ".join(sin_resumen) if sin_resumen else ""))
     print("minutos: {0:.1f}".format((time.time() - arranque) / 60))
+    _p = procedencia.leer(con)
+    print("procedencia -> codigo {0} | brief {1} | sistema {2}".format(
+        _p["version"], _p["brief"], _p["sistema"]))
+
+    # Lo que decide si el cero de `INV-03` es limpio o es ausencia de material
+    # (`F-30`, `F-52`). Sin esto, un cero de bloqueos no se puede interpretar.
+    print("\n=== TUVIERON LAS PUERTAS ALGO QUE RECHAZAR? ===")
+    acciones = revelaciones = 0
+    for fila in con.execute("SELECT delta FROM delta_de_escena"):
+        d = json.loads(fila[0]) if fila[0] else {}
+        acciones += len(d.get("acciones") or [])
+        revelaciones += len(d.get("revelaciones") or [])
+    filas = con.execute("SELECT COUNT(*) FROM delta_de_escena").fetchone()[0]
+    print("acciones declaradas: {0}, leidas de {1} delta(s) de la obra {2}"
+          "  <- lo que INV-03 compara".format(acciones, filas, OBRA))
+    print("revelaciones declaradas: {0}, de los mismos {1} delta(s)"
+          "  <- lo que alimenta el registro".format(revelaciones, filas))
+    if filas == 0:
+        print("  AVISO: cero deltas guardados. Los dos numeros de arriba son")
+        print("  el resultado de no haber mirado nada, no una medida.")
+    if acciones == 0:
+        print("  AVISO: cero acciones significa que INV-03 no tuvo NADA que")
+        print("  mirar. Su cero de bloqueos no dice que la obra este limpia.")
 
     if medidas:
         print("\n=== EL CONTEXTO (VER-37) ===")
@@ -288,8 +385,49 @@ def main():
         recortes = sum(1 for m in medidas if m["recortes"])
         print("escenas con recorte: {0} de {1}".format(recortes, len(medidas)))
 
+    # Pregunta 3: puede la verificacion formal correr sobre esto. Sin eventos
+    # con `t_fabula` legible no hay eje de fabula que comparar, y Lean diria
+    # "0 violaciones" sobre una obra que no ha mirado (`F-54`).
+    print("\n=== LA CRONOLOGIA (puede correr la verificacion formal?) ===")
+    try:
+        eventos = usos.eventos_de(con, OBRA)
+        con_fecha = [e for e in eventos if e.get("t_fabula")]
+        print("{0} evento(s) de la obra {1}, {2} con `t_fabula` legible".format(
+            len(eventos), OBRA, len(con_fecha)))
+        if not eventos:
+            print("  AVISO: sin eventos, las cuatro invariantes de Lean no")
+            print("  pueden decir nada. Un cero suyo no seria un cero limpio.")
+    except Exception as e:
+        print("  no se pudo consultar:", type(e).__name__, e)
+
+    # Pregunta 4: cuanto arrastra cambiar un hecho. Decide entre `S-1` y `S-2`
+    # con un numero en vez de a ojo, y si `menciona` entra en la regeneracion.
+    print("\n=== ARRASTRE POR HECHO (S-1 contra S-2) ===")
+    try:
+        ids = [h for h, _ in HECHOS]
+        for h in ids:
+            caps = consultas.capitulos_a_regenerar(con, h)
+            print("  {0:24} regenera {1} capitulo(s)".format(h, len(caps)))
+        print(" con mencion:",
+              json.dumps(consultas.arrastre_de_incluir_mencion(con, ids),
+                         ensure_ascii=False)[:300])
+    except Exception as e:
+        print("  no se pudo consultar:", type(e).__name__, e)
+
     print("\n=== EL CANON ===")
-    establecidos = repo.hechos_declarados(con, CAPITULOS[0][0])
+    # `OBRA` y no un capitulo: los hechos se declaran una vez para la obra
+    # entera. Con el identificador de capitulo esto devolvia `[]` y la seccion
+    # del canon salia **en blanco** — que es justo la que se lee para juzgar si
+    # la generacion funciono, y la misma que `F-39` ya dejo muda una vez por
+    # otra causa. Un canon vacio se lee como "no se establecio nada" y no como
+    # "la consulta pregunto por otra cosa".
+    establecidos = repo.hechos_declarados(con, OBRA)
+    print("{0} hecho(s) declarado(s) para la obra {1}".format(
+        len(establecidos), OBRA))
+    if not establecidos:
+        print("  AVISO: la obra no tiene hechos declarados. Esta seccion ha")
+        print("  salido muda tres veces por tres causas distintas, asi que un")
+        print("  vacio aqui es sospechoso antes que informativo.")
     for h in establecidos:
         print("  {0:24} {1}".format(h["id"], h["establecido_en"] or "SIN ESTABLECER"))
     print("entradas de conocimiento:", len(mundo.leer(con)["conocimiento"]))

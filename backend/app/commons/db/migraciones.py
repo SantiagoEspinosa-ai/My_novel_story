@@ -228,7 +228,95 @@ TODAS = [
         CREATE INDEX IF NOT EXISTS idx_uso_por_capitulo ON uso_de_hecho (capitulo, tipo);
         """,
     ),
+    Migracion(
+        7,
+        "la memoria se ordena por el discurso y no por el orden de la escena",
+        # `F-45`. `resumen.orden` y `ficha.orden` guardaban el `orden` de la
+        # escena, que es **local al capitulo**: no ordena nada que cruce el
+        # corte, y los resumenes tienen que cruzarlo. Pasan a `t_discurso`.
+        #
+        # QUE PUEDE Y QUE NO PUEDE ARREGLAR ESTA MIGRACION
+        # -------------------------------------------------
+        # Renombrar conserva los valores, y en una obra de **un solo capitulo**
+        # el valor viejo ya era correcto porque alli `orden` y `t_discurso`
+        # coinciden. En una obra de varios **no lo era**, asi que se recalcula
+        # desde `escena.t_discurso` cuando consta. Lo que no conste se queda con
+        # el valor viejo, que es chapucero y **se dice aqui en vez de fingir que
+        # la migracion lo arregla todo**: esas filas hay que regenerarlas.
+        lambda con: _migrar_memoria_a_t_discurso(con),
+    ),
+    Migracion(
+        8,
+        "la memoria recuerda de que obra es cada resumen y cada ficha",
+        # Las columnas `obra` de `resumen` y `ficha` nacieron directamente en el
+        # `CREATE TABLE` de la feature, **sin migracion**. Y
+        # `CREATE TABLE IF NOT EXISTS` no toca una tabla que ya existe, asi que
+        # ninguna base anterior las recibio nunca y **no se arreglaba sola**: al
+        # escribir con el codigo de hoy moria con `no such column: obra`.
+        #
+        # Se midio contra la base de la obra de diez capitulos -60 escenas, 30
+        # resumenes-, que no se podia continuar por esto. Es el caso exacto para
+        # el que existe `anadir_columnas`, y el recordatorio de que **añadir una
+        # columna al `CREATE TABLE` no es migrar**: solo sirve a las bases que
+        # todavia no existen.
+        lambda con: _migrar_memoria_a_obra(con),
+    ),
 ]
+
+
+def _migrar_memoria_a_obra(con):
+    """Añade `obra` a `resumen` y `ficha`, **y rellena lo que ya habia**.
+
+    Dejarla vacia habria sido peor que no añadirla: `resumenes_hasta` acota por
+    obra, asi que una fila sin ella **no la ve ninguna consulta**. Los treinta
+    resumenes de la obra de diez capitulos habrian quedado invisibles y cada
+    escena habria arrancado sin memoria **sin que nada fallara** — la Regla 8
+    entrando por la puerta de una migracion.
+
+    Se puede rellenar porque el dato existe en otro sitio: `resumen.escena` y
+    `ficha.version_en_t` son los dos el identificador de la escena, y la escena
+    sabe de que obra es.
+    """
+    anadidas = (anadir_columnas(con, "resumen", {"obra": "TEXT"})
+                + anadir_columnas(con, "ficha", {"obra": "TEXT"}))
+    if not tiene_tabla(con, "escena"):
+        return anadidas
+    for tabla, columna in (("resumen", "escena"), ("ficha", "version_en_t")):
+        if not tiene_tabla(con, tabla):
+            continue
+        con.execute(
+            "UPDATE {0} SET obra = ("
+            "  SELECT e.obra FROM escena e WHERE e.id = {0}.{1}"
+            ") WHERE obra IS NULL AND EXISTS ("
+            "  SELECT 1 FROM escena e WHERE e.id = {0}.{1} "
+            "  AND e.obra IS NOT NULL)".format(tabla, columna))
+    return anadidas
+
+
+def _migrar_memoria_a_t_discurso(con):
+    """Renombra `orden` a `t_discurso` y recalcula lo que se pueda."""
+    for tabla in ("resumen", "ficha"):
+        if not tiene_tabla(con, tabla):
+            continue
+        columnas = {f[1] for f in con.execute("PRAGMA table_info({0})".format(tabla))}
+        if "orden" in columnas and "t_discurso" not in columnas:
+            con.execute(
+                "ALTER TABLE {0} RENAME COLUMN orden TO t_discurso".format(tabla))
+    if not tiene_tabla(con, "escena"):
+        return 0
+    # `resumen.escena` y `ficha.version_en_t` son los dos el id de la escena.
+    recalculadas = 0
+    for tabla, columna in (("resumen", "escena"), ("ficha", "version_en_t")):
+        if not tiene_tabla(con, tabla):
+            continue
+        cur = con.execute(
+            "UPDATE {0} SET t_discurso = ("
+            "  SELECT e.t_discurso FROM escena e WHERE e.id = {0}.{1}"
+            ") WHERE EXISTS ("
+            "  SELECT 1 FROM escena e WHERE e.id = {0}.{1} "
+            "  AND e.t_discurso IS NOT NULL)".format(tabla, columna))
+        recalculadas += cur.rowcount
+    return recalculadas
 
 
 def validar_secuencia(migraciones):

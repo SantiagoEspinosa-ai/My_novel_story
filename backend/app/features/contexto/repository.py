@@ -52,6 +52,20 @@ CREATE INDEX IF NOT EXISTS lectura_por_hecho ON lectura_de_contexto (hecho);
 SIN_SUJETO = ""
 
 
+class SinRegistroDeLecturas(Exception):
+    """No hay ni una lectura registrada, que no es lo mismo que ninguna.
+
+    Una base generada por un proceso que arranco **antes** de que existiera
+    este registro no tiene filas -ni tabla-, y preguntarle que escenas leyeron
+    un hecho devolveria `[]`. Ese `[]` se lee como *ninguna* y alimentaria una
+    medida con un cero creible.
+
+    Es el mismo caso que un contador sin medir: ausente no es cero. Aqui se
+    convierte en excepcion y no en valor porque quien pregunta esto suele estar
+    midiendo, y una medida no puede empezar por confundir esas dos cosas.
+    """
+
+
 def asegurar_tablas(con: sqlite3.Connection):
     with con:
         con.executescript(SQL)
@@ -94,6 +108,11 @@ def escenas_que_leyeron(con, hecho):
     distingue este conjunto **observado** del **declarado** por el modelo
     (`SPEC-23` `S-5`).
     """
+    asegurar_tablas(con)
+    if not con.execute("SELECT 1 FROM lectura_de_contexto LIMIT 1").fetchone():
+        raise SinRegistroDeLecturas(
+            "no hay ninguna lectura registrada en esta base: no se puede "
+            "distinguir 'ninguna escena leyo este hecho' de 'no consta'")
     filas = con.execute(
         "SELECT DISTINCT escena FROM lectura_de_contexto WHERE hecho = ? "
         "ORDER BY escena", (hecho,))

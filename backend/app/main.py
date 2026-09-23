@@ -9,7 +9,7 @@ import sqlite3
 
 from fastapi import FastAPI
 
-from app.commons.db import migraciones
+from app.commons.db import migraciones, procedencia
 from app.commons.trabajos import cola
 from app.features.brief import repository as repositorio_brief
 from app.features.brief.router import router as router_brief
@@ -24,6 +24,12 @@ app.include_router(router_ciclo)
 def preparar_base(ruta=":memory:"):
     con = sqlite3.connect(ruta)
     migraciones.migrar(con)
+    # Con que codigo se escribio esta base. Sin esto, una base generada por un
+    # proceso que arranco antes de un cambio es **indistinguible** de una
+    # generada ahora, y cualquier medida sobre ella contesta en silencio sobre
+    # otro codigo. Paso de verdad: una obra de diez capitulos escribio una hora
+    # con los modulos que importo al lanzarse.
+    procedencia.registrar(con)
     cola.asegurar_tabla(con)
     repositorio_brief.asegurar_tablas(con)
     repositorio_escaleta.asegurar_tablas(con)

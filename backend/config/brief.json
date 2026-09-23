@@ -1,0 +1,28 @@
+{
+  "titulo": "La casa exacta",
+  "premisa": "Marta hereda la casa de su tia Ubalda y empieza a contar los peldanos. La casa no es hostil: es exacta, y eso es lo que asusta.",
+  "genero": "terror",
+  "subgenero": "terror domestico",
+
+  "forma": {
+    "capitulos": 10,
+    "escenas_por_capitulo": 6,
+    "palabras_por_escena": [250, 800]
+  },
+
+  "estilo": {
+    "persona": "tercera_limitada",
+    "tiempo_verbal": "pasado",
+    "tics_prohibidos": [
+      "de repente",
+      "sintio que",
+      "un escalofrio recorrio"
+    ],
+    "anclas": [
+      "Prosa seca. El miedo viene de lo que no se explica.",
+      "Las escenas son cortas. Se corta antes de explicar."
+    ]
+  },
+
+  "inmutable": "Terror domestico. Tercera persona limitada sobre Marta, pasado.\nProsa seca; el miedo viene de lo que no se explica. Nada de sangre.\nLa casa heredada no es hostil: es exacta, y eso es lo que asusta.\nLas escenas son cortas. Se corta antes de explicar."
+}

@@ -113,3 +113,70 @@ def test_migrar_dos_veces_seguidas_con_las_tablas_ya_creadas():
     migraciones.migrar(con)
     assert migraciones.migrar(con) == 0
     assert migraciones.version_aplicada(con) == migraciones.ULTIMA_VERSION
+
+
+def test_una_base_anterior_a_las_columnas_obra_se_puede_migrar():
+    """Las columnas `obra` de `resumen` y `ficha` nacieron en el `CREATE TABLE`
+    y **sin migracion**, asi que toda base creada antes se quedaba sin ellas.
+
+    `CREATE TABLE IF NOT EXISTS` no toca una tabla que ya existe, de modo que la
+    base no se arreglaba sola nunca, y el codigo de hoy moria al escribir con un
+    `no such column: obra`. Se midio contra la base de la obra de diez
+    capitulos: 60 escenas y 30 resumenes que no se podian continuar.
+    """
+    con = sqlite3.connect(":memory:")
+    # La forma **anterior**, tal como quedo en las bases de entonces.
+    con.executescript("""
+        CREATE TABLE resumen (escena TEXT NOT NULL, orden INTEGER NOT NULL,
+            version_en_t TEXT NOT NULL, nivel TEXT NOT NULL, texto TEXT NOT NULL,
+            hechos_clave TEXT NOT NULL DEFAULT '[]',
+            PRIMARY KEY (escena, version_en_t));
+        CREATE TABLE ficha (entidad TEXT NOT NULL, orden INTEGER NOT NULL,
+            version_en_t TEXT NOT NULL, resumen TEXT NOT NULL,
+            PRIMARY KEY (entidad, version_en_t));
+    """)
+    # Y una escena que dice de que obra es, para poder rellenar lo de antes.
+    con.executescript("""
+        CREATE TABLE escena (id TEXT PRIMARY KEY, obra TEXT, orden INTEGER,
+            t_discurso INTEGER);
+        INSERT INTO escena VALUES ('e1', 'obra-1', 1, 4);
+        INSERT INTO resumen VALUES ('e1', 1, 'e1', 'escena', 'texto', '[]');
+        INSERT INTO ficha VALUES ('ent-1', 1, 'e1', 'ficha');
+    """)
+    migraciones.migrar(con)
+    for tabla in ("resumen", "ficha"):
+        columnas = {f[1] for f in con.execute("PRAGMA table_info({0})".format(tabla))}
+        assert "obra" in columnas, "{0} sigue sin `obra`".format(tabla)
+        assert "t_discurso" in columnas
+
+
+def test_al_añadir_obra_se_rellena_lo_que_ya_habia():
+    """Añadir la columna y dejarla vacia habria sido peor que no añadirla.
+
+    `resumenes_hasta` acota por obra, asi que una fila con `obra` vacia **no la
+    ve ninguna consulta**: los treinta resumenes de la obra de diez capitulos
+    habrian quedado invisibles y cada escena habria arrancado sin memoria, sin
+    que nada fallara. Es la Regla 8 entrando por la puerta de una migracion.
+
+    Se puede rellenar porque el dato existe: `resumen.escena` y
+    `ficha.version_en_t` son los dos el identificador de la escena, y la escena
+    sabe de que obra es.
+    """
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+        CREATE TABLE resumen (escena TEXT NOT NULL, orden INTEGER NOT NULL,
+            version_en_t TEXT NOT NULL, nivel TEXT NOT NULL, texto TEXT NOT NULL,
+            hechos_clave TEXT NOT NULL DEFAULT '[]',
+            PRIMARY KEY (escena, version_en_t));
+        CREATE TABLE ficha (entidad TEXT NOT NULL, orden INTEGER NOT NULL,
+            version_en_t TEXT NOT NULL, resumen TEXT NOT NULL,
+            PRIMARY KEY (entidad, version_en_t));
+        CREATE TABLE escena (id TEXT PRIMARY KEY, obra TEXT, orden INTEGER,
+            t_discurso INTEGER);
+        INSERT INTO escena VALUES ('e1', 'obra-1', 1, 1);
+        INSERT INTO resumen VALUES ('e1', 1, 'e1', 'escena', 'texto', '[]');
+        INSERT INTO ficha VALUES ('ent-1', 1, 'e1', 'ficha');
+    """)
+    migraciones.migrar(con)
+    assert con.execute("SELECT obra FROM resumen").fetchone()[0] == "obra-1"
+    assert con.execute("SELECT obra FROM ficha").fetchone()[0] == "obra-1"

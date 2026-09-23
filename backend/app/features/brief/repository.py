@@ -49,6 +49,46 @@ def crear(con, datos: dict) -> str:
     return id_obra
 
 
+def alta_de_obra(con, id_obra, datos, capitulos):
+    """Da de alta una obra **con sus capitulos y su orden**, en un solo sitio.
+
+    POR QUE ESTO NO PUEDE ESTAR EN DOS SITIOS
+    -------------------------------------------
+    La forma de la obra vive en el brief, y darla de alta desde dos sitios -el
+    guion con sus `INSERT` a mano por un lado, el alta de la API por otro- es
+    exactamente como vuelven a divergir: el dia que una de las dos aprenda algo,
+    la otra no. Es la misma leccion de `F-56`, donde la forma de la obra vivia
+    dentro del guion y por eso nadie pudo discutirla en diez capitulos.
+
+    `crear()` sigue existiendo para el alta por API, que genera identificador y
+    todavia no recibe capitulos. Esta recibe el identificador ya decidido,
+    porque quien repite una tanda necesita que la obra se llame igual que la vez
+    anterior para poder comparar las dos.
+
+    **El orden de los capitulos no es decorativo**: es lo que
+    `escaleta.asignar_t_discurso` necesita para numerar el orden de lectura de la
+    obra entera. Sin el, sus escenas se quedan sin situar y lo dice.
+
+    Es idempotente: el guion la llama en cada arranque, y repetir un arranque no
+    puede dejar la obra con el doble de capitulos.
+    """
+    asegurar_tablas(con)
+    guia = {k: datos.get(k) for k in ("persona", "tiempo_verbal")}
+    with con:
+        con.execute(
+            "INSERT OR REPLACE INTO obra (id, titulo, premisa, genero, "
+            "subgenero, extension_objetivo, guia_de_estilo) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (id_obra, datos["titulo"], datos["premisa"], datos.get("genero"),
+             datos.get("subgenero"), datos.get("extension_objetivo"),
+             json.dumps(guia)))
+        for posicion, id_capitulo in enumerate(capitulos, start=1):
+            con.execute(
+                "INSERT OR REPLACE INTO capitulo (id, obra, orden, estado) "
+                "VALUES (?, ?, ?, 'abierto')", (id_capitulo, id_obra, posicion))
+    return id_obra
+
+
 def leer(con, id_obra: str):
     asegurar_tablas(con)
     fila = con.execute(

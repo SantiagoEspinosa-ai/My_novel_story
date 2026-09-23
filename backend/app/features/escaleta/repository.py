@@ -196,6 +196,57 @@ def escenas_de_capitulo(con, id_capitulo):
         (id_capitulo,))]
 
 
+def asignar_t_discurso(con, obra, orden_de_capitulos=None):
+    """Numera el orden de lectura de la obra entera (`F-45`).
+
+    POR QUE `orden` NO SIRVE Y ESTE CAMPO SI
+    ------------------------------------------
+    `Escena.orden` es **local al capitulo**, asi que no ordena nada que cruce el
+    corte. Y los resumenes tienen que cruzarlo: una novela no olvida el capitulo
+    uno al empezar el dos. `MomentoNarrativo.t_discurso` esta definido en el
+    dominio justo para esto -la posicion en el **discurso**, el orden de
+    lectura- y es obligatorio. Tenia columna desde la migracion 3 y no lo
+    rellenaba nadie.
+
+    Es un atributo del **plan**: si la escaleta lo declara, se respeta y no se
+    toca. Esto solo lo deriva para las escenas que no lo traen.
+
+    `orden_de_capitulos` es `{id_capitulo: posicion}` y llega como argumento
+    porque la tabla `capitulo` es de `features/brief/` (`A-02`). No hace falta
+    cuando la obra tiene un solo capitulo -o ninguno declarado-, porque entonces
+    el orden de lectura **es** el `orden`.
+
+    **Lo que no se puede situar se queda sin situar, y se dice.** Si falta la
+    posicion de un capitulo, sus escenas no reciben un `t_discurso` inventado:
+    colocarlas por orden alfabetico del identificador seria adivinar el orden de
+    lectura de una novela, que es exactamente el dato que falta.
+    """
+    filas = [(f[0], f[1], f[2], f[3]) for f in con.execute(
+        "SELECT id, orden, capitulo, t_discurso FROM escena WHERE obra = ?",
+        (obra,))]
+    capitulos = {c for _, _, c, _ in filas}
+    orden_de_capitulos = dict(orden_de_capitulos or {})
+
+    # Un solo capitulo -o ninguno- no necesita que nadie declare su posicion.
+    if len(capitulos) <= 1:
+        orden_de_capitulos = {c: 1 for c in capitulos}
+
+    situables, sin_asignar = [], []
+    for id_escena, orden, capitulo, ya in filas:
+        if ya is not None:
+            continue
+        if capitulo not in orden_de_capitulos:
+            sin_asignar.append(id_escena)
+            continue
+        situables.append((orden_de_capitulos[capitulo], orden, id_escena))
+
+    with con:
+        for posicion, (_, _, id_escena) in enumerate(sorted(situables), start=1):
+            con.execute("UPDATE escena SET t_discurso = ? WHERE id = ?",
+                        (posicion, id_escena))
+    return {"asignadas": len(situables), "sin_asignar": sorted(sin_asignar)}
+
+
 def escena(con, id_escena):
     for f in con.execute(
             "SELECT {0} FROM escena WHERE id = ?".format(_COLUMNAS), (id_escena,)):

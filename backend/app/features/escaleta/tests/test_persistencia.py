@@ -264,3 +264,63 @@ def test_establecer_un_hecho_no_lo_establece_en_las_demas_obras(con):
     repo.establecer_hecho(con, "hec-llave", "cap-1-e1", obra="cap-1")
     assert repo.hechos_declarados(con, "cap-1")[0]["establecido_en"] == "cap-1-e1"
     assert repo.hechos_declarados(con, "cap-2")[0]["establecido_en"] is None
+
+
+# --- `F-45`: el orden del discurso, que si es global a la obra --------------
+
+
+def _dos_capitulos(con):
+    repo.guardar_escaleta(con, "obra-1", [
+        {"id": "c1-e1", "orden": 1, "capitulo": "cap-1", "pov": "p", "lugar": "l",
+         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}, "beats": ["b"]},
+        {"id": "c1-e2", "orden": 2, "capitulo": "cap-1", "pov": "p", "lugar": "l",
+         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}, "beats": ["b"]},
+        {"id": "c2-e1", "orden": 1, "capitulo": "cap-2", "pov": "p", "lugar": "l",
+         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}, "beats": ["b"]},
+    ])
+
+
+def test_t_discurso_numera_la_obra_entera_y_no_cada_capitulo(con):
+    """`F-45`. `orden` es local al capitulo, asi que no sirve para ordenar nada
+    que cruce el corte -y los resumenes tienen que cruzarlo-.
+
+    `MomentoNarrativo.t_discurso` existe en el dominio exactamente para esto:
+    la posicion en el **discurso**, el orden de lectura de la obra entera. Era
+    obligatorio, tenia columna desde la migracion 3 y no lo rellenaba nadie.
+    """
+    _dos_capitulos(con)
+    repo.asignar_t_discurso(con, "obra-1", {"cap-1": 1, "cap-2": 2})
+    assert [repo.escena(con, i)["t_discurso"] for i in ("c1-e1", "c1-e2", "c2-e1")] == [1, 2, 3]
+
+
+def test_con_un_solo_capitulo_no_hace_falta_declarar_su_orden(con):
+    """El caso comun y el de las escaletas antiguas: si todas las escenas caen
+    en el mismo capitulo -o en ninguno-, el orden de lectura **es** el `orden`,
+    y no hay nada que adivinar."""
+    _sembrar(con)
+    assert repo.asignar_t_discurso(con, "obra-1")["sin_asignar"] == []
+    assert repo.escena(con, "e1")["t_discurso"] == 1
+
+
+def test_un_capitulo_cuyo_orden_no_se_declara_se_queda_sin_asignar_y_se_dice(con):
+    """Un dato ausente no es un verde.
+
+    Si no consta en que posicion va un capitulo, sus escenas **no** reciben un
+    `t_discurso` inventado: se quedan sin el y la llamada lo devuelve. Colocarlas
+    por orden alfabetico del identificador seria adivinar el orden de lectura de
+    una novela, que es precisamente el dato que falta.
+    """
+    _dos_capitulos(con)
+    r = repo.asignar_t_discurso(con, "obra-1", {"cap-1": 1})
+    assert r["sin_asignar"] == ["c2-e1"]
+    assert repo.escena(con, "c2-e1")["t_discurso"] is None
+    assert repo.escena(con, "c1-e1")["t_discurso"] == 1
+
+
+def test_asignar_dos_veces_no_renumera_lo_ya_asignado(con):
+    """Idempotente, y ademas respeta lo que la escaleta declaro: `t_discurso`
+    es un atributo del plan, y solo se deriva cuando el plan no lo trae."""
+    _dos_capitulos(con)
+    repo.asignar_t_discurso(con, "obra-1", {"cap-1": 1, "cap-2": 2})
+    repo.asignar_t_discurso(con, "obra-1", {"cap-1": 2, "cap-2": 1})
+    assert repo.escena(con, "c1-e1")["t_discurso"] == 1

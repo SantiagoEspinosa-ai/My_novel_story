@@ -28,11 +28,12 @@ la medida**.
 """
 
 import json
+import sqlite3
 from dataclasses import dataclass, field
 
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
-from app.features.auditoria import capitulo
+from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.cronologia import consultas
 
 # Una escena en estos estados ya paso por todo: su delta esta aplicado y su
@@ -57,6 +58,7 @@ class Generacion:
     cierre: dict | None = None
     saltadas: list = field(default_factory=list)
     sin_resumen: list = field(default_factory=list)
+    trazas_no_guardadas: list = field(default_factory=list)
     coste: dict = field(default_factory=lambda: {
         "usd": 0.0, "delegaciones": 0, "sin_coste": 0})
 
@@ -65,9 +67,33 @@ class Generacion:
         return self.parada is None
 
 
+def _orden_de_capitulos(con, obra):
+    """`{id_capitulo: posicion}` segun `brief/`, o vacio si no consta.
+
+    Vacio no es un problema cuando la obra tiene un solo capitulo: entonces el
+    orden de lectura **es** el `orden` de la escena y no hay nada que declarar.
+    Con varios y sin este dato, las escenas se quedan sin situar y
+    `asignar_t_discurso` lo dice en vez de colocarlas a ojo.
+    """
+    try:
+        filas = con.execute(
+            "SELECT id, orden FROM capitulo WHERE obra = ? ORDER BY orden", (obra,))
+        return {f[0]: f[1] for f in filas}
+    except sqlite3.OperationalError:
+        # La tabla la crea `brief/` cuando se da de alta una obra. Si no existe,
+        # es que nadie la dio de alta por esa via.
+        return {}
+
+
 def reunir_material(con, escena, obra_id, inmutable=""):
     """Lo que hay disponible para montar el contexto de esta escena."""
     orden = escena["orden"]
+    t_discurso = escena.get("t_discurso")
+    if t_discurso is None:
+        raise memoria.SinPosicionEnElDiscurso(
+            "la escena {0} no tiene `t_discurso`, asi que no se puede saber que "
+            "resumenes van antes que ella. Arreglo: `asignar_t_discurso` antes "
+            "de reunir material".format(escena["id"]))
     # Acotada a la obra, como los resumenes y las fichas (`F-40`). Esta era la
     # que quedaba fuera, y es **el bloque que mas pesa del contexto**: el
     # bloque Local, que lleva la escena anterior entera. Sin el filtro,
@@ -92,8 +118,14 @@ def reunir_material(con, escena, obra_id, inmutable=""):
     return {
         # Acotados a la obra: el `orden` va del 1 al N **dentro** de ella, asi
         # que sin el filtro dos obras en la misma base se mezclan (`F-40`).
-        "resumenes": memoria.resumenes_hasta(con, orden, obra=obra_id),
-        "fichas": memoria.fichas_en(con, orden, obra=obra_id),
+        # `F-45`: por `t_discurso` y no por `orden`. El `orden` es local al
+        # capitulo, asi que la escena 1 del capitulo dos preguntaba por "lo
+        # anterior a 1" y recibia cero: arrancaba sin memoria de todo lo
+        # anterior. Los resumenes **tienen** que cruzar el corte de capitulo;
+        # la escena anterior no. Son dos alcances distintos y por eso no puede
+        # servir el mismo campo para los dos.
+        "resumenes": memoria.resumenes_hasta(con, t_discurso, obra=obra_id),
+        "fichas": memoria.fichas_en(con, t_discurso, obra=obra_id),
         "escena_anterior": anterior[0] if anterior else "",
         # Vacio legitimo y vacio por fallo **no pueden verse igual** (Regla 8).
         # Que la escena 1 de un capitulo no tenga anterior es lo correcto; que
@@ -109,7 +141,7 @@ def reunir_material(con, escena, obra_id, inmutable=""):
 
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
-                 tope_delegaciones=None, instrucciones=None):
+                 tope_delegaciones=None, instrucciones=None, capitulo=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -127,8 +159,19 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # Anidar transacciones en SQLite hace commit del bloque interno, que es
     # justo la atomicidad que `SPEC-21` C-4 existe para sostener.
     cronologia.asegurar_tablas(con)
+    # `F-45`: sin esto la memoria no se puede ordenar a lo largo de la obra.
+    # El orden de los capitulos sale de `brief/`, que es otra feature: se lee
+    # aqui porque componer entre features es de `orquestacion/` (`A-02`), y se
+    # le pasa a `escaleta/` como valor.
+    repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra))
     g = Generacion()
-    for escena in repo.escenas_de(con, obra):
+    # Una obra son **diez capitulos, no diez obras**. Generar de capitulo en
+    # capitulo es lo que permite reintentar uno sin tocar los demas, que es como
+    # el guion de la obra larga se desatasca. Sin `capitulo` se genera la obra
+    # entera, que es lo que quiere una ejecucion de un tiron.
+    escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
+               else repo.escenas_de(con, obra))
+    for escena in escenas:
         if hasta is not None and escena["orden"] > hasta:
             break
 
@@ -199,7 +242,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
 
         if c.resumen:
             memoria.guardar_resumen(
-                con, escena["id"], escena["orden"],
+                con, escena["id"], escena["t_discurso"],
                 str(c.resumen.get("texto") or ""),
                 [h for h in (c.resumen.get("hechos_clave") or [])
                  if memoria.IDENTIFICADOR.match(str(h))],
@@ -215,7 +258,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         _actualizar_fichas(con, escena, c, obra)
         g.escenas_hechas.append(escena["id"])
 
-    g.cierre = evaluar_cierre(con, obra)
+    g.cierre = evaluar_cierre(con, obra, capitulo)
     return g
 
 
@@ -245,7 +288,33 @@ def escenas_que_usan(con, clase, objeto):
     return []
 
 
-def evaluar_cierre(con, obra):
+def inversiones_del_capitulo(temporal, capitulo_de_cada_evento, capitulo):
+    """Deja solo las inversiones que **este** capitulo tiene que responder.
+
+    `orden_temporal` mira la obra entera, que es lo correcto para lo que hace.
+    Pero `INV-08` es de **nivel capitulo**, asi que evaluarla al cerrar el tres
+    con las inversiones del siete impediria firmar un capitulo por un defecto
+    que no esta en el.
+
+    Hoy no se notaba porque el guion creaba una obra por capitulo y los dos
+    identificadores coincidian: **pasaba por accidente**. Lo predijo la sesion
+    de frontend al arreglar el mismo patron en el endpoint de cierre, y su
+    apuesta era que la coincidencia tapaba mas de un sitio. Tapaba este.
+
+    Una inversion que **cruza** dos capitulos se le imputa al posterior: es
+    donde el lector la encuentra, porque es al llegar ahi cuando el tiempo
+    retrocede.
+    """
+    if not capitulo or not temporal:
+        return temporal
+    del_capitulo = [
+        (a, b) for a, b in temporal.get("inversiones") or []
+        if capitulo_de_cada_evento.get(b) == capitulo
+    ]
+    return dict(temporal, inversiones=del_capitulo)
+
+
+def evaluar_cierre(con, obra, capitulo=None):
     """Dice si el capitulo **podria** cerrarse. No lo cierra.
 
     La firma es humana y la dispara el cliente de la API, nunca el worker
@@ -257,7 +326,11 @@ def evaluar_cierre(con, obra):
     Lo que si hace el bucle es dejar el veredicto preparado, porque tener que
     ir a buscarlo a mano es la forma mas facil de no mirarlo nunca.
     """
-    escenas = repo.escenas_de(con, obra)
+    # La puerta es **de capitulo**: evaluarla sobre la obra entera preguntaria
+    # si se puede firmar la novela, que es otra pregunta y siempre diria que no
+    # mientras quede un capitulo por escribir.
+    escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
+               else repo.escenas_de(con, obra))
     estados = [EE(e["estado"]) for e in escenas]
     hallazgos = [dict(h, severidad=h["severidad"], estado=h["estado"])
                  for e in escenas for h in repo.hallazgos_abiertos(con, e["id"])]
@@ -265,7 +338,11 @@ def evaluar_cierre(con, obra):
     # `auditoria/` no puede importar (`A-02`). Componer es de aqui, asi que el
     # orden temporal se consulta aqui y se le pasa ya resuelto (`F-47`).
     try:
-        temporal = consultas.orden_temporal(con, obra)
+        temporal = inversiones_del_capitulo(
+            consultas.orden_temporal(con, obra),
+            {e["id"]: e.get("capitulo")
+             for e in consultas.repo.eventos_de(con, obra)},
+            capitulo)
     except Exception:
         # La cronologia puede no estar poblada en una obra que no la use. Que
         # falte el dato no es lo mismo que estar en orden, pero tampoco puede
@@ -273,8 +350,8 @@ def evaluar_cierre(con, obra):
         # es "no se consulto", y la puerta no afirma nada sobre `INV-08`.
         temporal = None
     try:
-        cierre = capitulo.cerrar(estados, hallazgos, orden_temporal=temporal)
-    except capitulo.NoSePuedeCerrar as e:
+        cierre = puerta_capitulo.cerrar(estados, hallazgos, orden_temporal=temporal)
+    except puerta_capitulo.NoSePuedeCerrar as e:
         detalle = "; ".join(sorted({h["invariante"] for h in hallazgos})) or ""
         return {"puede_cerrarse": False, "firmado": False,
                 "motivo": "{0} [{1}]".format(e, detalle)}
@@ -303,6 +380,10 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                            acta=_acta_de_la_escena(escena, obra_id,
                                                    material["hechos"]))
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
+        # `F-49`: la traza sobrevive al proceso. Es lo que hace que la
+        # contencion de `PC-9` -saber que bloques quedaron fuera- valga
+        # tambien para el diagnostico de despues, que es cuando se hace.
+        g.trazas_no_guardadas.extend(ciclo.guardar_trazas(con, c))
         _acumular_coste(g, c.trazas)
         if c.generacion is not None and c.generacion.version is not None:
             intentos.append((c.generacion.version, c.generacion.hallazgos, c))
@@ -402,7 +483,7 @@ def _actualizar_fichas(con, escena, c, obra):
     if not tocadas:
         return
     m = modulo_mundo.leer(con)
-    memoria.actualizar_fichas(con, escena["id"], escena["orden"], obra=obra, entidades={
+    memoria.actualizar_fichas(con, escena["id"], escena["t_discurso"], obra=obra, entidades={
         e: "en {0}, {1}".format(m["ubicaciones"].get(e, "?"),
                                 m["entidades_vivas"].get(e, "?"))
         for e in sorted(tocadas)})

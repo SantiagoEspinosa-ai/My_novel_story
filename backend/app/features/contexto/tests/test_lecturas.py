@@ -144,3 +144,29 @@ def test_las_lecturas_de_otra_escena_no_se_cuelan(con):
                                prompt_hash="b")
 
     assert [f["hecho"] for f in repository.lecturas_de(con, "e1")] == ["hec-mio"]
+
+
+def test_sin_registro_no_se_devuelve_una_lista_vacia(con):
+    """Una base sin lecturas registradas **no** puede parecer un cero.
+
+    El caso es real y lo encontro la sesion Backend en la obra de diez
+    capitulos: un proceso que lleva una hora vivo ejecuta el codigo con el que
+    arranco, asi que una base generada por el no tiene esta tabla aunque el
+    fuente de la rama si la tenga. Preguntar ahi "que escenas leyeron este
+    hecho" y recibir `[]` se lee como *ninguna*, cuando lo cierto es *no
+    consta*.
+
+    Es la misma regla que el proyecto aplica al resto: un dato ausente no es un
+    cero y no es un verde. Aqui ademas seria peor, porque el cero alimentaria
+    una medida -el arrastre de `SPEC-23`- y saldria un numero creible.
+    """
+    with pytest.raises(repository.SinRegistroDeLecturas):
+        repository.escenas_que_leyeron(con, "hec-llave")
+
+
+def test_con_registro_un_hecho_que_nadie_leyo_si_es_una_lista_vacia(con):
+    """Y cuando **si** consta, cero es un dato y se devuelve como tal."""
+    repository.guardar_lecturas(con, "e1", {"hechos": ["hec-otro"], "conocimiento": []},
+                               prompt_hash="a")
+
+    assert repository.escenas_que_leyeron(con, "hec-llave") == []
