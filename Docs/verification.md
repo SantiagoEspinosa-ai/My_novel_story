@@ -141,6 +141,7 @@ Lo que los une: **todos dejan los detectores en verde**.
 | **MF-24** | **Criterio de salida colgante**: un validador cuyo criterio remite a algo que no está escrito en ninguna parte. No falla, no avisa, y **cuenta como cobertura** | `VER-06` decía *"el orden de recorte respeta la prioridad declarada"* y esa prioridad no estaba declarada en ningún documento. `VER-23` dice *"el conjunto de identificadores solo crece"* sin decir **respecto a qué**, así que el criterio lo eligió quien lo implementó | — Ver `PC-13`. Es hermano de `MF-23` y su contrario exacto: aquel es el validador que marca lo correcto, este es el que **no puede marcar nada** |
 | **MF-26** | **Verde heredado**: una comprobación que pasó contra un estado que ya no existe y que **nadie ha invalidado**. No es que falle: es que **dejó de significar lo que dice** | Se regenera la escena 7 y su delta nuevo mueve el estado del mundo. Las escenas 8 en adelante ya pasaron `INV-02`, `INV-03` e `INV-06` **contra el estado viejo**, y esos verdes siguen ahí, indistinguibles de los que sí valen. La obra se firma con la mitad de sus puertas evaluadas sobre una obra que ya no es esta | — **Nadie**. No hay nada que ate un resultado de verificación al estado contra el que se evaluó, así que tampoco hay nada que pueda caducarlo. Ver `SPEC-23`: es la razón por la que la regeneración selectiva no es una función más |
 | **MF-27** | **Artefacto de otro código**: lo produjo un proceso que ejecuta una versión del código **anterior a la del árbol**, y es indistinguible de uno producido por la de ahora | La obra de diez capítulos arrancó antes de que entrara la escritura de `uso_de_hecho`. Su proceso importó los módulos al lanzarse, así que lleva el código de entonces: **su base no tiene esa tabla aunque el fuente de la rama sí**. Una medida de arrastre sobre ella no da un número pequeño, da **cero filas**, y cero se lee como *no arrastra*. Es la familia de `MF-26` en otro eje: allí cambió el mundo bajo una comprobación, aquí cambió el código bajo un artefacto | **Cerrado por `commons/db/procedencia.py`** (`2791ac3`): la base registra el commit del árbol al crearse y `comprobar()` avisa si el proceso corre con otro — la contraparte de lo que la traza ya hacía con el modelo, que `VER-62` vigila. Tres decisiones dentro: la versión de creación **no se pisa** —la pregunta es con qué código se escribió lo que hay, no quién abrió la base el último—, lo indeterminable se dice `sin_determinar`, y **una base sin procedencia no es conforme**, porque leer esa ausencia como *coincide* sería el mismo silencio que esto viene a quitar. Lo midió y lo cerró la sesión de backend |
+| **MF-28** | **Misma versión, otra configuración**: dos artefactos generados con el mismo commit y **distinta configuración** son indistinguibles entre sí | La configuración del harness sale a un fichero —topes, modelos, umbrales—. Dos obras generadas con el mismo código y dos ficheros distintos se comparan como si fueran comparables, y la diferencia que explique sus números **no está en ninguna parte**. Es `MF-27` por el otro eje: allí cambió el código bajo el artefacto, aquí cambian los parámetros con los que corrió | — **Abierto.** `commons/db/procedencia.py` guarda el commit del árbol y **no la configuración**, así que hoy cubre un eje de los dos. Lo que falta es registrar junto a él el **hash del fichero de configuración**, con la misma regla de que lo indeterminable se dice y una ausencia no es conformidad. Señalado desde `SPEC-23`, que es donde una comparación entre dos obras decide algo |
 | ~~**MF-25**~~ | ~~Interbloqueo del presupuesto por un trabajo que no vuelve~~ | ~~El worker muere con una llamada del Escritor en vuelo y el techo se queda retenido~~ | **RETIRADO por `SPEC-14` C-1.** Salía de cruzar `P-2` —el presupuesto se libera al volver— con `P-5` —la llamada del Escritor es exclusiva—. Sin reserva **no hay nada que retener**, así que el interbloqueo desaparece con su causa. El identificador no se reutiliza. Lo sustituye nada: es un modo de fallo que **dejó de ser posible**, no uno que se tape |
 
 ## Estado de los nueve modos que no tenían cobertura
@@ -567,11 +568,44 @@ afirmación falsa junto al código es una de las pocas cosas que sobreviven a un
 prosa que describe lo que el código debería hacer se escribe como lo que hace, o no se
 escribe.
 
+### Regla 11 — Una prueba que pasa por coincidencia es indistinguible de una que pasa por corrección
+
+**Y solo se ve cuando la coincidencia desaparece.**
+
+El caso: el endpoint de cierre de capítulo pedía sus escenas con una consulta que filtra
+**por obra**, pasándole un identificador de **capítulo**. Estuvo mal desde que se escribió y
+sus dos pruebas estuvieron en verde desde que se escribieron, porque el guion de generación
+creaba **una obra por capítulo** y los dos identificadores eran la misma cadena. La consulta
+equivocada devolvía el resultado correcto.
+
+No lo destapó una revisión ni un validador: lo destapó **cambiar el guion** a una obra con
+diez capítulos dentro. En cuanto los dos identificadores dejaron de coincidir, la consulta
+devolvió cero escenas y el endpoint empezó a contestar *«no existe»* sobre capítulos que
+existen. Las dos pruebas que llevaban años en verde fallaron **el mismo día**, y fallaron por
+lo que nunca habían comprobado.
+
+Lo que la hace distinta de la `Regla 9`: allí falta un segundo elemento que ejerza la
+distinción; aquí **los dos elementos existen y valen lo mismo**. Un caso de prueba con dos
+escenas no basta si las dos están en la misma obra y esa obra es el capítulo.
+
+Dos consecuencias prácticas:
+
+1. **Un dato de prueba que hace coincidir dos identificadores distintos apaga todas las
+   comprobaciones que los distinguen.** Si `obra` y `capitulo` valen `"cap-1"`, ninguna
+   prueba de esa base puede detectar que se confunden. Los identificadores de un fixture se
+   eligen **distintos a propósito**, y distintos entre sí, no solo distintos de los de al
+   lado.
+2. **Cuando una suposición de datos cambia —un guion, un esquema, un formato— hay que ir a
+   buscar lo que la coincidencia estaba tapando**, en vez de esperar a que aparezca. Aquí,
+   buscar todas las consultas que reciben un capítulo y filtran por obra encontró dos
+   instancias más: la del endpoint y una en el propio guion, que pedía los hechos de la obra
+   pasando el primer capítulo y habría impreso el canon vacío en el informe final.
+
 ## Estado de implantación
 
 | | |
 | --- | --- |
-| **Modos de fallo catalogados** | **26 vigentes** (`MF-01`…`MF-27`, con `MF-25` retirado por `SPEC-14`: dejó de ser posible). **`MF-26` es el único sin ningún validador que lo mire**; `MF-27` nació cerrado el mismo día en que se catalogó |
+| **Modos de fallo catalogados** | **27 vigentes** (`MF-01`…`MF-28`, con `MF-25` retirado por `SPEC-14`: dejó de ser posible). **`MF-26` y `MF-28` son los que no tiene nadie mirando**; `MF-27` nació cerrado el mismo día en que se catalogó |
 | **Validadores definidos** | **60** (`VER-01`…`VER-63`, con `VER-44`, `VER-41` y `VER-57` quemados) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
