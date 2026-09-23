@@ -1,114 +1,181 @@
-"""El cliente real del modelo. **Nada de este modulo se ejecuta en las pruebas.**
+"""La delegación en una sesión de Claude Code. **No hay API ni clave.**
 
-QUE HACE Y QUE NO
------------------
-Traduce entre el harness y un proveedor HTTP: manda un prompt, recibe texto,
-delta y `usage`. Tiene **la misma firma que el doble** -`llamar(prompt) -> dict`-
-para que el bucle de `features/orquestacion/bucle.py` no sepa cual de los dos
-tiene delante. Esa simetria es lo que hace que `E2` valga: el bucle probado
-contra el doble es el mismo bucle que correra contra el proveedor.
+QUE CAMBIA RESPECTO A LA PRIMERA VERSION
+-----------------------------------------
+La primera version de este modulo hablaba HTTP con cabeceras y un `Bearer`.
+`SPEC-14` la retiro entera: el harness delega en sesiones y **ningun codigo
+suyo toca la red**. Lo que queda es un adaptador a un proceso, con la misma
+firma que el doble -`llamar(prompt) -> dict`- para que el bucle probado en
+`PLAN-01` E2 sea el mismo que corra de verdad.
 
-LAS CREDENCIALES
-----------------
-Se leen del **entorno** y de ningun otro sitio. No hay fichero de ejemplo, no
-hay valor por defecto y no se escriben nunca:
+DOS COSAS DE ENTORNO QUE NO SE DISCUTEN, PORQUE YA SE PAGARON
+--------------------------------------------------------------
+Son hallazgos 13 y 14 de `DECISIONES.md` de la rama `main`, y son conocimiento
+de entorno y no decisiones de diseno:
 
-  - no van al repositorio ni a `config.json`;
-  - no van a la traza, que registra **que modelo** se uso y no con que clave;
-  - no van al log, ni siquiera truncadas;
-  - no van al mensaje de una excepcion.
+1. **En Windows `claude` no es un ejecutable, es un `.CMD`.**
+   `subprocess.run(["claude", ...])` da `FileNotFoundError` mientras
+   `claude --version` funciona perfectamente en la terminal. Hay que resolver
+   la ruta y arrancarlo con `shell=True` o con su ruta absoluta.
 
-Si falta la variable, el modulo falla al construirse con un mensaje que dice
-**que variable falta**, nunca que valor tenia. Un fichero de configuracion
-versionado con una clave dentro es el modo de fallo mas caro y mas frecuente
-que hay, y no se cataloga como modo de fallo: se impide.
+2. **El prompt va por stdin, nunca como argumento.** Al pasar por `cmd.exe`, su
+   analizador de linea de comandos **termina el comando en el primer salto de
+   linea**, y el prompt llega truncado sin que nada avise. Costo un `502` que
+   parecia un problema de prompt: *"no era el prompt: era el transporte"*.
 
-POR QUE EL MODELO SE FIJA AL CONSTRUIR
----------------------------------------
-`SPEC-11` C-3: el modelo del Juez es **fijo dentro de una obra**, porque desde
-`SPEC-10` la comparabilidad entre puntuaciones decide que borrador se queda en
-`Escena.borrador_aceptado`. Si el modelo cambiara a mitad, dos puntuaciones
-dejarian de significar lo mismo y la eleccion seria arbitraria sin que nada
-avisara. Por eso se pasa en el constructor y no en cada llamada, y por eso la
-traza registra cual se uso: sin ese registro la regla no se puede comprobar
-despues.
+EL PARSEO ES DESCONFIADO A PROPOSITO
+-------------------------------------
+Aunque el prompt prohiba las vallas de bloque de codigo, **las anade la sesion
+intermedia al imprimir la respuesta**, no el modelo (hallazgo 7). Asi que se
+intenta rescatar el JSON de tres formas antes de rendirse: directo, quitando
+vallas, y extrayendo el primer objeto equilibrado. Perder una escena entera por
+tres acentos graves seria absurdo.
 """
 
 import json
 import os
+import re
+import shutil
+import subprocess
 
 VARIABLES = {
-    "clave": "HARNESS_MODELO_API_KEY",
-    "base_url": "HARNESS_MODELO_BASE_URL",
+    "ejecutable": "HARNESS_CLAUDE_BIN",
     "modelo_escritor": "HARNESS_MODELO_ESCRITOR",
     "modelo_juez": "HARNESS_MODELO_JUEZ",
 }
 
 
-class FaltaCredencial(RuntimeError):
+class FaltaEntorno(RuntimeError):
     pass
 
 
 class FalloDeTransporte(Exception):
-    """Timeout, corte, limite de tasa. Por `O-3` **si** se reintenta."""
+    """El proceso no arranco, no respondio o murio. Por `O-3` **si** se reintenta."""
 
 
-def _del_entorno(nombre, obligatoria=True):
-    valor = os.environ.get(nombre)
-    if obligatoria and not valor:
-        raise FaltaCredencial(
-            "falta la variable de entorno {0}. El harness no lee credenciales "
-            "de ningun fichero: ponla en la sesion antes de arrancar".format(nombre)
+class RespuestaIlegible(Exception):
+    """Ni siquiera el parseo desconfiado pudo sacar un objeto. Es fallo de
+    **contrato**: por `O-3` no se reintenta sin cambiar nada."""
+
+
+def _resolver_ejecutable():
+    """Hallazgo 13: `claude` es un `.CMD` y `shutil.which` sí lo encuentra."""
+    ruta = os.environ.get(VARIABLES["ejecutable"]) or shutil.which("claude")
+    if not ruta:
+        raise FaltaEntorno(
+            "no se encuentra el ejecutable de Claude Code. Ponlo en {0} o "
+            "asegurate de que `claude` esta en el PATH".format(VARIABLES["ejecutable"])
         )
-    return valor
+    return ruta
 
 
-class ClienteReal:
+def quitar_vallas(texto: str) -> str:
+    """Quita ```json ... ``` si los anadio alguien por el camino."""
+    t = (texto or "").strip()
+    if t.startswith("```"):
+        t = re.sub(r"^```[a-zA-Z]*\s*", "", t)
+        t = re.sub(r"\s*```$", "", t)
+    return t.strip()
+
+
+def primer_objeto_equilibrado(texto: str):
+    """Extrae el primer `{...}` con las llaves balanceadas.
+
+    No usa una expresion regular: las llaves anidadas no son un lenguaje
+    regular, y una que lo intente corta en el primer `}` interior.
+    """
+    inicio = texto.find("{")
+    if inicio == -1:
+        return None
+    profundidad = 0
+    for i in range(inicio, len(texto)):
+        if texto[i] == "{":
+            profundidad += 1
+        elif texto[i] == "}":
+            profundidad -= 1
+            if profundidad == 0:
+                return texto[inicio:i + 1]
+    return None
+
+
+def interpretar(bruto: str) -> dict:
+    """Tres intentos antes de rendirse, en orden de menos a mas invasivo."""
+    for candidato in (bruto, quitar_vallas(bruto), primer_objeto_equilibrado(bruto or "")):
+        if not candidato:
+            continue
+        try:
+            datos = json.loads(candidato)
+        except (ValueError, TypeError):
+            continue
+        if isinstance(datos, dict):
+            return datos
+    raise RespuestaIlegible(
+        "no se pudo interpretar la respuesta como objeto JSON tras quitar "
+        "vallas y extraer el primer objeto equilibrado"
+    )
+
+
+class SesionDelegada:
     """Misma firma que `DobleDelModelo`. El bucle no distingue."""
 
-    def __init__(self, modelo=None, transporte=None):
-        self._clave = _del_entorno(VARIABLES["clave"])
-        self.base_url = _del_entorno(VARIABLES["base_url"], obligatoria=False)
-        self.nombre = modelo or _del_entorno(VARIABLES["modelo_escritor"])
-        # El transporte se inyecta para poder probar el adaptador sin red.
-        self._transporte = transporte
+    def __init__(self, modelo=None, agente=None, ejecutar=None):
+        self.nombre = modelo or os.environ.get(VARIABLES["modelo_escritor"])
+        if not self.nombre:
+            raise FaltaEntorno(
+                "falta {0}: el modelo se fija al construir, porque `SPEC-11` C-3 "
+                "lo quiere fijo dentro de una obra".format(VARIABLES["modelo_escritor"])
+            )
+        self.agente = agente
+        self._ejecutar = ejecutar or _ejecutar_proceso
 
     def __repr__(self):
-        """Sin la clave. Un `repr` que la lleve acaba en un log tarde o temprano."""
-        return "ClienteReal(modelo={0!r})".format(self.nombre)
+        return "SesionDelegada(modelo={0!r}, agente={1!r})".format(self.nombre, self.agente)
 
     def llamar(self, prompt: str) -> dict:
-        cuerpo = {"model": self.nombre, "prompt": prompt}
         try:
-            bruto = self._transporte(
-                url=self.base_url,
-                cabeceras={"Authorization": "Bearer {0}".format(self._clave)},
-                cuerpo=cuerpo,
-            )
-        except Exception as e:
-            # El mensaje no incluye ni las cabeceras ni el cuerpo: las primeras
-            # llevan la clave y el segundo puede ser el contexto entero.
+            salida = self._ejecutar(_resolver_ejecutable(), self.nombre,
+                                    self.agente, prompt)
+        except FalloDeTransporte:
+            raise
+        except (OSError, subprocess.SubprocessError) as e:
+            # Se envuelve tambien aqui y no solo en `_ejecutar_proceso` porque
+            # el ejecutor es inyectable: un doble que reviente tiene que
+            # producir el mismo fallo que el proceso real, o la prueba estaria
+            # verificando un camino que no existe.
             raise FalloDeTransporte(
-                "la llamada al proveedor no completo: {0}".format(type(e).__name__)
-            ) from None
-        return _normalizar(bruto)
+                "la delegacion no completo: {0}".format(type(e).__name__)) from None
+        return _normalizar(interpretar(salida))
 
 
-def _normalizar(bruto: dict) -> dict:
+def _ejecutar_proceso(ejecutable, modelo, agente, prompt):
+    """El prompt por **stdin**. Nunca como argumento: `cmd.exe` lo trunca."""
+    orden = [ejecutable, "-p", "--model", modelo]
+    if agente:
+        orden += ["--agent", agente]
+    try:
+        r = subprocess.run(orden, input=prompt, capture_output=True,
+                           text=True, encoding="utf-8", timeout=600)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        raise FalloDeTransporte(
+            "la delegacion no completo: {0}".format(type(e).__name__)
+        ) from None
+    if r.returncode != 0:
+        raise FalloDeTransporte(
+            "la delegacion termino con codigo {0}".format(r.returncode))
+    return r.stdout
+
+
+def _normalizar(datos: dict) -> dict:
     """Deja la respuesta en la forma que el bucle espera.
 
-    `usage` se **copia tal cual**. No se calcula, no se rellena y no se pone a
-    cero si falta: queda ausente. Es la regla 1 de `SPEC-08` C-4, y es la que
-    hace que `VER-41` compare dos numeros y no uno consigo mismo.
+    No hay `usage` que copiar: los tokens los ve la sesion que delego y los
+    pasa aparte. Por eso `tokens_estimados` es **un suelo y no una medida**
+    (`SPEC-14` C-3), y por eso el campo no se rellena aqui con un cero.
     """
-    texto = bruto.get("texto") or bruto.get("content")
-    delta = bruto.get("delta")
+    delta = datos.get("delta")
     if isinstance(delta, str):
         try:
             delta = json.loads(delta)
         except ValueError:
             delta = None
-    salida = {"texto": texto, "delta": delta}
-    if "usage" in bruto:
-        salida["usage"] = bruto["usage"]
-    return salida
+    return {"texto": datos.get("texto") or datos.get("content"), "delta": delta}

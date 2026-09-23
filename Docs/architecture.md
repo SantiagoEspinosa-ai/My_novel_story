@@ -617,7 +617,9 @@ es ordenada —se escribe el estado y se deja constancia— y **no se pierde lo 
 Los dos números son provisionales y se fijan en el plan, como el tope de reintentos.
 **Caduca con:** `backend/app/features/orquestacion/`.
 
-#### El interbloqueo del presupuesto
+#### El interbloqueo del presupuesto ~~(retirado)~~
+
+**`SPEC-14` C-1 se llevó esta sección con su causa.** Sin reserva no hay techo retenido, así que el interbloqueo que describe **dejó de ser posible**. Se conserva tachada porque el razonamiento sigue enseñando algo: era un fallo que no salía de ningún error, sino de cruzar dos decisiones correctas por separado.
 
 **Un solo trabajo abandonado del Escritor deja el sistema entero parado hasta que expire el
 margen**, y no es consecuencia del número elegido: sale de cruzar dos decisiones que por

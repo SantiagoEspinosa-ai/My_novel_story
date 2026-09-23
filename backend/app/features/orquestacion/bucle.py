@@ -18,14 +18,15 @@ EL ORDEN DE LOS PASOS, Y POR QUE CADA UNO VA DONDE VA
     1. Ensamblar el contexto dentro del presupuesto. Si no cabe tras agotar
        las formas reducidas y eliminar los tres primeros bloques, `RF-26`:
        **falla en vez de generar**. No se genera con un contexto mutilado.
-    2. Reservar presupuesto (`P-2`) y llamar.
+    2. Comprobar el techo sobre lo que se manda y delegar. **No se reserva**:
+       `SPEC-14` C-1 retiro la reserva, porque el harness no administra la
+       ventana del subagente.
     3. Leer el contrato. Texto y delta en la misma respuesta. Lo que falle aqui
        es fallo **de contrato**, no hallazgo: no produce `Hallazgo`, no pasa por
        las puertas, y por `O-3` **no se reintenta**.
     4. Guardar el borrador. La escena pasa a `generada`.
     5. Pasar las puertas deterministas. Lo que salga son `Hallazgo`, con su
        invariante y su verificador.
-    6. Liberar el presupuesto **siempre**, tambien cuando falla.
 
 QUE NO HACE ESTE MODULO
 -----------------------
@@ -85,18 +86,19 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
         prompt.encode("utf-8")).hexdigest()[:12])
 
-    # 2. Reservar y llamar. Se libera siempre, tambien al fallar.
-    reservado = t.tokens_para_recortar
-    if not presupuesto.reservar(estado_del_techo, reservado):
-        return Resultado(escena=escena_id, traza=t, fallo="sin_presupuesto")
-    t.tokens_reservados = reservado
+    # 2. Comprobar el techo y delegar.
+    #
+    # Ya no se reserva: `SPEC-14` C-1 retiro la reserva porque el harness no
+    # administra la ventana del subagente. Lo que queda es el limite sobre lo
+    # que **mandamos**, que sigue siendo real y sigue haciendo fallar antes de
+    # generar con un contexto mutilado.
+    if t.tokens_para_recortar > techo:
+        return Resultado(escena=escena_id, traza=t, fallo="no_cabe")
     try:
         respuesta = modelo.llamar(prompt)
-    except FalloDeTransporte as e:
+    except FalloDeTransporte:
         modulo_traza.registrar_fallo(t, clase="transporte", salida=None)
         return Resultado(escena=escena_id, traza=t, fallo="transporte")
-    finally:
-        presupuesto.liberar(estado_del_techo, reservado)
 
     # 3. El contrato. Lo que falle aqui no es un hallazgo.
     try:

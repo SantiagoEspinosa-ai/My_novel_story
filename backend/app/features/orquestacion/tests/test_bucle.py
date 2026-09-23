@@ -44,11 +44,11 @@ def test_una_generacion_limpia_deja_borrador_traza_y_ningun_hallazgo(con):
     assert r.traza.tokens_declarados == 2100
 
 
-def test_los_tres_numeros_quedan_separados_en_la_traza(con):
+def test_son_dos_numeros_desde_spec_14(con):
+    """`SPEC-14` C-3 retiro `tokens_reservados`: decia "reservado" sin reservar."""
     r = agente.generar(con, "e1", _ctx(), DobleDelModelo(), techo=10_000)
     assert r.traza.tokens_para_recortar == 700
-    assert r.traza.tokens_reservados == 700
-    assert r.traza.tokens_declarados == 2100, "este viene del proveedor, no se calcula"
+    assert r.traza.tokens_reservados is None, "ya no se reserva nada"
 
 
 def test_una_respuesta_sin_delta_es_fallo_de_contrato_y_no_hallazgo(con):
@@ -79,12 +79,18 @@ def test_un_timeout_deja_traza_y_no_guarda_salida(con):
     assert r.traza.salida_fallida is None
 
 
-def test_el_presupuesto_se_libera_tambien_cuando_falla(con):
-    """`P-2`. Si no se liberara, un timeout dejaria el techo retenido: `MF-25`."""
+def test_ya_no_hay_techo_que_liberar(con):
+    """Lo que `SPEC-14` C-1 se llevo, y con ello `MF-25`.
+
+    Antes esta prueba comprobaba que un timeout liberase el presupuesto
+    reservado, porque si no lo liberaba el techo se quedaba retenido hasta que
+    expirase el margen de abandono: eso era `MF-25`. Sin reserva **no hay nada
+    que retener**, asi que el interbloqueo desaparece con su causa.
+    """
     techo = {}
     agente.generar(con, "e1", _ctx(), DobleDelModelo(Guion(["timeout"])),
                    techo=10_000, estado_del_techo=techo)
-    assert techo["usado"] == 0
+    assert techo == {}, "nadie reserva, asi que no hay nada que liberar"
 
 
 def test_una_escena_corta_produce_inv17_y_no_la_caza_ningun_juez(con):
