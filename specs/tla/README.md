@@ -235,7 +235,7 @@ necesita identidad propia**. `copiar_novela()` guarda `salida-novela-1/`,
 `salida-novela-2/`… y el número de carpeta es lo único que las distingue; nada
 dentro de la novela dice de qué ronda es.
 
-**Registrado como `F-39` en `Docs/verification.md`**, porque no es trabajo de
+**Registrado como `F-43` en `Docs/verification.md`**, porque no es trabajo de
 esta especificación y se cruza con `G-07` de `SPEC - Frontend y contrato
 congelado.md`, que llegó a lo mismo por el otro lado: la obra no tiene versión.
 
