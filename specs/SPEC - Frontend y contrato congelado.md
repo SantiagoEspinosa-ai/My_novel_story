@@ -236,6 +236,67 @@ acordar antes de escribir nada**, y ninguna de esas se decide aquí.
   posibles sin elegir ninguna. Siguen listadas arriba porque `C-9` sigue dependiendo de ellas;
   lo que ya no hace falta es decidirlas desde aquí.
 
+## Lo que queda decidido
+
+Las siete preguntas están respondidas. **Tres se contestaron solas**: `SPEC-21` `C-2` fijó qué
+significa que un capítulo use un hecho, y `D-2` y `D-1` de `SPEC-23` fijaron qué es una versión
+de la obra y qué pasa con lo que venía después. Las otras cuatro se deciden aquí.
+
+### `D-1` · Quien pide el cambio es quien firma las puertas (pregunta 4)
+
+No aparece un actor nuevo. Dos razones, y la segunda es la que manda:
+
+- **Técnica:** el proyecto no tiene identidad ni autenticación, así que declarar dos roles
+  sería declarar algo que nada puede comprobar — la Regla 8 a escala de diseño, otra vez.
+- **De producto:** en una novela por encargo, **quien pide un cambio es quien la compró**. Que
+  autor y lector sean la misma persona no es una limitación del prototipo: es cómo funciona el
+  producto.
+
+**Caduca con:** la existencia de identidad en el sistema. Si algún día la hay, esta decisión se
+revisa; hasta entonces no es un pendiente, es la respuesta.
+
+### `D-2` · La dedicatoria es una por obra (pregunta 5)
+
+Atributo de `Obra`, con su cambio en `Docs/definitions.md` y su migración.
+
+Si el enunciado acabara exigiendo una por lector, **entra como concepto propio —un ejemplar— y
+nunca como versión**. El motivo importa ahora que `SPEC-23` `D-2` acaba de definir qué es una
+versión: una versión existe para decir que **el contenido es otro**, y en una dedicatoria
+personalizada el texto de la novela no cambia. Usarla para un paratexto vaciaría el concepto
+justo después de darle sentido.
+
+### `D-3` · La comparación del contrato falla en CI (pregunta 6)
+
+Un validador que no corre donde se integra no protege nada, y `C-2` es toda la protección de
+esta frontera.
+
+**Y destapa una deuda que ya existía, que no es el coste de esta decisión.** Varias filas
+`VER` declaran **CI** como su sitio de ejecución —`VER-13`, `VER-14`, `VER-15`, `VER-16`,
+`VER-17`, `VER-21`, `VER-22`, `VER-23`— y **no hay CI configurado en el repositorio**: no
+existe `.github/workflows`. Es un grupo entero de validadores cuyo emplazamiento es una
+promesa. El patrón es el mismo que `INV-08` declarada, escrita, probada y sin enchufar
+(`F-47`): la diferencia entre *declarado* y *ejecutándose* no se ve desde fuera, porque las
+dos cosas se leen igual en la tabla.
+
+Esta spec no crea CI ni lo diseña. Lo que hace es dejar dicho que `C-2` **no está protegiendo
+nada hasta que exista**, en vez de contarlo como cobertura.
+
+### `D-4` · Primero el contrato, después las páginas (pregunta 7)
+
+El orden es: **`C-1` a `C-4` primero** —el esquema congelado y su validador—, porque no
+dependen de ningún hueco del backend y son lo que impide que el frontend se construya sobre
+una API que se mueve. Después las páginas, empezando por **portada, índice y fichas**, que solo
+esperan trabajo de backend sin decisiones pendientes.
+
+La lista de quince ha encogido mientras esta spec estaba en revisión. Cerrados: `G-01`
+—`escena.capitulo`—, `G-04` —`personajes_presentes` ya se persiste—, `G-05` —el delta se
+guarda—, `G-06` —`uso_de_hecho`—, y `G-07` y `G-08` por las decisiones de `SPEC-23`. Siguen
+abiertos y son los que bloquean las tres primeras páginas: `G-02` —no hay `parte`—, `G-03`
+—`Personaje` y `Lugar` no existen como entidades del canon—, `G-12` —faltan los endpoints que
+`SPEC-01` ya declara— y `G-13` —no hay lectura continua—.
+
+La selección y la regeneración esperan a la única pregunta que `SPEC-23` deja abierta.
+
 ## Qué queda explícitamente fuera
 
 - **Las decisiones de `G-06` a `G-11`.** Esta spec las nombra, dice qué depende de ellas y no
@@ -287,7 +348,18 @@ de `Docs/verification.md`; y `D3-5` de `REV-01`.
 Ninguna se rellena por suposición. Una spec con huecos supuestos es peor que no tenerla,
 porque parece acordada.
 
-| # | Pregunta | Por qué bloquea |
+**Todas están respondidas; el detalle está en «Lo que queda decidido».**
+
+| # | Pregunta | Respuesta |
+| --- | --- | --- |
+| 4 | ¿El lector es quien firma las puertas? | **Sí**, `D-1`, con marca de caducidad |
+| 5 | ¿La dedicatoria es por obra o por lector? | **Por obra**, `D-2`. Por lector sería un ejemplar, nunca una versión |
+| 6 | ¿El validador del contrato falla en CI? | **Sí**, `D-3`, y destapa que no hay CI |
+| 7 | ¿El frontend entra ahora o después? | **El contrato primero**, `D-4` |
+
+*(Las tres de abajo se contestaron fuera de esta spec y se dejan por trazabilidad.)*
+
+| # | Pregunta | Por qué bloqueaba |
 | --- | --- | --- |
 | 1 | **¿Qué significa que un capítulo *use* un hecho?** ¿Lo establece, lo revela, alguien obra con él, o basta con que entrara en su contexto? | Sin respuesta, `C-9` devuelve una lista de capítulos cuyo significado no está escrito: la Regla 5 otra vez (`G-06`) |
 | 2 | **¿Qué es una versión de la obra?** ¿Una foto de los borradores aceptados, o algo que se nombra y se conserva entero? | `C-9` dice "respecto a la versión anterior" y hoy no hay nada que se llame así (`G-07`) |
