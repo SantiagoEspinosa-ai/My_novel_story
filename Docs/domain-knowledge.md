@@ -92,6 +92,8 @@ Desde `SPEC-26` v3 solo quedan las dos ramas que son narrativa general: qué se 
 
 ## Proceso y Calidad
 
+Desde `SPEC-26` el plano Calidad tiene además `ValoracionDelEditor`: la nota de 1 a 5 del Editor a cada criterio de un capítulo, con su justificación. `INV-26` la compara con el umbral.
+
 ```mermaid
 flowchart LR
   P4["Plano Proceso"]

@@ -114,6 +114,7 @@ backend/
       consolidacion/         # aplicar el delta y resumir
       auditoria/             # invariantes de nivel obra y capitulo
       entrevista/            # la ficha del destinatario, por turnos, y el texto libre (SPEC-25)
+      planificacion/         # de la ficha a un plan aprobado: Planificador, Revisor y cobertura (SPEC-26)
       politica/              # listas de palabras vetadas en tres niveles (SPEC-25)
       orquestacion/          # compone las anteriores; unica autorizada a hacerlo
       lectura/               # consultas de solo lectura que alimentan el frontend
@@ -240,6 +241,9 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | **Auditor de obra** | Mixto | Comprobaciones de nivel obra y capítulo, que no se pueden hacer escena a escena | Obra completa → `Hallazgo[]` | Obra: `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13`, `INV-14`, `INV-16`. Capítulo: `INV-08`, `INV-15` |
 | **Entrevistador** | Sí | Preguntar al comprador con naturalidad; traducir cada respuesta a la ficha y a sus listas cerradas; explicar una contradicción sin juzgar; juzgar lo que queda en `otro` (`SPEC-25` `RF-08b`) | Respuesta del comprador + ficha + lo que el código calculó → ficha actualizada + siguiente pregunta | Ninguna: **qué falta, qué se contradice y si se puede cerrar lo decide el código**, no el agente |
 | **Guardián de política** | No | Normalizar y buscar palabras vetadas en tres niveles; devolver la escena al Escritor con el fragmento exacto; parar al agotar las reescrituras; registrar cada decisión en el audit log | Texto de la escena + vetadas de la obra → coincidencias | `INV-21` |
+| **Planificador** | Sí | Convertir la ficha en el plan de 10 capítulos de una escena; situar cada imprescindible con sus palabras clave; declarar la cronología (`t_fabula`, nacimientos, exclusiones) | Ficha → `PlanDeLaObra` | Ninguna directa: la cobertura (`RF-06`) la cuenta el código antes del Revisor (`SPEC-26`) |
+| **Revisor del plan** | Sí | Comparar plan y ficha: género, tono, ocasión, papel, que no invente ni contradiga, que haya arco | Ficha + plan → aprobado u objeciones | Ninguna: sin plan aprobado no se escribe, hasta 3 rondas (`RF-05`..`RF-07`) |
+| **Editor** | Sí | Nota 1–5 por criterio con justificación e instrucción; no reescribe. Y el juicio de obra sobre resúmenes y último capítulo | Capítulo → `ValoracionDelEditor[]`; novela → arco y final | `INV-26`, `INV-27` |
 
 **Qué significa «en su forma prevista».** El Escaletador comprueba `INV-01`, `INV-07`,
 `INV-12` e `INV-16` **contra la `Escaleta`, antes de que exista ningún texto**: que cada
@@ -869,3 +873,14 @@ esperando una respuesta que el dato no da.
   en qué puertas es obligatorio.
 - [ ] **Limpieza de los documentos de dominio.** Mover lo listado arriba y arreglar el
   enlace roto de `Docs/domain-knowledge.md`.
+
+## Los hooks de Claude Code (`SPEC-26` `RF-17`..`RF-19`)
+
+Dos scripts en `backend/hooks/`, declarados en `.claude/settings.json`:
+
+| Hook | Evento | Qué hace | A quién |
+| --- | --- | --- | --- |
+| `validar_capitulo.py` | `Stop` | Comprueba longitud, vetadas y nombres del último mensaje; si falla, sale con 2 y Claude Code se lo devuelve **en la misma sesión**, una sola vez (`stop_hook_active`) | Solo al Escritor |
+| `policy.py` | `PreToolUse` | Niega cualquier herramienta y lo apunta en el audit log (`herramienta_denegada`) | A cualquier agente del pipeline; el Editor y el Juez lo reciben en su directorio aislado con ruta absoluta |
+
+**Solo actúan sobre el pipeline**: `SesionDelegada` lanza cada delegación con `HARNESS_AGENTE` y, si las hay, `HARNESS_REGLAS`; sin esa variable los dos scripts salen con 0. Una sesión interactiva en el mismo proyecto no se toca. **Las puertas del código siguen mandando**: el hook es una primera línea más barata que una delegación nueva, no la única. Y mientras los agentes tengan `tools: []`, el de policy no se dispara nunca en la práctica.

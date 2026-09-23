@@ -92,4 +92,10 @@ La entrevista del destinatario (`SPEC-25`) se hace desde la terminal con el back
 cd backend && python -X utf8 entrevista_cli.py
 ```
 
+La novela regalo de principio a fin (`SPEC-26`), a partir de la ficha cerrada de una entrevista. **Gasta dinero** en cada capítulo; necesita los modelos del Planificador, el Revisor, el Editor, el Escritor y el Resumidor en `backend/config/sistema.json`:
+
+```
+cd backend && python -X utf8 novela_regalo.py FICHA.json --capitulos 1
+```
+
 **Los guiones de ejecución real gastan dinero** y por eso no están aquí como comando suelto: `backend/f6_seis_escenas.py` delega en sesiones de verdad. Necesitan `HARNESS_MODELO_ESCRITOR`, `HARNESS_MODELO_JUEZ` y `HARNESS_MODELO_RESUMIDOR`, y se lanzan con `python -X utf8` porque la consola de Windows no es UTF-8 por defecto.

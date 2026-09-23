@@ -1,9 +1,10 @@
 ---
 id: SPEC-26
 titulo: El pipeline de la novela regalo
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión (sustituir por su identificador)"
 fecha_aprobacion: 2026-09-23
+fecha_aplicacion: 2026-09-23
 fecha: 2026-09-23
 version: 3
 enmienda_aprobada: 2026-09-23
