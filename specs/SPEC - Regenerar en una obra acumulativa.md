@@ -123,8 +123,12 @@ sola:
 - `S-5` decide **cuántos** verdes hay que invalidar, no si hay que hacerlo.
 
 Y deja una pregunta que sobrevive a esta spec: si un resultado de verificación supiera contra
-qué estado se evaluó, **caducaría solo**. Eso es un cambio del modelo de verificación y no se
-decide aquí, pero es la única forma conocida de que `MF-26` deje de ser silencioso.
+qué estado se evaluó, **caducaría solo** —la misma forma que las marcas `Caduca con:`, una
+condición comprobable en lugar de una nota que alguien tiene que acordarse de revisar—. Eso es
+un cambio del modelo de verificación y no se decide aquí: queda **abierta como decisión
+propia** en `Docs/verification.md` § Decisiones abiertas, con lo que habría que elegir —qué
+identifica un estado, y qué se hace con un verde caducado—. Es la única forma conocida de que
+`MF-26` deje de ser silencioso.
 
 ## Una pieza que no es una decisión
 

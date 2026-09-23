@@ -923,6 +923,23 @@ esperando una respuesta que el dato no da.
       B2. La salida sería una condición sobre datos —*"cuando exista una traza con
       `tokens_declarados`"*— y reapuntar solo acerca el proxy. **Se decide cuando haya
       dato**, que es dentro de poco. **Se contesta sola** con una traza real.
+- [ ] **Si un resultado de verificación guarda contra qué estado se evaluó.** Es la causa
+      de fondo de **`MF-26`**, el verde heredado, y hoy la respuesta es que no: un
+      `Hallazgo` cita su invariante y su verificador, y **nada dice en qué mundo se
+      levantó**. Sin ese dato, un verde que dejó de valer —porque el estado que lo
+      sostenía cambió debajo— **no se puede caducar ni encontrar**: no hay forma de saber
+      cuáles habría que revisar, ni siquiera de saber que hay alguno. Es lo que convierte
+      a `MF-26` en el único modo de fallo catalogado sin ningún validador que lo mire, y
+      no por falta de validador, sino porque **no hay contra qué comprobarlo**.
+      Si el resultado llevara el estado contra el que se evaluó, **caducaría solo**: la
+      misma forma que las marcas `Caduca con:` —una condición comprobable en lugar de una
+      nota que alguien tiene que acordarse de revisar—, y por el mismo motivo, que es que
+      nadie se acuerda. Queda **abierta a propósito**: qué identifica un estado, si basta
+      con la última escena consolidada o hace falta algo más fino, y qué se hace con un
+      verde caducado —invalidarlo, marcarlo o reevaluarlo— son decisiones que no toma la
+      spec que lo destapó. **No se contesta sola**: ningún dato la resuelve, porque no es
+      una medida que falte sino un atributo que nadie ha decidido tener. Ver `SPEC-23`,
+      que la nombra y no la resuelve.
 - [ ] **Los umbrales de `VER-48` y `VER-51`.** Las dos series se registran desde
       el primer día; los números salen de mirarlas, como en `VER-32`. **Se contesta sola** con una traza real.
 - [x] ~~Bajar `INV-14` a `regla` y `INV-11` a `regla` con juez de desempate~~
