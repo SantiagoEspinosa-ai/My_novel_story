@@ -45,6 +45,17 @@ ACCESOS = {"lug-salon": ["lug-cocina", "lug-pasillo"],
            "lug-sotano": ["lug-pasillo"],
            "lug-dormitorio": ["lug-pasillo"]}
 
+# `SPEC-15`: los hechos los declara el plan, no el texto. Derivarlos del
+# registro de conocimiento fue el punto muerto de `F-29`, y por eso la
+# ejecucion anterior salio con conocimiento 0 y fichas 0.
+HECHOS = [
+    {"id": "hec-herencia", "enunciado": "Marta heredo la casa de su tia"},
+    {"id": "hec-sotano-cerrado", "enunciado": "El sotano esta cerrado por fuera"},
+    {"id": "hec-llave-perdida", "enunciado": "La llave del sotano no aparece"},
+    {"id": "hec-reloj-sin-cuerda", "enunciado": "El reloj del salon anda sin cuerda"},
+    {"id": "hec-peldano-de-mas", "enunciado": "La escalera tiene un peldano mas al bajar"},
+]
+
 ESCALETA = [
     (1, "cordura", "Marta recorre la casa heredada y cuenta los peldanos."),
     (2, "seguridad", "Marta encuentra el sotano cerrado y no aparece la llave."),
@@ -69,6 +80,7 @@ def main():
          "cambio_de_valor": {"eje": eje, "signo": "negativo"},
          "beats": ["b{0}".format(n)], "longitud_objetivo": [300, 900]}
         for n, eje, _ in ESCALETA])
+    repo.declarar_hechos(con, "cap-1", HECHOS)
 
     escritor = proveedor.SesionDelegada(agente="escritor")
     juez = ciclo.juez_aislado()
@@ -87,6 +99,12 @@ def main():
         for m in g.medidas:
             print("{0:6}  ".format(m["escena"]) +
                   "  ".join(str(m["bloques"][n]).rjust(11) for n in nombres))
+    print("\n=== LOS HECHOS DECLARADOS, Y DONDE LOS ESTABLECE EL TEXTO ===")
+    for h in repo.hechos_declarados(con, "cap-1"):
+        print("  {0:22} {1}".format(
+            h["id"], h["establecido_en"] or "SIN ESTABLECER"))
+    print("entradas de conocimiento:", len(mundo.leer(con)["conocimiento"]))
+
     print("\nescenas completas:", len(g.escenas_hechas))
     print("parada:", json.dumps(g.parada, ensure_ascii=False)[:400] if g.parada
           else "ninguna: llego al final")

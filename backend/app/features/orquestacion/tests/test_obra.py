@@ -55,7 +55,7 @@ def test_genera_las_tres_escenas_en_orden(con):
 def test_el_material_de_la_escena_2_incluye_lo_que_dejo_la_1(con):
     """El encadenado: sin esto la 2 genera contra el mundo de la 1."""
     obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
-    material = obra.reunir_material(con, repo.escena(con, "e2"))
+    material = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
     assert material["resumenes"], "el resumen de la 1 esta disponible en la 2"
     assert material["escena_anterior"], "y el texto de la 1 tambien"
 
@@ -90,3 +90,75 @@ def test_rf26_detiene_la_obra_sin_llamar_al_modelo(con):
 def test_el_informe_dice_si_el_contexto_crece(con):
     g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000)
     assert "CRECE" in obra.informe(g)
+
+
+# --- SPEC-15: los hechos los declara el plan, y el prompt los lleva --------
+
+class Revela:
+    """Un doble que **revela**, que es lo que el de serie nunca hace.
+
+    Regla 3 aplicada a las pruebas: un doble que solo sabe portarse bien pasa
+    contra si mismo. Sin este, el marcado de `escena_de_establecimiento` no
+    tendria ningun caso que lo ejercite.
+    """
+
+    nombre = "doble-que-revela"
+
+    def __init__(self):
+        self.llamadas = []
+
+    def llamar(self, prompt):
+        self.llamadas.append(prompt)
+        return {"texto": " ".join(["palabra"] * 1500),
+                "delta": {"cambio_de_valor": {"eje": "cordura",
+                                              "signo": "negativo"},
+                          "movimientos": [],
+                          "revelaciones": [{"sujeto": "per-marta",
+                                            "hecho": "hec-llave",
+                                            "grado": "sabe"}]},
+                "usage": {"total_tokens": 2100}}
+
+
+def test_los_hechos_declarados_llegan_al_prompt(con):
+    """El punto muerto de `F-29`: la lista salia del registro de conocimiento,
+    que solo crecia con revelaciones, que necesitaban la lista."""
+    repo.declarar_hechos(con, "cap-1", [
+        {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                      techo=1_000_000, hasta=1)
+    assert "hec-llave" in escritor.llamadas[0]
+
+
+def test_sin_hechos_declarados_el_prompt_no_inventa_ninguno(con):
+    """El caso negativo: que aparezca uno aqui seria el prompt fabricandolo."""
+    escritor = DobleDelModelo()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                      techo=1_000_000, hasta=1)
+    assert "hec-" not in escritor.llamadas[0]
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "F-31: la puerta de INV-03 bloquea la PRIMERA revelacion de la obra, sea "
+    "cual sea. Trata toda revelacion como 'actuar sabiendo ya' y exige que el "
+    "hecho conste en el registro de conocimiento antes de la escena; pero el "
+    "registro solo se escribe DESDE esas revelaciones, en la consolidacion, "
+    "que ocurre despues de la puerta. La obra para en e1 y nunca se llega a "
+    "marcar nada. Que significa `revelaciones` es una decision de dominio y no "
+    "se resuelve ajustando esta prueba. `strict` para que avise cuando pase."))
+def test_una_revelacion_marca_donde_el_texto_establece_el_hecho(con):
+    """`SPEC-15` C-1: `escena_de_establecimiento` es donde lo establece el
+    TEXTO, no donde nacio el hecho."""
+    repo.declarar_hechos(con, "cap-1", [
+        {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
+    obra.generar_obra(con, "cap-1", Revela(), *_agentes()[1:],
+                      techo=1_000_000, hasta=1)
+    hechos = repo.hechos_declarados(con, "cap-1")
+    assert hechos[0]["establecido_en"] == "e1"
+
+
+def test_el_material_de_una_escena_lleva_los_hechos_de_su_obra(con):
+    repo.declarar_hechos(con, "cap-1", [
+        {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
+    material = obra.reunir_material(con, repo.escena(con, "e1"), "cap-1")
+    assert [h["id"] for h in material["hechos"]] == ["hec-llave"]

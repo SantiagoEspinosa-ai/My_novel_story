@@ -103,3 +103,33 @@ def test_la_reserva_irreducible_es_lo_que_hace_fallar_rf26():
     tocados = {p.bloque for p in e.value.plan}
     assert "reserva_de_salida" not in tocados, "es irreducible y no se toca"
     assert "inmutable" not in tocados
+
+
+# --- SPEC-15: los hechos declarados van en el bloque 4 ---------------------
+
+def test_el_bloque_4_lleva_los_hechos_declarados_con_su_enunciado():
+    """Son lo que el modelo puede citar. Sin ellos el prompt decia
+    "hechos: (ninguno)" y el modelo, correctamente, no citaba ninguno."""
+    material = dict(MATERIAL, hechos=[
+        {"id": "hec-llave", "enunciado": "La llave del sotano se perdio",
+         "establecido_en": None}])
+    texto = ensamblado.montar(material)["estado_y_conocimiento"]
+    assert "hec-llave" in texto
+    assert "La llave del sotano se perdio" in texto
+
+
+def test_un_hecho_sin_establecer_se_distingue_de_uno_establecido():
+    """`INV-03` compara contra esto: revelar no puede preceder a establecer."""
+    material = dict(MATERIAL, hechos=[
+        {"id": "hec-a", "enunciado": "a", "establecido_en": "e1"},
+        {"id": "hec-b", "enunciado": "b", "establecido_en": None}])
+    texto = ensamblado.montar(material)["estado_y_conocimiento"]
+    linea_a = [l for l in texto.splitlines() if l.startswith("hec-a")][0]
+    linea_b = [l for l in texto.splitlines() if l.startswith("hec-b")][0]
+    assert "sin establecer" not in linea_a
+    assert "sin establecer" in linea_b
+
+
+def test_sin_hechos_declarados_el_bloque_4_sigue_montando():
+    """El caso de la obra que aun no tiene plan: no revienta, sale vacio."""
+    assert "hechos declarados" in ensamblado.montar(MATERIAL)["estado_y_conocimiento"]

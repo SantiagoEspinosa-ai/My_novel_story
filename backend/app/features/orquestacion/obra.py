@@ -47,7 +47,7 @@ class Generacion:
         return self.parada is None
 
 
-def reunir_material(con, escena, inmutable=""):
+def reunir_material(con, escena, obra_id, inmutable=""):
     """Lo que hay disponible para montar el contexto de esta escena."""
     orden = escena["orden"]
     anterior = con.execute(
@@ -59,6 +59,7 @@ def reunir_material(con, escena, inmutable=""):
         "escena_anterior": anterior[0] if anterior else "",
         "mundo": modulo_mundo.leer(con),
         "problemas": repo.hallazgos_abiertos(con, escena["id"]),
+        "hechos": repo.hechos_declarados(con, obra_id),
         "inmutable": inmutable,
     }
 
@@ -71,7 +72,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         if hasta is not None and escena["orden"] > hasta:
             break
 
-        material = reunir_material(con, escena, inmutable)
+        material = reunir_material(con, escena, obra, inmutable)
         bloques = ensamblado.montar(material)
         tamanos = ensamblado.tamanos(bloques, reserva_de_salida)
 
@@ -86,7 +87,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
 
         c = ciclo.ejecutar(con, escena["id"], tamanos, escritor, juez, resumidor,
                            material["mundo"], techo=techo,
-                           trabajo="obra-{0}".format(escena["orden"]))
+                           trabajo="obra-{0}".format(escena["orden"]),
+                           hechos=[h["id"] for h in material["hechos"]])
 
         if c.fallo:
             g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -101,9 +103,22 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                 str(c.resumen.get("texto") or ""),
                 [h for h in (c.resumen.get("hechos_clave") or [])
                  if memoria.IDENTIFICADOR.match(str(h))])
+        _marcar_establecidos(con, escena, c)
         _actualizar_fichas(con, escena, c)
         g.escenas_hechas.append(escena["id"])
     return g
+
+
+def _marcar_establecidos(con, escena, c):
+    """`SPEC-15`: `escena_de_establecimiento` dice donde lo establece el TEXTO.
+
+    Un hecho que el plan no previo puede establecerse igual, y **se marca**:
+    prohibirlo obligaria a replanificar por cada hallazgo del texto, y no
+    marcarlo perderia la diferencia entre lo planificado y lo improvisado.
+    """
+    delta = (c.generacion.leida_delta if c.generacion else None) or {}
+    for rev in delta.get("revelaciones", []):
+        repo.establecer_hecho(con, rev["hecho"], escena["id"])
 
 
 def _actualizar_fichas(con, escena, c):

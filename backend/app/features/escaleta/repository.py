@@ -37,6 +37,14 @@ CREATE TABLE IF NOT EXISTS borrador (
     prompt_hash TEXT,
     PRIMARY KEY (escena, version)
 );
+CREATE TABLE IF NOT EXISTS hecho_canonico (
+    id                      TEXT PRIMARY KEY,
+    obra                    TEXT NOT NULL,
+    enunciado               TEXT NOT NULL,
+    durabilidad             TEXT NOT NULL DEFAULT 'permanente',
+    escena_de_establecimiento TEXT,
+    previsto_en             TEXT
+);
 CREATE TABLE IF NOT EXISTS hallazgo (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     invariante  TEXT NOT NULL,
@@ -67,6 +75,47 @@ def guardar_escaleta(con, obra, escenas):
                  json.dumps(e["cambio_de_valor"]), json.dumps(e["beats"]),
                  json.dumps(e.get("longitud_objetivo"))),
             )
+
+
+def declarar_hechos(con, obra, hechos):
+    """`SPEC-15`: los `HechoCanonico` los declara el plan, no el texto.
+
+    `escena_de_establecimiento` queda **vacia** hasta que una escena lo
+    establezca: es opcional desde `SPEC-15` y significa *donde lo establece el
+    texto*, no *donde nacio*. Un hecho declarado y nunca establecido es un
+    defecto nombrable, y antes ni siquiera se podia escribir.
+    """
+    asegurar_tablas(con)
+    with con:
+        for h in hechos:
+            con.execute(
+                "INSERT OR REPLACE INTO hecho_canonico (id, obra, enunciado, "
+                "durabilidad, previsto_en) VALUES (?, ?, ?, ?, ?)",
+                (h["id"], obra, h["enunciado"], h.get("durabilidad", "permanente"),
+                 h.get("previsto_en")))
+
+
+def hechos_declarados(con, obra):
+    """Los hechos que el plan declaro. **Esto es lo que va al prompt.**
+
+    Derivar la lista del registro de conocimiento creo un punto muerto: no
+    habia hechos hasta que alguien los sabia, y nadie podia saberlos hasta que
+    existian (`F-29`). Que hechos existen lo declara el plan; quien los sabe lo
+    comprueba `INV-03`.
+    """
+    asegurar_tablas(con)
+    return [{"id": f[0], "enunciado": f[1], "establecido_en": f[2]}
+            for f in con.execute(
+                "SELECT id, enunciado, escena_de_establecimiento FROM hecho_canonico "
+                "WHERE obra = ? ORDER BY id", (obra,))]
+
+
+def establecer_hecho(con, hecho, escena):
+    """Marca donde el texto lo establece. Solo la primera vez."""
+    with con:
+        con.execute("UPDATE hecho_canonico SET escena_de_establecimiento = ? "
+                    "WHERE id = ? AND escena_de_establecimiento IS NULL",
+                    (escena, hecho))
 
 
 def escenas_de(con, obra):

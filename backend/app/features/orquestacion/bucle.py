@@ -61,7 +61,7 @@ class Resultado:
     fallo: str | None = None
 
 
-def _prompt(escena, contexto, mundo=None, problemas=None):
+def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None):
     """Usa la plantilla real, con los identificadores disponibles dentro.
 
     Sin ellos el modelo no puede citarlos y se le esta pidiendo lo imposible:
@@ -76,12 +76,16 @@ def _prompt(escena, contexto, mundo=None, problemas=None):
         objetivo=json.dumps(escena.get("cambio_de_valor"), sort_keys=True),
         problemas=problemas,
         personajes=sorted(mundo.get("entidades_vivas") or {}),
-        hechos=sorted({h for (_s, h) in (mundo.get("conocimiento") or {})}),
+        # Los hechos que el plan declaro, **no** los del registro de
+        # conocimiento. Derivarlos del registro creo el punto muerto de `F-29`:
+        # la lista salia de las revelaciones y las revelaciones necesitaban la
+        # lista, asi que nunca habia ninguna.
+        hechos=sorted(hechos or []),
     )
 
 
 def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,
-            mundo=None, trabajo="sin-trabajo"):
+            mundo=None, trabajo="sin-trabajo", hechos=None):
     escena = repo.escena(con, escena_id)
     t = modulo_traza.nueva(agente="escritor", escena=escena_id, trabajo=trabajo,
                            modelo=modelo.nombre)
@@ -98,7 +102,7 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
         modulo_traza.registrar_recorte(t, paso.bloque, paso.clase.value)
 
     t.tokens_para_recortar = sum(contexto.values())
-    texto_prompt = _prompt(escena, contexto, mundo)
+    texto_prompt = _prompt(escena, contexto, mundo, hechos=hechos)
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
         texto_prompt.encode("utf-8")).hexdigest()[:12])
 

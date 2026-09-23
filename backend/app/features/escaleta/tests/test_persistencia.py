@@ -94,3 +94,37 @@ def test_aceptar_rindiendose_deja_otro_estado(con):
     repo.guardar_borrador(con, "e1", texto="el menos malo", modelo="doble", prompt_hash="aa")
     repo.aceptar_borrador(con, "e1", version=1, rindiendose=True)
     assert repo.escena(con, "e1")["estado"] == EE.ACEPTADA_POR_RENDICION.value
+
+
+# --- SPEC-15: los hechos los declara el plan -------------------------------
+
+def test_un_hecho_declarado_existe_antes_de_que_nadie_lo_escriba(con):
+    """El punto muerto de `F-29`: la lista salia del registro de conocimiento,
+    el registro solo crecia con revelaciones, y revelar exigia la lista."""
+    repo.declarar_hechos(con, "obra-1", [
+        {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
+    hechos = repo.hechos_declarados(con, "obra-1")
+    assert [h["id"] for h in hechos] == ["hec-llave"]
+    assert hechos[0]["establecido_en"] is None, "declarado no es establecido"
+
+
+def test_establecer_un_hecho_dice_donde_lo_establece_el_texto(con):
+    repo.declarar_hechos(con, "obra-1", [
+        {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
+    repo.establecer_hecho(con, "hec-llave", "e1")
+    assert repo.hechos_declarados(con, "obra-1")[0]["establecido_en"] == "e1"
+
+
+def test_establecer_dos_veces_conserva_la_primera(con):
+    """`escena_de_establecimiento` es donde se establece, no donde se repite."""
+    repo.declarar_hechos(con, "obra-1", [
+        {"id": "hec-llave", "enunciado": "La llave del sotano se perdio"}])
+    repo.establecer_hecho(con, "hec-llave", "e1")
+    repo.establecer_hecho(con, "hec-llave", "e4")
+    assert repo.hechos_declarados(con, "obra-1")[0]["establecido_en"] == "e1"
+
+
+def test_los_hechos_de_otra_obra_no_se_cuelan(con):
+    repo.declarar_hechos(con, "obra-1", [{"id": "hec-a", "enunciado": "a"}])
+    repo.declarar_hechos(con, "obra-2", [{"id": "hec-b", "enunciado": "b"}])
+    assert [h["id"] for h in repo.hechos_declarados(con, "obra-1")] == ["hec-a"]

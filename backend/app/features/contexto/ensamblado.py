@@ -50,7 +50,21 @@ def _texto_estado(material):
         "donde: " + json.dumps(mundo.get("ubicaciones") or {}, sort_keys=True),
         "accesos: " + json.dumps(mundo.get("accesos") or {}, sort_keys=True),
         "conocimiento:",
-    ] + conocimiento)
+    ] + conocimiento + ["hechos declarados:", _texto_hechos(material)])
+
+
+def _texto_hechos(material):
+    """Los hechos declarados, con su estado de establecimiento.
+
+    Van en el bloque 4 con el resto del estado: son lo que el modelo puede
+    citar, y `INV-03` compara contra ellos. Decir cuales estan ya establecidos
+    es lo que permite que el texto no revele antes de establecer.
+    """
+    lineas = ["{0}: {1}{2}".format(
+        h["id"], h["enunciado"],
+        "" if h.get("establecido_en") else "  (sin establecer)")
+        for h in material.get("hechos", [])]
+    return "\n".join(lineas)
 
 
 def _texto_problemas(material):

@@ -117,12 +117,12 @@ def _delegar(modelo, prompt, agente, escena, trabajo, trazas):
 
 
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
-             techo=100_000, trabajo="ciclo"):
+             techo=100_000, trabajo="ciclo", hechos=None):
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
     c.generacion = bucle.generar(con, escena_id, contexto, escritor, techo=techo,
-                                 mundo=mundo, trabajo=trabajo)
+                                 mundo=mundo, trabajo=trabajo, hechos=hechos)
     c.trazas.append(c.generacion.traza)
     if c.generacion.fallo:
         c.fallo = c.generacion.fallo
