@@ -67,9 +67,17 @@ class Generacion:
 def reunir_material(con, escena, obra_id, inmutable=""):
     """Lo que hay disponible para montar el contexto de esta escena."""
     orden = escena["orden"]
+    # Acotada a la obra, como los resumenes y las fichas (`F-40`). Esta era la
+    # que quedaba fuera, y es **el bloque que mas pesa del contexto**: el
+    # bloque Local, que lleva la escena anterior entera. Sin el filtro,
+    # `orden - 1` casaba con una escena de cada obra y `LIMIT 1` se quedaba con
+    # la que saliera — el Escritor arrancaba leyendo una escena de otra obra y
+    # **nadie lo notaba, porque llega texto plausible**. Peor que lo de los
+    # resumenes, que llegaban desordenados o vacios.
     anterior = con.execute(
         "SELECT b.texto FROM borrador b JOIN escena e ON e.id = b.escena "
-        "WHERE e.orden = ? ORDER BY b.version DESC LIMIT 1", (orden - 1,)).fetchone()
+        "WHERE e.orden = ? AND e.obra = ? "
+        "ORDER BY b.version DESC LIMIT 1", (orden - 1, obra_id)).fetchone()
     return {
         # Acotados a la obra: el `orden` va del 1 al N **dentro** de ella, asi
         # que sin el filtro dos obras en la misma base se mezclan (`F-40`).

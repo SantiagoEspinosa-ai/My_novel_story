@@ -523,3 +523,30 @@ def test_una_escena_sin_resumen_se_dice_en_vez_de_callarse(con):
                           _agentes()[1], Mudo(), techo=1_000_000, hasta=1)
     assert g.escenas_hechas == ["e1"], "la escena se hace igual"
     assert g.sin_resumen == ["e1"], "pero consta que se quedo sin memoria"
+
+
+def test_la_escena_anterior_no_puede_venir_de_otra_obra(con):
+    """`F-40` seguia vivo aqui, y es el bloque que mas pesa del contexto.
+
+    La consulta buscaba `orden - 1` **sin acotar por nada**, con `LIMIT 1`: con
+    dos obras en la misma base, `orden - 1` casa con una escena de cada una y
+    gana la que salga. El Escritor arrancaba leyendo **entera** una escena de
+    otra obra, y nadie lo notaba porque llega texto plausible. Es peor que lo
+    de los resumenes, que llegaban desordenados o vacios.
+    """
+    repo.guardar_escaleta(con, "otra-obra", [
+        {"id": "otra-e1", "orden": 1, "pov": "per-marta", "lugar": "lug-salon",
+         "cambio_de_valor": {"eje": "cordura", "signo": "negativo"},
+         "beats": ["b"], "longitud_objetivo": [10, 5000]}])
+    # Dos borradores: la version 2 gana el `ORDER BY b.version DESC LIMIT 1`.
+    # Es lo que pasa en cuanto una escena de otra obra se reintenta una vez, y
+    # con un solo intento el empate lo resolvia el azar del rowid.
+    repo.guardar_borrador(con, "otra-e1", texto="PRIMERA DE LA OTRA OBRA",
+                          modelo="x", prompt_hash="h")
+    repo.guardar_borrador(con, "otra-e1", texto="TEXTO DE LA OTRA OBRA",
+                          modelo="x", prompt_hash="h")
+
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    material = obra.reunir_material(con, repo.escena(con, "e2"), "cap-1")
+    assert "OTRA OBRA" not in material["escena_anterior"]
+    assert material["escena_anterior"], "y si trae la de su propia obra"
