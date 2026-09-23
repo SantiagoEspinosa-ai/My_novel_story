@@ -1,9 +1,10 @@
 ---
 id: SPEC-25
 titulo: El destinatario, la entrevista y las palabras vetadas
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión (sustituir por su identificador)"
 fecha_aprobacion: 2026-09-23
+fecha_aplicacion: 2026-09-23
 fecha: 2026-09-23
 version: 2
 ---

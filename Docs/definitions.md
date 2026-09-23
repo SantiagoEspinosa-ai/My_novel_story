@@ -6,7 +6,7 @@ Documento de definiciones del harness: la referencia normativa de clases, atribu
 
 ## Alcance y convenciones
 
-La ontología separa cinco planos porque mezclarlos es el error habitual: lo que el texto es, lo que el mundo contiene, lo que da miedo, cómo se produce y cómo se mide.
+La ontología separa seis planos porque mezclarlos es el error habitual: lo que el texto es, lo que el mundo contiene, lo que da miedo, cómo se produce, cómo se mide y para quién se escribe. El sexto, Destinatario, llegó con `SPEC-25`.
 
 | Plano | Pregunta que responde | Uso en el sistema |
 | --- | --- | --- |

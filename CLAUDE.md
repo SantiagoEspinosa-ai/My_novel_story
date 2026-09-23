@@ -79,4 +79,10 @@ cd backend && python -m pytest app -q           # las pruebas
 
 Todavía no hay build: el backend se ejecuta con `uvicorn app.main:app` y el frontend no existe.
 
+La entrevista del destinatario (`SPEC-25`) se hace desde la terminal con el backend levantado. **Cada turno llama al modelo**, así que gasta dinero; necesita `modelos.entrevistador` en `backend/config/sistema.json`:
+
+```
+cd backend && python -X utf8 entrevista_cli.py
+```
+
 **Los guiones de ejecución real gastan dinero** y por eso no están aquí como comando suelto: `backend/f6_seis_escenas.py` delega en sesiones de verdad. Necesitan `HARNESS_MODELO_ESCRITOR`, `HARNESS_MODELO_JUEZ` y `HARNESS_MODELO_RESUMIDOR`, y se lanzan con `python -X utf8` porque la consola de Windows no es UTF-8 por defecto.

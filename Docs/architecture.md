@@ -102,6 +102,7 @@ backend/
       modelo/                # cliente del LLM, conteo de tokens, control de presupuesto
       invariantes/           # registro INV-01..INV-16, severidad, resultado tipado
       trabajos/              # tabla de trabajos, worker, estados de un trabajo
+      politica/              # detector de palabras vetadas y audit log del policy engine (SPEC-25)
       errores.py
     features/
       brief/                 # alta de la obra: premisa, tono, guia de estilo, prohibiciones
@@ -112,6 +113,8 @@ backend/
       revision/              # pases dirigidos sobre texto ya generado
       consolidacion/         # aplicar el delta y resumir
       auditoria/             # invariantes de nivel obra y capitulo
+      entrevista/            # la ficha del destinatario, por turnos, y el texto libre (SPEC-25)
+      politica/              # listas de palabras vetadas en tres niveles (SPEC-25)
       orquestacion/          # compone las anteriores; unica autorizada a hacerlo
       lectura/               # consultas de solo lectura que alimentan el frontend
 ```
@@ -235,6 +238,8 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | **Resumidor** | Sí | Condensar escena → capítulo → parte; extraer hechos clave; actualizar fichas de entidad | Escena consolidada → `Resumen`, `Ficha` | Ninguna; es lo que hace que el sistema escale |
 | **Consolidador** | No | Aplicar el delta al estado; detectar delta incompatible; reindexar embeddings | Delta aceptado → `EstadoDelMundo(t+1)` | `INV-05`, `INV-06` |
 | **Auditor de obra** | Mixto | Comprobaciones de nivel obra y capítulo, que no se pueden hacer escena a escena | Obra completa → `Hallazgo[]` | Obra: `INV-06`, `INV-09`, `INV-11`, `INV-12`, `INV-13`, `INV-14`, `INV-16`. Capítulo: `INV-08`, `INV-15` |
+| **Entrevistador** | Sí | Preguntar al comprador con naturalidad; traducir cada respuesta a la ficha y a sus listas cerradas; explicar una contradicción sin juzgar; juzgar lo que queda en `otro` (`SPEC-25` `RF-08b`) | Respuesta del comprador + ficha + lo que el código calculó → ficha actualizada + siguiente pregunta | Ninguna: **qué falta, qué se contradice y si se puede cerrar lo decide el código**, no el agente |
+| **Guardián de política** | No | Normalizar y buscar palabras vetadas en tres niveles; devolver la escena al Escritor con el fragmento exacto; parar al agotar las reescrituras; registrar cada decisión en el audit log | Texto de la escena + vetadas de la obra → coincidencias | `INV-21` |
 
 **Qué significa «en su forma prevista».** El Escaletador comprueba `INV-01`, `INV-07`,
 `INV-12` e `INV-16` **contra la `Escaleta`, antes de que exista ningún texto**: que cada

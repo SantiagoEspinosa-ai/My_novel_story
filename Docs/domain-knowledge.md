@@ -14,9 +14,25 @@ flowchart TD
   O --> P3["Plano Terror<br/>tensión y amenaza"]
   O --> P4["Plano Proceso<br/>producción y contexto"]
   O --> P5["Plano Calidad<br/>medición y puertas"]
+  O --> P6["Plano Destinatario<br/>para quién se escribe"]
 ```
 
-Los cinco planos son independientes en su definición y se cruzan solo a través de las relaciones. Obra y Mundo son declarativos; Terror es una capa de control sobre ambos; Proceso y Calidad describen el sistema, no la ficción.
+Los seis planos son independientes en su definición y se cruzan solo a través de las relaciones. Obra y Mundo son declarativos; Terror es una capa de control sobre ambos; Proceso y Calidad describen el sistema, no la ficción.
+
+## Plano Destinatario
+
+```mermaid
+flowchart TD
+  P6["Plano Destinatario"]
+  P6 --> FE["FichaDeEntrevista"]
+  FE --> D["Destinatario"]
+  D --> EP["ElementoPersonal<br/>rasgo, recuerdo, persona, mascota"]
+  FE --> HP["HechoPropuesto<br/>del texto libre, hasta confirmar"]
+  P6 --> PV["PalabraVetada<br/>global, franja de edad, novela"]
+  P6 --> DP["DecisionDePolitica<br/>audit log"]
+```
+
+La ficha es el único canal entre el comprador y el Escritor (`SPEC-25`): lo que no está en ella no llega a la novela. `PalabraVetada` y `DecisionDePolitica` sobreviven a la entrega; la ficha no.
 
 ## Plano Obra
 
