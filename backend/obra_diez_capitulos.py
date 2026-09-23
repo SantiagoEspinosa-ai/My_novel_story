@@ -30,7 +30,11 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from app.commons.db import migraciones, procedencia
 from app.commons.modelo import proveedor
+from app.features.consolidacion import deltas
+from app.features.cronologia import repository as usos
+from app.features.observabilidad import repository as observabilidad
 from app.features.consolidacion import aplicar, memoria, mundo
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, obra
@@ -175,7 +179,29 @@ INSTRUCCION_DE_CONTRATO = [
 
 
 def preparar(con):
-    for m in (repo, aplicar, memoria):
+    """Deja la base **completa** antes de escribir la primera escena.
+
+    La primera ejecucion no hacia esto y acabo con **diez de las veintitres
+    tablas del arbol** (`F-52`): faltaban `delta_de_escena`, `uso_de_hecho`,
+    `evento_cronologico`, `lectura_de_contexto` y hasta `esquema_version`. La
+    consecuencia no fue un numero equivocado sino algo peor: **la base se quedo
+    sin las columnas que harian falta para saber si sus numeros significan
+    algo**. Sin `delta_de_escena` no hay forma de saber si `INV-03` tuvo una
+    sola accion que comprobar, asi que su cero no se puede interpretar; y sin
+    `evento_cronologico` la verificacion formal no puede correr en absoluto.
+
+    Tres cosas que la primera no hizo, en este orden:
+
+        migrar          lleva el esquema a la ultima version y deja
+                        `esquema_version`, sin la cual ni siquiera consta por
+                        donde va la base
+        procedencia     con que commit se escribio. Es lo que `MF-27` pide y
+                        lo que la primera base no puede tener ya nunca
+        asegurar        todas las features que van a escribir, no solo tres
+    """
+    migraciones.migrar(con)
+    procedencia.registrar(con)
+    for m in (repo, aplicar, memoria, deltas, usos, observabilidad):
         m.asegurar_tablas(con)
     aplicar.sembrar(con, PERSONAS)
     mundo.sembrar_lugares(con, ACCESOS)
@@ -268,6 +294,23 @@ def main():
     print("escenas SIN resumen (F-41): {0}{1}".format(
         len(sin_resumen), " -> " + ", ".join(sin_resumen) if sin_resumen else ""))
     print("minutos: {0:.1f}".format((time.time() - arranque) / 60))
+    print("codigo con el que se escribio:", procedencia.leer(con)["version"])
+
+    # Lo que decide si el cero de `INV-03` es limpio o es ausencia de material
+    # (`F-30`, `F-52`). Sin esto, un cero de bloqueos no se puede interpretar.
+    print("\n=== TUVIERON LAS PUERTAS ALGO QUE RECHAZAR? ===")
+    acciones = revelaciones = 0
+    for fila in con.execute("SELECT delta FROM delta_de_escena"):
+        d = json.loads(fila[0]) if fila[0] else {}
+        acciones += len(d.get("acciones") or [])
+        revelaciones += len(d.get("revelaciones") or [])
+    print("acciones declaradas en toda la obra:", acciones,
+          "  <- lo que INV-03 compara")
+    print("revelaciones declaradas:", revelaciones,
+          "  <- lo que alimenta el registro")
+    if acciones == 0:
+        print("  AVISO: cero acciones significa que INV-03 no tuvo NADA que")
+        print("  mirar. Su cero de bloqueos no dice que la obra este limpia.")
 
     if medidas:
         print("\n=== EL CONTEXTO (VER-37) ===")
