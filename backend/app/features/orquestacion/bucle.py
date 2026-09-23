@@ -51,7 +51,8 @@ from app.features.verificacion import puertas
 
 @dataclass
 class Resultado:
-    escena: str
+    medidas: dict | None = field(default=None, init=False)
+    escena: str = ""
     version: int | None = None
     hallazgos: list = field(default_factory=list)
     traza: object = None
@@ -107,6 +108,12 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
         modulo_traza.registrar_fallo(t, clase="contrato", salida=repr(respuesta))
         return Resultado(escena=escena_id, traza=t, fallo="contrato")
     modulo_traza.registrar_respuesta(t, respuesta)
+    # `SPEC-14` C-3 supuso que los tokens los reportaria a mano la sesion y
+    # serian un suelo. El transporte los devuelve medidos, asi que se guardan.
+    medidas = respuesta.get("medidas")
+    if medidas:
+        t.tokens_estimados = ((medidas.get("tokens_entrada") or 0)
+                              + (medidas.get("tokens_salida") or 0))
 
     # 4. Guardar el borrador.
     version = repo.guardar_borrador(con, escena_id, texto=leida.texto,
@@ -122,7 +129,9 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
         repo.guardar_hallazgo(con, invariante=h.invariante, verificador=h.verificador,
                               escena=h.escena, severidad=h.severidad, estado=h.estado,
                               descripcion=h.descripcion)
-    return Resultado(escena=escena_id, version=version, hallazgos=hallazgos, traza=t)
+    res = Resultado(escena=escena_id, version=version, hallazgos=hallazgos, traza=t)
+    res.medidas = respuesta.get("medidas")
+    return res
 
 
 def _mundo_vacio():

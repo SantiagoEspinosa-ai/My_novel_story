@@ -161,6 +161,7 @@ class SesionDelegada:
         return "SesionDelegada(modelo={0!r}, agente={1!r})".format(self.nombre, self.agente)
 
     def llamar(self, prompt: str) -> dict:
+        """Devuelve la respuesta normalizada con sus `medidas` dentro."""
         try:
             salida = self._ejecutar(_resolver_ejecutable(), self.nombre,
                                     self.agente, prompt, self.cwd)
@@ -173,12 +174,26 @@ class SesionDelegada:
             # verificando un camino que no existe.
             raise FalloDeTransporte(
                 "la delegacion no completo: {0}".format(type(e).__name__)) from None
-        return _normalizar(interpretar(salida))
+        sobre = interpretar(salida)
+        # La envoltura de `--output-format json` trae el texto del modelo en
+        # `result` y las medidas al lado. Si no viene envuelta -un doble, o un
+        # formato viejo- se interpreta como la respuesta misma.
+        if "result" in sobre and "type" in sobre:
+            respuesta = _normalizar(interpretar(sobre["result"]))
+            respuesta["medidas"] = medidas_de(sobre)
+            return respuesta
+        return _normalizar(sobre)
 
 
 def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None):
-    """El prompt por **stdin**. Nunca como argumento: `cmd.exe` lo trunca."""
-    orden = [ejecutable, "-p", "--model", modelo]
+    """El prompt por **stdin**. Nunca como argumento: `cmd.exe` lo trunca.
+
+    Se pide `--output-format json` porque devuelve **medidas de verdad**:
+    `usage` con los tokens, `total_cost_usd` con el coste, y `modelUsage` con
+    el desglose **por modelo**. `SPEC-14` C-3 supuso que los tokens los
+    reportaria a mano la sesion y serian un suelo; con esto son una medida.
+    """
+    orden = [ejecutable, "-p", "--output-format", "json", "--model", modelo]
     if agente:
         orden += ["--agent", agente]
     try:
@@ -192,6 +207,25 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None):
         raise FalloDeTransporte(
             "la delegacion termino con codigo {0}".format(r.returncode))
     return r.stdout
+
+
+def medidas_de(sobre: dict) -> dict:
+    """Saca de la envoltura JSON lo que hay que registrar en la traza.
+
+    `modelos` es una **lista**, no un valor: una sola delegacion puede usar mas
+    de un modelo -se midio: una llamada sin `--model` reporto `haiku` y `opus`
+    en la misma respuesta-. Quien compruebe el modelo fijo tiene que saberlo.
+    """
+    uso = sobre.get("usage") or {}
+    return {
+        "tokens_entrada": uso.get("input_tokens"),
+        "tokens_salida": uso.get("output_tokens"),
+        "tokens_cache_creados": uso.get("cache_creation_input_tokens"),
+        "tokens_cache_leidos": uso.get("cache_read_input_tokens"),
+        "coste_usd": sobre.get("total_cost_usd"),
+        "modelos": sorted((sobre.get("modelUsage") or {}).keys()),
+        "duracion_ms": sobre.get("duration_ms"),
+    }
 
 
 def _normalizar(datos: dict) -> dict:
