@@ -239,3 +239,45 @@ def test_la_premisa_decidida_llega_al_escritor_como_texto(con, tmp_path):
     novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                     carpeta_de_reglas=str(tmp_path))
     assert "Un mapa heredado lleva a Irene de vuelta a Lisboa." in agentes["escritor"].llamadas[0]
+
+
+# --- `F-60`: el destinatario conoce sus propios recuerdos ------------------------
+
+def _sabe(con):
+    return {(f[0], f[1]) for f in con.execute(
+        "SELECT sujeto, hecho FROM conocimiento WHERE desde_escena IS NULL")}
+
+
+def test_el_destinatario_conoce_de_entrada_todos_los_imprescindibles(con):
+    """`F-60`: sin esto `INV-03` bloqueaba a Tomas por actuar sobre su propio
+    recuerdo, en los tres intentos del capitulo 1 real."""
+    novela.montar(con, "obra-x", ficha(), _aprobado())
+    assert {("per-irene", "imp-01"), ("per-irene", "imp-02"),
+            ("per-irene", "imp-03")} <= _sabe(con)
+
+
+def test_una_persona_o_mascota_imprescindible_conoce_lo_que_la_nombra(con):
+    novela.montar(con, "obra-x", ficha(), _aprobado())
+    assert ("per-brisa", "imp-03") in _sabe(con)
+    assert ("per-brisa", "imp-01") not in _sabe(con)
+
+
+def test_el_conocimiento_inicial_del_plan_tambien_se_siembra(con):
+    """`montar` lo ignoraba: el plan podia declararlo y no llegaba al registro."""
+    d = plan_dict()
+    d["hechos"] = [{"id": "hec-carta", "enunciado": "hay una carta en el mapa"}]
+    d["mundo"]["conocimiento_inicial"] = [{"sujeto": "per-brisa", "hecho": "hec-carta"}]
+    novela.montar(con, "obra-x", ficha(), PlanAprobado(plan(**d), 1, "t", "p"))
+    assert ("per-brisa", "hec-carta") in _sabe(con)
+
+
+def test_el_destinatario_actua_sobre_su_recuerdo_sin_disparar_inv03(con, tmp_path):
+    agentes = _agentes()
+    agentes["escritor"] = _Fijo({
+        "texto": " ".join(["palabra"] * 1198 + ["Irene", "mapa"]),
+        "pov_usado": "per-irene",
+        "delta": dict(DELTA_OK, acciones=[{"personaje": "per-irene", "hecho": "imp-01"}])})
+    r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path))
+    assert r["generacion"].parada is None
+    assert not con.execute("SELECT 1 FROM hallazgo WHERE invariante='INV-03'").fetchone()

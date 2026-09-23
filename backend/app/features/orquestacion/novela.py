@@ -11,6 +11,7 @@ from app.commons import config
 from app.commons.dominio.destinatario import EXTENSION
 from app.commons.invariantes.registro import TODAS
 from app.commons.politica.personalizacion import frases_repetidas, repeticiones
+from app.commons.politica.vetadas import coincidencias
 from app.features.brief import repository as brief
 from app.features.consolidacion import aplicar, deltas, memoria, mundo
 from app.features.cronologia import repository as usos
@@ -63,7 +64,35 @@ def montar(con, obra, ficha, aprobado):
         + [{"id": _id_imprescindible(n), "enunciado": imp.elemento,
             "previsto_en": "{0}-e1".format(imp.capitulo)}
            for n, imp in enumerate(plan.imprescindibles, 1)])
+    mundo.sembrar_conocimiento(con, _conocimiento_inicial(plan, ficha))
     return True
+
+
+def _conocimiento_inicial(plan, ficha):
+    """Quien sabe que **antes del capitulo 1** (`SPEC-17` C-1, `F-60`).
+
+    Lo que declara el plan, y ademas lo que es de la ficha: el destinatario
+    conoce todos sus imprescindibles -son sus recuerdos y sus rasgos- y cada
+    persona o mascota imprescindible conoce lo que la nombra. Sin esto `INV-03`
+    bloqueaba al destinatario por actuar sobre su propio recuerdo, que es
+    exactamente lo que la novela tiene que contar.
+    """
+    entradas = [{"sujeto": k.sujeto, "hecho": k.hecho, "grado": str(k.grado)}
+                for k in plan.mundo.conocimiento_inicial]
+    por_nombre = {p.nombre: p.id for p in plan.mundo.personajes}
+    destinatario = por_nombre.get(ficha.destinatario.nombre)
+    cercanos = [(e, por_nombre.get(e.nombre)) for e in ficha.destinatario.elementos
+                if e.imprescindible and e.nombre and por_nombre.get(e.nombre)]
+    for n, imp in enumerate(plan.imprescindibles, 1):
+        hecho = _id_imprescindible(n)
+        if destinatario:
+            entradas.append({"sujeto": destinatario, "hecho": hecho})
+        for elemento, id_personaje in cercanos:
+            es_el = imp.elemento == elemento.descripcion
+            lo_nombra = coincidencias(imp.elemento, [elemento.nombre.split()[0]])
+            if id_personaje != destinatario and (es_el or lo_nombra):
+                entradas.append({"sujeto": id_personaje, "hecho": hecho})
+    return entradas
 
 
 # --- El nivel obra (`SPEC-26` `RF-12`, `RF-15`, `RF-16`) --------------------------
