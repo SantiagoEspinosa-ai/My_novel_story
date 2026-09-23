@@ -79,3 +79,29 @@ def cargar_brief(ruta=None) -> BriefDeObra:
     """Lo que cambia con la novela: premisa, forma, estilo."""
     ruta = ruta or BRIEF_POR_DEFECTO
     return _validar(BriefDeObra, _leer_json(ruta, "la obra"), ruta, "la obra")
+
+
+def comprobar_forma(brief, capitulos: int, escenas_por_capitulo: int):
+    """El plan concreto tiene que caber en la forma que el brief declara.
+
+    El brief dice **cuantas** piezas tiene la obra; la escaleta trae **cuales**
+    son. Si los dos pueden decir cosas distintas, la forma vuelve a estar en dos
+    sitios y uno de ellos acabara mintiendo — que es lo que `F-53` costo
+    descubrir, solo que entonces ni siquiera habia un sitio donde mirarla.
+
+    Se comprueba **al arrancar**. Descubrirlo en la escena treinta y siete
+    cuesta una tanda entera, y el fallo que sale ahi no menciona el brief.
+    """
+    f = brief.forma
+    if f.capitulos != capitulos:
+        raise ConfiguracionInvalida(
+            "el brief declara {0} capitulos y el plan trae {1}. La forma la "
+            "manda el brief: o se corrige el fichero, o se corrige el "
+            "plan".format(f.capitulos, capitulos))
+    if f.escenas_por_capitulo != escenas_por_capitulo:
+        raise ConfiguracionInvalida(
+            "el brief declara {0} escenas por capitulo y el plan trae {1}. "
+            "Con esa diferencia, `forma.escenas_totales` miente y cualquier "
+            "proyeccion de coste hecha sobre el brief sale mal".format(
+                f.escenas_por_capitulo, escenas_por_capitulo))
+    return None

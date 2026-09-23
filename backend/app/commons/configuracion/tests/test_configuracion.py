@@ -140,3 +140,29 @@ def test_los_ficheros_del_repositorio_son_validos():
     b = carga.cargar_brief()
     assert s.modelos.escritor
     assert b.forma.capitulos > 0
+
+
+# --- Que la configuracion y el plan no puedan divergir -------------------
+
+def test_una_escaleta_que_no_cuadra_con_la_forma_se_detecta(tmp_path):
+    """El brief dice **cuantas** piezas y el guion trae **cuales**. Si los dos
+    pueden decir cosas distintas, volvemos a tener la forma en dos sitios — que
+    es exactamente lo que `F-53` costo descubrir.
+
+    Se comprueba al arrancar y no al generar: descubrirlo en la escena 37
+    cuesta una tanda entera.
+    """
+    b = carga.cargar_brief(_escribir(tmp_path, "brief.json", BRIEF_MINIMO))
+    with pytest.raises(carga.ConfiguracionInvalida, match="capitulos"):
+        carga.comprobar_forma(b, capitulos=5, escenas_por_capitulo=4)
+
+
+def test_escenas_por_capitulo_tambien_se_comprueba(tmp_path):
+    b = carga.cargar_brief(_escribir(tmp_path, "brief.json", BRIEF_MINIMO))
+    with pytest.raises(carga.ConfiguracionInvalida, match="escenas"):
+        carga.comprobar_forma(b, capitulos=3, escenas_por_capitulo=9)
+
+
+def test_si_cuadra_no_dice_nada(tmp_path):
+    b = carga.cargar_brief(_escribir(tmp_path, "brief.json", BRIEF_MINIMO))
+    assert carga.comprobar_forma(b, capitulos=3, escenas_por_capitulo=4) is None

@@ -30,6 +30,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from app.commons.configuracion import carga
 from app.commons.db import migraciones, procedencia
 from app.commons.modelo import proveedor
 from app.features.consolidacion import deltas
@@ -46,10 +47,16 @@ from app.features.orquestacion import ciclo, obra
 RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                     os.environ.get("HARNESS_BASE", "obra10.db"))
 
-INMUTABLE = """Terror domestico. Tercera persona limitada sobre Marta, pasado.
-Prosa seca; el miedo viene de lo que no se explica. Nada de sangre.
-La casa heredada no es hostil: es exacta, y eso es lo que asusta.
-Las escenas son cortas. Se corta antes de explicar."""
+# LA FORMA Y EL TONO SALEN DE `config/brief.json`; LA MAQUINA, DE `sistema.json`
+# ------------------------------------------------------------------------------
+# Estaban aqui dentro, y por eso nadie noto durante diez capitulos que se
+# estaban modelando **diez obras** (`F-53`, `F-56`). Lo que sigue en el guion es
+# el plan concreto -las sinopsis, los hechos, el mundo-; lo que se puede cambiar
+# sin tocar codigo esta en los dos ficheros.
+BRIEF = carga.cargar_brief()
+SISTEMA = carga.cargar_sistema()
+
+INMUTABLE = BRIEF.inmutable
 
 ACCESOS = {"lug-salon": ["lug-cocina", "lug-pasillo"],
            "lug-cocina": ["lug-salon"],
@@ -212,8 +219,14 @@ def preparar(con):
                         lo que la primera base no puede tener ya nunca
         asegurar        todas las features que van a escribir, no solo tres
     """
+    # La forma la manda el brief: si el plan de este guion no cuadra con ella,
+    # se para **aqui** y no en la escena treinta y siete (`comprobar_forma`).
+    carga.comprobar_forma(BRIEF, capitulos=len(CAPITULOS),
+                          escenas_por_capitulo=len(CAPITULOS[0][2]))
     migraciones.migrar(con)
-    procedencia.registrar(con)
+    # Con que codigo **y con que brief**: las dos mitades del par que permite
+    # repetir una tanda exactamente en vez de aproximadamente.
+    procedencia.registrar(con, brief=BRIEF.huella)
     for m in (repo, aplicar, memoria, deltas, usos, observabilidad):
         m.asegurar_tablas(con)
     aplicar.sembrar(con, PERSONAS)
@@ -228,7 +241,7 @@ def preparar(con):
         con.execute(
             "INSERT OR REPLACE INTO obra (id, titulo, premisa, genero) "
             "VALUES (?, ?, ?, ?)",
-            (OBRA, "La casa exacta", INMUTABLE.splitlines()[0], "terror"))
+            (OBRA, BRIEF.titulo, BRIEF.premisa, BRIEF.genero))
         for posicion, (cap, titulo, _e) in enumerate(CAPITULOS, start=1):
             con.execute(
                 "INSERT OR REPLACE INTO capitulo (id, obra, orden, estado) "
@@ -244,7 +257,9 @@ def preparar(con):
              "cambio_de_valor": {"eje": eje, "signo": "negativo"},
              "pov": "per-marta", "lugar": lugar,
              "beats": [{"id": "{0}-b{1}".format(cap, n), "establece": establece}],
-             "longitud_objetivo": [250, 800]}
+             # Del brief: `INV-17` compara contra esto, asi que cambiar el
+             # rango en el fichero cambia lo que la invariante exige.
+             "longitud_objetivo": list(BRIEF.forma.palabras_por_escena)}
             for n, (eje, lugar, _sinopsis, establece) in enumerate(escenas, 1)])
     # Una sola vez, para la obra entera. Declararlos por capitulo era lo que
     # los hacia colisionar: son los hechos de **la novela**, no de un capitulo.
@@ -253,11 +268,11 @@ def preparar(con):
 
 
 def agentes():
-    return (proveedor.SesionDelegada(agente="escritor"),
+    return (proveedor.SesionDelegada(modelo=SISTEMA.modelos.escritor,
+                                     agente="escritor"),
             ciclo.juez_aislado(),
-            proveedor.SesionDelegada(
-                modelo=os.environ.get("HARNESS_MODELO_RESUMIDOR", "haiku"),
-                agente="resumidor"))
+            proveedor.SesionDelegada(modelo=SISTEMA.modelos.resumidor,
+                                     agente="resumidor"))
 
 
 def main():
@@ -285,7 +300,10 @@ def main():
             # sobre el. Sin el, una sola llamada generaria las sesenta escenas
             # de un tiron y se perderia el reintento por capitulo.
             g = obra.generar_obra(con, OBRA, escritor, juez, resumidor,
-                                  inmutable=INMUTABLE, techo=100_000,
+                                  inmutable=INMUTABLE,
+                                  techo=SISTEMA.presupuesto.techo_de_contexto,
+                                  tope_intentos=SISTEMA.topes.intentos_por_escena,
+                                  tope_delegaciones=SISTEMA.topes.delegaciones_por_obra,
                                   instrucciones=instrucciones, capitulo=cap)
             total["escenas"] += len(g.escenas_hechas)
             total["usd"] += g.coste["usd"]
