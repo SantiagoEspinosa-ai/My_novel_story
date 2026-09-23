@@ -134,6 +134,25 @@ def registrar_fallo(con, id_t, motivo):
     return True
 
 
+def olvidar_resultados(con, clave, valores):
+    """Borra el resultado de los trabajos cuya carga tiene `clave` en `valores`.
+
+    Existe por `SPEC-25` `RF-21`: el resultado de un turno de entrevista lleva la
+    ficha entera, y entregar la novela borra la ficha. Se deja el trabajo -su
+    estado y su tipo siguen diciendo que paso- y se quita solo lo que contenia.
+    Devuelve cuantos resultados se borraron.
+    """
+    valores = list(valores)
+    if not valores:
+        return 0
+    with con:
+        return con.execute(
+            "UPDATE trabajo SET resultado = NULL WHERE resultado IS NOT NULL AND "
+            "json_extract(carga, '$.' || ?) IN ({0})".format(
+                ", ".join("?" * len(valores))),
+            [clave] + valores).rowcount
+
+
 def relanzar(con, id_t):
     """Lo dispara una persona, nunca el sistema."""
     with con:

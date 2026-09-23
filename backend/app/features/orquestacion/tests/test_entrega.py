@@ -64,7 +64,8 @@ def test_el_audit_log_dice_que_se_borro_pero_no_el_contenido(con, entregable):
     entrega.entregar(con, entregable.obra)
     [d] = [d for d in auditoria.decisiones(con, entregable.obra)
            if d["tipo"] == TD.BORRADO_AL_ENTREGAR]
-    assert d["detalle"] == {"entrevistas": 1, "turnos": 1, "vetadas_conservadas": 3}
+    assert d["detalle"] == {"entrevistas": 1, "turnos": 1, "resultados_olvidados": 0,
+                            "vetadas_conservadas": 3}
     volcado = json.dumps(auditoria.decisiones(con), ensure_ascii=False)
     assert CONVERSACION not in volcado and "Irene" not in volcado
 
@@ -105,3 +106,63 @@ def test_el_endpoint_entrega_y_una_entrevista_abierta_es_409(tmp_path):
     r = cliente.post("/obras/{0}/entregar".format(abierta["obra"]))
     assert r.status_code == 200
     assert r.json()["vetadas_conservadas"] == 1
+
+
+def test_tras_entregar_no_queda_ningun_dato_de_la_ficha_en_ninguna_tabla(tmp_path):
+    """La prueba de arriba sobre el audit log pasaba **por coincidencia**: su
+    ficha no tenia contradicciones, y una contradiccion copiaba al audit log la
+    descripcion de un recuerdo. Y el resultado de cada turno, en la tabla de
+    trabajos, guardaba la ficha entera. Aqui se recorre la base completa."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app, preparar_base
+
+    ruta = str(tmp_path / "obra.db")
+    preparar_base(ruta)
+    app.state.ruta_db = ruta
+    nina = ficha_completa().model_dump(mode="json")
+    nina["destinatario"]["edad"] = 8
+    nina["genero"] = "romance"
+    nina["destinatario"]["elementos"] = [
+        {"tipo": "rasgo", "descripcion": "silba canciones de Zanzibar"},
+        {"tipo": "recuerdo", "descripcion": "la excursion al faro de Xiada",
+         "momento": {"edad": 30}}]
+
+    class Agente:
+        nombre = "doble"
+
+        def __init__(self):
+            self.i = 0
+
+        def llamar(self, prompt):
+            self.i += 1
+            if self.i == 1:
+                return {"ficha": nina, "pregunta": "¿seguro?"}
+            resuelta = dict(nina, contradicciones_resueltas=[
+                {"tipo": t, "descripcion": d, "resolucion": "lo quiere Quirico asi"}
+                for t, d in _abiertas])
+            return {"ficha": resuelta, "pregunta": "listo"}
+
+    _abiertas = []
+    agente = Agente()
+    app.state.entrevistador = lambda: agente
+    try:
+        cliente = TestClient(app)
+        e = cliente.post("/entrevistas").json()
+        t1 = cliente.get("/trabajos/" + cliente.post(
+            "/entrevistas/{0}/turnos".format(e["id"]),
+            json={"respuesta": "tiene 8"}).json()["id_trabajo"]).json()
+        _abiertas.extend((c["tipo"], c["descripcion"])
+                         for c in t1["resultado"]["contradicciones"])
+        assert len(_abiertas) == 2
+        cliente.post("/entrevistas/{0}/turnos".format(e["id"]), json={"respuesta": "si"})
+        assert cliente.post("/entrevistas/{0}/cerrar".format(e["id"])).status_code == 200
+        assert cliente.post("/obras/{0}/entregar".format(e["obra"])).status_code == 200
+    finally:
+        del app.state.entrevistador
+    c = sqlite3.connect(ruta)
+    for (tabla,) in c.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+        volcado = json.dumps(c.execute("SELECT * FROM " + tabla).fetchall(),
+                             ensure_ascii=False)
+        for dato in ("Zanzibar", "Xiada", "Quirico", "Irene"):
+            assert dato not in volcado, "{0} sigue en la tabla {1}".format(dato, tabla)

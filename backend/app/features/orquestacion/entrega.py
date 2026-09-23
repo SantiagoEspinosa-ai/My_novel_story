@@ -7,9 +7,10 @@ perderian el guardrail sin que nada lo avisara.
 
 QUE SE BORRA Y QUE NO
 ---------------------
-Se borran la conversacion y la ficha. El texto libre no hace falta borrarlo
-porque nunca se guardo: solo sus hechos, dentro de la ficha. Se conservan la
-novela, las vetadas de la novela y los hechos de la story bible.
+Se borran la conversacion, la ficha y **sus copias**: el resultado de cada
+trabajo de la entrevista, que llevaba la ficha entera. El texto libre no hace
+falta borrarlo porque nunca se guardo: solo sus hechos, dentro de la ficha. Se
+conservan la novela, las vetadas de la novela y los hechos de la story bible.
 
 LA MARCA DE ENTREGADA ES EL AUDIT LOG
 -------------------------------------
@@ -21,6 +22,7 @@ marca, y es lo que hace que entregar dos veces no duplique nada.
 from app.commons.dominio.enumeraciones import NivelDeVeto as NV
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
 from app.commons.politica import auditoria
+from app.commons.trabajos import cola
 from app.features.entrevista import repository as entrevistas
 from app.features.politica import repository as politica
 
@@ -38,6 +40,7 @@ def entregar(con, obra) -> dict:
     """Idempotente: una obra ya entregada devuelve lo que se registro entonces."""
     politica.asegurar_tablas(con)
     entrevistas.asegurar_tablas(con)
+    cola.asegurar_tabla(con)
     for d in auditoria.decisiones(con, obra):
         if d["tipo"] is TD.BORRADO_AL_ENTREGAR:
             return d["detalle"]
@@ -53,7 +56,12 @@ def entregar(con, obra) -> dict:
                                  nombres=ficha.nombres_vetados)
     conservadas = sum(1 for v in politica.vetadas_para(con, obra, None, [])
                       if v.nivel is NV.NOVELA)
+    # El resultado de cada turno lleva una copia de la ficha: borrar la ficha y
+    # dejar sus copias en la tabla de trabajos no seria borrarla.
+    olvidados = cola.olvidar_resultados(con, "entrevista",
+                                        entrevistas.de_la_obra(con, obra))
     borrado = entrevistas.borrar_de_la_obra(con, obra)
-    detalle = dict(borrado, vetadas_conservadas=conservadas)
+    detalle = dict(borrado, resultados_olvidados=olvidados,
+                   vetadas_conservadas=conservadas)
     auditoria.registrar_decision(con, TD.BORRADO_AL_ENTREGAR, obra, detalle)
     return detalle

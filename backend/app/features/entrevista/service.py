@@ -15,6 +15,7 @@ descartar). Un modelo que los confirmara por su cuenta se saltaria `RF-13`, asi
 que se reponen desde la ficha anterior en cada turno.
 """
 
+import hashlib
 from datetime import date
 
 from pydantic import ValidationError
@@ -199,23 +200,32 @@ def _interpretar(e, bruto):
     return ficha, str(bruto["pregunta"]).strip(), juicios, confirmados
 
 
+def huella(texto):
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()[:12]
+
+
 def _auditar(con, e, estado):
-    """Una fila por contradiccion detectada y otra al resolverse, nunca repetidas."""
+    """Una fila por contradiccion detectada y otra al resolverse, nunca repetidas.
+
+    **Sin la descripcion ni la resolucion**, solo el tipo y una huella: la
+    descripcion cita la ficha («el recuerdo del viaje a Lisboa...») y el audit
+    log sobrevive a la entrega, asi que guardarla dejaria viva la ficha que
+    `RF-21` borra. La huella basta para emparejar deteccion y resolucion.
+    """
     vistas = e.vistas.setdefault("detectadas", [])
     for c in estado["contradicciones"]:
         if c.descripcion not in vistas:
             vistas.append(c.descripcion)
             auditoria.registrar_decision(con, TD.CONTRADICCION_DETECTADA, e.obra,
                                          {"tipo": c.tipo.value,
-                                          "descripcion": c.descripcion})
+                                          "huella": huella(c.descripcion)})
     resueltas_vistas = e.vistas.setdefault("resueltas", [])
     for c in e.ficha.contradicciones_resueltas:
         if c.descripcion not in resueltas_vistas:
             resueltas_vistas.append(c.descripcion)
             auditoria.registrar_decision(con, TD.CONTRADICCION_RESUELTA, e.obra,
                                          {"tipo": c.tipo.value,
-                                          "descripcion": c.descripcion,
-                                          "resolucion": c.resolucion})
+                                          "huella": huella(c.descripcion)})
 
 
 def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
