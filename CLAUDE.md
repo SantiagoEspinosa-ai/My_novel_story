@@ -44,6 +44,14 @@ El presupuesto se reparte por niveles de memoria y se comprueba antes de cada ll
 | Resúmenes | 10.000 | Condensaciones de capítulo y de parte |
 | Salida | 20.000 | Reserva para el texto generado y su delta |
 
+**Estas cifras están sin ejercitar, y conviene saberlo antes de razonar sobre ellas.** El
+contexto medido de una escena real es de **1.339 tokens** —el 1,3% del techo— y en cinco
+ejecuciones **no se ha recortado nunca**. El reparto no está mal: está sin ejercer, y un
+mecanismo que nunca se ejerce **no está verificado, solo declarado**. Las pruebas lo
+ejercitan con techos artificiales, lo que comprueba que el algoritmo funciona y no que el
+reparto sea el correcto. Está abierto en `Docs/verification.md` con dos salidas: ajustar las
+cifras a lo que se mide, o declarar que describen una obra larga que todavía no existe.
+
 Nunca se manda el texto completo de la obra **al modelo**. El límite de 100.000 tokens es sobre **lo que se envía en una llamada**, no sobre lo que el código lee de la base: una comprobación determinista puede leer el texto de un capítulo para medirlo —`INV-15` calcula así la distancia estilométrica— sin tocar el presupuesto. Si una **llamada al modelo** parece necesitar la obra entera, el fallo está en los resúmenes o en la recuperación, no en el presupuesto.
 
 ### SQLite con soporte vectorial
