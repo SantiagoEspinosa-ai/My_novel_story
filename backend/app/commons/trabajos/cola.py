@@ -117,6 +117,23 @@ def registrar_resultado(con, id_t, resultado):
     return True
 
 
+def registrar_fallo(con, id_t, motivo):
+    """El trabajo fallo y se dice por que. Misma regla que `registrar_resultado`:
+    si ya estaba `abandonado`, no es suyo y solo se anota que volvio."""
+    t = leer(con, id_t)
+    if t is None:
+        return False
+    if t.estado is EstadoDeTrabajo.ABANDONADO:
+        with con:
+            con.execute("UPDATE trabajo SET volvio_tras_abandono = 1 WHERE id = ?",
+                        (id_t,))
+        return False
+    with con:
+        con.execute("UPDATE trabajo SET estado = ?, motivo_ultimo_fallo = ? "
+                    "WHERE id = ?", (EstadoDeTrabajo.FALLIDO.value, str(motivo), id_t))
+    return True
+
+
 def relanzar(con, id_t):
     """Lo dispara una persona, nunca el sistema."""
     with con:

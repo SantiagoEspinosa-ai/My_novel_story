@@ -112,3 +112,18 @@ def cerrar_capitulo(id_capitulo: str, con: sqlite3.Connection = Depends(conexion
         })
     return {"capitulo": id_capitulo, "estado": cierre.estado,
             "menores_que_se_dejan_pasar": cierre.menores_que_se_dejan_pasar}
+
+
+@router.get("/trabajos/{id_trabajo}")
+def consultar_trabajo(id_trabajo: str, con: sqlite3.Connection = Depends(conexion)):
+    """El estado de un trabajo encolado: su resultado, o el motivo si fallo.
+
+    Es la otra mitad de todos los `202`: sin esto el cliente sabe que se encolo
+    algo y no tiene forma de saber que paso.
+    """
+    t = cola.leer(con, id_trabajo)
+    if t is None:
+        raise HTTPException(404, "no existe el trabajo {0}".format(id_trabajo))
+    return {"id": t.id, "tipo": t.tipo, "estado": t.estado.value,
+            "resultado": t.resultado, "motivo": t.motivo_ultimo_fallo,
+            "volvio_tras_abandono": t.volvio_tras_abandono}

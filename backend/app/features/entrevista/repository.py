@@ -15,6 +15,7 @@ import uuid
 from dataclasses import dataclass, field
 
 from app.commons.dominio.destinatario import FichaDeEntrevista
+from app.commons.politica import auditoria
 
 SQL = """
 CREATE TABLE IF NOT EXISTS entrevista (
@@ -48,8 +49,12 @@ class Entrevista:
 
 
 def asegurar_tablas(con: sqlite3.Connection):
+    """Tambien la del audit log: la entrevista escribe en el (contradicciones,
+    inyecciones, borrados) y una base sin esa tabla reventaba el primer turno
+    con una contradiccion."""
     with con:
         con.executescript(SQL)
+    auditoria.asegurar_tabla(con)
 
 
 def crear(con, obra=None) -> Entrevista:

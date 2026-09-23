@@ -85,3 +85,25 @@ def test_los_dos_numeros_estan_marcados_como_provisionales():
     assert texto.count("Caduca con:") >= 2
     assert config.TOPE_REINTENTOS_TRANSPORTE == 3
     assert config.MARGEN_ABANDONO_SEGUNDOS == 15 * 60
+
+
+# --- `PLAN-25` E9: un trabajo que falla lo dice, con su motivo ---------------
+
+
+def test_un_trabajo_que_falla_queda_fallido_con_su_motivo(con):
+    id_t = cola.encolar(con, "turno_de_entrevista", {})
+    cola.tomar(con, id_t)
+    assert cola.registrar_fallo(con, id_t, "el entrevistador no contesto")
+    t = cola.leer(con, id_t)
+    assert t.estado is EstadoDeTrabajo.FALLIDO
+    assert t.motivo_ultimo_fallo == "el entrevistador no contesto"
+
+
+def test_un_abandonado_que_vuelve_fallando_tampoco_escribe(con):
+    """La misma regla que `registrar_resultado`: el trabajo ya no es suyo."""
+    id_t = cola.encolar(con, "turno_de_entrevista", {})
+    cola.tomar(con, id_t)
+    cola.marcar_abandonado(con, id_t)
+    assert cola.registrar_fallo(con, id_t, "tarde") is False
+    t = cola.leer(con, id_t)
+    assert t.estado is EstadoDeTrabajo.ABANDONADO and t.volvio_tras_abandono
