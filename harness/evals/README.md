@@ -51,6 +51,32 @@ que `F-34` enseñó a no dar por bueno.
 de dónde sacar el dato (`F-46`). Mientras siga así, `L-4` no se puede medir con
 este brief aunque el brief esté diseñado para dispararla.
 
+## Cómo se lee un cero, en cualquier ejecución
+
+Vale para este brief y para cualquier generación. **La pregunta al ver un
+resultado limpio no es «¿está la obra bien?», sino «¿llegó alguna puerta a
+tener algo que rechazar?».** Son dos preguntas distintas y solo la segunda se
+puede contestar mirando el resultado.
+
+Ya pasó una vez y está escrito como `F-30`: una ejecución de seis escenas
+terminó sin que `INV-03` bloqueara ni una vez, y ese cero **no valía** porque
+el mecanismo nunca se ejerció — no hubo una sola revelación que comprobar. Un
+validador que no puede dispararse no está midiendo cero.
+
+Así que ante una obra que cierra con cero hallazgos, en este orden:
+
+1. **¿Se ejecutó cada invariante, o se saltó por falta de dato?** Un
+   `sin_veredicto` con `dato_ausente` no es un pase.
+2. **¿Hubo material que pudiera violarla?** Cero bloqueos de `INV-03` sin
+   ninguna acción sobre hechos es un cero vacío; con cuarenta acciones es un
+   cero que dice algo.
+3. **¿Cuántas escenas llegaron a Lean, y cuántas se quedaron sin
+   `t_fabula`?** El informe de cobertura del generador lo dice, y sin él un
+   «0 violaciones» puede significar «0 eventos».
+
+Las tres son la misma precaución: **una ausencia no es un cero**, y el
+informe tiene que permitir distinguirlas sin volver a ejecutar nada.
+
 ## Por qué este brief y no otro
 
 Los cuatro ganchos están puestos a propósito y cada uno apunta a una
