@@ -71,3 +71,13 @@ TOPE_REESCRITURAS_DEL_EDITOR = 3
 # obliga a reescribir.
 # Caduca con: harness/evals/revision_humana/
 UMBRAL_DEL_EDITOR = 3
+
+# Provisionales: elegidos por razonamiento, **no medidos** (`SPEC-26` `RF-16`).
+# Doce apariciones del nombre de pila en 1.000-1.500 palabras es una cada cien,
+# que ya se nota; ocho palabras seguidas iguales en dos capitulos ya no es una
+# coincidencia de lengua comun. Los dos se ajustan con la primera novela real:
+# contar cuantas veces salta `INV-25` en capitulos que el Editor puntua bien en
+# ritmo. Si salta en la mayoria, el umbral esta bajo.
+# Caduca con: harness/evals/revision_humana/
+UMBRAL_REPETICION_NOMBRE = 12
+LONGITUD_FRASE_REPETIDA = 8

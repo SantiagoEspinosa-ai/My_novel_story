@@ -63,3 +63,89 @@ def test_montar_dos_veces_no_duplica_ni_reinicia(con):
     novela.montar(con, "obra-x", ficha(), _aprobado())
     assert len(escaleta.escenas_de(con, "obra-x")) == 10
     assert escaleta.escena(con, "cap-01-e1")["estado"] == "consolidada"
+
+
+# --- E9: el nivel obra ----------------------------------------------------------
+
+from app.features.consolidacion import memoria
+from app.features.cronologia import repository as usos
+from app.commons.dominio.enumeraciones import OrigenDeUso, TipoDeUsoDeHecho
+
+
+class JuezDeObra:
+    nombre = "doble-obra"
+
+    def __init__(self, respuesta):
+        self.respuesta, self.llamadas = respuesta, []
+
+    def llamar(self, prompt):
+        self.llamadas.append(prompt)
+        return self.respuesta
+
+
+BIEN = {"arco_cerrado": True, "final_abrupto": False, "justificacion": "cierra"}
+
+
+def _escrita(con, usados=("imp-01", "imp-02", "imp-03"), texto_extra=None):
+    novela.montar(con, "obra-x", ficha(), _aprobado())
+    for n in range(1, 11):
+        e = "cap-{0:02d}-e1".format(n)
+        texto = "Texto del capitulo {0}. ".format(n) + (texto_extra or {}).get(n, "")
+        with con:
+            con.execute("INSERT INTO borrador (escena, version, texto) VALUES (?, 1, ?)",
+                        (e, texto))
+            con.execute("UPDATE escena SET estado='consolidada', borrador_aceptado=1 "
+                        "WHERE id=?", (e,))
+        memoria.guardar_resumen(con, e, n, "Resumen del capitulo {0}.".format(n), [],
+                                obra="obra-x")
+    usos.registrar_usos(con, [{"hecho": h, "escena": "cap-01-e1", "capitulo": "cap-01",
+                               "tipo": TipoDeUsoDeHecho.MENCIONA,
+                               "origen": OrigenDeUso.REGLA} for h in usados])
+
+
+def test_un_imprescindible_sin_uso_deja_la_novela_incompleta(con):
+    _escrita(con, usados=("imp-01", "imp-02"))
+    juez = JuezDeObra(BIEN)
+    r = novela.cerrar(con, "obra-x", ficha(), juez)
+    assert r["estado"] == "novela_incompleta"
+    assert r["faltan"] == ["un galgo muy lento"]
+    assert juez.llamadas == [], "una novela incompleta no se juzga entera"
+
+
+def test_con_todos_los_imprescindibles_la_novela_termina(con):
+    _escrita(con)
+    r = novela.cerrar(con, "obra-x", ficha(), JuezDeObra(BIEN))
+    assert r["estado"] == "terminada" and r["faltan"] == [] and r["juicio"] == []
+
+
+def test_el_nombre_repetido_da_un_menor_y_no_para_nada(con):
+    _escrita(con, texto_extra={3: "Irene " * 20})
+    r = novela.cerrar(con, "obra-x", ficha(), JuezDeObra(BIEN))
+    assert r["estado"] == "terminada"
+    assert r["repeticiones"] == [("cap-03-e1", 20)]
+    assert con.execute("SELECT severidad FROM hallazgo WHERE invariante='INV-25'"
+                       ).fetchone()[0] == "menor"
+
+
+def test_el_juicio_de_obra_ve_el_ultimo_capitulo_y_los_resumenes_no_la_obra(con):
+    _escrita(con)
+    juez = JuezDeObra(BIEN)
+    novela.cerrar(con, "obra-x", ficha(), juez)
+    prompt = juez.llamadas[0]
+    assert "Texto del capitulo 10." in prompt
+    assert "Texto del capitulo 1." not in prompt
+    assert "Resumen del capitulo 1." in prompt
+
+
+def test_un_final_abrupto_es_inv27(con):
+    _escrita(con)
+    r = novela.cerrar(con, "obra-x", ficha(), JuezDeObra(
+        {"arco_cerrado": True, "final_abrupto": True, "justificacion": "corta en seco"}))
+    assert [h["invariante"] for h in r["juicio"]] == ["INV-27"]
+    assert r["estado"] == "terminada", "qué bloquea la publicación es de otra spec"
+
+
+def test_un_juicio_de_obra_ilegible_queda_sin_veredicto(con):
+    _escrita(con)
+    r = novela.cerrar(con, "obra-x", ficha(), JuezDeObra({"nada": 1}))
+    assert [h["estado"] for h in r["juicio"]] == ["sin_veredicto"]
