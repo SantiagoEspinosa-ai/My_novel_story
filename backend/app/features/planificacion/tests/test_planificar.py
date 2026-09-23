@@ -20,7 +20,8 @@ class Agente:
 
 
 def _plan(**cambios):
-    return {"plan": dict(plan_dict(), **cambios)}
+    return {"titulo": "El mapa de Irene", "premisa": "Irene sigue un mapa antiguo.",
+            "plan": dict(plan_dict(), **cambios)}
 
 
 APROBADO = {"aprobado": True, "objeciones": []}
@@ -71,7 +72,7 @@ def test_un_plan_con_huecos_no_llega_al_revisor(con):
 
 
 def test_un_plan_que_no_cumple_el_esquema_gasta_una_ronda_y_se_dice(con):
-    malo = {"plan": {"capitulos": []}}
+    malo = {"titulo": "t", "premisa": "p", "plan": {"capitulos": []}}
     r = service.planificar(con, "obra-x", ficha(), Agente([malo, _plan()]),
                            Agente([APROBADO]))
     assert r.version == 2
@@ -94,3 +95,13 @@ def test_el_revisor_recibe_la_ficha_y_el_plan(con):
 def test_el_plan_aprobado_se_guarda_y_se_puede_leer(con):
     service.planificar(con, "obra-x", ficha(), Agente([_plan()]), Agente([APROBADO]))
     assert len(repo.aprobado(con, "obra-x").capitulos) == 10
+
+
+def test_un_plan_sin_titulo_ni_premisa_gasta_una_ronda(con):
+    """La obra los exige (`Docs/definitions.md` § `Obra`) y ni la ficha ni el
+    plan los tienen: los propone el Planificador."""
+    sin_titulo = {"plan": plan_dict()}
+    r = service.planificar(con, "obra-x", ficha(), Agente([sin_titulo, _plan()]),
+                           Agente([APROBADO]))
+    assert r.version == 2 and r.titulo == "El mapa de Irene"
+    assert "titulo" in repo.versiones(con, "obra-x")[0]["objeciones"][0]
