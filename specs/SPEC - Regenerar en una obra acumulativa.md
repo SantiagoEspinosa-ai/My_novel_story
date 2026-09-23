@@ -231,6 +231,29 @@ el fallo ruidoso sobre el silencioso —`SPEC-10` C-2, el `sin_veredicto` de `SP
 `RF-26` fallando en vez de generar—, y `SPEC-16` es la factura de un contrato que fijó forma
 sin significado.
 
+### Las dos no significan lo mismo, y van bajo el mismo tipo
+
+`SPEC-21` guarda los usos de un hecho con un `tipo_de_uso_de_hecho` y un `origen_de_uso`, y
+las filas observadas de `S-5` entran como `depende` con origen `regla`. **Eso deja dos
+afirmaciones distintas bajo el mismo tipo**, y la frase que las separa tiene que estar escrita
+o alguien las sumará:
+
+| Fila | Qué afirma exactamente |
+| --- | --- |
+| `depende` con origen `delta` | **El modelo dice que se sirvió del hecho.** Es una afirmación suya, no verificada |
+| `depende` con origen `regla` | **Al modelo se le ofreció el hecho en el contexto.** Es un dato medido por código, y no dice que lo usara |
+
+No son lo mismo y no se suman: la segunda **contiene** a la primera casi siempre, y contarlas
+juntas daría un número que no significa nada. Para la regeneración se quieren las dos juntas
+—sobre-aproximar es la decisión—, pero para **medir cuánto se separan**, que es lo que hay que
+saber antes de elegir entre `S-1` y `S-2`, hay que poder pedirlas por separado. `SPEC-21` lo
+permite filtrando por origen.
+
+Queda una pregunta que esta spec no resuelve: si «se le ofreció» merece un valor propio en
+`tipo_de_uso_de_hecho` en vez de viajar como `depende` distinguido solo por su origen. Un
+valor nuevo es un cambio del vocabulario controlado y va en su spec; mientras tanto, la
+distinción vive en esta tabla y en el `origen_de_uso`, no en la intuición de quien consulte.
+
 - **Qué cuesta `S-5`:** es un cambio del dominio con su spec, su migración y su caso negativo,
   y en la variante declarada, además, un contrato de agente nuevo con el riesgo que eso ya
   costó una vez.
