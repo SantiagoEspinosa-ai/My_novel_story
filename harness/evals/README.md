@@ -47,9 +47,12 @@ lo inventa, y hace bien— así que una obra cuyas escenas no declaren instante
 llega a Lean casi vacía y pasa sin haber comprobado nada. Eso es el verde falso
 que `F-34` enseñó a no dar por bueno.
 
-`eventos_con_exclusion` vale **0 siempre** hoy, y no porque nadie muera: no hay
-de dónde sacar el dato (`F-46`). Mientras siga así, `L-4` no se puede medir con
-este brief aunque el brief esté diseñado para dispararla.
+`eventos_con_exclusion` **ya no es siempre 0** (`F-46`, cerrado): sale de
+`cambios_de_estado_vital` del delta persistido, así que `L-4` sí se puede medir
+con este brief. Y por eso ese número hay que mirarlo: **si vale 0 en una obra
+donde alguien muere, el fallo está en el generador o en el delta, no en la
+invariante.** Solo `muerto` excluye; `desaparecido` no, porque en terror puede
+volver.
 
 ## Cómo se lee un cero, en cualquier ejecución
 
