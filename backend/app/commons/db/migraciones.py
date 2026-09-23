@@ -245,7 +245,52 @@ TODAS = [
         # la migracion lo arregla todo**: esas filas hay que regenerarlas.
         lambda con: _migrar_memoria_a_t_discurso(con),
     ),
+    Migracion(
+        8,
+        "la memoria recuerda de que obra es cada resumen y cada ficha",
+        # Las columnas `obra` de `resumen` y `ficha` nacieron directamente en el
+        # `CREATE TABLE` de la feature, **sin migracion**. Y
+        # `CREATE TABLE IF NOT EXISTS` no toca una tabla que ya existe, asi que
+        # ninguna base anterior las recibio nunca y **no se arreglaba sola**: al
+        # escribir con el codigo de hoy moria con `no such column: obra`.
+        #
+        # Se midio contra la base de la obra de diez capitulos -60 escenas, 30
+        # resumenes-, que no se podia continuar por esto. Es el caso exacto para
+        # el que existe `anadir_columnas`, y el recordatorio de que **añadir una
+        # columna al `CREATE TABLE` no es migrar**: solo sirve a las bases que
+        # todavia no existen.
+        lambda con: _migrar_memoria_a_obra(con),
+    ),
 ]
+
+
+def _migrar_memoria_a_obra(con):
+    """Añade `obra` a `resumen` y `ficha`, **y rellena lo que ya habia**.
+
+    Dejarla vacia habria sido peor que no añadirla: `resumenes_hasta` acota por
+    obra, asi que una fila sin ella **no la ve ninguna consulta**. Los treinta
+    resumenes de la obra de diez capitulos habrian quedado invisibles y cada
+    escena habria arrancado sin memoria **sin que nada fallara** — la Regla 8
+    entrando por la puerta de una migracion.
+
+    Se puede rellenar porque el dato existe en otro sitio: `resumen.escena` y
+    `ficha.version_en_t` son los dos el identificador de la escena, y la escena
+    sabe de que obra es.
+    """
+    anadidas = (anadir_columnas(con, "resumen", {"obra": "TEXT"})
+                + anadir_columnas(con, "ficha", {"obra": "TEXT"}))
+    if not tiene_tabla(con, "escena"):
+        return anadidas
+    for tabla, columna in (("resumen", "escena"), ("ficha", "version_en_t")):
+        if not tiene_tabla(con, tabla):
+            continue
+        con.execute(
+            "UPDATE {0} SET obra = ("
+            "  SELECT e.obra FROM escena e WHERE e.id = {0}.{1}"
+            ") WHERE obra IS NULL AND EXISTS ("
+            "  SELECT 1 FROM escena e WHERE e.id = {0}.{1} "
+            "  AND e.obra IS NOT NULL)".format(tabla, columna))
+    return anadidas
 
 
 def _migrar_memoria_a_t_discurso(con):
