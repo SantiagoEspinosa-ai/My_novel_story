@@ -71,14 +71,24 @@ def capitulos_donde_se_usa(con, hecho, tipos=PARA_FICHA):
     return _capitulos(repo.usos_de_hecho(con, hecho, tipos))
 
 
-def capitulos_a_regenerar(con, hecho):
+def capitulos_a_regenerar(con, hecho, origenes=None):
     """Que hay que reescribir si el lector cambia este hecho.
 
     Solo `establece` y `depende`. Un capitulo que se limita a nombrarlo sigue
     siendo cierto con el hecho cambiado, y arrastrarlo multiplicaria el coste
     de un cambio pequeño por toda la novela.
+
+    **Sin `origenes` cuentan todos**, y eso importa: el filtro es por tipo, asi
+    que el dia que exista una fuente observada -lo que el ensamblador metio de
+    verdad en el prompt- sus filas `depende` entran aqui **solas**, sin tocar
+    ninguna constante. Es lo que `SPEC-23` `S-5` necesita para que la variante
+    observada siga estando a un paso.
+
+    Con `origenes` se pide uno de los dos conjuntos por separado, que es lo que
+    hace falta para **medir cuanto se separan** antes de elegir entre el que
+    sobre-aproxima y falla ruidoso y el que se ajusta y falla en silencio.
     """
-    return _capitulos(repo.usos_de_hecho(con, hecho, PARA_REGENERACION))
+    return _capitulos(repo.usos_de_hecho(con, hecho, PARA_REGENERACION, origenes))
 
 
 def capitulos_de_la_ficha(con, hecho):

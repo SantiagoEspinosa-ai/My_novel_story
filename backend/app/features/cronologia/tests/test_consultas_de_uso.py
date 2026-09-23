@@ -109,3 +109,35 @@ def test_contradice_declara_que_nadie_lo_deduce(con):
     """
     assert consultas.cobertura_de_tipos()[U.CONTRADICE] == "no_se_deduce"
     assert consultas.cobertura_de_tipos()[U.MENCIONA] == "regla"
+
+
+def test_la_regeneracion_puede_pedir_solo_lo_observado_o_solo_lo_declarado(con):
+    """Los dos conjuntos por separado, que es lo que hace falta para medirlos.
+
+    `SPEC-23` `S-5` compara **observado** -lo que el ensamblador metio en el
+    prompt: sobre-aproxima y falla ruidoso- con **declarado** -lo que el modelo
+    dice que uso: se ajusta mas y falla en silencio-. Elegir entre los dos sin
+    haber medido cuanto se separan seria elegir a ciegas, y para medirlo hay que
+    poder pedir cada uno.
+    """
+    repo.registrar_usos(con, [
+        {"hecho": "h-llave", "escena": "e9", "capitulo": "cap-9",
+         "tipo": U.DEPENDE, "origen": O.REGLA}])
+    assert consultas.capitulos_a_regenerar(con, "h-llave", (O.DELTA,)) == [
+        "cap-1", "cap-3"]
+    assert consultas.capitulos_a_regenerar(con, "h-llave", (O.REGLA,)) == ["cap-9"]
+
+
+def test_una_fila_observada_entra_en_la_regeneracion_sin_tocar_constantes(con):
+    """El filtro por defecto es **por tipo**, no por origen.
+
+    Es lo que mantiene barata la decision que `SPEC-23` tiene pendiente: el dia
+    que exista la fuente observada, sus filas `depende` las cuenta esta consulta
+    solas. Si el filtro fuera tambien por origen, incorporarlas seria volver a
+    decidir en vez de empezar a escribir.
+    """
+    repo.registrar_usos(con, [
+        {"hecho": "h-llave", "escena": "e9", "capitulo": "cap-9",
+         "tipo": U.DEPENDE, "origen": O.REGLA}])
+    assert consultas.capitulos_a_regenerar(con, "h-llave") == [
+        "cap-1", "cap-3", "cap-9"]

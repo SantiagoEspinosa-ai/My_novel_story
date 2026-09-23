@@ -148,3 +148,41 @@ def test_contradice_no_se_deduce_solo_y_se_dice(con):
         delta=DELTA, texto="El sotano esta tapiado", hechos=HECHOS,
         escena="e1", capitulo="cap-1")
     assert all(u["tipo"] is not U.CONTRADICE for u in usos)
+
+
+def test_lo_observado_y_lo_declarado_conviven_sobre_el_mismo_par(con):
+    """La clave incluye el **origen**, y no incluirlo perdia una fila entera.
+
+    El mismo hecho puede constar como `depende` por dos caminos que no valen lo
+    mismo: **observado** -el ensamblador lo metio en el prompt, asi que la
+    escena pudo apoyarse en el; sobre-aproxima y falla ruidoso- y **declarado**
+    -el delta dice que se uso; se ajusta mas y falla en silencio-.
+
+    Con la clave `(hecho, escena, tipo)` el segundo `INSERT OR REPLACE` pisaba
+    al primero, **y cual sobrevivia dependia del orden de escritura**. Eso
+    destruye justo la distincion para la que existe `origen_de_uso`, y la
+    destruye sin avisar: la tabla se queda con una fila creible.
+
+    `SPEC-23` compara las dos formas y deja escrito que, si hiciera falta
+    elegir, la correcta es la observada, porque este proyecto ha preferido tres
+    veces el fallo ruidoso al silencioso. Esta prueba es lo que mantiene esa
+    eleccion **abierta**: mientras las dos filas quepan, decidir cual cuenta es
+    editar una constante.
+    """
+    for origen in (O.REGLA, O.DELTA):
+        repo.registrar_usos(con, [{"hecho": "h-llave", "escena": "e1",
+                                   "capitulo": "cap-1", "tipo": U.DEPENDE,
+                                   "origen": origen}])
+    filas = repo.usos_de_hecho(con, "h-llave")
+    assert len(filas) == 2, "una de las dos se ha perdido: {0}".format(filas)
+    assert {f["origen"] for f in filas} == {O.REGLA, O.DELTA}
+
+
+def test_repetir_la_misma_fila_con_el_mismo_origen_sigue_siendo_idempotente(con):
+    """La idempotencia no se afloja al ampliar la clave: lo que se repite
+    identico sigue siendo una sola fila."""
+    uso = {"hecho": "h-llave", "escena": "e1", "capitulo": "cap-1",
+           "tipo": U.DEPENDE, "origen": O.DELTA}
+    repo.registrar_usos(con, [uso])
+    repo.registrar_usos(con, [uso])
+    assert len(repo.usos_de_hecho(con, "h-llave")) == 1

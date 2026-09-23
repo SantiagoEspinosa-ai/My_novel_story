@@ -31,7 +31,15 @@ CREATE TABLE IF NOT EXISTS uso_de_hecho (
     capitulo TEXT,
     tipo     TEXT NOT NULL,
     origen   TEXT NOT NULL,
-    PRIMARY KEY (hecho, escena, tipo)
+    -- El **origen forma parte de la clave**, y dejarlo fuera costaba una fila.
+    -- El mismo hecho puede constar como `depende` por dos caminos que no valen
+    -- lo mismo: observado -el ensamblador lo metio en el prompt, sobre-aproxima
+    -- y falla ruidoso- y declarado -el delta dice que se uso, se ajusta mas y
+    -- falla en silencio-. Con la clave `(hecho, escena, tipo)`, el segundo
+    -- `INSERT OR REPLACE` pisaba al primero y **cual sobrevivia dependia del
+    -- orden de escritura**, destruyendo sin avisar la distincion para la que
+    -- existe `origen_de_uso`. La tabla se quedaba con una fila creible.
+    PRIMARY KEY (hecho, escena, tipo, origen)
 );
 CREATE TABLE IF NOT EXISTS evento_cronologico (
     id           TEXT PRIMARY KEY,
@@ -85,7 +93,7 @@ def asegurar_tablas(con: sqlite3.Connection):
 
 
 def registrar_usos(con, usos, dentro_de_transaccion=False):
-    """Escribe los usos de una escena. Idempotente por `(hecho, escena, tipo)`.
+    """Escribe los usos. Idempotente por `(hecho, escena, tipo, origen)`.
 
     `dentro_de_transaccion` existe porque la consolidacion ya abrio la suya:
     anidar `with con` en SQLite hace commit del bloque interno y romperia la
@@ -115,15 +123,30 @@ def _uso(f):
             "tipo": U(f[3]), "origen": O(f[4])}
 
 
-def usos_de_hecho(con, hecho, tipos=None):
-    """Todas las filas de un hecho, o solo las de los tipos que se pidan."""
+def usos_de_hecho(con, hecho, tipos=None, origenes=None):
+    """Las filas de un hecho, filtrables por tipo y por origen.
+
+    Son **dos ejes independientes** y por eso son dos filtros. El tipo dice
+    *que relacion* tiene la escena con el hecho; el origen, *quien lo afirma*.
+    Sin `origenes` cuentan todos, que es lo que quiere casi todo el mundo: a
+    quien pregunta "¿donde se usa esto?" le da igual si lo midio el codigo o lo
+    declaro el delta.
+
+    Lo quiere quien compara. Preguntar solo por `regla` da el conjunto
+    **observado** -sobre-aproxima, falla ruidoso- y solo por `delta` el
+    **declarado** -se ajusta mas, falla en silencio-. Poder pedir cada uno por
+    separado es lo que permite medir cuanto se separan antes de elegir.
+    """
     sql = ("SELECT hecho, escena, capitulo, tipo, origen FROM uso_de_hecho "
            "WHERE hecho = ?")
     args = [hecho]
     if tipos is not None:
         sql += " AND tipo IN ({0})".format(",".join("?" * len(tipos)))
         args += [str(t) for t in tipos]
-    return [_uso(f) for f in con.execute(sql + " ORDER BY escena, tipo", args)]
+    if origenes is not None:
+        sql += " AND origen IN ({0})".format(",".join("?" * len(origenes)))
+        args += [str(o) for o in origenes]
+    return [_uso(f) for f in con.execute(sql + " ORDER BY escena, tipo, origen", args)]
 
 
 def usos_de_capitulo(con, capitulo, tipos=None):

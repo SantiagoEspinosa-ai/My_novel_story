@@ -89,6 +89,27 @@ migración, porque las cuatro filas ya están escritas. Los valores de partida s
 `humano`). Una fila calculada por código es un dato medido; una declarada por un modelo es
 una afirmación no verificada, y un demostrador formal no puede tratarlas igual.
 
+**El origen forma parte de la clave, y al implementar se vio que no lo era.** La primera
+versión identificaba una fila por `(hecho, escena, tipo)`, de modo que un `depende`
+**observado** y uno **declarado** sobre el mismo par no cabían a la vez: el segundo pisaba
+al primero y cuál sobrevivía dependía del orden de escritura. Eso borra en silencio la
+distinción que `origen_de_uso` existe para guardar, y deja una fila creíble en su lugar.
+
+No es un detalle de esquema. `SPEC-23` `S-5` compara las dos formas de saber de qué depende
+una escena —**observada**, de lo que el ensamblador metió en el prompt, que sobre-aproxima y
+**falla ruidoso**; **declarada**, de lo que el modelo dice que usó, que se ajusta más y
+**falla en silencio**— y deja escrito que, si hubiera que elegir, la correcta es la
+observada, porque el proyecto ya prefirió tres veces el fallo ruidoso (`SPEC-10` C-2,
+`SPEC-18` C-3, `RF-26`). **Mientras las dos filas quepan, esa elección sigue siendo editar
+una constante.** Sin la clave ampliada, dejaría de serlo.
+
+**Y eso deja el conjunto de la regeneración selectiva a la espera.** Los valores de partida
+—`establece` y `depende`— salen **los dos del delta**, es decir, son declarados: con ellos
+solos, la regeneración selectiva hereda el modo de fallo silencioso. Cuando exista una
+fuente observada (`SPEC-23` la está construyendo, y escribe con `origen_de_uso = regla`),
+incluirla es añadirla al conjunto. Qué conjunto queda es decisión del autor, no de esta
+spec; lo que esta spec garantiza es que la decisión siga siendo barata.
+
 ---
 
 ## C-3 · La cronología es de eventos, y su eje es una fecha absoluta

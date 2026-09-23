@@ -185,6 +185,49 @@ TODAS = [
         ALTER TABLE hecho_canonico_nuevo RENAME TO hecho_canonico;
         """,
     ),
+    Migracion(
+        6,
+        "el uso de un hecho se identifica tambien por su origen",
+        # `SPEC-21` C-2. La clave era `(hecho, escena, tipo)` y dejaba fuera el
+        # origen, asi que un `depende` **observado** y uno **declarado** sobre
+        # el mismo par no cabian a la vez: el segundo pisaba al primero y cual
+        # sobrevivia dependia del orden de escritura. Eso borra la distincion
+        # que `origen_de_uso` existe para guardar, y la borra en silencio.
+        #
+        # Importa mas de lo que parece: `SPEC-23` compara las dos formas de
+        # saber de que depende una escena y deja escrito que, si hubiera que
+        # elegir, la correcta es la observada -sobre-aproxima y falla ruidoso-.
+        # Mientras las dos filas quepan, esa eleccion sigue siendo editar una
+        # constante; sin esta migracion, seria volver a decidirla.
+        #
+        # SQLite no sabe cambiar una PRIMARY KEY con ALTER, asi que se recrea y
+        # se copia. `INSERT OR IGNORE` porque la tabla vieja no pudo guardar
+        # duplicados: lo que hay ya es unico bajo la clave nueva.
+        """
+        CREATE TABLE IF NOT EXISTS uso_de_hecho (
+            hecho    TEXT NOT NULL,
+            escena   TEXT NOT NULL,
+            capitulo TEXT,
+            tipo     TEXT NOT NULL,
+            origen   TEXT NOT NULL,
+            PRIMARY KEY (hecho, escena, tipo)
+        );
+        CREATE TABLE uso_de_hecho_nuevo (
+            hecho    TEXT NOT NULL,
+            escena   TEXT NOT NULL,
+            capitulo TEXT,
+            tipo     TEXT NOT NULL,
+            origen   TEXT NOT NULL,
+            PRIMARY KEY (hecho, escena, tipo, origen)
+        );
+        INSERT OR IGNORE INTO uso_de_hecho_nuevo
+            SELECT hecho, escena, capitulo, tipo, origen FROM uso_de_hecho;
+        DROP TABLE uso_de_hecho;
+        ALTER TABLE uso_de_hecho_nuevo RENAME TO uso_de_hecho;
+        CREATE INDEX IF NOT EXISTS idx_uso_por_hecho ON uso_de_hecho (hecho, tipo);
+        CREATE INDEX IF NOT EXISTS idx_uso_por_capitulo ON uso_de_hecho (capitulo, tipo);
+        """,
+    ),
 ]
 
 

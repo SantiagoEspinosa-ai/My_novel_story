@@ -501,3 +501,25 @@ def test_si_el_delta_no_entra_el_acta_tampoco(con):
     assert g.parada is not None, "el delta tenia que ser incompatible"
     assert cron.usos_de_hecho(con, "hec-llave") == []
     assert cron.eventos_de(con, "cap-1") == []
+
+
+def test_una_escena_sin_resumen_se_dice_en_vez_de_callarse(con):
+    """`F-41`: cinco escenas de doce se quedaron sin resumen en la obra de diez
+    capitulos y **nadie lo dijo**. Las escenas siguientes leen un contexto al
+    que le falta esa, y desde fuera es indistinguible de una escena que no
+    tenia nada que resumir."""
+    class Mudo:
+        """Se porta como el proveedor real cuando no puede leer la respuesta:
+        lanza `RespuestaIlegible`. Un doble que devuelve `None` donde el real
+        lanza no es un doble, es otra cosa (Regla 3)."""
+
+        nombre = "resumidor-mudo"
+
+        def llamar(self, prompt):
+            from app.commons.modelo.proveedor import RespuestaIlegible
+            raise RespuestaIlegible("no se pudo leer la respuesta")
+
+    g = obra.generar_obra(con, "cap-1", DobleDelModelo(),
+                          _agentes()[1], Mudo(), techo=1_000_000, hasta=1)
+    assert g.escenas_hechas == ["e1"], "la escena se hace igual"
+    assert g.sin_resumen == ["e1"], "pero consta que se quedo sin memoria"

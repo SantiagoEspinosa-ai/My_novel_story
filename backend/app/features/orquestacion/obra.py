@@ -55,6 +55,7 @@ class Generacion:
     delegaciones: int = 0
     cierre: dict | None = None
     saltadas: list = field(default_factory=list)
+    sin_resumen: list = field(default_factory=list)
     coste: dict = field(default_factory=lambda: {
         "usd": 0.0, "delegaciones": 0, "sin_coste": 0})
 
@@ -70,8 +71,10 @@ def reunir_material(con, escena, obra_id, inmutable=""):
         "SELECT b.texto FROM borrador b JOIN escena e ON e.id = b.escena "
         "WHERE e.orden = ? ORDER BY b.version DESC LIMIT 1", (orden - 1,)).fetchone()
     return {
-        "resumenes": memoria.resumenes_hasta(con, orden),
-        "fichas": memoria.fichas_en(con, orden),
+        # Acotados a la obra: el `orden` va del 1 al N **dentro** de ella, asi
+        # que sin el filtro dos obras en la misma base se mezclan (`F-40`).
+        "resumenes": memoria.resumenes_hasta(con, orden, obra=obra_id),
+        "fichas": memoria.fichas_en(con, orden, obra=obra_id),
         "escena_anterior": anterior[0] if anterior else "",
         "mundo": modulo_mundo.leer(con),
         "problemas": repo.hallazgos_abiertos(con, escena["id"]),
@@ -175,9 +178,17 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                 con, escena["id"], escena["orden"],
                 str(c.resumen.get("texto") or ""),
                 [h for h in (c.resumen.get("hechos_clave") or [])
-                 if memoria.IDENTIFICADOR.match(str(h))])
+                 if memoria.IDENTIFICADOR.match(str(h))],
+                obra=obra)
+        else:
+            # `F-41`: el Resumidor no contesto y la escena se quedaba **sin
+            # memoria** sin que nadie lo dijera. Un dato ausente no es un
+            # verde: las escenas siguientes leen un contexto al que le falta
+            # esta, y desde fuera eso es indistinguible de una escena que no
+            # tenia nada que resumir.
+            g.sin_resumen.append(escena["id"])
         _marcar_establecidos(con, escena, c, obra)
-        _actualizar_fichas(con, escena, c)
+        _actualizar_fichas(con, escena, c, obra)
         g.escenas_hechas.append(escena["id"])
 
     g.cierre = evaluar_cierre(con, obra)
@@ -348,7 +359,7 @@ def _marcar_establecidos(con, escena, c, obra):
         repo.establecer_hecho(con, rev["hecho"], escena["id"], obra=obra)
 
 
-def _actualizar_fichas(con, escena, c):
+def _actualizar_fichas(con, escena, c, obra):
     """Una ficha por entidad que el delta toco. Sin modelo: es un extracto."""
     delta = (c.generacion.leida_delta if c.generacion else None) or {}
     tocadas = {m["personaje"] for m in delta.get("movimientos", [])}
@@ -356,7 +367,7 @@ def _actualizar_fichas(con, escena, c):
     if not tocadas:
         return
     m = modulo_mundo.leer(con)
-    memoria.actualizar_fichas(con, escena["id"], escena["orden"], {
+    memoria.actualizar_fichas(con, escena["id"], escena["orden"], obra=obra, entidades={
         e: "en {0}, {1}".format(m["ubicaciones"].get(e, "?"),
                                 m["entidades_vivas"].get(e, "?"))
         for e in sorted(tocadas)})

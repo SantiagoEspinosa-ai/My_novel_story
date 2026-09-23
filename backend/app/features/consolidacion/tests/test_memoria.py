@@ -78,3 +78,37 @@ def test_el_contexto_crece_con_las_escenas(con):
     assert tamanos == sorted(tamanos), "no decrece"
     assert tamanos[0] < tamanos[-1], (
         "el contexto tiene que crecer solo: {0}".format(tamanos))
+
+
+# --- F-40: la memoria no puede mezclar obras ------------------------------
+
+def test_los_resumenes_no_mezclan_obras(con):
+    """`F-40`, medido en la obra de diez capitulos.
+
+    El `orden` de una escena es **por obra** -la escena 1 de cada capitulo
+    tiene orden 1- y `resumenes_hasta` filtraba solo por `orden`. Con dos
+    obras en la misma base, la escena 4 de la segunda recibia los resumenes de
+    la primera **entremezclados y en orden equivocado**, y la escena 1 de un
+    capitulo recibia cero: arrancaba sin memoria de todo lo anterior.
+    """
+    memoria.guardar_resumen(con, "a-e1", 1, "primera de A", [], obra="obra-a")
+    memoria.guardar_resumen(con, "a-e2", 2, "segunda de A", [], obra="obra-a")
+    memoria.guardar_resumen(con, "b-e1", 1, "primera de B", [], obra="obra-b")
+
+    de_a = memoria.resumenes_hasta(con, 3, obra="obra-a")
+    assert [r["escena"] for r in de_a] == ["a-e1", "a-e2"]
+    de_b = memoria.resumenes_hasta(con, 3, obra="obra-b")
+    assert [r["escena"] for r in de_b] == ["b-e1"]
+
+
+def test_sin_obra_se_devuelve_todo_como_antes(con):
+    """Compatibilidad: quien no la pase sigue viendo lo de siempre. La obra es
+    un filtro que se añade, no un requisito que rompa lo que ya llamaba."""
+    memoria.guardar_resumen(con, "a-e1", 1, "primera", [], obra="obra-a")
+    assert len(memoria.resumenes_hasta(con, 3)) == 1
+
+
+def test_las_fichas_tampoco_mezclan_obras(con):
+    memoria.actualizar_fichas(con, "a-e1", 1, {"per-marta": "en A"}, obra="obra-a")
+    memoria.actualizar_fichas(con, "b-e1", 1, {"per-ana": "en B"}, obra="obra-b")
+    assert [f["entidad"] for f in memoria.fichas_en(con, 9, obra="obra-a")] == ["per-marta"]

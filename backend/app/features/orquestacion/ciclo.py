@@ -108,6 +108,13 @@ def _delegar(modelo, prompt, agente, escena, trabajo, trazas):
         modulo_traza.registrar_fallo(t, clase="contrato", salida="ilegible")
         trazas.append(t)
         return None, t
+    if r is None:
+        # Una respuesta nula es lo mismo que una ilegible: **no hay juicio**.
+        # El transporte puede devolverla si el JSON de la sesion trae `null`,
+        # y sin esto reventaba con `AttributeError` en vez de registrarse.
+        modulo_traza.registrar_fallo(t, clase="contrato", salida="nula")
+        trazas.append(t)
+        return None, t
     medidas = r.get("medidas") or {}
     t.modelos = medidas.get("modelos") or []
     t.medidas = medidas
