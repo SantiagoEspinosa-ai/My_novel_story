@@ -246,7 +246,7 @@ Se documentan y se resuelve a favor del documento, que es lo normativo.
 | | Discrepancia | Resolución |
 | --- | --- | --- |
 | **D-1** | `Docs/architecture.md` modela **escenas** con ocho estados y dos puertas humanas (`A-04`: la aceptación la dispara una persona). `main` trabaja por **capítulos** y sin ninguna puerta humana | La especificación modela capítulos, porque es lo que pide el enunciado y lo que existe. **La ausencia de puerta humana es un hueco real**, no una simplificación del modelo |
-| **D-2** | La regeneración por cambio del lector **no existe en ningún documento**. No hay transición, ni estado, ni versión | La acción `Regenerar` es nueva. Antes de implementarla hace falta spec: es un cambio que decide algo nuevo |
+| **D-2** | La regeneración por cambio del lector **no existía en ningún documento** cuando se escribió esta especificación. No había transición, ni estado, ni versión. **Desde entonces la describen `SPEC-22` `RF-50`..`RF-55` (`aprobada`) y `SPEC-23` `D-2` (`en_revision`), que adopta versiones con identidad propia por `CE-5`**; en `Docs/` sigue sin estar | La acción `Regenerar` es nueva. Antes de implementarla hace falta spec: es un cambio que decide algo nuevo |
 | **D-3** | `EJECUCION.md` §3.5 describe un bucle "en orden"; el código usa lista de pendientes | Gana el código, y el documento debe corregirse. Ver CE-3 |
 | **D-4** | Rendición incondicional (`EJECUCION.md` regla 1) frente a rendición condicionada a que no quede ninguna invariante `bloqueante` (`Docs/architecture.md`) | Gana `Docs/architecture.md`. Ver CE-2 |
 

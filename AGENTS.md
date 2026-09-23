@@ -2,18 +2,20 @@
 
 Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde está cada cosa, en qué orden cargarla y qué manda sobre qué.
 
-**Proyecto:** sistema de IA que escribe novelas largas (caso base: terror, una sola obra) y el harness que lo evalúa.
+**Proyecto:** sistema agéntico que escribe novelas personalizadas para regalar —diez capítulos, a partir de una entrevista con el comprador— y el harness que las valida (`EXAMEN.md`). Nació con una novela de terror como caso base; lo específico de terror se retiró en `SPEC-26` v3.
 **Rama de trabajo:** `contexto_semilla`.
 
 ## Dónde está cada cosa
 
 | Necesitas | Archivo | Qué contiene |
 | --- | --- | --- |
+| Qué hay que construir y entregar | `EXAMEN.md` | El enunciado del examen: configuración, lectura (web o PDF), harness, memoria, los cuatro tipos de validadores (programáticos, semánticos, Lean 4, TLA+), evaluación con cinco briefs, observabilidad en Langfuse y guardrails; y lo que el repositorio debe incluir (novela de ejemplo en PDF, `/docs` de proceso, vídeo de demo, `.claude/`). **Manda sobre las decisiones del proyecto**: si una lo contradice, gana el enunciado y la decisión se revisa. **Un mínimo suyo no es un techo**: pedir tres roles y tener diez no es un incumplimiento. Dice qué, no cómo |
 | Requisitos técnicos y stack | `CLAUDE.md` | FastAPI, React, límite de contexto de 100.000 tokens, SQLite con soporte vectorial, y el presupuesto de contexto que se deriva de ellos |
 | Definiciones del dominio | `Docs/definitions.md` | Referencia normativa: los seis planos (el sexto, Destinatario, desde `SPEC-25`), clases con atributos, tabla de relaciones, vocabularios controlados e invariantes `INV-01`…`INV-16` |
 | Árbol y diagramas | `Docs/domain-knowledge.md` | El mismo modelo en Mermaid: árbol por planos, grafo de relaciones núcleo, ciclo de vida de la escena, secuencia de generación |
 | Decisiones de sistema, agentes y proceso | `Docs/architecture.md` | Reparto frontend/backend, estructura por feature con `commons`, FSD en el frontend, los diez agentes del pipeline con sus habilidades e invariantes, el proceso de una escena y las decisiones `A-01`…`A-09` |
 | Plan de verificación del sistema | `Docs/verification.md` | Primero **qué puede salir mal**: 24 modos de fallo `MF-01`…`MF-24` sobre las rejillas de MAST, ConStory-Bench y los fallos silenciosos, **ninguno sin estado**. Después **cómo se detecta**: 54 validadores `VER-01`…`VER-55`, cada uno con su punto ciego, más los 11 asumidos y lo que se aprendió al escribir cinco. Ninguno implementado hoy |
+| Huecos contra el enunciado | `Docs/cobertura-examen.md` | Registro `EX-xx` de lo que `EXAMEN.md` exige y los documentos no recogen o contradicen (de documentación) y de lo documentado que el código no hace (de sistema), cada fila con cita de los dos lados, bloqueante o no, y el recuento por vuelta. No introduce requisitos: lo que decide cómo cerrar un hueco va en una spec |
 | Skills del proyecto | `.agents/skills/` | Contenido real de las ocho skills instaladas. Ver la sección "Skills" más abajo |
 | Specs en curso | `specs/` | Un fichero por spec. Hoy `SPEC-01` backend del harness (**`aprobada`**), `SPEC-22` el frontend y el contrato congelado (**`aprobada`**), y en `en_revision` `SPEC-09` versión de `Resumen`, `SPEC-23` qué es regenerar en una obra acumulativa y `SPEC-26`, el pipeline de la novela regalo: planificador con revisor del plan, editor con rúbrica, validadores de personalización y los dos hooks. **`SPEC-24`, dónde se declara una analepsis, está `aprobada` y pendiente de plan**: añade a `MomentoNarrativo` la marca que `INV-08` necesita para distinguir un retroceso deliberado de uno accidental. `SPEC-21`, los usos de un hecho y la cronología de la fábula, está **`aprobada`** y es de la que `SPEC-23` toma qué capítulos hay que regenerar |
 | Planes de implementación | `specs/plans/` | Un `PLAN-NN.md` por spec aprobada, con el mismo identificador y su propio estado. Hoy `PLAN-01`, el backend, en `en_revision`, `PLAN-21`, los usos y la cronología, **`aprobada`**, y `PLAN-25`, el destinatario y la entrevista, **`aplicada`**. Es la tercera puerta: sin plan aprobado no se escribe código |
@@ -26,16 +28,18 @@ Mapa de contexto de `My_novel_story`. Léelo antes de tocar nada: dice dónde es
 
 ## Orden de carga
 
-1. `CLAUDE.md` — restricciones técnicas. Condicionan todo lo demás, así que van primero.
-2. `Docs/definitions.md` — el modelo de dominio. Es la fuente de verdad.
-3. `Docs/architecture.md` — cómo se organiza el código y quién habla con quién. Antes de escribir nada en `backend/` o `frontend/`.
-4. `Docs/domain-knowledge.md` — solo cuando necesites ver la estructura de un vistazo o explicarla.
-5. `Docs/verification.md` — cuando vayas a escribir una prueba o a cerrar una fila `VER-xx`.
+1. `EXAMEN.md` — qué hay que construir y entregar. Va primero porque es lo único que puede obligar a revisar una decisión del proyecto; basta con la sección que toque la tarea.
+2. `CLAUDE.md` — restricciones técnicas. Condicionan todo lo demás del proyecto.
+3. `Docs/definitions.md` — el modelo de dominio. Es la fuente de verdad del dominio.
+4. `Docs/architecture.md` — cómo se organiza el código y quién habla con quién. Antes de escribir nada en `backend/` o `frontend/`.
+5. `Docs/domain-knowledge.md` — solo cuando necesites ver la estructura de un vistazo o explicarla.
+6. `Docs/verification.md` — cuando vayas a escribir una prueba o a cerrar una fila `VER-xx`.
 
-No cargues los cinco enteros por costumbre. Para una tarea de backend suele bastar `CLAUDE.md`, la sección de invariantes de `Docs/definitions.md` y la de backend de `Docs/architecture.md`; para una discusión de arquitectura del dominio, el árbol de `Docs/domain-knowledge.md`.
+No cargues los seis enteros por costumbre. Para una tarea de backend suele bastar `CLAUDE.md`, la sección de invariantes de `Docs/definitions.md` y la de backend de `Docs/architecture.md`; para una discusión de arquitectura del dominio, el árbol de `Docs/domain-knowledge.md`.
 
 ## Precedencia
 
+- **Por encima de todo, `EXAMEN.md` en qué se construye y se entrega.** Su cabecera lo declara: si algo del enunciado contradice a una decisión del proyecto —de `CLAUDE.md`, de `Docs/`, de una spec o de un plan—, gana el enunciado y la decisión se revisa. Revisarla sigue el proceso de siempre: una spec que la cambie, aprobada antes del código. Lo que el enunciado no menciona lo gobiernan las reglas de abajo.
 - En lo técnico manda `CLAUDE.md`. En lo de dominio manda `Docs/definitions.md`. En cómo se organiza el código manda `Docs/architecture.md`.
 - `Docs/architecture.md` no redefine ni el stack ni el dominio: los desarrolla. Si contradice a `CLAUDE.md`, gana `CLAUDE.md`; si usa un nombre de clase o de enumeración que no está en `Docs/definitions.md`, el error es suyo.
 - `Docs/verification.md` no introduce requisitos nuevos. Cada fila `VER-xx` cita el documento del que sale; una fila sin origen sobra.
@@ -158,6 +162,7 @@ Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuent
 - `frontend/` — aplicación React.
 - `harness/` — ejecución de los validadores de `Docs/verification.md` y sus fixtures, en las tres carpetas que declara `Docs/architecture.md` § "El harness": `documentos/`, `evals/` y `adversarial/`. Se escribieron cinco a modo de prueba y se retiraron; lo que enseñaron está en `Docs/verification.md` § "Lo que se aprendió al implementar".
 - `Docs/decisions/` — decisiones de arquitectura fechadas.
+- Lo que `EXAMEN.md` exige que el repositorio incluya, y no existe todavía (§ "Los repositorios deben incluir también"): `README.md` en la raíz con un brief de ejemplo reproducible, `.env.example`, `ejemplos/novela-ejemplo.pdf`, `presentacion/` con el vídeo de demo, `.claude/commands/` y la memoria dentro de `.claude/`, y el fichero de configuración MCP con un servidor de inspección de browser. Y la carpeta `/docs` de proceso, cuyo nombre choca con `Docs/`: ver `EX-11` en `Docs/cobertura-examen.md`.
 
 ## Mantenimiento de este archivo
 
