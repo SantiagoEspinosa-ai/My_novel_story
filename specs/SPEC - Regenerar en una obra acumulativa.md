@@ -320,7 +320,7 @@ proyecto ya ha elegido tres veces.
 | --- | --- | --- |
 | 1 | **¿Qué salida se toma?** | Es lo único que esta spec pide |
 | 2 | **¿Qué se le promete al lector?** ¿«Reescribimos lo que dependía de esto» o «reescribimos de aquí al final»? | `S-1` y `S-3` prometen cosas distintas y las dos son defendibles. La promesa se escribe antes de construirla |
-| 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, `S-2` es el mínimo y `S-3` deja de bastar |
+| 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, la salida tiene que **invalidar o rehacer** los verdes posteriores: `S-1` los rehace y `S-2` los reverifica, así que el mínimo es `S-2`. `S-3` no hereda ninguno —el estado no se mueve— pero **no cubre la función**: en cuanto una petición mueva el estado hay que escalarla, así que no vale como salida única |
 | 4 | **¿Una obra puede quedar en dos versiones vivas, o la nueva sustituye a la vieja?** | Es `S-4`, y también decide qué significa «se conserva la versión anterior» |
 | 5 | **¿Cuánto arrastra un cambio medio?** No está medido, y **hoy no se puede medir aunque haya obra**: ver la nota de abajo | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
 
