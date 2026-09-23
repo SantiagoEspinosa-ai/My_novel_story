@@ -59,7 +59,7 @@ def version_del_arbol(cwd=None) -> str:
 
 
 def registrar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
-              brief=None):
+              brief=None, sistema=None):
     """Con que codigo **y con que brief** se creo esta base. **No pisa.**
 
     Son las dos mitades del mismo par. El commit dice que **codigo** escribio
@@ -78,6 +78,14 @@ def registrar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
         if brief:
             con.execute("INSERT OR IGNORE INTO procedencia (clave, valor) "
                         "VALUES ('huella_del_brief', ?)", (brief,))
+        if sistema:
+            # `MF-28`: el commit dice con **que codigo**, el brief con **que
+            # novela**, y esto con **que maquina** -modelos, topes, techo-. Sin
+            # los tres, dos tandas que dieron numeros distintos no se pueden
+            # explicar: el modelo cambia el coste y la calidad sin que la
+            # novela haya cambiado nada.
+            con.execute("INSERT OR IGNORE INTO procedencia (clave, valor) "
+                        "VALUES ('huella_del_sistema', ?)", (sistema,))
 
 
 def leer(con: sqlite3.Connection):
@@ -87,15 +95,17 @@ def leer(con: sqlite3.Connection):
         "SELECT clave, valor, cuando FROM procedencia"))
     v = filas.get("version_del_harness")
     b = filas.get("huella_del_brief")
+    sis = filas.get("huella_del_sistema")
     return {"version": v[0] if v else None,
             "creada_en": v[1] if v else None,
+            "sistema": sis[0] if sis else None,
             # `None` y no una cadena vacia: las bases anteriores a esto no lo
             # llevan, y hay que poder distinguir "no consta" de "sin brief".
             "brief": b[0] if b else None}
 
 
 def comprobar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
-              brief=None):
+              brief=None, sistema=None):
     """Devuelve el aviso si la base se escribio con otro codigo, o `None`.
 
     **Una base sin procedencia no es una base conforme** (Regla 8): las
@@ -122,4 +132,12 @@ def comprobar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
                     "Mismo codigo y distinta forma de obra **no es la misma "
                     "tanda**: comparar sus numeros seria comparar dos novelas "
                     "distintas".format(guardado, brief))
+    if sistema:
+        guardado = leer(con)["sistema"]
+        if guardado and guardado != sistema:
+            return ("esta base corrio con la configuracion de sistema {0} y "
+                    "ahora se pide {1}. El modelo y los topes cambian el coste "
+                    "y la calidad **sin que la novela haya cambiado**, asi que "
+                    "comparar las dos tandas atribuiria a la obra lo que hizo "
+                    "la maquina".format(guardado, sistema))
     return None

@@ -162,6 +162,23 @@ class ConfiguracionDelSistema(_DelDominio):
     presupuesto: Presupuesto = Field(default_factory=Presupuesto)
     ruta_de_la_base: str = Field(default="obra.db")
 
+    @property
+    def huella(self) -> str:
+        """Identifica **esta** configuracion de maquina (`MF-28`).
+
+        El commit dice con que **codigo** se escribio una base y la huella del
+        brief con que **novela**. Faltaba la tercera: con que **maquina**. Dos
+        tandas de la misma novela y el mismo codigo dan numeros distintos si
+        cambia el modelo, y sin esto la diferencia no queda registrada en
+        ninguna parte — se le atribuiria a la obra lo que hizo la maquina.
+
+        Ordenada por claves por lo mismo que la del brief: el orden del fichero
+        no puede hacer que dos configuraciones identicas parezcan distintas.
+        """
+        crudo = json.dumps(self.model_dump(mode="json"), sort_keys=True,
+                           ensure_ascii=False)
+        return hashlib.sha256(crudo.encode("utf-8")).hexdigest()[:12]
+
     @model_validator(mode="after")
     def _el_techo_cabe_en_el_presupuesto(self):
         return self

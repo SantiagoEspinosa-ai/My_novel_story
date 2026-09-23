@@ -99,3 +99,27 @@ def test_el_brief_tampoco_se_pisa(con):
     procedencia.registrar(con, version="aaaaaaa", brief="huella-A")
     procedencia.registrar(con, version="aaaaaaa", brief="huella-B")
     assert procedencia.leer(con)["brief"] == "huella-A"
+
+
+def test_tambien_consta_con_que_configuracion_de_sistema_corrio(con):
+    """`MF-28`: dos artefactos con el mismo commit y **distinta configuracion**
+    eran indistinguibles. El brief ya constaba; el sistema -modelos, topes,
+    techo- no, y es lo que explica por que dos tandas de la misma novela dieron
+    numeros distintos."""
+    procedencia.registrar(con, version="aaaaaaa", brief="huella-B",
+                          sistema="huella-S")
+    p = procedencia.leer(con)
+    assert p["sistema"] == "huella-S"
+
+
+def test_cambiar_de_modelo_no_es_la_misma_tanda(con):
+    """Mismo codigo, mismo brief y otro modelo **no se puede comparar**: el
+    coste y la calidad cambian por el modelo, no por la novela."""
+    procedencia.registrar(con, version="aaaaaaa", brief="B", sistema="S1")
+    aviso = procedencia.comprobar(con, version="aaaaaaa", brief="B", sistema="S2")
+    assert aviso is not None and "S1" in aviso and "S2" in aviso
+
+
+def test_una_base_sin_huella_de_sistema_lo_dice(con):
+    procedencia.registrar(con, version="aaaaaaa")
+    assert procedencia.leer(con)["sistema"] is None

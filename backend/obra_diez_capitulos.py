@@ -226,26 +226,22 @@ def preparar(con):
     migraciones.migrar(con)
     # Con que codigo **y con que brief**: las dos mitades del par que permite
     # repetir una tanda exactamente en vez de aproximadamente.
-    procedencia.registrar(con, brief=BRIEF.huella)
+    procedencia.registrar(con, brief=BRIEF.huella,
+                          sistema=SISTEMA.huella)
     for m in (repo, aplicar, memoria, deltas, usos, observabilidad):
         m.asegurar_tablas(con)
     aplicar.sembrar(con, PERSONAS)
     mundo.sembrar_lugares(con, ACCESOS)
 
-    # El alta de la obra y de sus capitulos, con su orden. Es lo que
-    # `asignar_t_discurso` necesita para numerar el orden de lectura de la obra
-    # entera: sin capitulos registrados no hay forma de saber cual va antes, y
-    # **no se adivina**.
-    brief.asegurar_tablas(con)
-    with con:
-        con.execute(
-            "INSERT OR REPLACE INTO obra (id, titulo, premisa, genero) "
-            "VALUES (?, ?, ?, ?)",
-            (OBRA, BRIEF.titulo, BRIEF.premisa, BRIEF.genero))
-        for posicion, (cap, titulo, _e) in enumerate(CAPITULOS, start=1):
-            con.execute(
-                "INSERT OR REPLACE INTO capitulo (id, obra, orden, estado) "
-                "VALUES (?, ?, ?, 'abierto')", (cap, OBRA, posicion))
+    # El alta la hace **una sola funcion**, no este guion con `INSERT` a mano.
+    # La forma de la obra vive en el brief; darla de alta desde dos sitios es
+    # como vuelven a divergir (`F-56`). Los valores salen del brief y el orden
+    # de los capitulos es el de `CAPITULOS`, que es lo que
+    # `asignar_t_discurso` necesita para numerar el orden de lectura.
+    brief.alta_de_obra(
+        con, OBRA,
+        {"titulo": BRIEF.titulo, "premisa": BRIEF.premisa, "genero": BRIEF.genero},
+        [cap for cap, _t, _e in CAPITULOS])
 
     for cap, _titulo, escenas in CAPITULOS:
         repo.guardar_escaleta(con, OBRA, [
@@ -345,7 +341,9 @@ def main():
     print("escenas SIN resumen (F-41): {0}{1}".format(
         len(sin_resumen), " -> " + ", ".join(sin_resumen) if sin_resumen else ""))
     print("minutos: {0:.1f}".format((time.time() - arranque) / 60))
-    print("codigo con el que se escribio:", procedencia.leer(con)["version"])
+    _p = procedencia.leer(con)
+    print("procedencia -> codigo {0} | brief {1} | sistema {2}".format(
+        _p["version"], _p["brief"], _p["sistema"]))
 
     # Lo que decide si el cero de `INV-03` es limpio o es ausencia de material
     # (`F-30`, `F-52`). Sin esto, un cero de bloqueos no se puede interpretar.
@@ -383,7 +381,13 @@ def main():
         print("escenas con recorte: {0} de {1}".format(recortes, len(medidas)))
 
     print("\n=== EL CANON ===")
-    establecidos = repo.hechos_declarados(con, CAPITULOS[0][0])
+    # `OBRA` y no un capitulo: los hechos se declaran una vez para la obra
+    # entera. Con el identificador de capitulo esto devolvia `[]` y la seccion
+    # del canon salia **en blanco** — que es justo la que se lee para juzgar si
+    # la generacion funciono, y la misma que `F-39` ya dejo muda una vez por
+    # otra causa. Un canon vacio se lee como "no se establecio nada" y no como
+    # "la consulta pregunto por otra cosa".
+    establecidos = repo.hechos_declarados(con, OBRA)
     for h in establecidos:
         print("  {0:24} {1}".format(h["id"], h["establecido_en"] or "SIN ESTABLECER"))
     print("entradas de conocimiento:", len(mundo.leer(con)["conocimiento"]))
