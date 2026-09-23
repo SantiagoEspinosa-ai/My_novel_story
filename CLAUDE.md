@@ -57,7 +57,9 @@ Escritor recibía la lista de tamaños de los bloques en vez de su texto, en tod
 escenas: lo enviado era mucho menos que 1.339 tokens y no llevaba ni la premisa. Desde el
 arreglo lo montado y lo enviado coinciden, pero **el contexto enviado está sin medir**: se
 mide en la primera ejecución real de la novela regalo, y hasta entonces 1.339 no dice cuánto
-sobra.
+sobra. **Primera medida (E13): 419 tokens estimados** para el capítulo 1 de la novela regalo.
+Sesga hacia abajo: es el primer capítulo, sin capítulo anterior ni resúmenes, que son los
+bloques que más crecen. Todavía no dice cuánto se envía a mitad de novela.
 
 Nunca se manda el texto completo de la obra **al modelo**. El límite de 100.000 tokens es sobre **lo que se envía en una llamada**, no sobre lo que el código lee de la base: una comprobación determinista puede leer el texto de un capítulo para medirlo —`INV-15` calcula así la distancia estilométrica— sin tocar el presupuesto. Si una **llamada al modelo** parece necesitar la obra entera, el fallo está en los resúmenes o en la recuperación, no en el presupuesto.
 
