@@ -58,6 +58,7 @@ class Generacion:
     cierre: dict | None = None
     saltadas: list = field(default_factory=list)
     sin_resumen: list = field(default_factory=list)
+    trazas_no_guardadas: list = field(default_factory=list)
     coste: dict = field(default_factory=lambda: {
         "usd": 0.0, "delegaciones": 0, "sin_coste": 0})
 
@@ -339,6 +340,10 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                            acta=_acta_de_la_escena(escena, obra_id,
                                                    material["hechos"]))
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
+        # `F-49`: la traza sobrevive al proceso. Es lo que hace que la
+        # contencion de `PC-9` -saber que bloques quedaron fuera- valga
+        # tambien para el diagnostico de despues, que es cuando se hace.
+        g.trazas_no_guardadas.extend(ciclo.guardar_trazas(con, c))
         _acumular_coste(g, c.trazas)
         if c.generacion is not None and c.generacion.version is not None:
             intentos.append((c.generacion.version, c.generacion.hallazgos, c))

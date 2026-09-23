@@ -646,3 +646,16 @@ def test_el_capitulo_dos_arranca_con_la_memoria_del_capitulo_uno(con):
         "la primera escena del capitulo dos arranca sin memoria del uno")
     assert not material["escena_anterior"], (
         "pero la escena anterior si se queda en su capitulo")
+
+
+def test_las_trazas_de_la_obra_sobreviven_al_proceso(con):
+    """`F-49`: la traza se construia en memoria y **nadie la escribia**, asi
+    que la contencion de `PC-9` -saber que bloques quedaron fuera cuando un
+    agente inventa- solo valia dentro de la misma ejecucion. Y el diagnostico
+    siempre se hace despues."""
+    from app.features.observabilidad import repository as obs
+
+    obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
+    trazas = obs.trazas_de(con, "e1")
+    assert {t["agente"] for t in trazas} == {"escritor", "juez", "resumidor"}, (
+        "las tres delegaciones del ciclo, no solo la del Escritor")

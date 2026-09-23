@@ -216,6 +216,30 @@ def texto_de(con, escena_id, version):
                        (escena_id, version)).fetchone()[0]
 
 
+def guardar_trazas(con, c):
+    """Escribe las trazas del ciclo, que hasta `F-49` morian con el proceso.
+
+    Va aqui y no en `bucle.py` porque el ciclo es quien las tiene todas: la
+    del Escritor, la del Juez y la del Resumidor. Guardarlas por separado
+    dejaria fuera las de los agentes que `bucle.py` no ve.
+
+    No revienta el ciclo si falla: perder una traza es malo y **perder la
+    escena por no poder anotarla es peor**. Lo que no hace es callarse: el
+    fallo sube como aviso en el resultado.
+    """
+    from app.features.observabilidad import repository as obs
+
+    fallos = []
+    for t in c.trazas:
+        if t is None:
+            continue
+        try:
+            obs.guardar_traza(con, t)
+        except Exception as e:  # noqa: BLE001 - se reporta, no se traga
+            fallos.append("{0}: {1}".format(getattr(t, "agente", "?"), e))
+    return fallos
+
+
 def coste_total(trazas):
     """Lo que costo el ciclo, sumando lo medido y **diciendo qué falta**."""
     medidos = [t for t in trazas if getattr(t, "tokens_estimados", None)]
