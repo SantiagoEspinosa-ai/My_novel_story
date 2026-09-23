@@ -34,6 +34,7 @@ from app.commons.configuracion import carga
 from app.commons.db import migraciones, procedencia
 from app.commons.modelo import proveedor
 from app.features.consolidacion import deltas
+from app.features.cronologia import consultas
 from app.features.cronologia import repository as usos
 from app.features.observabilidad import repository as observabilidad
 from app.features.consolidacion import aplicar, memoria, mundo
@@ -353,10 +354,14 @@ def main():
         d = json.loads(fila[0]) if fila[0] else {}
         acciones += len(d.get("acciones") or [])
         revelaciones += len(d.get("revelaciones") or [])
-    print("acciones declaradas en toda la obra:", acciones,
-          "  <- lo que INV-03 compara")
-    print("revelaciones declaradas:", revelaciones,
-          "  <- lo que alimenta el registro")
+    filas = con.execute("SELECT COUNT(*) FROM delta_de_escena").fetchone()[0]
+    print("acciones declaradas: {0}, leidas de {1} delta(s) de la obra {2}"
+          "  <- lo que INV-03 compara".format(acciones, filas, OBRA))
+    print("revelaciones declaradas: {0}, de los mismos {1} delta(s)"
+          "  <- lo que alimenta el registro".format(revelaciones, filas))
+    if filas == 0:
+        print("  AVISO: cero deltas guardados. Los dos numeros de arriba son")
+        print("  el resultado de no haber mirado nada, no una medida.")
     if acciones == 0:
         print("  AVISO: cero acciones significa que INV-03 no tuvo NADA que")
         print("  mirar. Su cero de bloqueos no dice que la obra este limpia.")
@@ -380,6 +385,35 @@ def main():
         recortes = sum(1 for m in medidas if m["recortes"])
         print("escenas con recorte: {0} de {1}".format(recortes, len(medidas)))
 
+    # Pregunta 3: puede la verificacion formal correr sobre esto. Sin eventos
+    # con `t_fabula` legible no hay eje de fabula que comparar, y Lean diria
+    # "0 violaciones" sobre una obra que no ha mirado (`F-54`).
+    print("\n=== LA CRONOLOGIA (puede correr la verificacion formal?) ===")
+    try:
+        eventos = usos.eventos_de(con, OBRA)
+        con_fecha = [e for e in eventos if e.get("t_fabula")]
+        print("{0} evento(s) de la obra {1}, {2} con `t_fabula` legible".format(
+            len(eventos), OBRA, len(con_fecha)))
+        if not eventos:
+            print("  AVISO: sin eventos, las cuatro invariantes de Lean no")
+            print("  pueden decir nada. Un cero suyo no seria un cero limpio.")
+    except Exception as e:
+        print("  no se pudo consultar:", type(e).__name__, e)
+
+    # Pregunta 4: cuanto arrastra cambiar un hecho. Decide entre `S-1` y `S-2`
+    # con un numero en vez de a ojo, y si `menciona` entra en la regeneracion.
+    print("\n=== ARRASTRE POR HECHO (S-1 contra S-2) ===")
+    try:
+        ids = [h for h, _ in HECHOS]
+        for h in ids:
+            caps = consultas.capitulos_a_regenerar(con, h)
+            print("  {0:24} regenera {1} capitulo(s)".format(h, len(caps)))
+        print(" con mencion:",
+              json.dumps(consultas.arrastre_de_incluir_mencion(con, ids),
+                         ensure_ascii=False)[:300])
+    except Exception as e:
+        print("  no se pudo consultar:", type(e).__name__, e)
+
     print("\n=== EL CANON ===")
     # `OBRA` y no un capitulo: los hechos se declaran una vez para la obra
     # entera. Con el identificador de capitulo esto devolvia `[]` y la seccion
@@ -388,6 +422,12 @@ def main():
     # otra causa. Un canon vacio se lee como "no se establecio nada" y no como
     # "la consulta pregunto por otra cosa".
     establecidos = repo.hechos_declarados(con, OBRA)
+    print("{0} hecho(s) declarado(s) para la obra {1}".format(
+        len(establecidos), OBRA))
+    if not establecidos:
+        print("  AVISO: la obra no tiene hechos declarados. Esta seccion ha")
+        print("  salido muda tres veces por tres causas distintas, asi que un")
+        print("  vacio aqui es sospechoso antes que informativo.")
     for h in establecidos:
         print("  {0:24} {1}".format(h["id"], h["establecido_en"] or "SIN ESTABLECER"))
     print("entradas de conocimiento:", len(mundo.leer(con)["conocimiento"]))
