@@ -281,3 +281,26 @@ def test_si_la_obra_se_detiene_no_se_evalua_el_cierre(con):
                           *_agentes()[1:], techo=1_000_000)
     assert g.parada is not None
     assert g.cierre is None
+
+
+def test_la_generacion_acumula_el_coste_y_dice_que_delegaciones_no_lo_traen(con):
+    """El coste **se lee, no se deduce** (`F-25`): el volumen no lo predice,
+    porque el precio del modelo pesa mas que la cantidad de tokens.
+
+    Y las delegaciones sin cifra se cuentan aparte en vez de sumar cero: un
+    cero se lee como un dato y un hueco no.
+    """
+    class ConCoste(Devuelve):
+        def llamar(self, prompt):
+            r = dict(self._r)
+            r["medidas"] = {"modelos": ["m"], "tokens_entrada": 5,
+                            "tokens_salida": 5, "coste_usd": 0.01}
+            return r
+
+    agentes = (DobleDelModelo(),
+               ConCoste({"veredicto": "PASA", "problemas": []}),
+               ConCoste({"texto": "R. " * 10, "hechos_clave": []}))
+    g = obra.generar_obra(con, "cap-1", *agentes, techo=1_000_000, hasta=1)
+    assert g.coste["usd"] == pytest.approx(0.02), "las dos que lo traen"
+    assert g.coste["sin_coste"] == 1, "el escritor doble no lo trae"
+    assert g.coste["delegaciones"] == 3

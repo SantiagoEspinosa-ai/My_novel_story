@@ -47,6 +47,8 @@ class Generacion:
     rendidas: list = field(default_factory=list)
     delegaciones: int = 0
     cierre: dict | None = None
+    coste: dict = field(default_factory=lambda: {
+        "usd": 0.0, "delegaciones": 0, "sin_coste": 0})
 
     @property
     def llego_al_final(self):
@@ -196,11 +198,33 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material,
                            hechos=[h["id"] for h in material["hechos"]],
                            problemas=_problemas_de(intentos))
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
+        _acumular_coste(g, c.trazas)
         if c.generacion is not None and c.generacion.version is not None:
             intentos.append((c.generacion.version, c.generacion.hallazgos, c))
         if c.fallo or not c.generacion.hallazgos:
             break
     return c, intentos
+
+
+def _acumular_coste(g, trazas):
+    """Lo que se ha pagado, **leido y no deducido**.
+
+    `F-25`: el volumen no predice el coste. El Resumidor gasto 1.872 tokens y
+    costo 0,0294 $; el Juez gasto 1.567 y costo 0,0689 — mas del doble con
+    menos volumen, porque el precio del modelo pesa mas que la cantidad.
+
+    Las delegaciones que no traen cifra **se cuentan aparte** en vez de sumar
+    cero: un cero se lee como un dato y un hueco no.
+    """
+    for t in trazas:
+        if t is None:
+            continue
+        g.coste["delegaciones"] += 1
+        usd = (getattr(t, "medidas", None) or {}).get("coste_usd")
+        if usd is None:
+            g.coste["sin_coste"] += 1
+        else:
+            g.coste["usd"] += usd
 
 
 def _problemas_de(intentos):

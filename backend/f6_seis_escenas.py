@@ -56,13 +56,24 @@ HECHOS = [
     {"id": "hec-peldano-de-mas", "enunciado": "La escalera tiene un peldano mas al bajar"},
 ]
 
+# `SPEC-18` C-2: el POV es del plan. Antes no se declaraba y el modelo elegia
+# -y eligio a Ana con la escaleta pidiendo Marta (`F-34`)-.
 ESCALETA = [
-    (1, "cordura", "Marta recorre la casa heredada y cuenta los peldanos."),
-    (2, "seguridad", "Marta encuentra el sotano cerrado y no aparece la llave."),
-    (3, "conocimiento", "Ana llega y niega lo que Marta cree haber visto."),
-    (4, "vinculo", "Las hermanas discuten; Marta deja de contarle lo que ve."),
-    (5, "control", "Marta fuerza la puerta del sotano."),
-    (6, "cordura", "Lo que hay abajo es exactamente lo que Marta esperaba."),
+    (1, "cordura", "lug-salon", "Marta recorre la casa heredada y cuenta los peldanos."),
+    (2, "seguridad", "lug-pasillo", "Marta encuentra el sotano cerrado y no aparece la llave."),
+    (3, "conocimiento", "lug-salon", "Ana llega y niega lo que Marta cree haber visto."),
+    (4, "vinculo", "lug-cocina", "Las hermanas discuten; Marta deja de contarle lo que ve."),
+    (5, "control", "lug-pasillo", "Marta fuerza la puerta del sotano."),
+    (6, "cordura", "lug-sotano", "Lo que hay abajo es exactamente lo que Marta esperaba."),
+]
+
+# `SPEC-17` C-1: quien sabe que **antes de la escena 1**. Sin esto el registro
+# arranca vacio y ninguna accion es posible en la primera escena (`F-32`):
+# Marta heredo la casa antes del relato, y eso no lo revela ninguna escena.
+CONOCIMIENTO_INICIAL = [
+    {"sujeto": "per-marta", "hecho": "hec-herencia", "grado": "sabe"},
+    {"sujeto": "per-ana", "hecho": "hec-herencia", "grado": "sabe"},
+    {"sujeto": "per-marta", "hecho": "hec-reloj-sin-cuerda", "grado": "ignora"},
 ]
 
 
@@ -78,9 +89,11 @@ def main():
     repo.guardar_escaleta(con, "cap-1", [
         {"id": "e{0}".format(n), "orden": n,
          "cambio_de_valor": {"eje": eje, "signo": "negativo"},
+         "pov": "per-marta", "lugar": lugar,
          "beats": ["b{0}".format(n)], "longitud_objetivo": [300, 900]}
-        for n, eje, _ in ESCALETA])
+        for n, eje, lugar, _ in ESCALETA])
     repo.declarar_hechos(con, "cap-1", HECHOS)
+    mundo.sembrar_conocimiento(con, CONOCIMIENTO_INICIAL)
 
     escritor = proveedor.SesionDelegada(agente="escritor")
     juez = ciclo.juez_aislado()
@@ -104,6 +117,15 @@ def main():
         print("  {0:22} {1}".format(
             h["id"], h["establecido_en"] or "SIN ESTABLECER"))
     print("entradas de conocimiento:", len(mundo.leer(con)["conocimiento"]))
+
+    print("\n=== RENDICIONES, COSTE Y CIERRE ===")
+    print("escenas rendidas:", g.rendidas or "ninguna")
+    print("delegaciones:", g.coste["delegaciones"],
+          "| con coste medido:", g.coste["delegaciones"] - g.coste["sin_coste"],
+          "| SIN MEDIR:", g.coste["sin_coste"])
+    print("coste leido: {0:.4f} USD".format(g.coste["usd"]))
+    print("cierre:", json.dumps(g.cierre, ensure_ascii=False)[:300] if g.cierre
+          else "no se evalua: la obra se detuvo")
 
     print("\nescenas completas:", len(g.escenas_hechas))
     print("parada:", json.dumps(g.parada, ensure_ascii=False)[:400] if g.parada
