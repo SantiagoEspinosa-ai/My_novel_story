@@ -144,4 +144,29 @@ def verificar(escena, delta, mundo):
         h.append(_hallazgo("INV-17", escena["id"],
                            "{0} palabras, fuera del rango {1}-{2}".format(
                                palabras, rango[0], rango[1])))
+    # `INV-18` (`SPEC-19`): lo que el plan prometio contra lo que el delta
+    # entrego. Es la primera invariante que mira el **plan**: las diecisiete
+    # anteriores miran el texto, el delta o el estado.
+    #
+    # Es una diferencia de conjuntos, y por eso es una regla y no un juez. El
+    # defecto que caza es el de `F-37`: la escaleta prometia que la escena
+    # establecia un hecho, el texto se escribio y el delta no lo declaro, asi
+    # que `INV-03` acabo bloqueando dos escenas despues **por la consecuencia**.
+    #
+    # Solo mira una de las dos diferencias. Lo entregado y no prometido **no es
+    # un defecto**: `SPEC-15` P-4 decidio que un hecho que el plan no previo se
+    # permite y se marca, y contradecirlo aqui seria reabrir esa decision por
+    # la puerta de atras.
+    prometidos = set()
+    for b in escena.get("beats") or []:
+        # Los `beats` siguen siendo prosa **y ademas** pueden llevar
+        # referencias, asi que una escaleta antigua trae cadenas aqui.
+        if isinstance(b, dict):
+            prometidos.update(b.get("establece") or [])
+    entregados = {r["hecho"] for r in (delta or {}).get("revelaciones", [])}
+    for hecho in sorted(prometidos - entregados):
+        h.append(_hallazgo("INV-18", escena["id"],
+                           "los beats prometian establecer {0} y el delta no lo "
+                           "declara; el texto puede haberlo hecho igual, lo que "
+                           "consta mal es el delta".format(hecho)))
     return h

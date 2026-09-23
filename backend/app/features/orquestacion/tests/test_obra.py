@@ -380,3 +380,22 @@ def test_la_instruccion_se_distingue_de_un_hallazgo_en_el_prompt(con):
     prompt = escritor.llamadas[0]
     assert "haz esto otro" in prompt
     assert "PERSONA" in prompt.upper() or "HUMANA" in prompt.upper()
+
+
+# --- SPEC-19 de punta a punta: prometer, pedirlo y comprobarlo ------------
+
+def test_lo_que_el_beat_promete_llega_al_prompt_y_se_comprueba(con):
+    """`F-37` completo: sin las dos mitades esto no funciona. Si solo se
+    comprueba, es un rechazo merecido e inutil (Regla 4); si solo se pide, no
+    hay nada que detecte que no se hizo."""
+    with con:
+        con.execute("""UPDATE escena SET beats='[{"id": "b1", "establece":
+                       ["hec-sotano"]}]' WHERE id='e1'""")
+    escritor = DobleDelModelo()
+    g = obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                          techo=1_000_000, hasta=1, tope_intentos=1)
+    assert "hec-sotano" in escritor.llamadas[0], "el plan se lo pide"
+    abiertos = repo.hallazgos_abiertos(con, "e1")
+    assert any(h["invariante"] == "INV-18" for h in abiertos), (
+        "y el doble no lo declara, asi que se detecta en la misma escena")
+    assert g.rendidas, "un mayor no detiene: se rinde tras agotar intentos"

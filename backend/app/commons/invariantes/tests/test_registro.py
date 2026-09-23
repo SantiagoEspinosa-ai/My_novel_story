@@ -21,9 +21,11 @@ from app.commons.invariantes.severidad import (
 )
 
 
-def test_estan_las_diecisiete_y_sin_huecos():
+def test_estan_las_dieciocho_y_sin_huecos():
+    """Un hueco significa que se borro una invariante publicada, y en este
+    proyecto lo que deja de aplicar se marca obsoleto pero no se quita."""
     ids = sorted(registro.TODAS)
-    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 18)]
+    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 19)]
 
 
 def test_la_clasificacion_es_la_de_definitions():
@@ -33,6 +35,10 @@ def test_la_clasificacion_es_la_de_definitions():
     assert registro.TODAS["INV-10"].tipo is enums.TipoDeVerificador.JUEZ_LLM
     assert registro.TODAS["INV-17"].severidad is enums.Severidad.MAYOR
     assert registro.TODAS["INV-17"].nivel is enums.NivelDeEvaluacion.ESCENA
+    # `INV-18` es `mayor` y no `bloqueante`: lo que falta es una declaracion,
+    # no una falsedad, asi que no corrompe el canon (`SPEC-19` P-2).
+    assert registro.TODAS["INV-18"].severidad is enums.Severidad.MAYOR
+    assert registro.TODAS["INV-18"].tipo is enums.TipoDeVerificador.REGLA
 
 
 def test_solo_una_invariante_es_de_juez():

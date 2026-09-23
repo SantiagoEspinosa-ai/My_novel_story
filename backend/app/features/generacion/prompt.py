@@ -59,7 +59,7 @@ IDENTIFICADORES QUE PUEDES CITAR EN EL DELTA
 Usa SOLO estos. Son identificadores, no descripciones: si lo que quieres decir
 no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
 {identificadores}
-
+{establece}
 {problemas}{instrucciones}FORMATO DE LA RESPUESTA
 Devuelve un unico objeto JSON con dos claves:
   "texto": la escena, en prosa.
@@ -91,6 +91,13 @@ No expliques el JSON ni lo envuelvas en vallas de bloque de codigo.
 
 SIN_PROBLEMAS = ""
 SIN_INSTRUCCIONES = ""
+SIN_ESTABLECER = ""
+CON_ESTABLECER = """
+ESTA ESCENA TIENE QUE ESTABLECER ESTOS HECHOS
+El plan dice que es aqui donde el lector se entera de esto. Escribelos en el
+texto y **declaralos en `revelaciones`**, con el sujeto que se entera.
+{lista}
+"""
 CON_INSTRUCCIONES = """INSTRUCCIONES DE UNA PERSONA SOBRE ESTA ESCENA
 Esto no lo levanto ninguna regla: lo escribio quien supervisa la obra. Tiene
 prioridad sobre tu criterio.
@@ -104,7 +111,8 @@ CON_PROBLEMAS = """PROBLEMAS DEL INTENTO ANTERIOR QUE HAY QUE CORREGIR
 
 
 def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
-              personajes=None, hechos=None, instrucciones=None) -> str:
+              personajes=None, hechos=None, instrucciones=None,
+              establece=None) -> str:
     """Los problemas del intento anterior entran en el prompt, no en un aviso.
 
     En la otra rama el aviso de longitud lo leia la sesion orquestadora y no el
@@ -121,6 +129,13 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
     # los problemas: un hallazgo lo levanto una regla y una instruccion la
     # escribio una persona. Mezclarlos haria que el modelo no supiera cual es
     # cual, y que quien lea la traza no pueda saber de donde salio cada cosa.
+    # `SPEC-19` P-5 / Regla 4, por tercera vez: si no le decimos que hechos
+    # tiene que establecer, exigirle en el contrato que los declare es pedirle
+    # lo imposible, y `INV-18` seria un rechazo merecido e inutil.
+    bloque_establece = SIN_ESTABLECER
+    if establece:
+        bloque_establece = CON_ESTABLECER.format(
+            lista="\n".join("- " + str(e) for e in sorted(establece)))
     bloque_humano = SIN_INSTRUCCIONES
     if instrucciones:
         bloque_humano = CON_INSTRUCCIONES.format(
@@ -137,6 +152,7 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
         objetivo=objetivo,
         problemas=bloque,
         instrucciones=bloque_humano,
+        establece=bloque_establece,
     )
 
 

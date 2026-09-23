@@ -85,7 +85,25 @@ def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None,
         # lista, asi que nunca habia ninguna.
         hechos=sorted(hechos or []),
         instrucciones=instrucciones,
+        # `SPEC-19` P-5: lo que el plan prometio que esta escena establece.
+        # Sale de los `beats`, que desde `SPEC-19` pueden llevar referencias
+        # ademas de prosa.
+        establece=_prometidos(escena),
     )
+
+
+def _prometidos(escena):
+    """Los hechos que los `beats` de esta escena prometen establecer.
+
+    Los `beats` siguen siendo prosa **y ademas** pueden llevar referencias, asi
+    que una escaleta antigua trae cadenas donde esto espera diccionarios y hay
+    que tolerarlo sin romper.
+    """
+    salida = set()
+    for b in escena.get("beats") or []:
+        if isinstance(b, dict):
+            salida.update(b.get("establece") or [])
+    return sorted(salida)
 
 
 def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,

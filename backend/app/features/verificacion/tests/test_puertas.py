@@ -200,3 +200,49 @@ def test_inv03_la_revelacion_de_otro_no_habilita_mi_accion():
              "acciones": [{"personaje": "marta", "hecho": "hec-9"}]}
     h = puertas.verificar(_escena_de_conocimiento(), delta, _mundo())
     assert any(x.invariante == "INV-03" for x in h)
+
+
+# --- SPEC-19 / INV-18: lo prometido contra lo entregado -------------------
+
+def _escena_que_promete(establece):
+    return {"id": "e2", "cambio_de_valor": {"eje": "cordura", "signo": "negativo"},
+            "pov": "marta", "lugar": "salon", "pov_usado": "marta",
+            "beats": [{"id": "b1", "establece": establece}]}
+
+
+def test_inv18_un_hecho_prometido_y_no_entregado_es_hallazgo():
+    """`F-37` tal cual ocurrio: la escaleta decia "Marta encuentra el sotano
+    cerrado", el texto paso todas las puertas y el hecho quedo sin establecer.
+    Dos escenas despues `INV-03` bloqueo por la consecuencia."""
+    h = puertas.verificar(_escena_que_promete(["hec-sotano"]), {}, _mundo())
+    inv18 = [x for x in h if x.invariante == "INV-18"]
+    assert inv18 and inv18[0].severidad is Severidad.MAYOR
+    assert "hec-sotano" in inv18[0].descripcion
+
+
+def test_inv18_si_el_delta_lo_declara_no_hay_hallazgo():
+    delta = {"revelaciones": [{"sujeto": "marta", "hecho": "hec-sotano"}]}
+    h = puertas.verificar(_escena_que_promete(["hec-sotano"]), delta, _mundo())
+    assert not any(x.invariante == "INV-18" for x in h)
+
+
+def test_inv18_no_dice_nada_de_lo_entregado_y_no_prometido():
+    """`SPEC-15` P-4 ya decidio que un hecho que el plan no previo **se permite
+    y se marca**. Convertirlo aqui en defecto contradiria esa decision."""
+    delta = {"revelaciones": [{"sujeto": "marta", "hecho": "hec-improvisado"}]}
+    h = puertas.verificar(_escena_que_promete([]), delta, _mundo())
+    assert not any(x.invariante == "INV-18" for x in h)
+
+
+def test_inv18_una_escena_sin_promesas_no_produce_nada():
+    """`establece[]` es opcional: la mayoria de beats no añaden al canon."""
+    assert not any(x.invariante == "INV-18"
+                   for x in puertas.verificar(_escena_que_promete([]), {}, _mundo()))
+
+
+def test_inv18_beats_en_prosa_no_rompen_la_comprobacion():
+    """Los `beats` siguen siendo prosa **y ademas** pueden llevar referencias.
+    Una escaleta antigua tiene cadenas donde esta espera diccionarios."""
+    esc = dict(_escena_que_promete([]), beats=["Marta baja al sotano"])
+    assert not any(x.invariante == "INV-18"
+                   for x in puertas.verificar(esc, {}, _mundo()))

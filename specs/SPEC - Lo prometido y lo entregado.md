@@ -1,9 +1,11 @@
 ---
 id: SPEC-19
 titulo: Los beats declaran qué hechos establecen, y algo cruza lo prometido con lo entregado
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-23
+fecha_aplicacion: 2026-09-23
+commit_de_aplicacion: PENDIENTE
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
 version: 1
@@ -113,3 +115,10 @@ es la que obliga a declarar el punto ciego de `C-3`.
 | 3 | ¿Qué pasa con un hecho prometido en un beat de `e2` que el delta de `e4` sí declara? | **Se resuelve y deja de contar.** La promesa era *que se establezca*, no *dónde*. Lo contrario convertiría un reordenamiento narrativo legítimo en un defecto permanente |
 | 4 | ¿Un beat puede prometer un hecho que ninguna otra escena establece nunca? | Sí durante la obra, **no al firmarla**. Es el defecto que `SPEC-15` C-3 nombró y esta spec le da por fin con qué detectarlo |
 | 5 | ¿`establece[]` va en el prompt del Escritor? | **Sí, y es media spec.** Si no le decimos qué hechos tiene que establecer esta escena, exigirle que los declare es pedirle lo imposible (Regla 4), y la comprobación nueva sería merecida e inútil |
+
+Las cinco se respondieron el 2026-09-23. La **5 se resolvió en la dirección de la Regla 4 y
+no es un detalle de implementación**: es la tercera vez que el proyecto tropieza con lo
+mismo —`F-21` con los identificadores, `F-34` con el POV, y ahora los hechos a establecer—.
+El patrón ya no admite duda: **cada vez que se añade algo que el contrato exige, hay que
+preguntarse si el prompt lo pide**, porque exigir sin pedir produce un rechazo merecido e
+inútil, y el sistema se para por una causa que nadie nombró.

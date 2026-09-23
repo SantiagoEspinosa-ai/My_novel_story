@@ -32,7 +32,8 @@ CONSTANTS
     MaxRegeneraciones,            \* Cota de cambios pedidos por el lector.
     ExigirValidacionCompleta,     \* FALSE = codigo de hoy (ACEPTADO_POR_PUNTUACION).
     PublicarAlAgotarTope,         \* TRUE  = codigo de hoy (regla 6: "ensambla lo que haya").
-    ConservarVersionAlRegenerar   \* FALSE = regenerar pisa la salida anterior.
+    ConservarVersionAlRegenerar,  \* FALSE = regenerar pisa la salida anterior.
+    ReanudarPorCursor             \* FALSE = codigo de hoy (se re-deriva del disco).
 
 Capitulos == 1..NumCapitulos
 
@@ -240,20 +241,38 @@ Caer ==
     /\ UNCHANGED <<actual, intentos, estadoCap, checkpoint, versiones,
                    regeneraciones, topeAgotado>>
 
-\* La reanudacion se guia por el CONJUNTO de capitulos cerrados, no por el
-\* cursor `checkpoint.actual`. Es lo que dice `EJECUCION.md` 6 ("los capitulos
-\* ya aprobados no se regeneran"; "un capitulo que no llego a generarse se
-\* queda pendiente"), y es lo que hace que no se duplique ni se pierda nada:
-\* un cursor puede quedarse desfasado respecto a lo que hay en disco, un
-\* conjunto no.
+(***************************************************************************)
+(* LAS DOS FORMAS DE REANUDAR, Y POR QUE HAY DOS.                          *)
+(*                                                                          *)
+(* ReanudarPorCursor = FALSE es el codigo de hoy. `siguiente_paso` de       *)
+(*   `src/orquestacion.py` lo dice en su docstring: "la decision se toma    *)
+(*   SIEMPRE mirando el disco, nunca un valor recordado". El texto de cada  *)
+(*   intento se escribe en `salida/.tmp/cap-NN-intento-M.md` ANTES de       *)
+(*   validarlo (EJECUCION.md 3.5b), asi que una caida no se lo lleva: al    *)
+(*   volver, el capitulo sigue escrito y lo que toca es validarlo.          *)
+(*                                                                          *)
+(* ReanudarPorCursor = TRUE es la alternativa que parece razonable y no lo  *)
+(*   es: fiarse de `checkpoint.actual` y dar por perdido el trabajo en      *)
+(*   vuelo. Se modela para PODER ROMPERLA. Sin esta rama, las invariantes   *)
+(*   de reanudacion pasan sin haber sido puestas a prueba nunca, que es     *)
+(*   justo lo que `Docs/verification.md` llama un validador sin caso        *)
+(*   negativo.                                                              *)
+(***************************************************************************)
+
 Reanudar ==
     /\ fase = "caido"
-    /\ LET recuperado == [c \in Capitulos |->
-                            IF c \in checkpoint.cerrados THEN estadoCap[c] ELSE "pendiente"]
-           prox == SiguientePendienteEn(recuperado)
-       IN /\ estadoCap' = recuperado
-          /\ actual' = prox
-          /\ fase' = FaseTras(prox)
+    /\ IF ReanudarPorCursor
+       THEN LET recuperado == [c \in Capitulos |->
+                                  IF c \in checkpoint.cerrados
+                                  THEN estadoCap[c] ELSE "pendiente"]
+            IN /\ estadoCap' = recuperado
+               /\ actual' = checkpoint.actual
+               /\ fase' = FaseTras(checkpoint.actual)
+       ELSE LET escritos == {c \in Capitulos : estadoCap[c] = "escrito"}
+                prox     == SiguientePendienteEn(estadoCap)
+            IN /\ estadoCap' = estadoCap
+               /\ actual' = IF escritos # {} THEN Menor(escritos) ELSE prox
+               /\ fase'   = IF escritos # {} THEN "validacion" ELSE FaseTras(prox)
     /\ UNCHANGED <<intentos, checkpoint, versiones, caidas, regeneraciones,
                    topeAgotado>>
 

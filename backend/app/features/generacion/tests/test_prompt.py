@@ -74,3 +74,28 @@ def test_el_prompt_dice_que_pov_se_planifico():
         personajes=["per-marta", "per-ana"], hechos=[])
     assert "per-marta" in texto
     assert "pov_usado" in texto, "y hay que pedir que lo declare de vuelta"
+
+
+def test_el_prompt_dice_que_hechos_tiene_que_establecer_esta_escena():
+    """`SPEC-19` P-5, y la Regla 4 **por tercera vez**: `F-21` con los
+    identificadores, `F-34` con el POV, y ahora los hechos a establecer.
+    Exigir en el contrato lo que el prompt no pide produce un rechazo merecido
+    e inutil, y el sistema se para por una causa que nadie nombro."""
+    texto = prompt.construir(
+        parametros={"escena": "e2", "longitud_objetivo": [300, 900],
+                    "pov": "per-marta"},
+        estado={"contexto": []}, objetivo="{}", problemas=None,
+        personajes=["per-marta"], hechos=["hec-sotano", "hec-llave"],
+        establece=["hec-sotano"])
+    assert "hec-sotano" in texto
+    minusculas = texto.lower()
+    assert "establec" in minusculas, "tiene que decir que hay que establecerlos"
+
+
+def test_sin_hechos_que_establecer_el_prompt_no_lo_pide():
+    """`establece[]` es opcional: la mayoria de escenas no prometen nada."""
+    texto = prompt.construir(
+        parametros={"escena": "e2", "pov": "per-marta"},
+        estado={"contexto": []}, objetivo="{}", problemas=None,
+        personajes=["per-marta"], hechos=["hec-sotano"])
+    assert "ESTA ESCENA TIENE QUE ESTABLECER" not in texto

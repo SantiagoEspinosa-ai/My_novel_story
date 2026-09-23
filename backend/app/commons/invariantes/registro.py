@@ -109,6 +109,11 @@ _LISTA = [
        "capitulo", "menor", "regla", "Borrador.texto, AnclaDeEstilo.texto"),
     _r("INV-16", "La varianza de la curva de dread supera el minimo fijado",
        "obra", "menor", "regla", "CurvaDeDread.serie"),
+    _r("INV-18", "Todo hecho que los `beats` de una escena prometian establecer "
+       "aparece en su delta",
+       "escena", "mayor", "regla",
+       "Beat.establece[], revelaciones del delta, "
+       "HechoCanonico.escena_de_establecimiento"),
     _r("INV-17", "La longitud de la escena cae dentro de su `longitud_objetivo`",
        "escena", "mayor", "regla", "Borrador.texto, Escena.longitud_objetivo"),
 ]

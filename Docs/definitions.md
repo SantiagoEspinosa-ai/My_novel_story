@@ -48,7 +48,9 @@ La **Escena** es la unidad atómica: la unidad que se genera, se verifica y se r
 | Parte | Agrupación de capítulos con unidad dramática (acto). | **id**, **orden**, funcion\_estructural, valor\_inicial, valor\_final |
 | Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, **estado** → `estado_de_capitulo`, gancho\_de\_cierre, escenas\[\] |
 | Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo, intentos, borrador\_aceptado → Borrador |
-| Beat | Micro-unidad de cambio dentro de una escena. | **id**, tipo, valor\_antes, valor\_despues |
+| Beat | Micro-unidad de cambio dentro de una escena. | **id**, tipo, valor\_antes, valor\_despues, establece\[\] → HechoCanonico |
+
+**`Beat.establece[]` es opcional, y esa es la decisión** (`SPEC-19` C-1). No todo beat añade algo al canon: muchos mueven tensión, posición o relación. Exigirlo llenaría la escaleta de listas vacías y enseñaría a rellenarlas por inercia, que es la forma más rápida de que un campo deje de significar nada. Los identificadores tienen que existir en `Escaleta.hechos_canonicos[]`: **un beat no inventa hechos, los sitúa.**
 | ArcoNarrativo | Trayectoria de cambio de un personaje o de una tensión a lo largo de la obra. | **id**, **sujeto**, estado\_inicial, estado\_final, hitos\[\] |
 | POV | Punto de vista y distancia narrativa de una escena. | **personaje**, **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, distancia, fiabilidad |
 | MomentoNarrativo | Posición de la escena en la fábula (cronología) y en el discurso (orden de lectura). | **t\_fabula**, **t\_discurso**, duracion\_ficcional |
@@ -313,6 +315,7 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-15 | La distancia estilométrica a las anclas se mantiene bajo umbral | capitulo | menor | regla | `Borrador.texto`, `AnclaDeEstilo.texto` |
 | INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla | `CurvaDeDread.serie` |
 | INV-17 | La longitud de la escena cae dentro de su `longitud_objetivo` | escena | mayor | regla | `Borrador.texto`, `Escena.longitud_objetivo` |
+| INV-18 | Todo hecho que los `beats` de una escena prometían establecer aparece en su delta | escena | mayor | regla | `Beat.establece[]`, `revelaciones` del delta, `HechoCanonico.escena_de_establecimiento` |
 
 **La columna «Qué lee» existe para hacer verificable una regla del recorte.** `SPEC-12`
 fija que la forma reducida de un bloque de contexto **nunca puede llevarse lo que lee una
@@ -366,6 +369,10 @@ anterior había pedido acortarlo— está escrito junto a la Regla 2 de `Docs/ve
 Es `mayor` y no `menor` porque un `menor` no bloquea el cierre de capítulo desde `SPEC-04`,
 así que una escena corta entraría firmada y nadie la vería, que es exactamente el fallo que
 la motivó.
+
+**`INV-18` es la primera invariante que mira el plan** (`SPEC-19`). Las diecisiete anteriores miran el texto, el delta o el estado, y ninguna compara lo que la escaleta prometió con lo que la escena entregó. Su severidad es `mayor` porque **no corrompe el canon** —lo que falta es una declaración, no una falsedad— pero **impide cerrar el capítulo**, que es lo que corta el hueco por el que `INV-03` acababa bloqueando dos escenas después de la causa (`F-37`).
+
+**Su punto ciego, declarado como exige la Regla 2:** compara **dos declaraciones** —el plan y el delta— y no ve el texto. Un modelo que declare la revelación sin escribirla la pasa limpiamente. Eso lo cubre `INV-11`, que es un juez, y es un punto ciego distinto del que ya tenían las demás.
 
 **`sin_veredicto` pesa el máximo de la escala, no más que la escala.** La frase "pesa lo
 máximo posible" invita a leerlo como un peso que gana a cualquier combinación, y **no es
