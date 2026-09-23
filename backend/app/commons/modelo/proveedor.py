@@ -156,6 +156,10 @@ class SesionDelegada:
         # Escritor; el Juez se lanza desde uno vacio.
         self.cwd = cwd
         self._ejecutar = ejecutar or _ejecutar_proceso
+        # `SPEC-26`: lo que leen los hooks. Se fija desde fuera, por obra: la
+        # ruta de las reglas del capitulo y donde apuntar lo que nieguen.
+        self.reglas = None
+        self.entorno = {}
 
     def __repr__(self):
         return "SesionDelegada(modelo={0!r}, agente={1!r})".format(self.nombre, self.agente)
@@ -163,8 +167,13 @@ class SesionDelegada:
     def llamar(self, prompt: str) -> dict:
         """Devuelve la respuesta normalizada con sus `medidas` dentro."""
         try:
+            extra = {}
+            if self.reglas:
+                extra["reglas"] = self.reglas
+            if self.entorno:
+                extra["entorno"] = self.entorno
             salida = self._ejecutar(_resolver_ejecutable(), self.nombre,
-                                    self.agente, prompt, self.cwd)
+                                    self.agente, prompt, self.cwd, **extra)
         except FalloDeTransporte:
             raise
         except (OSError, subprocess.SubprocessError) as e:
@@ -185,7 +194,8 @@ class SesionDelegada:
         return _normalizar(sobre)
 
 
-def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None):
+def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
+                      entorno=None):
     """El prompt por **stdin**. Nunca como argumento: `cmd.exe` lo trunca.
 
     Se pide `--output-format json` porque devuelve **medidas de verdad**:
@@ -196,9 +206,17 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None):
     orden = [ejecutable, "-p", "--output-format", "json", "--model", modelo]
     if agente:
         orden += ["--agent", agente]
+    # `SPEC-26` `RF-19`: los hooks solo actuan si ven `HARNESS_AGENTE`, y solo
+    # lo ponemos aqui. Una sesion interactiva en el mismo proyecto no lo tiene.
+    env = dict(os.environ, **(entorno or {}))
+    if agente:
+        env["HARNESS_AGENTE"] = agente
+    if reglas:
+        env["HARNESS_REGLAS"] = reglas
     try:
         r = subprocess.run(orden, input=prompt, capture_output=True,
-                           text=True, encoding="utf-8", timeout=600, cwd=cwd)
+                           text=True, encoding="utf-8", timeout=600, cwd=cwd,
+                           env=env)
     except (OSError, subprocess.TimeoutExpired) as e:
         raise FalloDeTransporte(
             "la delegacion no completo: {0}".format(type(e).__name__)

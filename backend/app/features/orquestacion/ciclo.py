@@ -98,6 +98,14 @@ def preparar_directorio_aislado(definicion, nombre="juez"):
     destino.mkdir(parents=True)
     (destino / (nombre + ".md")).write_text(
         pathlib.Path(definicion).read_text(encoding="utf-8"), encoding="utf-8")
+    # `SPEC-26` `RF-18`: fuera del proyecto no hay `.claude/settings.json`, asi
+    # que el hook de policy no llegaria al Editor ni al Juez. Se escribe aqui con
+    # la ruta absoluta del script. Solo policy: validar capitulos es del Escritor.
+    policy = pathlib.Path(__file__).resolve().parents[3] / "hooks" / "policy.py"
+    (pathlib.Path(base) / ".claude" / "settings.json").write_text(json.dumps({
+        "hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
+            {"type": "command", "command": 'python "{0}"'.format(policy)}]}]}},
+        indent=2), encoding="utf-8")
     return base
 
 

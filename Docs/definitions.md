@@ -255,7 +255,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `estado_de_hecho_propuesto` | HechoPropuesto.estado | propuesto, confirmado, descartado |
 | `nivel_de_veto` | PalabraVetada.nivel | global, franja\_de\_edad, novela |
 | `tipo_de_contradiccion` | FichaDeEntrevista.contradicciones\_resueltas | edad\_frente\_a\_genero, edad\_frente\_a\_ocasion, recuerdo\_frente\_a\_edad, juicio\_del\_modelo |
-| `tipo_de_decision_de_politica` | DecisionDePolitica.tipo | coincidencia\_vetada, reescritura\_pedida, parada\_por\_vetada, instruccion\_en\_texto\_libre, contradiccion\_detectada, contradiccion\_resuelta, borrado\_al\_entregar |
+| `tipo_de_decision_de_politica` | DecisionDePolitica.tipo | coincidencia\_vetada, reescritura\_pedida, parada\_por\_vetada, instruccion\_en\_texto\_libre, contradiccion\_detectada, contradiccion\_resuelta, borrado\_al\_entregar, herramienta\_denegada |
 | `criterio_de_edicion` | ValoracionDelEditor.criterio | continuidad, tono, arco, coherencia\_de\_personajes, ritmo, personalizacion |
 
 **«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —contar también los `menciona` reescribe media novela por una alusión de paso—. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.

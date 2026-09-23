@@ -328,6 +328,8 @@ class TipoDeDecisionDePolitica(_Vocabulario):
     CONTRADICCION_DETECTADA = "contradiccion_detectada"
     CONTRADICCION_RESUELTA = "contradiccion_resuelta"
     BORRADO_AL_ENTREGAR = "borrado_al_entregar"
+    HERRAMIENTA_DENEGADA = "herramienta_denegada"
+    """`SPEC-26` `RF-18`: el hook de policy nego una herramienta a un agente."""
 
 
 class CriterioDeEdicion(_Vocabulario):
