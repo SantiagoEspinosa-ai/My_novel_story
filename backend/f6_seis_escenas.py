@@ -1,0 +1,97 @@
+"""F6 — Seis escenas seguidas, midiendo.
+
+EL CRITERIO DE TERMINACION NO ES UNA PRUEBA VERDE
+---------------------------------------------------
+Es el primero del proyecto que no lo es: **la Fase F termina cuando el contexto
+crece solo**. Una suite en verde con un contexto de 9.000 tokens ya la teniamos
+y no contestaba nada.
+
+Lo que esta ejecucion contesta:
+
+    VER-37  si el reparto por niveles de `CLAUDE.md` basta para una escena real.
+            Se midio dos veces con fixtures y las dos el contexto se quedo
+            corto, porque **a mano no se llega al techo**.
+    VER-64  con que frecuencia `INV-03` bloquea una generacion larga. No hay ni
+            una medida.
+
+Y SI SE PARA EN LA TERCERA, NO ES UN FRACASO
+----------------------------------------------
+`INV-03` es `bloqueante` y no admite rendicion: rendirse meteria un hecho falso
+en el registro de conocimiento y todas las escenas siguientes se generarian
+encima. **Una parada es el dato**, no una incidencia.
+"""
+
+import json
+import os
+import sqlite3
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from app.commons.modelo import proveedor
+from app.features.consolidacion import aplicar, memoria, mundo
+from app.features.escaleta import repository as repo
+from app.features.orquestacion import ciclo, obra
+
+RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "f6.db")
+
+INMUTABLE = """Terror domestico. Tercera persona limitada sobre Marta, pasado.
+Prosa seca; el miedo viene de lo que no se explica. Nada de sangre.
+La casa heredada no es hostil: es exacta, y eso es lo que asusta."""
+
+ACCESOS = {"lug-salon": ["lug-cocina", "lug-pasillo"],
+           "lug-cocina": ["lug-salon"],
+           "lug-pasillo": ["lug-salon", "lug-sotano", "lug-dormitorio"],
+           "lug-sotano": ["lug-pasillo"],
+           "lug-dormitorio": ["lug-pasillo"]}
+
+ESCALETA = [
+    (1, "cordura", "Marta recorre la casa heredada y cuenta los peldanos."),
+    (2, "seguridad", "Marta encuentra el sotano cerrado y no aparece la llave."),
+    (3, "conocimiento", "Ana llega y niega lo que Marta cree haber visto."),
+    (4, "vinculo", "Las hermanas discuten; Marta deja de contarle lo que ve."),
+    (5, "control", "Marta fuerza la puerta del sotano."),
+    (6, "cordura", "Lo que hay abajo es exactamente lo que Marta esperaba."),
+]
+
+
+def main():
+    if os.path.exists(RUTA):
+        os.remove(RUTA)
+    con = sqlite3.connect(RUTA)
+    for m in (repo, aplicar, memoria):
+        m.asegurar_tablas(con)
+    aplicar.sembrar(con, {"per-marta": ("vivo", "lug-salon"),
+                          "per-ana": ("vivo", "lug-cocina")})
+    mundo.sembrar_lugares(con, ACCESOS)
+    repo.guardar_escaleta(con, "cap-1", [
+        {"id": "e{0}".format(n), "orden": n,
+         "cambio_de_valor": {"eje": eje, "signo": "negativo"},
+         "beats": ["b{0}".format(n)], "longitud_objetivo": [300, 900]}
+        for n, eje, _ in ESCALETA])
+
+    escritor = proveedor.SesionDelegada(agente="escritor")
+    juez = ciclo.juez_aislado()
+    resumidor = proveedor.SesionDelegada(
+        modelo=os.environ.get("HARNESS_MODELO_RESUMIDOR", "haiku"), agente="resumidor")
+
+    g = obra.generar_obra(con, "cap-1", escritor, juez, resumidor,
+                          inmutable=INMUTABLE, techo=100_000, reserva_de_salida=20_000)
+
+    print("\n=== EL CONTEXTO, ESCENA A ESCENA (VER-37) ===")
+    print(obra.informe(g))
+    print("\n=== DESGLOSE POR BLOQUE ===")
+    if g.medidas:
+        nombres = [n for n in g.medidas[0]["bloques"] if n != "reserva_de_salida"]
+        print("escena  " + "  ".join(n[:11].rjust(11) for n in nombres))
+        for m in g.medidas:
+            print("{0:6}  ".format(m["escena"]) +
+                  "  ".join(str(m["bloques"][n]).rjust(11) for n in nombres))
+    print("\nescenas completas:", len(g.escenas_hechas))
+    print("parada:", json.dumps(g.parada, ensure_ascii=False)[:400] if g.parada
+          else "ninguna: llego al final")
+    con.close()
+
+
+if __name__ == "__main__":
+    main()
