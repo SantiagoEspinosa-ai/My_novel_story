@@ -349,6 +349,18 @@ de arrastre sacada de esa base sale **baja**, y baja no significa *arrastra poco
 sería un argumento falso. Si alguna vez se enseña un número salido de ahí, se enseña **marcado
 como suelo en el mismo sitio en que se enseña**, no en una nota al pie.
 
+**Y lo que lo hace peligroso no es que esté mal: es hacia dónde se equivoca.** Un defecto que
+hace que se registre de menos produce números que recomiendan justo la salida que menos
+trabajo cuesta. La coincidencia entre *lo que el dato roto sugiere* y *lo que apetece hacer*
+es lo que convierte un número malo en un argumento convincente, y es la razón de que un sesgo
+haya que declararlo **con su dirección** y no como una incertidumbre genérica: un sesgo
+conocido y dicho sigue siendo utilizable; uno callado decide por su cuenta.
+
+**Es el cero de `INV-03` con otra cara.** *«`INV-03` bloquea 0 de 6»* también se leía como una
+medida y era la huella de que no había llegado a mirar (`F-30`, Regla 8). Allí el hueco se
+disfrazaba de cero; aquí, de arrastre pequeño. Las dos veces el valor falso es el que
+tranquiliza.
+
 Tres consecuencias que conviene no confundir:
 
 - **El registro no está mal.** `lectura_de_contexto` apunta fielmente lo que entró; lo que
