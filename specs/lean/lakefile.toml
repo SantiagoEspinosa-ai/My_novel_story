@@ -1,0 +1,19 @@
+name = "cronologia"
+version = "0.1.0"
+defaultTargets = ["Cronologia", "verificar", "verificar-real"]
+
+# Sin Mathlib a proposito. Estas invariantes son comparaciones sobre listas
+# finitas: no hacen falta ni reales, ni topologia, ni tacticas pesadas. Mathlib
+# son varios GB y minutos de compilacion, y meterlo aqui cambiaria una
+# verificacion que tarda segundos por una que nadie va a ejecutar en CI.
+
+[[lean_lib]]
+name = "Cronologia"
+
+[[lean_exe]]
+name = "verificar"
+root = "Main"
+
+[[lean_exe]]
+name = "verificar-real"
+root = "MainReal"
