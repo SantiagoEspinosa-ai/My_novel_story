@@ -87,7 +87,7 @@ def test_la_traza_guarda_ids_y_no_texto():
     asi que sin los ids no se sabe cuales entraron aunque su contenido siga ahi.
     """
     t = traza.nueva(agente="escritor", escena="esc-1", trabajo="tr-1")
-    traza.registrar_entrada(t, fichas=[("per-marta", 7)], presagios=["pre-1"],
+    traza.registrar_entrada(t, fichas=[("per-marta", 7)], setups=["set-1"],
                             resumenes=["res-3"], prompt_hash="ab12")
     assert t.fichas == [("per-marta", 7)]
     assert t.prompt_hash == "ab12"

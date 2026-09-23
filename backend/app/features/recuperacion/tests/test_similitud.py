@@ -47,7 +47,8 @@ def test_se_indexa_una_ficha_y_se_recupera_por_cercania(con):
 
 
 def test_los_tres_tipos_del_documento_se_indexan(con):
-    """Fichas, resumenes y presagios pendientes. Ni mas ni menos."""
+    """Fichas, resumenes y setups pendientes (`SPEC-26` v3: los presagios se
+    retiraron y su sitio lo ocupa el setup, que es narrativa general)."""
     for tipo in similitud.TIPOS:
         similitud.indexar(con, tipo, "x-" + tipo, [0.0, 0.0, 0.0, 1.0])
     assert len(similitud.buscar(con, [0.0, 0.0, 0.0, 1.0], limite=10)) == 3
@@ -62,9 +63,9 @@ def test_el_texto_de_escena_no_se_puede_indexar(con):
 
 def test_se_puede_filtrar_por_tipo(con):
     similitud.indexar(con, "ficha", "per-marta", [1.0, 0.0, 0.0, 0.0])
-    similitud.indexar(con, "presagio", "pre-1", [1.0, 0.0, 0.0, 0.0])
-    solo = similitud.buscar(con, [1.0, 0.0, 0.0, 0.0], limite=10, tipo="presagio")
-    assert [c["referencia"] for c in solo] == ["pre-1"]
+    similitud.indexar(con, "setup", "set-1", [1.0, 0.0, 0.0, 0.0])
+    solo = similitud.buscar(con, [1.0, 0.0, 0.0, 0.0], limite=10, tipo="setup")
+    assert [c["referencia"] for c in solo] == ["set-1"]
 
 
 def test_reindexar_la_misma_referencia_la_sustituye(con):
@@ -86,3 +87,10 @@ def test_una_dimension_distinta_falla_al_indexar(con):
 
 def test_buscar_en_un_indice_vacio_devuelve_vacio_y_no_revienta(con):
     assert similitud.buscar(con, [1.0, 0.0, 0.0, 0.0], limite=5) == []
+
+
+def test_un_presagio_ya_no_se_indexa(con):
+    """`SPEC-26` v3 `RF-21`: retirado. Indexarlo en silencio dejaria un tipo que
+    ninguna consulta busca."""
+    with pytest.raises(ValueError):
+        similitud.indexar(con, "presagio", "pre-1", [1.0, 0.0, 0.0, 0.0])

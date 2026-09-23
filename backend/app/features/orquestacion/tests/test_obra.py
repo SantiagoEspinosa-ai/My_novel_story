@@ -733,14 +733,8 @@ def test_sin_capitulo_se_mira_la_obra_entera(con):
 # --- `SPEC-26` `RF-20`: lo que no aplica se dice ----------------------------
 
 
-def test_una_obra_de_aventura_dice_no_aplica_en_las_cinco_de_terror(con):
+def test_el_informe_dice_que_invariantes_estan_obsoletas(con):
+    """`SPEC-26` v3 `RF-20`: lo retirado se dice, no se calla."""
     g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000,
                           genero="aventura")
-    texto = obra.informe(g)
-    assert texto.count("no aplica") == 5
-    assert "INV-12 no aplica" in texto
-
-
-def test_sin_genero_el_informe_dice_que_no_se_sabe(con):
-    g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000)
-    assert "genero no declarado" in obra.informe(g)
+    assert "obsoletas: INV-10, INV-11, INV-12, INV-16" in obra.informe(g)

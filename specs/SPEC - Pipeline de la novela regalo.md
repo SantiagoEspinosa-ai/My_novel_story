@@ -5,12 +5,18 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión (sustituir por su identificador)"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 2
+version: 3
+enmienda_aprobada: 2026-09-23
 ---
 
 > **Historial.** v1: redactada con las doce respuestas, con `O-1` y `O-2`
 > abiertas. v2: el autor aprueba con las dos propuestas, que pasan a los
-> requisitos.
+> requisitos. v3 (enmienda del autor, 2026-09-23): **`INV-14` es general** —*«si
+> Deterioro se queda, su invariante también»*— y se retira lo específico de
+> terror con la lista que el autor aprobó (`RF-20` enmendado, `RF-21` nuevo).
+> Terror se conserva como género, y el brief y los guiones de las mediciones
+> antiguas se quedan: *«son la evidencia de lo medido y /docs los va a necesitar
+> para el registro de iteraciones»*.
 
 # SPEC-26 — El pipeline de la novela regalo
 
@@ -132,10 +138,22 @@ Faltan cinco cosas:
 
 ### El género
 
-- **RF-20.** Las invariantes del plano Terror (`INV-10`, `INV-11`, `INV-12`,
-  `INV-14` e `INV-16`) **solo se aplican si la obra es de terror**. En cualquier
-  otra, el informe dice **«no aplica»** junto a cada una, en vez de callarse.
-  `INV-13` e `INV-15` no son de terror y se aplican siempre.
+- **RF-20 (enmendado en v3).** Las invariantes propias de terror (`INV-10`,
+  `INV-11`, `INV-12` e `INV-16`) **se retiran como obsoletas** (`RF-21`) y no se
+  aplican a ninguna obra. `INV-13`, `INV-14` e `INV-15` son narrativa general y
+  se aplican siempre. El informe dice cuáles están obsoletas en vez de callarse.
+  Terror se conserva como género: una obra de terror se escribe con su género y
+  su tono en el prompt, como cualquier otra.
+- **RF-21 (nuevo en v3). Lo que se retira y lo que se queda.** Se retira lo
+  específico de terror: la curva de dread y sus válvulas, los presagios, la
+  amenaza con su tell y su grado de explicación, y la fuente del miedo; y con
+  ellas `INV-10`, `INV-11`, `INV-12` e `INV-16`, que se marcan obsoletas sin
+  renumerar. Los presagios indexables pasan a ser *setups* pendientes. **Se
+  queda** lo que parece de terror y es narrativa general: `SetupYPago` (y su
+  vocabulario `estado_de_presagio`), `PuntoDeNoRetorno`, `Deterioro` con sus
+  ejes, los ejes de valor, el registro de conocimiento, los roles dramáticos y el
+  bloque `fichas_y_setups`. **No se borran** el brief de terror ni los guiones de
+  las mediciones antiguas.
 
 ## Cuestiones resueltas
 

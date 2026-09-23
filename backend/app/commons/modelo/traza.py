@@ -53,7 +53,7 @@ class Traza:
     modelo: str | None = None
     prompt_hash: str | None = None
     fichas: list = field(default_factory=list)
-    presagios: list = field(default_factory=list)
+    setups: list = field(default_factory=list)
     resumenes: list = field(default_factory=list)
     recortes: list = field(default_factory=list)
     tokens_para_recortar: int | None = None
@@ -71,10 +71,10 @@ def nueva(agente, escena, trabajo, modelo=None):
     return Traza(agente=agente, escena=escena, trabajo=trabajo, modelo=modelo)
 
 
-def registrar_entrada(t, fichas=None, presagios=None, resumenes=None, prompt_hash=None):
+def registrar_entrada(t, fichas=None, setups=None, resumenes=None, prompt_hash=None):
     """Los identificadores que entraron, no su texto."""
     t.fichas = list(fichas or [])
-    t.presagios = list(presagios or [])
+    t.setups = list(setups or [])
     t.resumenes = list(resumenes or [])
     t.prompt_hash = prompt_hash
 

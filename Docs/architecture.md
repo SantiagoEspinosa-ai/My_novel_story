@@ -81,7 +81,7 @@ flowchart LR
 ```
 
 La frontera es estricta: el frontend nunca toca la base de datos y nunca calcula nada del
-dominio. El cambio de valor de una escena, la curva de dread y el estado de las
+dominio. El cambio de valor de una escena y el estado de las
 invariantes llegan resueltos desde la API. Si el frontend necesitara calcular algo para
 pintarlo, falta un campo en la respuesta.
 
@@ -155,10 +155,10 @@ cerrarla es teatro, porque todo pasa cuando no hay nadie que la cierre.
 
 | Vista | Qué muestra | Qué deja hacer |
 | --- | --- | --- |
-| Obra | Estructura de partes y capítulos, progreso, curva de dread | Navegar |
+| Obra | Estructura de partes y capítulos, progreso | Navegar |
 | Escena | Texto, estado (`planificada`…`consolidada`), delta propuesto, hallazgos abiertos | Lanzar generación, aceptar, rechazar, pedir reescritura |
 | Puertas | Resultado de cada invariante con su identificador y severidad | Cerrar la puerta o devolver la escena |
-| Continuidad | Estado del mundo en `t`, registro de conocimiento, presagios sin pagar | Consultar |
+| Continuidad | Estado del mundo en `t`, registro de conocimiento, setups sin pagar | Consultar |
 | Trabajos | Trabajos en curso y su estado | Seguir un trabajo por su identificador |
 
 Dos reglas de presentación:
@@ -202,7 +202,7 @@ La skill oficial de FSD está instalada en el repositorio
 Una sola base de datos guarda el estado estructurado, los embeddings y la cola de
 trabajos. No hay servicio de vectores aparte ni cola externa.
 
-- Se indexan por similitud: fichas de entidad, resúmenes de escena y presagios pendientes.
+- Se indexan por similitud: fichas de entidad, resúmenes de escena y setups pendientes (`SPEC-26` v3).
 - El texto completo de las escenas se guarda pero **no** se recupera por similitud. Para
   eso están los resúmenes. Nunca se manda la obra entera al modelo.
 - El estado del mundo se reconstruye acumulando los deltas de escena en orden. No se relee
@@ -229,11 +229,11 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 | Agente | ¿Llama al modelo? | Habilidades | Entrada → Salida | Invariantes que toca |
 | --- | --- | --- | --- | --- |
 | **Orquestador** | No | Aplicar la máquina de estados; decidir la siguiente transición legal; detener en puerta bloqueante | Estado de la escena → transición | `INV-05` (que el delta esté aplicado antes de seguir) |
-| **Escaletador** | Sí | Repartir el cambio de valor por escena; prever la curva de dread; asignar beats a arcos | `Brief` + `GuiaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
+| **Escaletador** | Sí | Repartir el cambio de valor por escena; asignar beats a arcos | `Brief` + `GuiaDeEstilo` → `Escaleta` | `INV-01`, `INV-07`, `INV-12`, `INV-16` en su forma prevista |
 | **Ensamblador de contexto** | No | Recuperar por similitud; seleccionar fichas y setups pendientes; recortar por nivel de prioridad; contar tokens | Escena planificada → contexto dentro del presupuesto | Ninguna; hace cumplir el límite de `CLAUDE.md` |
 | **Escritor de escena** | Sí | Escribir la escena; sostener el POV; respetar las anclas de estilo; **devolver el delta estructurado en la misma llamada** | Contexto → `Borrador` + `DeltaDeEscena` | Produce el material de `INV-01`…`INV-04` |
 | **Verificador de reglas** | No | Continuidad de entidades; coherencia cronológica; **comparación contra el registro de conocimiento en `t`**; repetición léxica; distribución de longitud de frase | Borrador + delta + estado → `Hallazgo[]` | `INV-01`, `INV-02`, `INV-03`, `INV-04`, `INV-07`, `INV-13` (incremental), `INV-17` |
-| **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del presagio, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-10`. Como desempate: `INV-03`, `INV-11`, `INV-14` |
+| **Juez de rúbrica** | Sí | Puntuar con `Rubrica`: función dramática, credibilidad del diálogo, eficacia del setup, adecuación al POV, calidad del cambio de valor | Borrador + rúbrica → puntuación + `Hallazgo[]` | `INV-10`. Como desempate: `INV-03`, `INV-11`, `INV-14` |
 | **Revisor** | Sí | Un `PaseDeRevision` por tipo: continuidad, voz, ritmo, densidad, línea | Borrador + hallazgos → borrador nuevo | Las del hallazgo que corrige |
 | **Resumidor** | Sí | Condensar escena → capítulo → parte; extraer hechos clave; actualizar fichas de entidad | Escena consolidada → `Resumen`, `Ficha` | Ninguna; es lo que hace que el sistema escale |
 | **Consolidador** | No | Aplicar el delta al estado; detectar delta incompatible; reindexar embeddings | Delta aceptado → `EstadoDelMundo(t+1)` | `INV-05`, `INV-06` |
@@ -244,14 +244,14 @@ se comprueba con código: pedírselo a un modelo es más caro, más lento y meno
 **Qué significa «en su forma prevista».** El Escaletador comprueba `INV-01`, `INV-07`,
 `INV-12` e `INV-16` **contra la `Escaleta`, antes de que exista ningún texto**: que cada
 escena planificada tenga su `cambio_de_valor`, que sus beats sirvan a un arco, y que la
-curva de dread prevista tenga su máximo en el clímax y varianza suficiente. Es la misma
+curva de dread prevista tenga su máximo en el clímax y varianza suficiente *(obsoleto desde `SPEC-26` v3: `INV-12` e `INV-16` se retiraron y el Escaletador ya no prevé la curva)*. Es la misma
 invariante sobre el plan en vez de sobre la obra, y por eso no sustituye a la comprobación
 del Auditor: un plan correcto que se ejecuta mal sigue fallando, y quien lo caza es el
 barrido final sobre la curva realizada.
 
 **Por qué el Verificador de reglas no comprueba invariantes de nivel obra.** Su entrada es
 una escena —borrador, delta y estado en `t`—, y `INV-09`, `INV-12` e `INV-16` no se pueden
-contestar desde ahí: un presagio es huérfano solo cuando la obra termina sin pagarlo, y el
+contestar desde ahí: un setup es huérfano solo cuando la obra termina sin pagarlo, y el
 máximo y la varianza de la curva necesitan la serie entera. `INV-06` tampoco es suya: su
 forma incremental —que el delta no contradiga el estado en `t`— es del Consolidador, y así
 lo dice `RF-20` de `SPEC-01`. Las cuatro son del Auditor de obra.
@@ -315,8 +315,8 @@ criterio implícito no impide que alguien añada una fila que no le corresponde.
 que puede leer.** Esta tabla reparte lo que se **envía** al modelo; sus comprobaciones son
 de tipo `regla`, y una regla consulta la base. `INV-15` mide la distancia estilométrica
 sobre la prosa real del capítulo sin tocar el presupuesto, y `INV-09` compara filas de
-`Presagio` —que tienen `escena_de_plantado` y `escena_de_pago` propios—, no líneas de un
-resumen: una condensación que se deje un presagio no esconde nada.
+`SetupYPago` —que tiene su plantado y su cobro propios; antes `Presagio`, obsoleta en `SPEC-26` v3—, no líneas de un
+resumen: una condensación que se deje un setup no esconde nada.
 
 Recibe `Estado actual` por `INV-06`, que compara hechos vigentes entre sí; `Recuperado`
 por los setups pendientes de `INV-09`; y del nivel inmutable solo las anclas de estilo,
@@ -535,7 +535,7 @@ registra:
 - El **`prompt_hash`**. Vive también aquí y no solo en `Borrador`, porque una llamada
   fallida no produce ningún `Borrador` y es justo la que hay que diagnosticar.
 - **Los identificadores que entraron en el contexto**, no su texto: qué fichas con su
-  `version_en_t`, qué presagios, qué resúmenes y qué niveles. Guardar el contexto entero
+  `version_en_t`, qué setups, qué resúmenes y qué niveles. Guardar el contexto entero
   sería duplicar hasta 80.000 tokens que se reconstruyen desde el estado; guardar los ids
   cuesta nada y es lo que hace la reconstrucción **posible**, porque el índice vectorial
   crece al consolidar y los empates de una consulta KNN no tienen orden definido: sin los
@@ -784,7 +784,7 @@ esperando una respuesta que el dato no da.
   completa o el beat? Cambia el tamaño del delta y el coste de revisión.
 - [ ] **Persistencia del estado.** ¿Los deltas son la fuente de verdad, o se materializa **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
   el `EstadoDelMundo` en cada `t`? Lo primero es más fiel, lo segundo más barato de consultar.
-- [ ] **Escala de la curva de dread.** ¿Presión absoluta 0–100 anotada por un juez, o **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
+- [x] ~~**Escala de la curva de dread.**~~ **Obsoleta**: `SPEC-26` v3 retiró la curva de dread. ¿Presión absoluta 0–100 anotada por un juez, o **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide.
   relativa entre escenas contiguas? La relativa es más estable entre modelos.
 - [ ] **Umbrales de `INV-15` e `INV-16`.** Sin números concretos el harness las salta en **Se contesta sola** con una traza real.
   silencio. Los números salen de medir, no de estimar. Es la misma decisión "Umbrales" de

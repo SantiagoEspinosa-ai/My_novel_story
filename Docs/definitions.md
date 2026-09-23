@@ -84,16 +84,18 @@ El canon es lo que es verdad dentro de la ficción, con independencia de cómo s
 
 ## Plano Terror
 
+**Desde `SPEC-26` v3 lo específico de terror está obsoleto** —la amenaza con su tell y su grado de explicación, la fuente del miedo, los presagios, la curva de dread y sus válvulas— y se conserva marcado, sin borrar, porque los identificadores publicados no desaparecen. **Lo que queda en este plano es narrativa general**: `SetupYPago`, `PuntoDeNoRetorno` y `Deterioro`. Terror sigue siendo un género: se escribe con su género y su tono en el prompt, como cualquier otro.
+
 Una ontología narrativa genérica se queda corta aquí. Estas clases son las que permiten controlar el miedo como variable, no como adjetivo.
 
 | Clase | Definición | Atributos clave |
 | --- | --- | --- |
-| Amenaza | Lo que puede dañar y organiza la tensión de la obra. | **id**, **naturaleza**, **reglas**, limites, coste\_de\_invocacion, tell, curva\_de\_escalada, grado\_de\_explicacion\_permitido |
-| FuenteDelMiedo | El mecanismo psicológico sobre el que opera la obra. | **tipo** → `fuente_del_miedo`, intensidad |
-| Tell | Señal perceptible de que la amenaza está cerca. | **id**, canal\_sensorial, primera\_aparicion, fiabilidad |
-| Presagio | Elemento plantado que anticipa un suceso posterior. | **id**, escena\_de\_plantado, escena\_de\_pago, estado → `estado_de_presagio`, sutileza |
-| CurvaDeDread | Presión acumulada a lo largo de la obra. | **serie** (presión por escena), valvulas\[\], pendiente\_media, mesetas\[\] |
-| Valvula | Alivio deliberado que reinicia la capacidad de asustarse del lector. | **escena**, tipo → `tipo_de_valvula`, duracion |
+| ~~Amenaza~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | Lo que puede dañar y organiza la tensión de la obra. | **id**, **naturaleza**, **reglas**, limites, coste\_de\_invocacion, tell, curva\_de\_escalada, grado\_de\_explicacion\_permitido |
+| ~~FuenteDelMiedo~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | El mecanismo psicológico sobre el que opera la obra. | **tipo** → `fuente_del_miedo`, intensidad |
+| ~~Tell~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | Señal perceptible de que la amenaza está cerca. | **id**, canal\_sensorial, primera\_aparicion, fiabilidad |
+| ~~Presagio~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | Elemento plantado que anticipa un suceso posterior. | **id**, escena\_de\_plantado, escena\_de\_pago, estado → `estado_de_presagio`, sutileza |
+| ~~CurvaDeDread~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | Presión acumulada a lo largo de la obra. | **serie** (presión por escena), valvulas\[\], pendiente\_media, mesetas\[\] |
+| ~~Valvula~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | Alivio deliberado que reinicia la capacidad de asustarse del lector. | **escena**, tipo → `tipo_de_valvula`, duracion |
 | PuntoDeNoRetorno | Escena tras la cual el coste de retroceder es prohibitivo. | **escena**, que\_se\_pierde |
 | Deterioro | Degradación progresiva de un personaje. | **sujeto**, **eje** → `eje_de_deterioro`, serie\_por\_escena, umbral\_critico |
 | SetupYPago | Par de elementos ligados: lo plantado y su cobro (registro de Chéjov). | **setup**, **pago**, distancia\_en\_escenas, estado → `estado_de_presagio` |
@@ -210,9 +212,9 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 | modifica | Escena | EstadoDelMundo | 1:1 (vía delta) | Reconstrucción de estado |
 | establece | Escena | HechoCanonico | 1:N | Origen del canon |
 | usa | Escena | HechoCanonico | N:M (+ `tipo_de_uso_de_hecho`, `origen_de_uso`) | Dónde se **vuelve a usar** un hecho, que no es dónde nace (`SPEC-21` C-2) |
-| obedece | Amenaza, Evento | ReglaDelMundo | N:M | Consistencia interna |
-| se\_paga\_en | Presagio | Escena | 1:0..1 | Detección de setups huérfanos |
-| escala | Escena | CurvaDeDread | 1:1 | Control de tensión |
+| obedece | ~~Amenaza~~ (obsoleta), Evento | ReglaDelMundo | N:M | Consistencia interna |
+| se\_paga\_en | SetupYPago (antes `Presagio`, obsoleta en `SPEC-26` v3) | Escena | 1:0..1 | Detección de setups huérfanos |
+| ~~escala~~ (obsoleta: `CurvaDeDread` se retiró en `SPEC-26` v3) | Escena | ~~CurvaDeDread~~ | 1:1 | Control de tensión |
 | deteriora | Escena | Deterioro | N:M | Progresión de daño |
 | contradice | HechoCanonico | HechoCanonico | N:M | Detección de conflictos |
 | verificada\_por | Escena | Verificador | N:M | Puertas de calidad |
@@ -263,9 +265,9 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 **Cuál de los cuatro cuenta lo decide cada consumidor, no esta tabla.** Es deliberado: cambiar de opinión es cambiar el conjunto de tipos que se consulta, y no hay migración detrás porque las cuatro clases de fila ya están escritas.
 
 **`origen_de_uso` distingue lo medido de lo afirmado.** `menciona` lo calcula el código sobre el texto, así que es un dato medido; `establece` y `depende` los declara el delta, así que son afirmaciones no verificadas. Un demostrador formal no puede tratarlas igual, y sin la columna no hay forma de separarlas después. **`contradice` no lo deduce nadie todavía**, de modo que una consulta que no devuelva contradicciones está diciendo que nadie ha mirado, no que no las haya.
-| `fuente_del_miedo` | FuenteDelMiedo.tipo | desconocido, perdida\_de\_control, contaminacion, paranoia, culpa, aislamiento |
-| `estado_de_presagio` | Presagio.estado, SetupYPago.estado | declarado, plantado, pagado, huerfano |
-| `tipo_de_valvula` | Valvula.tipo | humor, ternura, informacion, seguridad\_falsa |
+| ~~`fuente_del_miedo`~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | FuenteDelMiedo.tipo | desconocido, perdida\_de\_control, contaminacion, paranoia, culpa, aislamiento |
+| `estado_de_presagio` | SetupYPago.estado (el nombre literal se conserva; `Presagio` está obsoleta) | declarado, plantado, pagado, huerfano |
+| ~~`tipo_de_valvula`~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | Valvula.tipo | humor, ternura, informacion, seguridad\_falsa |
 | `eje_de_deterioro` | Deterioro.eje | cordura, cuerpo, vinculos, recursos |
 | `estado_de_escena` | Escena.estado | planificada, generada, en\_verificacion, rechazada, en\_revision, aceptada, aceptada\_por\_rendicion, consolidada |
 | `estado_de_capitulo` | Capitulo.estado | abierto, cerrado |
@@ -348,14 +350,14 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-06 | Ningún `HechoCanonico` vigente contradice a otro | obra | bloqueante | regla | `HechoCanonico.contradice`, `EstadoDelMundo.hechos_vigentes` |
 | INV-07 | Toda escena realiza al menos un beat que sirve a un arco | escena | mayor | regla | `Beat.sirve_a`, `ArcoNarrativo` |
 | INV-08 | `t_fabula` es monótono dentro de una línea argumental salvo analepsis declarada | capitulo | mayor | regla | `MomentoNarrativo.t_fabula`, `LineaArgumental` |
-| INV-09 | Todo presagio plantado se paga antes del final | obra | mayor | regla | `Presagio.estado` |
-| INV-10 | La amenaza no viola sus propias reglas sin pagar el coste declarado | escena | mayor | juez\_llm | `ReglaDelMundo`, `Amenaza`, deterioros del delta |
-| INV-11 | El grado de explicación acumulado no supera el fijado en el brief | obra | mayor | regla | `HechoCanonico` revelados, `Amenaza.grado_de_explicacion_permitido` |
-| INV-12 | La presión máxima de la curva de dread cae en el clímax ±1 escena | obra | mayor | regla | `CurvaDeDread.serie` |
+| INV-09 | Todo setup plantado se paga antes del final (antes decía «presagio»: `SPEC-26` v3 lo apunta a `SetupYPago`, que es narrativa general) | obra | mayor | regla | `SetupYPago.estado` |
+| ~~INV-10~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | La amenaza no viola sus propias reglas sin pagar el coste declarado | escena | mayor | juez\_llm | `ReglaDelMundo`, `Amenaza`, deterioros del delta |
+| ~~INV-11~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | El grado de explicación acumulado no supera el fijado en el brief | obra | mayor | regla | `HechoCanonico` revelados, `Amenaza.grado_de_explicacion_permitido` |
+| ~~INV-12~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | La presión máxima de la curva de dread cae en el clímax ±1 escena | obra | mayor | regla | `CurvaDeDread.serie` |
 | INV-13 | Ningún hecho se revela dos veces al lector como si fuera nuevo | obra | mayor | regla | revelaciones del delta acumuladas |
 | INV-14 | Cada deterioro es monótono, o su reversión está justificada en el texto | obra | menor | regla | `Deterioro.serie_por_escena` |
 | INV-15 | La distancia estilométrica a las anclas se mantiene bajo umbral | capitulo | menor | regla | `Borrador.texto`, `AnclaDeEstilo.texto` |
-| INV-16 | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla | `CurvaDeDread.serie` |
+| ~~INV-16~~ **(obsoleta: `SPEC-26` v3 `RF-21`)** | La varianza de la curva de dread supera el mínimo fijado | obra | menor | regla | `CurvaDeDread.serie` |
 | INV-17 | La longitud de la escena cae dentro de su `longitud_objetivo` | escena | mayor | regla | `Borrador.texto`, `Escena.longitud_objetivo` |
 | INV-18 | Todo hecho que los `beats` de una escena prometían establecer aparece en su delta | escena | mayor | regla | `Beat.establece[]`, `revelaciones` del delta, `HechoCanonico.escena_de_establecimiento` |
 | INV-21 | Ningún capítulo aceptado contiene una palabra vetada de ninguno de los tres niveles, tras normalizar mayúsculas, acentos, plurales y género gramatical | capitulo | bloqueante | regla | `Borrador.texto`, `PalabraVetada.forma`, `Destinatario.edad` |

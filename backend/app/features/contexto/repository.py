@@ -6,7 +6,7 @@ metio en cada prompt.
 
 POR QUE NO VALE LA TRAZA QUE YA HABIA
 ---------------------------------------
-`commons/modelo/traza.py` guarda que fichas, presagios y resumenes entraron, y
+`commons/modelo/traza.py` guarda que fichas, setups y resumenes entraron, y
 explica por que se guardan ids y no texto: el indice vectorial crece al
 consolidar y los empates de una consulta KNN no tienen orden definido, asi que
 **cual se recupero no se reconstruye**. El mismo argumento vale para los hechos

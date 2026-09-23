@@ -45,8 +45,7 @@ def test_la_forma_prevista_no_sustituye_al_barrido():
     assert plan.SUSTITUYE_AL_AUDITOR is False
 
 
-def test_una_obra_que_no_es_de_terror_no_preve_la_curva_de_miedo():
-    """`SPEC-26` `RF-20`: `INV-12` e `INV-16` son del plano Terror."""
+def test_ninguna_obra_preve_ya_la_curva_de_miedo():
+    """`SPEC-26` v3: `INV-12` e `INV-16` estan obsoletas, tambien en terror."""
     assert plan.invariantes_previstas("aventura") == ("INV-01", "INV-07")
-    assert plan.invariantes_previstas("terror") == (
-        "INV-01", "INV-07", "INV-12", "INV-16")
+    assert plan.invariantes_previstas("terror") == ("INV-01", "INV-07")

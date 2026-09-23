@@ -39,10 +39,13 @@ class Invariante:
     severidad: Severidad
     tipo: TipoDeVerificador
     que_lee: str
+    obsoleta: bool = False
+    """`SPEC-26` v3 `RF-21`: retirada sin renumerar. Sigue en el registro para
+    que ningun identificador publicado desaparezca, y no se aplica a ninguna obra."""
 
 
 def construir_invariante(id, enunciado, nivel, severidad, tipo, que_lee,
-                         severidad_esperada=None):
+                         severidad_esperada=None, obsoleta=False):
     """Construye una invariante y, si se le da, comprueba su severidad.
 
     `severidad_esperada` es el gancho de `VER-38`: quien parsea la tabla del
@@ -58,6 +61,7 @@ def construir_invariante(id, enunciado, nivel, severidad, tipo, que_lee,
         severidad=Severidad(severidad),
         tipo=TipoDeVerificador(tipo),
         que_lee=que_lee,
+        obsoleta=obsoleta,
     )
     if severidad_esperada is not None and inv.severidad is not severidad_esperada:
         raise ValueError(
@@ -70,8 +74,9 @@ def construir_invariante(id, enunciado, nivel, severidad, tipo, que_lee,
     return inv
 
 
-def _r(id, enunciado, nivel, severidad, tipo, que_lee):
-    return construir_invariante(id, enunciado, nivel, severidad, tipo, que_lee)
+def _r(id, enunciado, nivel, severidad, tipo, que_lee, obsoleta=False):
+    return construir_invariante(id, enunciado, nivel, severidad, tipo, que_lee,
+                                obsoleta=obsoleta)
 
 
 _LISTA = [
@@ -93,14 +98,16 @@ _LISTA = [
        "escena", "mayor", "regla", "Beat.sirve_a, ArcoNarrativo"),
     _r("INV-08", "`t_fabula` es monotono dentro de una linea argumental salvo analepsis declarada",
        "capitulo", "mayor", "regla", "MomentoNarrativo.t_fabula, LineaArgumental"),
-    _r("INV-09", "Todo presagio plantado se paga antes del final",
-       "obra", "mayor", "regla", "Presagio.estado"),
+    _r("INV-09", "Todo setup plantado se paga antes del final",
+       "obra", "mayor", "regla", "SetupYPago.estado"),
     _r("INV-10", "La amenaza no viola sus propias reglas sin pagar el coste declarado",
-       "escena", "mayor", "juez_llm", "ReglaDelMundo, Amenaza, deterioros del delta"),
+       "escena", "mayor", "juez_llm", "ReglaDelMundo, Amenaza, deterioros del delta",
+       obsoleta=True),
     _r("INV-11", "El grado de explicacion acumulado no supera el fijado en el brief",
-       "obra", "mayor", "regla", "HechoCanonico revelados, Amenaza.grado_de_explicacion_permitido"),
+       "obra", "mayor", "regla", "HechoCanonico revelados, Amenaza.grado_de_explicacion_permitido",
+       obsoleta=True),
     _r("INV-12", "La presion maxima de la curva de dread cae en el climax mas o menos una escena",
-       "obra", "mayor", "regla", "CurvaDeDread.serie"),
+       "obra", "mayor", "regla", "CurvaDeDread.serie", obsoleta=True),
     _r("INV-13", "Ningun hecho se revela dos veces al lector como si fuera nuevo",
        "obra", "mayor", "regla", "revelaciones del delta acumuladas"),
     _r("INV-14", "Cada deterioro es monotono, o su reversion esta justificada en el texto",
@@ -108,7 +115,7 @@ _LISTA = [
     _r("INV-15", "La distancia estilometrica a las anclas se mantiene bajo umbral",
        "capitulo", "menor", "regla", "Borrador.texto, AnclaDeEstilo.texto"),
     _r("INV-16", "La varianza de la curva de dread supera el minimo fijado",
-       "obra", "menor", "regla", "CurvaDeDread.serie"),
+       "obra", "menor", "regla", "CurvaDeDread.serie", obsoleta=True),
     _r("INV-18", "Todo hecho que los `beats` de una escena prometian establecer "
        "aparece en su delta",
        "escena", "mayor", "regla",
@@ -147,18 +154,19 @@ _LISTA = [
 
 TODAS = {i.id: i for i in _LISTA}
 
-# `SPEC-26` `RF-20`: las del plano Terror de `Docs/definitions.md`. `INV-13`
-# (un hecho revelado dos veces) e `INV-15` (la voz) valen para cualquier genero.
-PLANO_TERROR = ("INV-10", "INV-11", "INV-12", "INV-14", "INV-16")
-
-
 def aplica(id_inv, genero) -> bool:
-    """Si una invariante se aplica a una obra de este genero."""
-    return id_inv not in PLANO_TERROR or genero == "terror"
+    """Si una invariante se aplica a una obra de este genero.
+
+    `SPEC-26` v3: las de terror (`INV-10`, `INV-11`, `INV-12`, `INV-16`) estan
+    obsoletas y no se aplican a ninguna obra, tampoco a una de terror. `INV-13`,
+    `INV-14` e `INV-15` son narrativa general. El genero se conserva en la firma
+    porque es la pregunta que se hace, aunque hoy no cambie la respuesta.
+    """
+    return not TODAS[id_inv].obsoleta
 
 
-def no_aplican(genero) -> list:
-    return [i for i in PLANO_TERROR if not aplica(i, genero)]
+def obsoletas() -> list:
+    return sorted(i.id for i in _LISTA if i.obsoleta)
 
 
 def de_nivel(nivel: NivelDeEvaluacion):

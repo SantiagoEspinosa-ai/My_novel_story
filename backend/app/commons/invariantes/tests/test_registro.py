@@ -103,9 +103,16 @@ def test_las_de_la_novela_regalo_tienen_su_severidad():
     assert registro.TODAS["INV-24"].nivel is enums.NivelDeEvaluacion.OBRA
 
 
-def test_las_de_terror_solo_se_aplican_a_una_obra_de_terror():
-    """`SPEC-26` `RF-20`."""
-    terror = ["INV-10", "INV-11", "INV-12", "INV-14", "INV-16"]
-    assert registro.no_aplican("aventura") == terror
-    assert registro.no_aplican("terror") == []
-    assert registro.aplica("INV-13", "aventura") and registro.aplica("INV-15", "romance")
+def test_las_de_terror_estan_obsoletas_y_no_se_aplican_a_ninguna_obra():
+    """`SPEC-26` v3 `RF-20`, `RF-21`: se retiran sin renumerar, y siguen en el
+    registro para que ningun identificador publicado desaparezca."""
+    assert registro.obsoletas() == ["INV-10", "INV-11", "INV-12", "INV-16"]
+    for genero in ("terror", "aventura"):
+        assert not registro.aplica("INV-12", genero)
+
+
+def test_inv14_es_general():
+    """`SPEC-26` v3: si `Deterioro` se queda, su invariante tambien."""
+    for genero in ("terror", "aventura", "romance"):
+        assert registro.aplica("INV-14", genero)
+        assert registro.aplica("INV-13", genero) and registro.aplica("INV-15", genero)

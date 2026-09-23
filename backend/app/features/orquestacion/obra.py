@@ -627,12 +627,9 @@ def informe(g: Generacion) -> str:
     if g.medidas:
         crecio = g.medidas[-1]["total"] > g.medidas[0]["total"]
         lineas.append("el contexto {0}".format("CRECE" if crecio else "NO crece"))
-    # `SPEC-26` `RF-20`: lo que no aplica se dice, y lo que no se sabe tambien.
-    if g.genero is None:
-        lineas.append("genero no declarado: no se sabe si aplican las "
-                      "invariantes del plano Terror")
-    for inv in registro.no_aplican(g.genero) if g.genero else []:
-        lineas.append("{0} no aplica: la obra no es de terror".format(inv))
+    # `SPEC-26` v3 `RF-20`: lo retirado se dice, no se calla.
+    lineas.append("obsoletas: {0} (retiradas en SPEC-26 v3; no se comprueban)".format(
+        ", ".join(registro.obsoletas())))
     if not g.vetadas_comprobadas:
         lineas.append("INV-21 no se comprobo: no se dio ninguna lista de "
                       "palabras vetadas")

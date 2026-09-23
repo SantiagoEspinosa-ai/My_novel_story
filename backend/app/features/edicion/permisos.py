@@ -65,7 +65,7 @@ INTOCABLES = {
 }
 
 # Se editan si nadie consolidado los ha usado todavia.
-SEGUN_USO = {"hecho", "escena", "presagio"}
+SEGUN_USO = {"hecho", "escena", "setup"}
 
 
 class EdicionProhibida(Exception):

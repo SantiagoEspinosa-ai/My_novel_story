@@ -81,21 +81,14 @@ La rama de estado es la que cambia con cada escena; entidades y verdad canónica
 ```mermaid
 flowchart TD
   P3["Plano Terror"]
-  P3 --> A["Amenaza"]
-  P3 --> T["Gestión de tensión"]
+  P3 --> T["Plantar y cobrar"]
   P3 --> D["Daño acumulado"]
-  A --> A1["FuenteDelMiedo"]
-  A --> A2["Tell"]
-  A --> A3["Grado de explicación"]
-  T --> T1["CurvaDeDread"]
-  T --> T2["Valvula"]
-  T --> T3["Presagio"]
   T --> T4["SetupYPago"]
   D --> D1["Deterioro"]
   D --> D2["PuntoDeNoRetorno"]
 ```
 
-Las tres ramas responden a preguntas distintas: qué amenaza, cómo se dosifica y qué se va perdiendo. Un sistema que solo modela la primera produce monstruos, no miedo.
+Desde `SPEC-26` v3 solo quedan las dos ramas que son narrativa general: qué se planta y se cobra, y qué se va perdiendo. La amenaza, la curva de dread, las válvulas y los presagios están obsoletos en `Docs/definitions.md` y ya no se dibujan.
 
 ## Proceso y Calidad
 
@@ -153,7 +146,7 @@ flowchart LR
   HEC["HechoCanonico"]
   CON["Personaje / Narrador / Lector<br/>(RegistroDeConocimiento)"]
   EST["EstadoDelMundo"]
-  PRE["Presagio"]
+  PRE["SetupYPago"]
   DRE["CurvaDeDread"]
   BEAT -->|sirve_a| ARC
   ESC -->|realiza| BEAT

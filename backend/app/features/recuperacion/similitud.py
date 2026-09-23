@@ -6,7 +6,7 @@ SQLite; no se añade un servicio aparte."*
 
 QUE SE INDEXA, Y LO QUE DELIBERADAMENTE NO
 --------------------------------------------
-Fichas de entidad, resumenes de escena y presagios pendientes. **El texto
+Fichas de entidad, resumenes de escena y setups pendientes. **El texto
 completo de las escenas se guarda pero no se recupera por similitud**: para eso
 estan los resumenes. Indexarlo seria volver a meter la obra entera en el
 contexto por otra puerta, que es justo lo que el presupuesto de `CLAUDE.md`
@@ -36,8 +36,9 @@ lo que este modulo tiene que hacer bien.
 
 import struct
 
-# Los tres que nombra `CLAUDE.md`, y ninguno mas.
-TIPOS = ("ficha", "resumen", "presagio")
+# Los tres que nombra `CLAUDE.md`, y ninguno mas. `SPEC-26` v3 retiro los
+# presagios (especificos de terror); su sitio lo ocupa el setup, que es general.
+TIPOS = ("ficha", "resumen", "setup")
 
 
 class SinSoporteVectorial(RuntimeError):

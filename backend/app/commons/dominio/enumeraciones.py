@@ -183,28 +183,16 @@ class EstadoDeCapitulo(_Vocabulario):
     CERRADO = "cerrado"
 
 
-# --- Plano Terror ----------------------------------------------------------
+# --- Plano Terror: lo que queda es narrativa general (`SPEC-26` v3) --------
 
-class FuenteDelMiedo(_Vocabulario):
-    DESCONOCIDO = "desconocido"
-    PERDIDA_DE_CONTROL = "perdida_de_control"
-    CONTAMINACION = "contaminacion"
-    PARANOIA = "paranoia"
-    CULPA = "culpa"
-    AISLAMIENTO = "aislamiento"
-
+# `FuenteDelMiedo` y `TipoDeValvula` se retiraron en `SPEC-26` v3 (`RF-21`):
+# eran especificos de terror y ningun codigo los usaba. `EstadoDePresagio` se
+# queda porque lo usa `SetupYPago`, que es narrativa general.
 
 class EstadoDePresagio(_Vocabulario):
     PLANTADO = "plantado"
     PAGADO = "pagado"
     HUERFANO = "huerfano"
-
-
-class TipoDeValvula(_Vocabulario):
-    HUMOR = "humor"
-    TERNURA = "ternura"
-    INFORMACION = "informacion"
-    SEGURIDAD_FALSA = "seguridad_falsa"
 
 
 class EjeDeDeterioro(_Vocabulario):

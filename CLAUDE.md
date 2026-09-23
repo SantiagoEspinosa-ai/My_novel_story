@@ -21,7 +21,7 @@ La línea de arriba importa `AGENTS.md` entero: Claude Code la expande al arranc
 
 ### React
 
-- La interfaz muestra estado, no lo calcula. El cambio de valor de una escena, la curva de dread y el estado de las invariantes vienen resueltos de la API.
+- La interfaz muestra estado, no lo calcula. El cambio de valor de una escena y el estado de las invariantes vienen resueltos de la API.
 - Una escena se muestra siempre con su estado (`planificada`…`consolidada`) y con los hallazgos abiertos que tenga. Un texto sin ese contexto induce a darlo por bueno.
 
 ### Límite de contexto: 100.000 tokens
@@ -64,7 +64,7 @@ Nunca se manda el texto completo de la obra **al modelo**. El límite de 100.000
 ### SQLite con soporte vectorial
 
 - Una sola base de datos guarda el estado estructurado y los embeddings. La búsqueda por similitud se hace con una extensión vectorial de SQLite; no se añade un servicio aparte.
-- Se indexan fichas de entidad, resúmenes de escena y presagios pendientes. El texto completo de las escenas se guarda pero no se recupera por similitud: para eso están los resúmenes.
+- Se indexan fichas de entidad, resúmenes de escena y setups pendientes (los presagios, específicos de terror, se retiraron en `SPEC-26` v3). El texto completo de las escenas se guarda pero no se recupera por similitud: para eso están los resúmenes.
 - El estado del mundo se reconstruye acumulando los deltas de escena en orden. No se relee el texto para averiguar qué pasó.
 - Las migraciones de esquema se versionan. Un cambio en `Docs/definitions.md` que altere un atributo obligatorio necesita su migración en el mismo commit.
 
