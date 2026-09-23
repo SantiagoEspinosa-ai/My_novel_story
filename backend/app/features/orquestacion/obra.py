@@ -34,7 +34,9 @@ from dataclasses import dataclass, field
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
+from app.commons.dominio.enumeraciones import OrigenDeUso, TipoDeUsoDeHecho
 from app.commons.invariantes import registro
+from app.commons.politica.personalizacion import claves_ausentes
 from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.cronologia import consultas
 
@@ -152,7 +154,8 @@ def reunir_material(con, escena, obra_id, inmutable=""):
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
-                 vetadas=None, tope_vetadas=None, genero=None):
+                 vetadas=None, tope_vetadas=None, genero=None, nombres=None,
+                 imprescindibles=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -225,7 +228,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         c, intentos = _intentar(con, escena, tamanos, escritor, juez, resumidor,
                                 material, obra, techo, tope_intentos, g,
                                 instrucciones, vetadas=vetadas,
-                                tope_vetadas=tope_vetadas)
+                                tope_vetadas=tope_vetadas, nombres=nombres,
+                                imprescindibles=(imprescindibles or {}).get(escena["id"]))
 
         if c.fallo:
             g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -272,6 +276,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
             # esta, y desde fuera eso es indistinguible de una escena que no
             # tenia nada que resumir.
             g.sin_resumen.append(escena["id"])
+        _registrar_imprescindibles(con, escena, (imprescindibles or {}).get(escena["id"]))
         _marcar_establecidos(con, escena, c, obra)
         _actualizar_fichas(con, escena, c, obra)
         g.escenas_hechas.append(escena["id"])
@@ -388,7 +393,8 @@ def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
 
 
 def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id,
-              techo, tope, g, instrucciones=None, vetadas=None, tope_vetadas=0):
+              techo, tope, g, instrucciones=None, vetadas=None, tope_vetadas=0,
+              nombres=None, imprescindibles=None):
     """Hasta `tope` intentos, y los problemas de uno entran en el siguiente.
 
     Se para en cuanto sale limpia, y **tambien en cuanto una `bloqueante`
@@ -420,7 +426,8 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                            instrucciones=instrucciones,
                            acta=_acta_de_la_escena(escena, obra_id,
                                                    material["hechos"]),
-                           vetadas=vetadas)
+                           vetadas=vetadas, nombres=nombres,
+                           imprescindibles=imprescindibles)
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
         # `F-49`: la traza sobrevive al proceso. Es lo que hace que la
         # contencion de `PC-9` -saber que bloques quedaron fuera- valga
@@ -448,6 +455,17 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                                 "(vetada: {1})".format(co.fragmento, co.vetada)}
                 for co in c.vetadas_encontradas]
             continue
+        if c.fallo == "nombre_mal_escrito":
+            # `SPEC-26` `O-2`: el mismo contador y el mismo tope que `INV-21`.
+            if reescrituras >= tope_vetadas:
+                break
+            reescrituras += 1
+            problemas_de_vetadas = [
+                {"invariante": "INV-22",
+                 "descripcion": "escribiste «{0}»: el nombre es «{1}»".format(
+                     m.escrito, m.correcto)}
+                for m in c.nombres_encontrados]
+            continue
         problemas_de_vetadas = None
         if c.generacion is not None and c.generacion.version is not None:
             intentos.append((c.generacion.version, c.generacion.hallazgos, c))
@@ -455,6 +473,19 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
             break
         numero += 1
     return c, intentos
+
+
+def _registrar_imprescindibles(con, escena, imprescindibles):
+    """`INV-24` lee de aqui: un imprescindible cuyas palabras clave aparecen en el
+    texto aceptado **se usa** en esta escena. Lo mide el codigo (`menciona`,
+    origen `regla`), no lo declara el modelo."""
+    if not imprescindibles:
+        return
+    texto = _texto_elegido(con, repo.escena(con, escena["id"])) or ""
+    cronologia.registrar_usos(con, [
+        {"hecho": i["id"], "escena": escena["id"], "capitulo": escena.get("capitulo"),
+         "tipo": TipoDeUsoDeHecho.MENCIONA, "origen": OrigenDeUso.REGLA}
+        for i in imprescindibles if not claves_ausentes(texto, [i])])
 
 
 def _texto_elegido(con, escena):

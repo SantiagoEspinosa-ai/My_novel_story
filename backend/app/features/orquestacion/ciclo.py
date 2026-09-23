@@ -50,6 +50,10 @@ from app.commons.modelo import proveedor, traza as modulo_traza
 from app.features.consolidacion import aplicar
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import bucle
+from app.commons.dominio.enumeraciones import EstadoDeHallazgo
+from app.commons.dominio.modelos import Hallazgo
+from app.commons.invariantes.registro import TODAS
+from app.commons.politica.personalizacion import claves_ausentes, nombres_mal_escritos
 from app.commons.politica.vetadas import coincidencias
 
 RUBRICA = """Puntua esta escena de terror. Devuelve PASA o FALLO y los problemas
@@ -70,6 +74,7 @@ class Ciclo:
     fallo: str | None = None
     trazas: list = field(default_factory=list)
     vetadas_encontradas: list = field(default_factory=list)
+    nombres_encontrados: list = field(default_factory=list)
 
 
 def preparar_directorio_aislado(definicion, nombre="juez"):
@@ -143,14 +148,16 @@ def _acta_de(acta, texto, c):
 
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
              techo=100_000, trabajo="ciclo", hechos=None, problemas=None,
-             instrucciones=None, acta=None, vetadas=None):
+             instrucciones=None, acta=None, vetadas=None, nombres=None,
+             imprescindibles=None):
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
     c.generacion = bucle.generar(con, escena_id, contexto, escritor, techo=techo,
                                  mundo=mundo, trabajo=trabajo, hechos=hechos,
                                  problemas=problemas,
-                                 instrucciones=instrucciones, vetadas=vetadas)
+                                 instrucciones=instrucciones, vetadas=vetadas,
+                                 nombres=nombres, imprescindibles=imprescindibles)
     c.trazas.append(c.generacion.traza)
     if c.generacion.fallo:
         c.fallo = c.generacion.fallo
@@ -167,6 +174,25 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
         if c.vetadas_encontradas:
             c.fallo = "palabra_vetada"
             return c
+    # `INV-22` (`SPEC-26` `RF-13`): igual que `INV-21`, antes del Juez y con el
+    # fragmento exacto, porque es el mismo tipo de error.
+    if nombres:
+        c.nombres_encontrados = nombres_mal_escritos(texto, nombres)
+        if c.nombres_encontrados:
+            c.fallo = "nombre_mal_escrito"
+            return c
+    # `INV-23` (`RF-14`): `mayor`, asi que no para: entra en los hallazgos de
+    # este intento, se guarda como los de la puerta y provoca otro intento.
+    for elemento, clave in claves_ausentes(texto, imprescindibles or []):
+        h = Hallazgo(invariante="INV-23", verificador="verificador_de_reglas",
+                     escena=escena_id, severidad=TODAS["INV-23"].severidad,
+                     estado=EstadoDeHallazgo.ABIERTO,
+                     descripcion="falta «{0}»: el capitulo tiene que contar «{1}»".format(
+                         clave, elemento))
+        repo.guardar_hallazgo(con, invariante=h.invariante, verificador=h.verificador,
+                              escena=h.escena, severidad=h.severidad, estado=h.estado,
+                              descripcion=h.descripcion)
+        c.generacion.hallazgos.append(h)
 
     # 2. El Juez, aislado.
     bruto, _ = _delegar(juez, RUBRICA + "\n\nESCENA\n" + texto, "juez",

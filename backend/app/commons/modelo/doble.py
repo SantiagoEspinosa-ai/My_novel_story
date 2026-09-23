@@ -31,6 +31,8 @@ class Guion:
         "corto"         texto de 944 palabras, el caso real de la otra rama
         "timeout"       levanta un fallo de transporte
         "vetada"        texto correcto con la palabra vetada «zoquete»
+        "nombre_mal"    texto correcto con «Irena» en vez de «Irene»
+        "con_clave"     texto correcto que nombra a Irene y un mapa
     """
 
     pasos: list
@@ -96,6 +98,16 @@ class DobleDelModelo:
             # este paso `INV-21` no tendria ningun caso que la ejercite contra
             # el bucle, y una invariante que nunca falla no esta verificada.
             return {"texto": " ".join(["palabra"] * 1499 + ["zoquete"]),
+                    "pov_usado": POV, "delta": DELTA_OK,
+                    "usage": {"total_tokens": 2100}}
+        if paso == "nombre_mal":
+            # `SPEC-26`: «Irena» por «Irene», para ejercitar `INV-22`.
+            return {"texto": " ".join(["palabra"] * 1499 + ["Irena"]),
+                    "pov_usado": POV, "delta": DELTA_OK,
+                    "usage": {"total_tokens": 2100}}
+        if paso == "con_clave":
+            # `SPEC-26`: nombra a Irene y un mapa, para `INV-23`.
+            return {"texto": " ".join(["palabra"] * 1498 + ["Irene", "mapa"]),
                     "pov_usado": POV, "delta": DELTA_OK,
                     "usage": {"total_tokens": 2100}}
         if paso == "corto":

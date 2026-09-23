@@ -63,7 +63,8 @@ class Resultado:
 
 
 def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None,
-            instrucciones=None, vetadas=None):
+            instrucciones=None, vetadas=None, nombres=None,
+            imprescindibles=None):
     """Usa la plantilla real, con los identificadores disponibles dentro.
 
     Sin ellos el modelo no puede citarlos y se le esta pidiendo lo imposible:
@@ -96,6 +97,8 @@ def _prompt(escena, contexto, mundo=None, problemas=None, hechos=None,
         # ademas de prosa.
         establece=_prometidos(escena),
         vetadas=vetadas,
+        nombres=nombres,
+        imprescindibles=imprescindibles,
     )
 
 
@@ -115,7 +118,8 @@ def _prometidos(escena):
 
 def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=None,
             mundo=None, trabajo="sin-trabajo", hechos=None, problemas=None,
-            instrucciones=None, vetadas=None):
+            instrucciones=None, vetadas=None, nombres=None,
+            imprescindibles=None):
     escena = repo.escena(con, escena_id)
     t = modulo_traza.nueva(agente="escritor", escena=escena_id, trabajo=trabajo,
                            modelo=modelo.nombre)
@@ -134,7 +138,8 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
     t.tokens_para_recortar = sum(contexto.values())
     texto_prompt = _prompt(escena, contexto, mundo, problemas=problemas,
                            hechos=hechos, instrucciones=instrucciones,
-                           vetadas=vetadas)
+                           vetadas=vetadas, nombres=nombres,
+                           imprescindibles=imprescindibles)
     modulo_traza.registrar_entrada(t, prompt_hash=hashlib.sha256(
         texto_prompt.encode("utf-8")).hexdigest()[:12])
     # Lo que esta llamada tuvo delante del canon, registrado **antes** de

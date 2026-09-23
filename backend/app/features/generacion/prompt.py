@@ -60,7 +60,7 @@ Usa SOLO estos. Son identificadores, no descripciones: si lo que quieres decir
 no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
 {identificadores}
 {establece}
-{problemas}{instrucciones}{vetadas}FORMATO DE LA RESPUESTA
+{problemas}{instrucciones}{vetadas}{personalizacion}FORMATO DE LA RESPUESTA
 Devuelve un unico objeto JSON con dos claves:
   "texto": la escena, en prosa.
   "pov_usado": el identificador del personaje desde cuyo punto de vista la
@@ -92,6 +92,18 @@ No expliques el JSON ni lo envuelvas en vallas de bloque de codigo.
 SIN_PROBLEMAS = ""
 SIN_INSTRUCCIONES = ""
 SIN_VETADAS = ""
+CON_NOMBRES = """NOMBRES QUE VAN ESCRITOS EXACTAMENTE ASI
+Con estas letras y estas tildes. Un nombre parecido que no sea igual devuelve la
+escena para reescribirla.
+{lista}
+
+"""
+CON_CLAVES = """ESTE CAPITULO TIENE QUE CONTAR ESTO
+Son recuerdos y rasgos reales de la persona que recibe la novela. Integralos con
+naturalidad, sin forzarlos, y usa estas palabras al contarlos:
+{lista}
+
+"""
 CON_VETADAS = """PALABRAS QUE NO PUEDEN APARECER
 Ni estas ni sus plurales, femeninos o variantes con o sin acento. Una sola
 aparicion devuelve la escena para reescribirla.
@@ -119,7 +131,8 @@ CON_PROBLEMAS = """PROBLEMAS DEL INTENTO ANTERIOR QUE HAY QUE CORREGIR
 
 def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
               personajes=None, ids_de_hechos=None, instrucciones=None,
-              establece=None, vetadas=None) -> str:
+              establece=None, vetadas=None, nombres=None,
+              imprescindibles=None) -> str:
     """Los problemas del intento anterior entran en el prompt, no en un aviso.
 
     En la otra rama el aviso de longitud lo leia la sesion orquestadora y no el
@@ -153,6 +166,16 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
     if vetadas:
         bloque_vetadas = CON_VETADAS.format(
             lista="\n".join("- " + str(v) for v in vetadas))
+    # `SPEC-26` / Regla 4: `INV-22` e `INV-23` exigen nombres exactos y palabras
+    # clave, asi que el Escritor tiene que saberlos antes de escribir.
+    bloque_personal = ""
+    if nombres:
+        bloque_personal += CON_NOMBRES.format(
+            lista="\n".join("- " + n for n in nombres))
+    if imprescindibles:
+        bloque_personal += CON_CLAVES.format(lista="\n".join(
+            "- {0} (palabras: {1})".format(i["elemento"], ", ".join(i["palabras_clave"]))
+            for i in imprescindibles))
     ids = "\n".join([
         "personajes: " + (", ".join(personajes or []) or "(ninguno)"),
         "hechos: " + (", ".join(ids_de_hechos or []) or "(ninguno)"),
@@ -167,6 +190,7 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
         instrucciones=bloque_humano,
         establece=bloque_establece,
         vetadas=bloque_vetadas,
+        personalizacion=bloque_personal,
     )
 
 
