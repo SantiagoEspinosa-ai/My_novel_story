@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "id": "brief-incoherencia-temporal",
+    "proposito": "Provocar incoherencias de cronologia que solo la verificacion formal en Lean puede cazar, porque ninguna puerta escena a escena las ve.",
+    "de_los_cinco_briefs": "el adversario temporal",
+    "estado": "listo para ejecutar; sin ejecutar todavia",
+    "requiere": [
+      "F-47 enchufado o no: el brief vale igual, y de hecho vale mas si INV-08 sigue desconectada, porque entonces Lean es el unico que caza L-1",
+      "F-46 resuelto para que L-4 pueda disparar: hoy `excluye` llega vacia y esa parte del brief no se puede medir"
+    ]
+  },
+
+  "brief": {
+    "titulo": "La casa de los dos veranos",
+    "genero": "terror",
+    "subgenero": "casa encantada",
+    "persona": "tercera_limitada",
+    "tiempo_verbal": "pasado",
+    "extension_objetivo": 10,
+    "premisa": "Ana vuelve a la casa familiar en el verano de 2019 para vaciarla antes de venderla. La novela alterna ese presente con el verano de 1998, cuando su hermana Marta desaparecio en el bosque de detras. Su abuela Elena, que murio en el incendio de 2003, es quien contaba lo que habia pasado en la casa en 1962. Cada capitulo salta entre las dos lineas sin avisar al lector: el salto se nota por el detalle, no por un rotulo."
+  },
+
+  "por_que_provoca_cada_incoherencia": {
+    "L-1": "La premisa pide explicitamente saltar entre 2019 y 1998 'sin avisar al lector'. Es la trampa: un salto narrativo bien hecho es legitimo, pero tiene que quedar DECLARADO como analepsis en `Escena.momento_narrativo`. Si el arquitecto escribe el salto en la prosa y no lo declara en el dato, `t_fabula` retrocede mientras el discurso avanza y `L-1` dispara. Es justo la diferencia entre lo que el texto hace y lo que el plan declara.",
+    "L-2": "Elena cuenta en primera persona lo que vio en la casa en 1962. Si el arquitecto le pone a Elena una fecha de nacimiento posterior -lo natural si la piensa como abuela de alguien nacido en los noventa- queda presente en un evento anterior a su nacimiento.",
+    "L-3": "La linea de 1998 tiene a Ana y a Marta la misma tarde, una en la casa y otra en el bosque. Si las dos escenas comparten `t_fabula` y alguna coloca a las dos hermanas presentes, `L-3` dispara.",
+    "L-4": "Elena murio en el incendio de 2003. Cualquier escena de la linea de 2019 en la que este presente -y la premisa invita, porque es la voz que cuenta la casa- es una aparicion posterior a un evento que la excluye. **Hoy esto no se puede medir**: ver `F-46`."
+  },
+
+  "que_deberia_pasar": {
+    "en_las_puertas_de_escena": "Nada, o casi nada. Cada escena por separado es coherente: la de 1998 lo es, la de 2019 lo es. `INV-02` mira una escena en su puerta y no ve la relacion entre dos. Ese es el punto del brief.",
+    "en_lean": "`verificar-real` devuelve 1 y nombra los pares concretos de eventos en conflicto.",
+    "lectura_si_lean_no_dispara": "No significa que la obra sea coherente. Significa que hay que mirar el informe de cobertura del generador: cuantos eventos se convirtieron, y cuantos personajes se quedaron sin fecha de nacimiento. Un cero con la mitad de los eventos fuera no es un cero."
+  },
+
+  "limitacion_declarada": {
+    "que": "Este fichero usa solo los campos que `BriefEntrada` acepta hoy: titulo, premisa, genero, subgenero, extension_objetivo, persona, tiempo_verbal.",
+    "por_que_importa": "El enunciado del examen pide un brief bastante mas rico -destinatario, edad, rasgos, recuerdos, palabras prohibidas- y nada de eso existe todavia en el esquema. Inventar aqui campos que el backend rechazaria con un 422 daria un fichero que parece listo y no se puede ejecutar. Cuando el esquema crezca, este brief crece con el."
+  }
+}

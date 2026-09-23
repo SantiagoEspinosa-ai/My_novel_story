@@ -75,15 +75,40 @@ no comprobado por falta de dato:
 Hay incoherencias temporales: la version NO se publica.   EXIT = 1
 ```
 
-**`L-1` es el caso que más vale, y no porque Lean sea más listo: es que hoy no
-lo mira nadie.** `INV-08` está declarada en `Docs/definitions.md` con severidad
-`mayor`, tiene su consulta escrita en `cronologia/consultas.py`
-(`orden_temporal`) — y **no aparece en `features/verificacion/puertas.py`, y a
-`orden_temporal` solo la llaman sus propias pruebas**. El orden temporal de una
-obra no se comprueba en ningún punto del pipeline. Registrado como `F-47`.
+### `F-47` · No es que Lean viera algo que a los otros se les escapó: es que Lean es lo único que lo mira
 
-Es exactamente el patrón de `F-34`: una invariante que no se ejecuta y una que
-está en verde **se ven igual desde fuera**.
+El enunciado pide «un caso real donde Lean detecte algo que los otros
+validadores no vieron». Lo que apareció es más fuerte que eso, y conviene
+decirlo con todas las letras porque es lo que cambia la conclusión:
+
+> **`INV-08` —el orden temporal— está declarada, tiene su consulta escrita,
+> tiene pruebas propias que pasan, y no la ejecuta nadie en el pipeline.**
+
+Las tres mitades, para que se vea que no es una omisión por descuido sino algo
+que *parece* terminado:
+
+| | Estado |
+| --- | --- |
+| Declarada | `Docs/definitions.md`: `INV-08`, nivel capítulo, severidad `mayor`, con sus fuentes de datos |
+| Implementada | `cronologia/consultas.py` → `orden_temporal()`, que compara fábula con discurso y devuelve las inversiones |
+| Probada | Sus propias pruebas la ejercitan y pasan |
+| **Enchufada** | **No.** No aparece en `features/verificacion/puertas.py`, y a `orden_temporal()` **solo la llaman sus propias pruebas** |
+
+Es decir: **una invariante con toda la apariencia de estar cubierta, a la que
+solo le faltaba estar enchufada.** Desde fuera —leyendo el documento, leyendo
+el código, mirando las pruebas en verde— no hay forma de distinguirla de una
+que sí se ejecuta. Es el patrón de `F-34` elevado a su versión más engañosa:
+allí una invariante se saltaba en silencio por un campo ausente; aquí no se
+salta, es que nunca se la llama.
+
+**Por eso el caso vale.** Lean no es más listo que `orden_temporal()` —hacen la
+misma comparación—; lo que hace es **ejecutarse**. Y ejecutarse es lo que
+destapó que el orden temporal de una obra no se comprueba en ningún punto del
+pipeline, cosa que ninguna lectura del repositorio había revelado en semanas.
+
+Registrado como `F-47`. **Enchufarla es trabajo del backend, no de este
+proyecto Lean**: es una llamada en la puerta de capítulo, y la consulta que
+necesita ya existe.
 
 ### Lo que este caso todavía no es
 
