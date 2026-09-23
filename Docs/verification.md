@@ -434,6 +434,22 @@ vez en cuanto un comando de git falle, antes de ponerse a corregir la sintaxis. 
 pasar el mensaje por la entrada estándar —`git commit -F -` con un heredoc—, porque quita de
 en medio los errores de comillas y de orden de argumentos, que son los que abren la ventana.
 
+**Y la regla ya ha evitado un daño, que es la primera vez.** Se escribió después de dos
+incidentes —`F-44` y `F-48`, las dos veces perdiendo el porqué de un trabajo— y a la tercera
+sirvió para **no** llevarse algo. Al ir a commitear un cambio propio en
+`obra_diez_capitulos.py`, mirar el índice antes de preparar enseñó que el mismo fichero
+llevaba encima un cambio de otra sesión a medias: una llamada a
+`procedencia.registrar(..., sistema=...)` cuya firma todavía no estaba commiteada.
+Commitearlo habría dejado **el árbol roto para todos**, no solo mal atribuido. Se commitearon
+por separado los ficheros enteramente propios y el compartido lo commiteó después la sesión
+dueña del código del que dependía.
+
+Conviene dejarlo escrito porque este documento cataloga fallos y **una regla que funciona no
+deja rastro en ninguna parte**: sin esta nota, la única evidencia sobre la disciplina del
+índice serían las dos veces que faltó. Y el matiz que la hace utilizable es que el daño evitado
+era **de otra clase** que el que la motivó: no perder la autoría, sino no publicar código que
+no compila.
+
 **La consecuencia para verificar:** un fallo de esta familia **no se caza con pruebas de
 caso feliz ni mirando código**, porque cada operación aislada es correcta. Se caza
 explorando entrelazados —que es para lo que sirve un *model checker*, y por lo que
