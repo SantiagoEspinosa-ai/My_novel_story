@@ -13,9 +13,12 @@ from app.commons.db import migraciones
 from app.commons.trabajos import cola
 from app.features.brief import repository as repositorio_brief
 from app.features.brief.router import router as router_brief
+from app.features.escaleta import repository as repositorio_escaleta
+from app.features.orquestacion.router import router as router_ciclo
 
 app = FastAPI(title="Harness de novelas", version="0.1.0")
 app.include_router(router_brief)
+app.include_router(router_ciclo)
 
 
 def preparar_base(ruta=":memory:"):
@@ -23,4 +26,5 @@ def preparar_base(ruta=":memory:"):
     migraciones.migrar(con)
     cola.asegurar_tabla(con)
     repositorio_brief.asegurar_tablas(con)
+    repositorio_escaleta.asegurar_tablas(con)
     return con

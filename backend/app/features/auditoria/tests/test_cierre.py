@@ -55,3 +55,29 @@ def test_un_capitulo_cerrado_no_se_reabre():
     r = capitulo.cerrar([EE.CONSOLIDADA], [])
     with pytest.raises(capitulo.NoSePuedeCerrar, match="reabre"):
         capitulo.reabrir(r)
+
+
+def test_un_mayor_leido_de_la_base_tambien_bloquea():
+    """La prueba que faltaba, y que dejo la puerta abierta en silencio.
+
+    Las de arriba pasan `Severidad.MAYOR` directamente. El repositorio devolvia
+    la cadena `"mayor"`, y `"mayor" is Severidad.MAYOR` es falso: el cierre
+    pasaba con un `mayor` abierto y nada avisaba. Ahora el repositorio
+    deserializa al tipo del dominio, y esta prueba recorre ese camino.
+    """
+    import sqlite3
+
+    from app.features.escaleta import repository as repo
+
+    con = sqlite3.connect(":memory:")
+    repo.asegurar_tablas(con)
+    repo.guardar_escaleta(con, "cap-1", [{"id": "e1", "orden": 1,
+        "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}, "beats": ["b1"]}])
+    repo.guardar_hallazgo(con, invariante="INV-07", verificador="verificador_de_reglas",
+                          escena="e1", severidad=S.MAYOR, estado=EH.ABIERTO,
+                          descripcion="sin beat")
+
+    leidos = repo.hallazgos_abiertos(con, "e1")
+    assert leidos[0]["severidad"] is S.MAYOR, "el repositorio devuelve el tipo del dominio"
+    with pytest.raises(capitulo.NoSePuedeCerrar):
+        capitulo.cerrar([EE.CONSOLIDADA], leidos)

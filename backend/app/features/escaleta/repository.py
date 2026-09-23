@@ -16,6 +16,7 @@ import sqlite3
 
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.commons.dominio.enumeraciones import EstadoDeHallazgo as EH
+from app.commons.dominio.enumeraciones import Severidad
 
 SQL = """
 CREATE TABLE IF NOT EXISTS escena (
@@ -117,12 +118,26 @@ def guardar_hallazgo(con, invariante, verificador, escena, severidad, estado, de
 
 
 def hallazgos_abiertos(con, escena):
+    """Devuelve `severidad` y `estado` como **miembros de su enumeracion**.
+
+    La primera version los devolvia como cadenas, y eso abrio la puerta de
+    capitulo en silencio: `impide_cerrar_el_capitulo` compara con `is` contra
+    `Severidad.MAYOR`, y `"mayor" is Severidad.MAYOR` es falso. Un `mayor`
+    leido de la base **no bloqueaba nada**, y las pruebas unitarias de la puerta
+    no lo veian porque le pasaban miembros directamente.
+
+    La leccion es de frontera: si los modelos Pydantic son la frontera de
+    validacion de la API, **la deserializacion es la frontera de validacion de
+    la base**. Un dato que entra al dominio entra con el tipo del dominio o no
+    entra.
+    """
     filas = con.execute(
         "SELECT invariante, verificador, severidad, estado, descripcion FROM hallazgo "
         "WHERE escena = ? AND estado IN (?, ?)",
         (escena, CUENTAN_COMO_ABIERTOS[0], CUENTAN_COMO_ABIERTOS[1]))
-    return [{"invariante": f[0], "verificador": f[1], "severidad": f[2],
-             "estado": f[3], "descripcion": f[4]} for f in filas]
+    return [{"invariante": f[0], "verificador": f[1],
+             "severidad": Severidad(f[2]), "estado": EH(f[3]),
+             "descripcion": f[4]} for f in filas]
 
 
 def aceptar_borrador(con, escena, version, rindiendose):
