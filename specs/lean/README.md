@@ -80,7 +80,7 @@ lo mira nadie.** `INV-08` está declarada en `Docs/definitions.md` con severidad
 `mayor`, tiene su consulta escrita en `cronologia/consultas.py`
 (`orden_temporal`) — y **no aparece en `features/verificacion/puertas.py`, y a
 `orden_temporal` solo la llaman sus propias pruebas**. El orden temporal de una
-obra no se comprueba en ningún punto del pipeline. Registrado como `F-46`.
+obra no se comprueba en ningún punto del pipeline. Registrado como `F-47`.
 
 Es exactamente el patrón de `F-34`: una invariante que no se ejecuta y una que
 está en verde **se ven igual desde fuera**.
@@ -106,7 +106,7 @@ Hoy hay dos huecos declarados:
 - **`L-4` no puede disparar sobre datos reales.** `Evento.excluye` llega
   siempre vacía porque **no hay de dónde sacarla**: `entidad` guarda el estado
   vital *actual* y no en qué evento cambió, y `cambios_de_estado_vital` del
-  delta se aplica y no se conserva. Registrado como `F-45`. La invariante está
+  delta se aplica y no se conserva. Registrado como `F-46`. La invariante está
   escrita y probada contra el fixture: lo que falta es el dato, no la
   comprobación.
 - **`L-2` se salta a quien no tiene fecha de nacimiento.** Es opcional a

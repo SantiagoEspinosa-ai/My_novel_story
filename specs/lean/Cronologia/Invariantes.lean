@@ -102,7 +102,7 @@ def ubicuidad (o : Obra) : Informe :=
 
     **Hoy esta comprobacion no puede disparar contra datos reales**, porque
     `Evento.excluye` llega siempre vacia del generador: no hay tabla que diga
-    en que evento alguien dejo de poder aparecer (`F-45`). Contra el fixture si
+    en que evento alguien dejo de poder aparecer (`F-46`). Contra el fixture si
     dispara, que es lo que demuestra que la comprobacion funciona y que lo que
     falta es el dato. Decir «cero violaciones de L-4» sobre una obra real seria
     exactamente el verde falso que `F-34` enseño a no dar por bueno. -/

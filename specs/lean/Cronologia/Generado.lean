@@ -8,7 +8,7 @@
 
   `excluye` va vacia en todos los eventos, y no porque nadie muera: porque no
   hay de donde sacarlo. `entidad` guarda el estado vital **actual** y no en que
-  evento cambio (`F-45`). Mientras siga asi, `L-4` no puede disparar sobre
+  evento cambio (`F-46`). Mientras siga asi, `L-4` no puede disparar sobre
   datos reales y un cero suyo no significa nada.
 -/
 import Cronologia.Basic

@@ -155,7 +155,7 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
         "eventos_sin_fecha_legible": sin_fecha_legible,
         "personajes": len(personajes),
         "personajes_sin_fecha_de_nacimiento": sin_nacimiento,
-        # Siempre vacio hoy, y por eso se informa en vez de callarse: ver F-45.
+        # Siempre vacio hoy, y por eso se informa en vez de callarse: ver F-46.
         "eventos_con_exclusion": 0,
     }
 
@@ -170,7 +170,7 @@ CABECERA = '''/-
 
   `excluye` va vacia en todos los eventos, y no porque nadie muera: porque no
   hay de donde sacarlo. `entidad` guarda el estado vital **actual** y no en que
-  evento cambio (`F-45`). Mientras siga asi, `L-4` no puede disparar sobre
+  evento cambio (`F-46`). Mientras siga asi, `L-4` no puede disparar sobre
   datos reales y un cero suyo no significa nada.
 -/
 import Cronologia.Basic

@@ -94,7 +94,7 @@ structure Evento where
       **Hoy el generador siempre la deja vacia**, y no porque no pase nunca:
       porque no hay de donde sacarlo. La tabla `entidad` guarda el estado vital
       **actual** y no en que evento cambio, y `cambios_de_estado_vital` del
-      delta se aplica y no se conserva. Ver `F-45`. El campo existe ya para que
+      delta se aplica y no se conserva. Ver `F-46`. El campo existe ya para que
       la invariante este escrita y probada contra el fixture el dia que el dato
       llegue: lo que falta es la fuente, no la comprobacion. -/
   excluye     : List String := []
