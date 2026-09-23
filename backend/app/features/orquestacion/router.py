@@ -90,7 +90,12 @@ def cerrar_capitulo(id_capitulo: str, con: sqlite3.Connection = Depends(conexion
     Devuelve los `menor` que se dejan pasar: si no se enseñaran, `mayor` y
     `menor` volverian a producir el mismo comportamiento.
     """
-    escenas = repo.escenas_de(con, id_capitulo)
+    # Por **capitulo**, no por obra. `escenas_de` filtra por obra y aqui llega
+    # un capitulo: mientras el guion creaba una obra por capitulo los dos
+    # identificadores coincidian y esto salia bien por accidente. Con varios
+    # capitulos dentro de una obra, devolveria cero escenas y el endpoint
+    # concluiria que el capitulo no existe.
+    escenas = repo.escenas_de_capitulo(con, id_capitulo)
     if not escenas:
         raise HTTPException(404, "no existe el capitulo {0}".format(id_capitulo))
     hallazgos = [h for e in escenas for h in repo.hallazgos_abiertos(con, e["id"])]
