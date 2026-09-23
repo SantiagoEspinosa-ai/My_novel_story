@@ -12,19 +12,18 @@ import pytest
 from app.commons.dominio.enumeraciones import OrigenDeUso as O
 from app.commons.dominio.enumeraciones import TipoDeUsoDeHecho as U
 from app.features.cronologia import extraccion, repository as repo
-from app.features.escaleta import repository as escaleta
+
+# `A-02`: esta feature no importa de ninguna otra, **ni en sus pruebas**. El
+# fixture sembraba escenas con `escaleta/` y no hacian falta: `registrar_usos`
+# recibe `escena` y `capitulo` como valores y **no consulta la tabla `escena`**,
+# que es justo por lo que `repository.py` guarda el capitulo en la fila en vez
+# de resolverlo por JOIN. El comprobador de importaciones lo cazó.
 
 
 @pytest.fixture
 def con():
     c = sqlite3.connect(":memory:")
     repo.asegurar_tablas(c)
-    escaleta.asegurar_tablas(c)
-    escaleta.guardar_escaleta(c, "obra-1", [
-        {"id": "e1", "orden": 1, "capitulo": "cap-1", "pov": "p", "lugar": "lug-salon",
-         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
-         "beats": ["b1"]},
-    ])
     return c
 
 
