@@ -72,6 +72,7 @@ def test_un_mayor_leido_de_la_base_tambien_bloquea():
     con = sqlite3.connect(":memory:")
     repo.asegurar_tablas(con)
     repo.guardar_escaleta(con, "cap-1", [{"id": "e1", "orden": 1,
+                                         "pov": "per-marta", "lugar": "lug-salon", 
         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}, "beats": ["b1"]}])
     repo.guardar_hallazgo(con, invariante="INV-07", verificador="verificador_de_reglas",
                           escena="e1", severidad=S.MAYOR, estado=EH.ABIERTO,

@@ -61,3 +61,16 @@ def test_el_prompt_dice_que_significa_revelar_y_que_significa_actuar():
         assert significado in minusculas, (
             "falta el significado de un campo: dar la forma sin el significado "
             "es lo que produjo F-31")
+
+
+def test_el_prompt_dice_que_pov_se_planifico():
+    """`SPEC-18` C-2, y la causa directa de `F-34`: no se lo deciamos, asi que
+    el modelo eligio -y eligio mal-. Regla 4: exigir en el contrato lo que el
+    prompt no pide es pedir lo imposible."""
+    texto = prompt.construir(
+        parametros={"escena": "e1", "longitud_objetivo": [300, 900],
+                    "pov": "per-marta"},
+        estado={"contexto": []}, objetivo="{}", problemas=None,
+        personajes=["per-marta", "per-ana"], hechos=[])
+    assert "per-marta" in texto
+    assert "pov_usado" in texto, "y hay que pedir que lo declare de vuelta"

@@ -26,7 +26,7 @@ SQL = """
 CREATE TABLE IF NOT EXISTS conocimiento (
     sujeto       TEXT NOT NULL,
     hecho        TEXT NOT NULL,
-    desde_escena TEXT NOT NULL,
+    desde_escena TEXT,
     grado        TEXT NOT NULL DEFAULT 'sabe',
     fuente       TEXT,
     PRIMARY KEY (sujeto, hecho)
@@ -41,6 +41,34 @@ CREATE TABLE IF NOT EXISTS lugar (
 def asegurar_tablas(con: sqlite3.Connection):
     with con:
         con.executescript(SQL)
+
+
+# `SPEC-17` C-3: lo que se sabe desde antes de la escena 1 no tiene escena de
+# origen, asi que necesita un valor propio de `fuente`. Sin el, la invariante de
+# la fuente que `SPEC-16` dejo abierta nace ya incumplida por estas entradas.
+ANTERIOR_AL_RELATO = "anterior_al_relato"
+
+
+def sembrar_conocimiento(con, entradas):
+    """Lo que los personajes saben **antes de la escena 1** (`SPEC-17` C-1).
+
+    Va en esta misma tabla y no en una aparte: tener dos sitios donde consta
+    "quien sabe que" garantiza que la copia que alguien olvide actualizar sea
+    justo la que `INV-03` lea. `desde_escena` queda vacio, que es lo que
+    significa *anterior al relato*.
+
+    Sin esto el registro arrancaba vacio y **ninguna accion era posible en la
+    primera escena de una obra** (`F-32`): un personaje llega sabiendo cosas de
+    antes del relato, y eso no lo revela ninguna escena.
+    """
+    asegurar_tablas(con)
+    with con:
+        for e in entradas:
+            con.execute(
+                "INSERT OR REPLACE INTO conocimiento (sujeto, hecho, "
+                "desde_escena, grado, fuente) VALUES (?, ?, NULL, ?, ?)",
+                (e["sujeto"], e["hecho"], e.get("grado", "sabe"),
+                 ANTERIOR_AL_RELATO))
 
 
 def sembrar_lugares(con, accesos: dict):

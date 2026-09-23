@@ -45,6 +45,7 @@ import pathlib
 import tempfile
 from dataclasses import dataclass, field
 
+from app.commons.invariantes import severidad
 from app.commons.modelo import proveedor, traza as modulo_traza
 from app.features.consolidacion import aplicar
 from app.features.orquestacion import bucle
@@ -140,8 +141,11 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
         c.veredicto = {"veredicto": "SIN_VEREDICTO", "problemas": []}
 
     # 3. Consolidar: despues de las puertas, antes de resumir.
+    # Quien decide es `severidad.py`, una vez (`D-4`), y desde `SPEC-18` C-3
+    # mira el hallazgo entero y no solo su severidad: un `sin_veredicto` no
+    # afirma que nada se haya roto, asi que no detiene la escena.
     bloqueantes = [h for h in c.generacion.hallazgos
-                   if str(h.severidad) == "bloqueante"]
+                   if severidad.detiene_la_escena_por(h)]
     if bloqueantes:
         c.fallo = "bloqueante"
         return c

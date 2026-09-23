@@ -40,3 +40,36 @@ def se_lista_al_firmar(severidad: Severidad) -> bool:
     que deja pasar. Si no se enseñaran, `mayor` y `menor` volverian a ser lo
     mismo."""
     return severidad is Severidad.MENOR
+
+
+# --- SPEC-18 C-3: un `sin_veredicto` no es una violacion -------------------
+#
+# Las tres funciones de arriba miran **la severidad**, que dice cuanto pesa una
+# violacion CONFIRMADA. Un hallazgo cuyo `estado` es `sin_veredicto` no afirma
+# que nada se haya roto: afirma que **no se pudo mirar**, y tratarlo igual hacia
+# que un dato ausente detuviera la obra como una violacion (`F-36`).
+#
+# Tampoco puede pasar como exito: `SPEC-10` C-2 decidio que quien no se dejo
+# auditar no gana por defecto. El sitio donde las dos cosas son verdad a la vez
+# es el cierre de capitulo, que es exactamente donde vive un `mayor`.
+#
+# Estas dos funciones reciben el **hallazgo**, no la severidad, y son las que
+# debe usar quien decide. Las de arriba se quedan porque siguen siendo la
+# definicion de cada severidad, y `D-4` exige que esa definicion viva una vez.
+
+def _sin_veredicto(hallazgo) -> bool:
+    return str(getattr(hallazgo, "estado", "")) == "sin_veredicto"
+
+
+def detiene_la_escena_por(hallazgo) -> bool:
+    """Solo una violacion confirmada detiene la escena."""
+    if _sin_veredicto(hallazgo):
+        return False
+    return detiene_la_escena(hallazgo.severidad)
+
+
+def impide_cerrar_el_capitulo_por(hallazgo) -> bool:
+    """Un `mayor` abierto **y** cualquier cosa que no se pudo comprobar."""
+    if _sin_veredicto(hallazgo):
+        return True
+    return impide_cerrar_el_capitulo(hallazgo.severidad)

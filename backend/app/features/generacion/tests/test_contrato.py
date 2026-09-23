@@ -15,7 +15,8 @@ from app.features.generacion import contrato
 def test_una_respuesta_sin_delta_se_rechaza_antes_de_las_puertas():
     """El caso negativo de `VER-20`."""
     with pytest.raises(contrato.FalloDeContrato, match="delta"):
-        contrato.leer({"texto": "La puerta estaba abierta."})
+        contrato.leer({"texto": "La puerta estaba abierta.",
+                       "pov_usado": "per-marta"})
 
 
 def test_una_respuesta_sin_texto_tambien():
@@ -32,7 +33,7 @@ def test_un_delta_fuera_de_esquema_es_fallo_de_contrato_y_no_se_reintenta():
 
 def test_una_respuesta_completa_se_lee():
     r = contrato.leer({
-        "texto": "La puerta estaba abierta.",
+        "texto": "La puerta estaba abierta.", "pov_usado": "per-marta",
         "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}},
     })
     assert r.texto.startswith("La puerta")
@@ -54,7 +55,7 @@ def test_una_revelacion_en_prosa_es_fallo_de_contrato_no_de_continuidad():
     """
     with pytest.raises(contrato.FalloDeContrato, match="identificador"):
         contrato.leer({
-            "texto": "x",
+            "texto": "x", "pov_usado": "per-marta",
             "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
                       "revelaciones": [{"sujeto": "casa familiar",
                                         "hecho": "el reloj funciona sin cuerda"}]},
@@ -63,7 +64,7 @@ def test_una_revelacion_en_prosa_es_fallo_de_contrato_no_de_continuidad():
 
 def test_una_revelacion_con_identificadores_pasa():
     r = contrato.leer({
-        "texto": "x",
+        "texto": "x", "pov_usado": "per-marta",
         "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
                   "revelaciones": [{"sujeto": "per-marta", "hecho": "hec-reloj"}]},
     })
@@ -78,7 +79,7 @@ def test_una_accion_en_prosa_es_fallo_de_contrato():
     conoce, y el defecto era de formato."""
     with pytest.raises(contrato.FalloDeContrato, match="identificador"):
         contrato.leer({
-            "texto": "x",
+            "texto": "x", "pov_usado": "per-marta",
             "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
                       "acciones": [{"personaje": "la hermana mayor",
                                     "hecho": "que la llave no aparece"}]},
@@ -87,7 +88,7 @@ def test_una_accion_en_prosa_es_fallo_de_contrato():
 
 def test_una_accion_con_identificadores_pasa():
     r = contrato.leer({
-        "texto": "x",
+        "texto": "x", "pov_usado": "per-marta",
         "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
                   "acciones": [{"personaje": "per-marta", "hecho": "hec-reloj"}]},
     })
@@ -98,7 +99,36 @@ def test_un_delta_sin_acciones_sigue_siendo_valido():
     """La mayoria de las escenas no las tienen, y exigirlas convertiria en
     fallo de contrato lo que es simplemente una escena sin acciones."""
     r = contrato.leer({
-        "texto": "x",
+        "texto": "x", "pov_usado": "per-marta",
         "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}},
     })
     assert r.delta.get("acciones") in (None, [])
+
+
+# --- SPEC-18 C-1: el agente declara el POV que uso ------------------------
+
+def test_una_respuesta_sin_pov_usado_es_fallo_de_contrato():
+    """`Borrador.pov_usado` es obligatorio en el dominio y nadie lo rellenaba
+    (`F-36`), asi que `INV-04` no tenia contra que comparar."""
+    with pytest.raises(contrato.FalloDeContrato, match="pov_usado"):
+        contrato.leer({
+            "texto": "x",
+            "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}},
+        })
+
+
+def test_el_pov_usado_llega_a_la_respuesta():
+    r = contrato.leer({
+        "texto": "x", "pov_usado": "per-marta",
+        "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}},
+    })
+    assert r.pov_usado == "per-marta"
+
+
+def test_un_pov_usado_en_prosa_es_fallo_de_contrato():
+    """Misma frontera que el resto de referencias (`SPEC-03`, Regla 4)."""
+    with pytest.raises(contrato.FalloDeContrato, match="identificador"):
+        contrato.leer({
+            "texto": "x", "pov_usado": "la hermana mayor",
+            "delta": {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"}},
+        })

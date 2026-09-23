@@ -23,7 +23,7 @@ def con():
     c = sqlite3.connect(":memory:")
     repo.asegurar_tablas(c)
     repo.guardar_escaleta(c, "obra-1", [
-        {"id": "e1", "orden": 1,
+        {"id": "e1", "orden": 1, "pov": "per-marta", "lugar": "lug-salon",
          "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
          "beats": ["b1"], "longitud_objetivo": [1200, 2200]},
     ])
@@ -35,19 +35,6 @@ def _ctx(tam=100):
     return {b.nombre: tam for b in BLOQUES}
 
 
-PENDIENTE_F36 = pytest.mark.xfail(strict=True, reason=(
-    "F-36: `Borrador.pov_usado` es obligatorio en el dominio y **nadie lo "
-    "rellena**. Al dejar de callarse (`F-34`), `INV-04` devuelve "
-    "`sin_veredicto` en toda escena, y `sin_veredicto` hereda la severidad de "
-    "su invariante -`bloqueante`- asi que el bucle se detiene antes de "
-    "generar nada. No se ablanda la comprobacion ni se ajusta la prueba: "
-    "faltan dos decisiones de dominio -de donde sale `pov_usado` y si un "
-    "`sin_veredicto` detiene igual que una violacion confirmada- y las dos "
-    "van por spec. `strict` para que estas pruebas avisen en cuanto se "
-    "decidan."))
-
-
-@PENDIENTE_F36
 def test_una_generacion_limpia_deja_borrador_traza_y_ningun_hallazgo(con):
     r = agente.generar(con, "e1", _ctx(), DobleDelModelo(), techo=10_000)
     assert r.fallo is None
@@ -106,7 +93,6 @@ def test_ya_no_hay_techo_que_liberar(con):
     assert techo == {}, "nadie reserva, asi que no hay nada que liberar"
 
 
-@PENDIENTE_F36
 def test_una_escena_corta_produce_inv17_y_no_la_caza_ningun_juez(con):
     """El caso de la otra rama: 944 palabras con minimo de 1200.
 

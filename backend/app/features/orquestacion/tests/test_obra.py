@@ -47,26 +47,12 @@ def _agentes():
                       "hechos_clave": ["hec-llave"]}))
 
 
-PENDIENTE_F36 = pytest.mark.xfail(strict=True, reason=(
-    "F-36: `Borrador.pov_usado` es obligatorio en el dominio y **nadie lo "
-    "rellena**. Al dejar de callarse (`F-34`), `INV-04` devuelve "
-    "`sin_veredicto` en toda escena, y `sin_veredicto` hereda la severidad de "
-    "su invariante -`bloqueante`- asi que el bucle se detiene antes de "
-    "generar nada. No se ablanda la comprobacion ni se ajusta la prueba: "
-    "faltan dos decisiones de dominio -de donde sale `pov_usado` y si un "
-    "`sin_veredicto` detiene igual que una violacion confirmada- y las dos "
-    "van por spec. `strict` para que estas pruebas avisen en cuanto se "
-    "decidan."))
-
-
-@PENDIENTE_F36
 def test_genera_las_tres_escenas_en_orden(con):
     g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000)
     assert g.escenas_hechas == ["e1", "e2", "e3"]
     assert g.llego_al_final
 
 
-@PENDIENTE_F36
 def test_el_material_de_la_escena_2_incluye_lo_que_dejo_la_1(con):
     """El encadenado: sin esto la 2 genera contra el mundo de la 1."""
     obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000, hasta=1)
@@ -75,7 +61,6 @@ def test_el_material_de_la_escena_2_incluye_lo_que_dejo_la_1(con):
     assert material["escena_anterior"], "y el texto de la 1 tambien"
 
 
-@PENDIENTE_F36
 def test_el_contexto_crece_escena_a_escena(con):
     """El criterio de terminacion de la Fase F, y el unico que importa."""
     g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000)
@@ -84,7 +69,6 @@ def test_el_contexto_crece_escena_a_escena(con):
     assert totales[-1] > totales[0], "tiene que crecer solo: {0}".format(totales)
 
 
-@PENDIENTE_F36
 def test_una_bloqueante_detiene_la_obra_y_deja_el_dato(con):
     """No se rinde y no se salta. Y la parada **es la medida** (`VER-64`)."""
     with con:
@@ -104,7 +88,6 @@ def test_rf26_detiene_la_obra_sin_llamar_al_modelo(con):
     assert escritor.llamadas == []
 
 
-@PENDIENTE_F36
 def test_el_informe_dice_si_el_contexto_crece(con):
     g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000)
     assert "CRECE" in obra.informe(g)
@@ -128,6 +111,7 @@ class Revela:
     def llamar(self, prompt):
         self.llamadas.append(prompt)
         return {"texto": " ".join(["palabra"] * 1500),
+                "pov_usado": "per-marta",
                 "delta": {"cambio_de_valor": {"eje": "cordura",
                                               "signo": "negativo"},
                           "movimientos": [],
@@ -156,7 +140,6 @@ def test_sin_hechos_declarados_el_prompt_no_inventa_ninguno(con):
     assert "hec-" not in escritor.llamadas[0]
 
 
-@PENDIENTE_F36
 def test_una_revelacion_marca_donde_el_texto_establece_el_hecho(con):
     """`SPEC-15` C-1: `escena_de_establecimiento` es donde lo establece el
     TEXTO, no donde nacio el hecho. Y `SPEC-16` C-4: establecer un hecho **es**

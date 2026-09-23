@@ -24,7 +24,7 @@ def con():
 
 def _sembrar(con):
     repo.guardar_escaleta(con, "obra-1", [
-        {"id": "e1", "orden": 1,
+        {"id": "e1", "orden": 1, "pov": "per-marta", "lugar": "lug-salon", 
          "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
          "beats": ["b1"], "longitud_objetivo": [1200, 2200]},
     ])

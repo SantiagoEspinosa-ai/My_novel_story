@@ -63,3 +63,16 @@ def test_caso_negativo_un_hueco_en_la_secuencia():
                 migraciones.Migracion(3, "crea otra cosa", "SELECT 1"),
             ]
         )
+
+
+def test_la_migracion_2_permite_conocimiento_anterior_al_relato():
+    """`SPEC-17` C-2: `desde_escena` pierde su `NOT NULL`, porque lo que se sabe
+    desde antes de la escena 1 no tiene escena de origen. Es la primera
+    migracion del proyecto que no es gratis."""
+    con = sqlite3.connect(":memory:")
+    migraciones.migrar(con)
+    assert migraciones.version_aplicada(con) >= 2
+    con.execute("INSERT INTO conocimiento (sujeto, hecho, desde_escena, grado, "
+                "fuente) VALUES ('per-ana', 'hec-1', NULL, 'sabe', "
+                "'anterior_al_relato')")
+    assert con.execute("SELECT desde_escena FROM conocimiento").fetchone()[0] is None

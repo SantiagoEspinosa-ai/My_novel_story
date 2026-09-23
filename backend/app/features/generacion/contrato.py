@@ -31,6 +31,7 @@ class FalloDeContrato(Exception):
 class Respuesta:
     texto: str
     delta: dict
+    pov_usado: str = ""
 
 
 def leer(bruto: dict) -> Respuesta:
@@ -40,6 +41,21 @@ def leer(bruto: dict) -> Respuesta:
             "la respuesta no trae texto. Un vacio que pasa es peor que un "
             "fallo: entra en el manuscrito sin que nada lo marque"
         )
+    # `SPEC-18` C-1: el agente **declara** el POV que uso. No se deriva del
+    # texto, y el motivo es la Regla 3: `VER-48` contrasta la señal morfologica
+    # del texto **contra esta declaracion**, asi que si las dos salieran del
+    # mismo sitio el validador se compararia consigo mismo.
+    pov_usado = (bruto or {}).get("pov_usado")
+    if not pov_usado:
+        raise FalloDeContrato(
+            "la respuesta no declara `pov_usado`, que es obligatorio en el "
+            "dominio. Sin el, `INV-04` no tiene contra que comparar el POV "
+            "planificado y **pasa en verde sin haber mirado nada** (`F-36`)")
+    if not isinstance(pov_usado, str) or not IDENTIFICADOR.match(pov_usado):
+        raise FalloDeContrato(
+            "`pov_usado` tiene que ser un identificador y es {0!r}. Misma "
+            "frontera que el resto de referencias (`SPEC-03`)".format(pov_usado))
+
     delta = bruto.get("delta")
     if not delta:
         raise FalloDeContrato(
@@ -72,4 +88,4 @@ def leer(bruto: dict) -> Respuesta:
                         "personaje actuando sobre un hecho que no conoce y le "
                         "da severidad bloqueante. El defecto es de "
                         "formato".format(lista, i, campo, valor))
-    return Respuesta(texto=texto, delta=delta)
+    return Respuesta(texto=texto, delta=delta, pov_usado=pov_usado)

@@ -42,6 +42,10 @@ class FalloDeTransporte(Exception):
     pass
 
 
+# El POV que los fixtures planifican. El doble lo respeta salvo que el
+# guion pida `pov_cambiado`.
+POV = "per-marta"
+
 DELTA_OK = {"cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
             "movimientos": [], "revelaciones": []}
 
@@ -65,22 +69,29 @@ class DobleDelModelo:
         if paso == "mudo":
             return {"texto": "", "usage": {"total_tokens": 12}}
         if paso == "sin_delta":
-            return {"texto": "La puerta estaba abierta.", "usage": {"total_tokens": 40}}
+            return {"texto": "La puerta estaba abierta.", "pov_usado": POV,
+                    "usage": {"total_tokens": 40}}
         if paso == "delta_roto":
-            return {"texto": "La puerta estaba abierta.",
+            return {"texto": "La puerta estaba abierta.", "pov_usado": POV,
                     "delta": {"cambio_de_valor": {"eje": "dinero", "signo": "negativo"}},
                     "usage": {"total_tokens": 45}}
+        if paso == "pov_cambiado":
+            # `F-34` en real: el modelo escribio la escena sobre otro
+            # personaje del planificado. Sin este paso, `INV-04` no tiene
+            # ningun caso que la ejercite contra el bucle.
+            return {"texto": " ".join(["palabra"] * 1500), "pov_usado": "per-ana",
+                    "delta": DELTA_OK, "usage": {"total_tokens": 2100}}
         if paso == "actua_sin_saber":
             # El caso de `F-24`, que el modelo real produjo solo: un personaje
             # obra sirviendose de algo que no consta que conozca. Sin este paso
             # el doble no puede ejercitar `INV-03`, y una invariante que nunca
             # falla en las pruebas no esta verificada, solo declarada.
-            return {"texto": " ".join(["palabra"] * 1500),
+            return {"texto": " ".join(["palabra"] * 1500), "pov_usado": POV,
                     "delta": dict(DELTA_OK, acciones=[
                         {"personaje": "per-ana", "hecho": "hec-llave"}]),
                     "usage": {"total_tokens": 2100}}
         if paso == "corto":
-            return {"texto": " ".join(["palabra"] * 944), "delta": DELTA_OK,
-                    "usage": {"total_tokens": 1300}}
-        return {"texto": " ".join(["palabra"] * 1500), "delta": DELTA_OK,
-                "usage": {"total_tokens": 2100}}
+            return {"texto": " ".join(["palabra"] * 944), "pov_usado": POV,
+                    "delta": DELTA_OK, "usage": {"total_tokens": 1300}}
+        return {"texto": " ".join(["palabra"] * 1500), "pov_usado": POV,
+                "delta": DELTA_OK, "usage": {"total_tokens": 2100}}

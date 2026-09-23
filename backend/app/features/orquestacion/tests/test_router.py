@@ -16,7 +16,7 @@ def cliente(tmp_path):
     ruta = str(tmp_path / "obra.db")
     con = preparar_base(ruta)
     repo.guardar_escaleta(con, "cap-1", [
-        {"id": "e1", "orden": 1,
+        {"id": "e1", "orden": 1, "pov": "per-marta", "lugar": "lug-salon",
          "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
          "beats": ["b1"], "longitud_objetivo": [1200, 2200]},
     ])

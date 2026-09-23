@@ -8,11 +8,13 @@ import sqlite3
 
 import pytest
 
+from app.commons.invariantes import severidad
 from app.commons.modelo.doble import DobleDelModelo, Guion
 from app.features.consolidacion import aplicar
 from app.features.contexto.bloques import BLOQUES
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo
+from app.features.verificacion import puertas
 
 
 class DobleQueDevuelve:
@@ -37,6 +39,7 @@ def con():
     aplicar.asegurar_tablas(c)
     aplicar.sembrar(c, {"marta": ("vivo", "salon")})
     repo.guardar_escaleta(c, "cap-1", [{"id": "e1", "orden": 1,
+                                       "pov": "per-marta", "lugar": "lug-salon", 
         "cambio_de_valor": {"eje": "seguridad", "signo": "negativo"},
         "beats": ["b1"], "longitud_objetivo": [100, 3000]}])
     return c
@@ -51,19 +54,6 @@ def _ctx():
     return {b.nombre: 10 for b in BLOQUES}
 
 
-PENDIENTE_F36 = pytest.mark.xfail(strict=True, reason=(
-    "F-36: `Borrador.pov_usado` es obligatorio en el dominio y **nadie lo "
-    "rellena**. Al dejar de callarse (`F-34`), `INV-04` devuelve "
-    "`sin_veredicto` en toda escena, y `sin_veredicto` hereda la severidad de "
-    "su invariante -`bloqueante`- asi que el bucle se detiene antes de "
-    "generar nada. No se ablanda la comprobacion ni se ajusta la prueba: "
-    "faltan dos decisiones de dominio -de donde sale `pov_usado` y si un "
-    "`sin_veredicto` detiene igual que una violacion confirmada- y las dos "
-    "van por spec. `strict` para que estas pruebas avisen en cuanto se "
-    "decidan."))
-
-
-@PENDIENTE_F36
 def test_el_ciclo_completo_deja_escena_consolidada_y_resumida(con):
     c = ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(),
                        DobleQueDevuelve({"veredicto": "PASA", "problemas": []}),
@@ -83,7 +73,6 @@ def test_un_juez_ilegible_no_es_un_pase(con):
     assert c.veredicto["veredicto"] == "SIN_VEREDICTO"
 
 
-@PENDIENTE_F36
 def test_se_consolida_despues_de_las_puertas_y_antes_de_resumir(con):
     """El orden no se puede cambiar, y aqui queda como prueba."""
     orden = []
@@ -117,7 +106,6 @@ def test_una_bloqueante_detiene_antes_de_consolidar(con):
     assert c.consolidada is False
 
 
-@PENDIENTE_F36
 def test_el_coste_dice_cuantas_delegaciones_no_tienen_medida(con):
     """Un total sin decir que le falta es un suelo disfrazado de medida."""
     c = ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(),
@@ -126,3 +114,22 @@ def test_el_coste_dice_cuantas_delegaciones_no_tienen_medida(con):
     coste = ciclo.coste_total(c.trazas)
     assert coste["delegaciones"] == 3
     assert coste["sin_medida"] >= 1, "el Escritor doble no reporta medidas"
+
+
+def test_un_sin_veredicto_no_detiene_la_escena_pero_queda_abierto(con):
+    """`SPEC-18` C-3: "no se pudo comprobar" no es "se violo".
+
+    Antes heredaba la severidad de su invariante, asi que un dato que faltaba
+    detenia la obra igual que una violacion confirmada. Y tampoco puede pasar
+    como exito: `SPEC-10` C-2 dice que quien no se dejo auditar no gana por
+    defecto, y el sitio donde eso es verdad es el cierre de capitulo.
+    """
+    from app.commons.dominio.enumeraciones import EstadoDeHallazgo
+    from app.features.escaleta import repository as repo
+
+    with con:
+        con.execute("UPDATE escena SET longitud_objetivo='[300, 900]' WHERE id='e1'")
+    h = puertas.dato_ausente("INV-04", "e1", "Borrador.pov_usado", "comparar")
+    assert h.estado is EstadoDeHallazgo.SIN_VEREDICTO
+    assert not severidad.detiene_la_escena_por(h), "no detiene: no consta violacion"
+    assert severidad.impide_cerrar_el_capitulo_por(h), "pero no gana por defecto"

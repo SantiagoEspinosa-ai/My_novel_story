@@ -72,7 +72,7 @@ El canon es lo que es verdad dentro de la ficción, con independencia de cómo s
 | ReglaDelMundo | Restricción estable que gobierna lo que puede pasar. | **id**, **enunciado**, ambito, coste, excepciones\[\] |
 | EventoCronologico | Suceso situado en la fábula, se narre o no. | **id**, **t\_fabula**, participantes\[\], consecuencias\[\] |
 | EstadoDelMundo | Instantánea del canon en un momento `t`. | **t**, entidades\_vivas\[\], ubicaciones, posesiones, relaciones, hechos\_vigentes\[\] |
-| RegistroDeConocimiento | Quién sabe qué y desde cuándo. | **sujeto**, **hecho**, **desde\_escena**, tipo\_de\_sujeto → `tipo_de_sujeto`, grado → `grado_de_conocimiento`, **fuente** → Escena \| Personaje |
+| RegistroDeConocimiento | Quién sabe qué y desde cuándo. | **sujeto**, **hecho**, desde\_escena (**opcional desde `SPEC-17`**: vacío significa *anterior al relato*), tipo\_de\_sujeto → `tipo_de_sujeto`, grado → `grado_de_conocimiento`, **fuente** → Escena \| Personaje \| `anterior_al_relato` |
 
 **El registro de conocimiento merece rango propio.** Tiene tres tipos de sujeto —personaje, narrador y lector— y casi todos los fallos de tensión, así como los agujeros de trama, son incoherencias en esa tabla: un personaje que actúa sabiendo algo que aún no ha descubierto, o una revelación que el lector ya tenía.
 
@@ -104,7 +104,9 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | --- | --- | --- |
 | Brief | Contrato inicial de la obra: qué se va a escribir y bajo qué reglas. | **premisa**, **tono**, extension, referentes, prohibiciones, contrato\_con\_el\_lector |
 | GuiaDeEstilo | Reglas de superficie que no deben derivar. | **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, registro, densidad\_sensorial, tics\_prohibidos\[\] (cadenas literales) |
-| Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, **hechos\_canonicos\[\]** → HechoCanonico, cambios\_de\_valor, curva\_de\_dread\_prevista |
+| Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, **hechos\_canonicos\[\]** → HechoCanonico, **conocimiento\_inicial\[\]** (`{sujeto, hecho, grado}`: quién sabe qué **antes de la escena 1**), cambios\_de\_valor, curva\_de\_dread\_prevista |
+
+**El plan declara quién sabe qué al empezar, y no solo qué hechos existen** (`SPEC-17` C-1). Sin esto el `RegistroDeConocimiento` arranca vacío y **ninguna acción es posible en la primera escena de una obra** (`F-32`): un personaje llega sabiendo cosas de antes del relato —Ana heredó la casa— y eso no es una revelación de ninguna escena.
 | Borrador | Texto generado de una escena, con versión. | **escena**, **version**, **pov\_usado** (`persona` → `persona_narrativa`, `tiempo_verbal` → `tiempo_verbal`), texto, modelo, prompt\_hash |
 | DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, **cambio\_de\_valor** (`{eje, signo}`), cambios\_de\_estado\_vital\[\] (`{personaje, de, a}`, con `de` y `a` → `estado_vital`), ~~muertes~~ (obsoleto: lo sustituye cambios\_de\_estado\_vital), movimientos, revelaciones (`{sujeto, hecho}`: el sujeto **pasa a conocer** ese hecho desde esta escena), **acciones** (`{personaje, hecho}`: el personaje **obró sirviéndose** de ese hecho), setups\_pagados, cambios\_de\_posesion, deterioros |
 
@@ -224,6 +226,8 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `estado_de_escena` | Escena.estado | planificada, generada, en\_verificacion, rechazada, en\_revision, aceptada, aceptada\_por\_rendicion, consolidada |
 | `estado_de_capitulo` | Capitulo.estado | abierto, cerrado |
 | `estado_de_hallazgo` | Hallazgo.estado | abierto, resuelto, descartado, sin\_veredicto |
+
+**Qué hace un `sin_veredicto`, que no es lo mismo que una violación** (`SPEC-18` C-3). *"No se pudo comprobar"* y *"se violó"* son cosas distintas, y el harness las trataba igual porque el hallazgo heredaba la severidad de su invariante. Un `sin_veredicto` **no detiene la escena** —no consta que nada se haya roto— pero **impide cerrar el capítulo**, que es donde `SPEC-10` C-2 exige que quien no se dejó auditar no gane por defecto. Es el mismo sitio en el que vive un `mayor`, y no reclasifica ninguna invariante: la severidad sigue diciendo cuánto pesa una violación **confirmada**.
 | `tipo_de_verificador` | Verificador.tipo, Invariante.tipo | regla, juez\_llm, humano |
 | `nivel_de_evaluacion` | DimensionDeCalidad.nivel, Invariante.nivel, Resumen.nivel | escena, capitulo, obra |
 **La severidad podrá pesar, y todavía no pesa.** Para elegir el menos malo entre dos
@@ -294,7 +298,7 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | --- | --- | --- | --- | --- | --- |
 | INV-01 | Toda escena tiene `cambio_de_valor` no nulo | escena | bloqueante | regla | `Escena.cambio_de_valor` |
 | INV-02 | Todo personaje presente tiene `estado_vital = vivo` y es accesible en `EstadoDelMundo(t)` | escena | bloqueante | regla | `Escena.personajes_presentes`, `EstadoDelMundo.entidades_vivas`, `EstadoDelMundo.ubicaciones`, `Lugar.accesos_y_salidas` |
-| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla | `RegistroDeConocimiento`, `HechoCanonico.escena_de_establecimiento`, `MomentoNarrativo.t_fabula`, **`acciones` del delta** (no `revelaciones`: `SPEC-16` C-1) |
+| INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla | `RegistroDeConocimiento` **más las `revelaciones` del delta que juzga** (`SPEC-17` C-4: `t` dentro de una escena es un intervalo), `HechoCanonico.escena_de_establecimiento`, `MomentoNarrativo.t_fabula`, **`acciones` del delta** (no `revelaciones`: `SPEC-16` C-1) |
 | INV-04 | El POV no cambia dentro de una escena | escena | bloqueante | regla | `Escena.pov`, `Borrador.pov_usado` |
 | INV-05 | Toda escena aceptada tiene su delta aplicado antes de la siguiente | escena | bloqueante | regla | `DeltaDeEscena`, `EstadoDelMundo` |
 | INV-06 | Ningún `HechoCanonico` vigente contradice a otro | obra | bloqueante | regla | `HechoCanonico.contradice`, `EstadoDelMundo.hechos_vigentes` |

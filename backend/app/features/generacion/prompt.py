@@ -50,6 +50,11 @@ LO QUE YA ES VERDAD EN LA FICCION
 LO QUE ESTA ESCENA TIENE QUE HACER
 {objetivo}
 
+EL PUNTO DE VISTA ES DEL PLAN, NO TUYO
+{pov}
+Escribe la escena desde ese personaje y desde ningun otro, y **declaralo** en
+`pov_usado`. Si lo cambias, la escena no es la planificada.
+
 IDENTIFICADORES QUE PUEDES CITAR EN EL DELTA
 Usa SOLO estos. Son identificadores, no descripciones: si lo que quieres decir
 no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
@@ -59,6 +64,8 @@ no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
 FORMATO DE LA RESPUESTA
 Devuelve un unico objeto JSON con dos claves:
   "texto": la escena, en prosa.
+  "pov_usado": el identificador del personaje desde cuyo punto de vista la
+      escribiste. Es lo que se compara con el POV del plan.
   "delta": lo que cambia en el mundo. Cada campo tiene un significado preciso y
   no son intercambiables:
 
@@ -110,6 +117,7 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
     ])
     return PLANTILLA.format(
         identificadores=ids,
+        pov=parametros.get("pov") or "(el plan no lo declara)",
         parametros=json.dumps(parametros, ensure_ascii=False, sort_keys=True),
         estado=json.dumps(estado, ensure_ascii=False, sort_keys=True),
         objetivo=objetivo,

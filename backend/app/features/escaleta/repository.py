@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS escena (
     estado             TEXT NOT NULL,
     cambio_de_valor    TEXT NOT NULL,
     beats              TEXT NOT NULL,
-    pov                TEXT,
-    lugar              TEXT,
+    pov                TEXT NOT NULL,
+    lugar              TEXT NOT NULL,
     longitud_objetivo  TEXT,
     borrador_aceptado  INTEGER
 );

@@ -101,8 +101,17 @@ def verificar(escena, delta, mundo):
     # mismas revelaciones. Ningun personaje podia llegar a saber nada nunca
     # (`F-31`). Actuar es **obrar sirviendose de lo ya sabido**, y eso si se
     # puede comprobar contra lo que consta.
+    # Y `t` dentro de una escena **es un intervalo, no un punto** (`SPEC-17`
+    # C-4): lo que esta misma escena revela cuenta para sus propias acciones.
+    # La puerta verifica antes de consolidar, asi que sin esto aprender y
+    # actuar en la misma escena bloqueaba siempre (`F-33`) — y eso es Marta
+    # encontrando la llave y abriendo el sotano, el caso mas comun que hay.
+    aprendido_aqui = {(r["sujeto"], r["hecho"])
+                      for r in (delta or {}).get("revelaciones", [])}
     for acc in (delta or {}).get("acciones", []):
         clave = (acc["personaje"], acc["hecho"])
+        if clave in aprendido_aqui:
+            continue
         sabido = mundo["conocimiento"].get(clave)
         if not sabido or sabido["grado"] == "ignora":
             h.append(_hallazgo("INV-03", escena["id"],

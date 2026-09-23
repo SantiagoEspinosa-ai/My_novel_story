@@ -179,3 +179,24 @@ def test_un_campo_opcional_ausente_no_produce_nada():
     h = puertas.verificar(esc, {}, _mundo())
     assert not any(x.invariante == "INV-17" for x in h)
     assert not any(x.invariante == "INV-02" for x in h)
+
+
+# --- SPEC-17 C-4: `t` dentro de una escena es un intervalo ----------------
+
+def test_inv03_lo_que_la_escena_revela_cuenta_para_sus_propias_acciones():
+    """`F-33`: aprender y actuar en la misma escena es el caso narrativo mas
+    comun que existe -Marta encuentra la llave y abre el sotano- y bloqueaba
+    siempre, porque la puerta verifica antes de consolidar."""
+    delta = {"revelaciones": [{"sujeto": "marta", "hecho": "hec-9"}],
+             "acciones": [{"personaje": "marta", "hecho": "hec-9"}]}
+    h = puertas.verificar(_escena_de_conocimiento(), delta, _mundo())
+    assert not any(x.invariante == "INV-03" for x in h)
+
+
+def test_inv03_la_revelacion_de_otro_no_habilita_mi_accion():
+    """El caso negativo que conserva el filo que queda: que Ana se entere no
+    hace que Marta lo sepa, y esa distincion es media novela de terror."""
+    delta = {"revelaciones": [{"sujeto": "ana", "hecho": "hec-9"}],
+             "acciones": [{"personaje": "marta", "hecho": "hec-9"}]}
+    h = puertas.verificar(_escena_de_conocimiento(), delta, _mundo())
+    assert any(x.invariante == "INV-03" for x in h)

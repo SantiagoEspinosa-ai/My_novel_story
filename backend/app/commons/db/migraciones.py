@@ -46,6 +46,37 @@ TODAS = [
         );
         """,
     ),
+    Migracion(
+        2,
+        "el conocimiento anterior al relato no tiene escena de origen",
+        # `SPEC-17` C-2. La tabla la crea `features/consolidacion/` con
+        # `CREATE TABLE IF NOT EXISTS`, asi que una base nueva ya nace bien;
+        # esta migracion existe para las que ya tenian la version con
+        # `desde_escena NOT NULL`. SQLite no sabe quitar un `NOT NULL` con
+        # `ALTER`, asi que se recrea la tabla y se copia, que es el camino que
+        # su propia documentacion recomienda.
+        """
+        CREATE TABLE IF NOT EXISTS conocimiento (
+            sujeto       TEXT NOT NULL,
+            hecho        TEXT NOT NULL,
+            desde_escena TEXT NOT NULL,
+            grado        TEXT NOT NULL DEFAULT 'sabe',
+            fuente       TEXT,
+            PRIMARY KEY (sujeto, hecho)
+        );
+        CREATE TABLE conocimiento_nuevo (
+            sujeto       TEXT NOT NULL,
+            hecho        TEXT NOT NULL,
+            desde_escena TEXT,
+            grado        TEXT NOT NULL DEFAULT 'sabe',
+            fuente       TEXT,
+            PRIMARY KEY (sujeto, hecho)
+        );
+        INSERT INTO conocimiento_nuevo SELECT * FROM conocimiento;
+        DROP TABLE conocimiento;
+        ALTER TABLE conocimiento_nuevo RENAME TO conocimiento;
+        """,
+    ),
 ]
 
 

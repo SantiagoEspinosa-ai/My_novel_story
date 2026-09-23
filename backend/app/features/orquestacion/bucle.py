@@ -146,6 +146,9 @@ def generar(con, escena_id, contexto, modelo, techo=100_000, estado_del_techo=No
     # 5. Las puertas.
     vista = dict(escena)
     vista["palabras"] = len(leida.texto.split())
+    # `SPEC-18` C-1: lo declara el agente, y por eso `INV-04` puede compararlo
+    # con el `pov` del plan. Derivarlo del texto seria un eco de `VER-48`.
+    vista["pov_usado"] = leida.pov_usado
     vista["longitud_objetivo"] = tuple(escena["longitud_objetivo"] or ()) or None
     vista["personajes_presentes"] = escena.get("personajes_presentes", [])
     hallazgos = puertas.verificar(vista, leida.delta, mundo or _mundo_vacio())

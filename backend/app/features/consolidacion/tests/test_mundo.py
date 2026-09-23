@@ -78,3 +78,48 @@ def test_el_conocimiento_no_sobrevive_a_un_delta_que_falla(con):
             "revelaciones": [{"sujeto": "per-marta", "hecho": "hec-llave"}],
             "movimientos": [{"personaje": "per-nadie", "a": "lug-salon"}]})
     assert mundo.leer(con)["conocimiento"] == {}
+
+
+# --- SPEC-17: el conocimiento inicial, lo anterior al relato --------------
+
+def test_el_conocimiento_inicial_existe_antes_de_la_escena_1(con):
+    """`F-32`: el registro arrancaba vacio, asi que ninguna accion era posible
+    en la primera escena. Ana sabe que heredo la casa desde antes del relato, y
+    eso no es una revelacion de ninguna escena."""
+    mundo.sembrar_conocimiento(con, [
+        {"sujeto": "per-ana", "hecho": "hec-herencia", "grado": "sabe"}])
+    c = mundo.leer(con)["conocimiento"]
+    assert ("per-ana", "hec-herencia") in c
+    assert c[("per-ana", "hec-herencia")]["desde"] is None, "anterior al relato"
+
+
+def test_lo_anterior_al_relato_lleva_su_propia_fuente(con):
+    """`SPEC-17` C-3: sin esto, la invariante de la fuente que `SPEC-16` dejo
+    abierta nace ya incumplida por las entradas iniciales."""
+    mundo.sembrar_conocimiento(con, [
+        {"sujeto": "per-ana", "hecho": "hec-herencia", "grado": "sabe"}])
+    fila = con.execute("SELECT fuente FROM conocimiento WHERE sujeto='per-ana'").fetchone()
+    assert fila[0] == mundo.ANTERIOR_AL_RELATO
+
+
+def test_una_accion_en_la_escena_1_es_posible_si_el_plan_lo_declaro(con):
+    """El circuito de `F-32`, de punta a punta."""
+    from app.features.verificacion import puertas
+
+    mundo.sembrar_conocimiento(con, [
+        {"sujeto": "per-marta", "hecho": "hec-herencia", "grado": "sabe"}])
+    escena = {"id": "e1", "cambio_de_valor": {"eje": "cordura", "signo": "negativo"},
+              "pov": "per-marta", "lugar": "lug-salon", "pov_usado": "per-marta"}
+    delta = {"acciones": [{"personaje": "per-marta", "hecho": "hec-herencia"}]}
+    assert not any(h.invariante == "INV-03"
+                   for h in puertas.verificar(escena, delta, mundo.leer(con)))
+
+
+def test_una_revelacion_posterior_no_pisa_lo_que_ya_se_sabia(con):
+    """`INSERT OR IGNORE`: si ya lo sabia de antes del relato, enterarse otra
+    vez en la escena 4 no cambia desde cuando lo sabe."""
+    mundo.sembrar_conocimiento(con, [
+        {"sujeto": "per-marta", "hecho": "hec-herencia", "grado": "sabe"}])
+    aplicar.consolidar(con, "e4", {
+        "revelaciones": [{"sujeto": "per-marta", "hecho": "hec-herencia"}]})
+    assert mundo.leer(con)["conocimiento"][("per-marta", "hec-herencia")]["desde"] is None
