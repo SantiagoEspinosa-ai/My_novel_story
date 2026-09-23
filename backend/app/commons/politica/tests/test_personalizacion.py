@@ -5,7 +5,7 @@ Los nombres de prueba son inventados y distintos entre si, salvo donde la
 prueba necesita a proposito dos nombres parecidos (Luis y Luisa).
 """
 
-from app.features.verificacion import personalizacion as p
+from app.commons.politica import personalizacion as p
 
 
 def test_un_nombre_con_una_letra_cambiada_se_detecta():

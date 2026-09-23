@@ -110,6 +110,10 @@ class PersonajeDelPlan(_DelDominio):
     nombre: str = Field(min_length=1, description="`nombre_canonico`")
     empieza_en: str = Field(min_length=1)
     estado_vital: enums.EstadoVital = enums.EstadoVital.VIVO
+    fecha_de_nacimiento: str | None = Field(
+        default=None,
+        description="ISO-8601, opcional (`SPEC-21` C-3). La declara el plan "
+                    "(`SPEC-26` `RF-04`) y la lee la comprobacion de edad")
 
 
 class ConocimientoInicial(_DelDominio):
@@ -139,6 +143,31 @@ class EscenaDelPlan(_DelDominio):
         default_factory=list,
         description="`Beat.establece[]` (`SPEC-19`): que hechos promete "
                     "establecer esta escena")
+    t_fabula: str | None = Field(
+        default=None,
+        description="`MomentoNarrativo.t_fabula`: cuando ocurre en la historia. "
+                    "Lo declara el plan (`SPEC-26` `RF-04`)")
+
+
+class ImprescindibleDelPlan(_DelDominio):
+    """`Escaleta.imprescindibles` (`SPEC-26` `RF-03`): donde aparece cada
+    elemento imprescindible de la ficha y que palabras lo delatan.
+
+    `elemento` es la `descripcion` literal del `ElementoPersonal` de la ficha:
+    es como la cobertura empareja el plan con lo que dijo el comprador.
+    """
+
+    elemento: str = Field(min_length=1)
+    capitulo: str = Field(min_length=1)
+    palabras_clave: list[str] = Field(min_length=1)
+
+
+class ExclusionPrevista(_DelDominio):
+    """`Escaleta.exclusiones_previstas` (`SPEC-26` `RF-04`)."""
+
+    personaje: str = Field(min_length=1)
+    capitulo: str = Field(min_length=1)
+    estado_vital: enums.EstadoVital
 
 
 class CapituloDelPlan(_DelDominio):
@@ -158,6 +187,8 @@ class PlanDeLaObra(_DelDominio):
     mundo: "MundoDelPlan"
     hechos: list[HechoDelPlan] = Field(default_factory=list)
     capitulos: list[CapituloDelPlan] = Field(min_length=1)
+    imprescindibles: list[ImprescindibleDelPlan] = Field(default_factory=list)
+    exclusiones_previstas: list[ExclusionPrevista] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _las_referencias_existen(self):
@@ -208,6 +239,15 @@ class PlanDeLaObra(_DelDominio):
                             "{0} escena {1} promete establecer `{2}`, que no "
                             "esta declarado. Un beat **no inventa hechos, los "
                             "situa** (`SPEC-19`)".format(c.id, i, h))
+        capitulos = {c.id for c in self.capitulos}
+        for imp in self.imprescindibles:
+            if imp.capitulo not in capitulos:
+                raise ValueError("el imprescindible «{0}» va en `{1}`, que no es un "
+                                 "capitulo del plan".format(imp.elemento, imp.capitulo))
+        for x in self.exclusiones_previstas:
+            if x.personaje not in personajes or x.capitulo not in capitulos:
+                raise ValueError("la exclusion prevista de `{0}` en `{1}` cita algo "
+                                 "que no esta declarado".format(x.personaje, x.capitulo))
         return self
 
 

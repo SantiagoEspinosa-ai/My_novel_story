@@ -6,8 +6,14 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión (sustituir por su identificador)"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
+
+> **Historial.** v2, durante la implementación: `personalizacion.py` va a
+> `commons/politica/` y no a `features/verificacion/`, porque lo usan dos
+> features —la puerta de escena, vía `orquestacion`, y la cobertura del plan— y
+> una feature no importa de otra. Lo cazó la prueba de dependencias. Sin cambio
+> de comportamiento; conserva la aprobación.
 
 # PLAN-26 — El pipeline de la novela regalo
 
@@ -51,7 +57,7 @@ aprobar esos dos números.**
 | Dónde | Qué | Por qué ahí |
 | --- | --- | --- |
 | `features/planificacion/` (nueva) | Planificador, Revisor del plan, comprobación de cobertura y versiones del plan | Es un caso de uso propio: de ficha a plan aprobado (`A-02`) |
-| `features/verificacion/personalizacion.py` | `INV-22`, `INV-23`, `INV-25`: funciones puras sobre texto | Son puertas deterministas, como el resto de `verificacion/` |
+| `commons/politica/personalizacion.py` (v2) | `INV-22`, `INV-23`, `INV-25`: funciones puras sobre texto | Las usan dos features: la puerta de escena y la cobertura del plan |
 | `features/orquestacion/novela.py` (nueva) | Compone: ficha → plan → obra montada → generación → juicio de obra | Componer es solo de `orquestacion/` |
 | `features/orquestacion/ciclo.py` y `obra.py` | `INV-22` junto a `INV-21`, `INV-23`, el Editor e `INV-26` | Es donde ya viven las puertas de la escena |
 | `commons/invariantes/registro.py` | `INV-22`..`INV-27` y qué invariantes son del plano Terror | El registro es la copia en código de la tabla |
