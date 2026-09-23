@@ -149,3 +149,84 @@ def test_un_juicio_de_obra_ilegible_queda_sin_veredicto(con):
     _escrita(con)
     r = novela.cerrar(con, "obra-x", ficha(), JuezDeObra({"nada": 1}))
     assert [h["estado"] for h in r["juicio"]] == ["sin_veredicto"]
+
+
+# --- La novela entera, encadenada (lo que usara `novela_regalo.py`) ------------
+
+import json as _json
+
+from app.commons.modelo.doble import DELTA_OK
+from app.features.planificacion.tests.conftest import plan_dict
+
+
+class _Fijo:
+    def __init__(self, r, nombre="doble"):
+        self.r, self.nombre, self.llamadas = r, nombre, []
+        self.reglas, self.entorno = None, {}
+
+    def llamar(self, prompt):
+        self.llamadas.append(prompt)
+        return self.r
+
+
+def _agentes():
+    planificador = _Fijo({"titulo": "El mapa de Irene", "premisa": "Irene sigue un mapa.",
+                          "plan": plan_dict()})
+    revisor = _Fijo({"aprobado": True, "objeciones": []})
+    # El POV del plan de prueba es `per-irene`; el doble de serie declara
+    # `per-marta` y `INV-04` lo pararia, con razon.
+    escritor = _Fijo({"texto": " ".join(["palabra"] * 1198 + ["Irene", "mapa"]),
+                      "pov_usado": "per-irene", "delta": DELTA_OK})
+    editor = _Fijo({"valoraciones": [
+        {"criterio": c, "nota": 4, "justificacion": "bien"} for c in
+        ("continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
+         "personalizacion")]})
+    resumidor = _Fijo({"texto": "Resumen. " * 10, "hechos_clave": []})
+    return {"planificador": planificador, "revisor": revisor, "escritor": escritor,
+            "editor": editor, "resumidor": resumidor}
+
+
+@__import__("pytest").mark.xfail(strict=True, reason=(
+    "F-58: el Escritor recibe los tamaños de los bloques de contexto, no su texto, "
+    "asi que el genero y el tono del bloque inmutable no llegan al prompt. "
+    "Estricto: se pondra en rojo el dia que se arregle."))
+def test_escribir_encadena_plan_montaje_y_generacion(con, tmp_path):
+    agentes = _agentes()
+    r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path))
+    assert r["plan"].version == 1
+    assert r["generacion"].escenas_hechas == ["cap-01-e1"]
+    prompt = agentes["escritor"].llamadas[0]
+    assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt
+    assert "aventura" in prompt and "divertido" in prompt
+
+
+def test_escribir_deja_las_reglas_del_hook_al_escritor(con, tmp_path):
+    agentes = _agentes()
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    reglas = _json.loads(open(agentes["escritor"].reglas, encoding="utf-8").read())
+    assert reglas["longitud"] == [1000, 1500]
+    assert "Irene Valdés" in reglas["nombres"] and "hospital" in reglas["vetadas"]
+    assert "Tomas" in reglas["vetadas"], "el nombre vetado, tambien por su nombre de pila"
+
+
+def test_un_plan_no_aprobado_no_escribe_nada(con, tmp_path):
+    agentes = _agentes()
+    agentes["revisor"] = _Fijo({"aprobado": False, "objeciones": ["sin arco"]})
+    import pytest as _pytest
+    from app.features.planificacion.service import PlanNoAprobado
+    with _pytest.raises(PlanNoAprobado):
+        novela.escribir(con, "obra-x", ficha(), agentes, carpeta_de_reglas=str(tmp_path))
+    assert agentes["escritor"].llamadas == []
+
+
+def test_escribir_encadena_plan_montaje_y_primer_capitulo(con, tmp_path):
+    """Lo que si funciona hoy, separado de `F-58` para que no quede sin probar."""
+    agentes = _agentes()
+    r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path))
+    assert r["plan"].version == 1 and r["cierre"] is None
+    assert r["generacion"].escenas_hechas == ["cap-01-e1"]
+    prompt = agentes["escritor"].llamadas[0]
+    assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt

@@ -153,3 +153,102 @@ def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=No
                 "repeticiones": repetidas, "frases": frases, "juicio": []}
     return {"estado": "terminada", "faltan": [], "repeticiones": repetidas,
             "frases": frases, "juicio": _juicio_de_obra(con, obra, escenas, juez_de_obra)}
+
+
+# --- La novela entera, encadenada ----------------------------------------------
+
+def inmutable(ficha):
+    """El bloque 1 del contexto para una novela regalo: lo que no cambia en toda
+    la obra. El genero y el tono salen de la ficha, no de la definicion del
+    Escritor (`SPEC-26` `RF-20`)."""
+    def valor(campo):
+        v = getattr(ficha, campo)
+        if v is None:
+            return "(sin declarar)"
+        return ficha.literales_de_otro.get(campo, v.value) if v.value == "otro" else v.value
+    d = ficha.destinatario
+    return ("Novela para regalar. Genero: {0}. Tono: {1}. Ocasion: {2}.\n"
+            "La novela es para {3}, de {4} años, que es {5} de la historia.\n"
+            "Tercera persona, pasado. La personalizacion se integra con naturalidad; "
+            "nunca justifica una mala escritura.").format(
+                valor("genero"), valor("tono"), valor("ocasion"), d.nombre, d.edad,
+                valor("papel").replace("_", " "))
+
+
+def _reglas_del_hook(carpeta, obra, vetadas, nombres):
+    import json
+    import os
+    ruta = os.path.join(carpeta, "reglas-{0}.json".format(obra))
+    minimo, maximo = EXTENSION["palabras_por_capitulo"]
+    with open(ruta, "w", encoding="utf-8") as f:
+        json.dump({"vetadas": vetadas, "nombres": nombres, "longitud": [minimo, maximo]},
+                  f, ensure_ascii=False)
+    return ruta
+
+
+def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=None,
+             sistema=None, listas=None):
+    """Ficha → plan aprobado → obra montada → capitulos → cierre de la novela.
+
+    Genera capitulo a capitulo, en el orden del plan, y se para en la primera
+    parada. Con `hasta_capitulo` se queda en ese capitulo y no cierra la novela:
+    es lo que usa la ejecucion minima de `PLAN-26` E13.
+    """
+    import tempfile
+    from app.commons.configuracion import carga
+    from app.features.orquestacion import obra as modulo_obra
+    from app.features.planificacion import service as planificacion
+    from app.features.politica import repository as politica
+
+    sistema = sistema or carga.cargar_sistema()
+    aprobado = planificacion.planificar(con, obra, ficha, agentes["planificador"],
+                                        agentes["revisor"],
+                                        tope=sistema.topes.revisiones_de_plan)
+    montar(con, obra, ficha, aprobado)
+
+    politica.asegurar_tablas(con)
+    politica.cargar_listas(con, listas or carga.cargar_vetadas())
+    politica.vetar_en_novela(con, obra, palabras=ficha.vetadas,
+                             nombres=ficha.nombres_vetados)
+    vetadas = [v.forma for v in politica.vetadas_para(con, obra, ficha.destinatario.edad,
+                                                      sistema.franjas_de_edad)]
+    nombres = sorted({ficha.destinatario.nombre} | {p.nombre for p in aprobado.plan.mundo.personajes})
+    imprescindibles = {}
+    for n, imp in enumerate(aprobado.plan.imprescindibles, 1):
+        imprescindibles.setdefault("{0}-e1".format(imp.capitulo), []).append(
+            {"id": _id_imprescindible(n), "elemento": imp.elemento,
+             "palabras_clave": imp.palabras_clave})
+    agentes["escritor"].reglas = _reglas_del_hook(
+        carpeta_de_reglas or tempfile.gettempdir(), obra, vetadas, nombres)
+
+    total = modulo_obra.Generacion(vetadas_comprobadas=True,
+                                   genero=ficha.genero.value if ficha.genero else None)
+    capitulos = [c.id for c in aprobado.plan.capitulos]
+    if hasta_capitulo:
+        capitulos = capitulos[:hasta_capitulo]
+    for cap in capitulos:
+        g = modulo_obra.generar_obra(
+            con, obra, agentes["escritor"], agentes["editor"], agentes["resumidor"],
+            inmutable=inmutable(ficha), techo=sistema.presupuesto.techo_de_contexto,
+            tope_intentos=1 + sistema.topes.reescrituras_del_editor,
+            tope_vetadas=sistema.topes.reescrituras_por_vetada,
+            tope_delegaciones=sistema.topes.delegaciones_por_obra,
+            capitulo=cap, vetadas=vetadas, nombres=nombres,
+            imprescindibles=imprescindibles, editor=True,
+            genero=ficha.genero.value if ficha.genero else None)
+        for campo in ("escenas_hechas", "rendidas", "saltadas", "sin_resumen",
+                      "medidas", "trazas_no_guardadas"):
+            getattr(total, campo).extend(getattr(g, campo))
+        total.delegaciones += g.delegaciones
+        for k in total.coste:
+            total.coste[k] += g.coste.get(k, 0)
+        total.cierre = g.cierre
+        if g.parada:
+            total.parada = g.parada
+            break
+    cierre = None
+    if not hasta_capitulo and total.parada is None:
+        cierre = cerrar(con, obra, ficha, agentes["editor"],
+                        sistema.edicion.umbral_repeticion_nombre,
+                        sistema.edicion.longitud_frase_repetida)
+    return {"plan": aprobado, "generacion": total, "cierre": cierre}
