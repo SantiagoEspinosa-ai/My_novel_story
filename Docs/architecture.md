@@ -606,7 +606,11 @@ una escena que insiste puede reintentarse sin final hasta que llegue una persona
 por obra, que acota el agregado. Con uno solo, el otro caso pasa entero.
 
 **Cuentan todas las llamadas al modelo, no solo las del Escritor.** Si los verificadores
-gastan más que el Escritor, estás pagando la auditoría más cara que la novela, y contando
+gastan más que el Escritor, **eso por sí solo no dice nada del coste** —se midió: el
+Resumidor gastó más tokens que el Juez y costó menos de la mitad, porque el precio del
+modelo pesa más que el volumen—. El contador cuenta **delegaciones y tokens**, que son las
+dos cosas que acota; el **coste** se lee del `total_cost_usd` que devuelve cada delegación,
+y no se deduce de ninguna de las otras dos. Contando
 solo al Escritor eso no se ve nunca.
 
 El contador se comprueba **antes** de cada llamada. Si el tope se ha alcanzado, el trabajo
