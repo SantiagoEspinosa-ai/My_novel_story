@@ -68,7 +68,7 @@ El canon es lo que es verdad dentro de la ficción, con independencia de cómo s
 | Lugar | Espacio donde puede ocurrir una escena. | **id**, **nombre**, tipo, atmosfera, accesos\_y\_salidas\[\] → Lugar, reglas\_locales, contiene\[\] |
 | Objeto | Cosa con relevancia dramática. | **id**, **nombre**, propiedades, poseedor\_actual, ubicacion\_actual |
 | Faccion | Grupo con intereses propios. | **id**, **nombre**, objetivo, miembros\[\], relacion\_con\[\] |
-| HechoCanonico | Proposición verdadera en la ficción. | **id**, **enunciado**, **escena\_de\_establecimiento**, **durabilidad** → `durabilidad_del_hecho`, certeza → `certeza_canonica`, contradice\[\] |
+| HechoCanonico | Proposición verdadera en la ficción. | **id**, **enunciado**, escena\_de\_establecimiento, **durabilidad** → `durabilidad_del_hecho`, certeza → `certeza_canonica`, contradice\[\] |
 | ReglaDelMundo | Restricción estable que gobierna lo que puede pasar. | **id**, **enunciado**, ambito, coste, excepciones\[\] |
 | EventoCronologico | Suceso situado en la fábula, se narre o no. | **id**, **t\_fabula**, participantes\[\], consecuencias\[\] |
 | EstadoDelMundo | Instantánea del canon en un momento `t`. | **t**, entidades\_vivas\[\], ubicaciones, posesiones, relaciones, hechos\_vigentes\[\] |
@@ -87,7 +87,7 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | Amenaza | Lo que puede dañar y organiza la tensión de la obra. | **id**, **naturaleza**, **reglas**, limites, coste\_de\_invocacion, tell, curva\_de\_escalada, grado\_de\_explicacion\_permitido |
 | FuenteDelMiedo | El mecanismo psicológico sobre el que opera la obra. | **tipo** → `fuente_del_miedo`, intensidad |
 | Tell | Señal perceptible de que la amenaza está cerca. | **id**, canal\_sensorial, primera\_aparicion, fiabilidad |
-| Presagio | Elemento plantado que anticipa un suceso posterior. | **id**, **escena\_de\_plantado**, escena\_de\_pago, estado → `estado_de_presagio`, sutileza |
+| Presagio | Elemento plantado que anticipa un suceso posterior. | **id**, escena\_de\_plantado, escena\_de\_pago, estado → `estado_de_presagio`, sutileza |
 | CurvaDeDread | Presión acumulada a lo largo de la obra. | **serie** (presión por escena), valvulas\[\], pendiente\_media, mesetas\[\] |
 | Valvula | Alivio deliberado que reinicia la capacidad de asustarse del lector. | **escena**, tipo → `tipo_de_valvula`, duracion |
 | PuntoDeNoRetorno | Escena tras la cual el coste de retroceder es prohibitivo. | **escena**, que\_se\_pierde |
@@ -104,7 +104,7 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | --- | --- | --- |
 | Brief | Contrato inicial de la obra: qué se va a escribir y bajo qué reglas. | **premisa**, **tono**, extension, referentes, prohibiciones, contrato\_con\_el\_lector |
 | GuiaDeEstilo | Reglas de superficie que no deben derivar. | **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, registro, densidad\_sensorial, tics\_prohibidos\[\] (cadenas literales) |
-| Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, cambios\_de\_valor, curva\_de\_dread\_prevista |
+| Escaleta | Plan de escenas antes de escribirlas. | **escenas\[\]**, **hechos\_canonicos\[\]** → HechoCanonico, cambios\_de\_valor, curva\_de\_dread\_prevista |
 | Borrador | Texto generado de una escena, con versión. | **escena**, **version**, **pov\_usado** (`persona` → `persona_narrativa`, `tiempo_verbal` → `tiempo_verbal`), texto, modelo, prompt\_hash |
 | DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, **cambio\_de\_valor** (`{eje, signo}`), cambios\_de\_estado\_vital\[\] (`{personaje, de, a}`, con `de` y `a` → `estado_vital`), ~~muertes~~ (obsoleto: lo sustituye cambios\_de\_estado\_vital), movimientos, revelaciones, setups\_pagados, cambios\_de\_posesion, deterioros |
 | Ficha | Resumen recuperable de una entidad, para inyectar en contexto. | **entidad**, resumen, version\_en\_t |
@@ -216,7 +216,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `certeza_canonica` | HechoCanonico.certeza | establecido, implicito, disputado |
 | `durabilidad_del_hecho` | HechoCanonico.durabilidad | permanente, efimero |
 | `fuente_del_miedo` | FuenteDelMiedo.tipo | desconocido, perdida\_de\_control, contaminacion, paranoia, culpa, aislamiento |
-| `estado_de_presagio` | Presagio.estado, SetupYPago.estado | plantado, pagado, huerfano |
+| `estado_de_presagio` | Presagio.estado, SetupYPago.estado | declarado, plantado, pagado, huerfano |
 | `tipo_de_valvula` | Valvula.tipo | humor, ternura, informacion, seguridad\_falsa |
 | `eje_de_deterioro` | Deterioro.eje | cordura, cuerpo, vinculos, recursos |
 | `estado_de_escena` | Escena.estado | planificada, generada, en\_verificacion, rechazada, en\_revision, aceptada, aceptada\_por\_rendicion, consolidada |
@@ -314,6 +314,21 @@ invariante `bloqueante` de nivel escena**: si lo hace, la puerta sigue en pie y 
 decidir. Sin esta columna esa regla es una intención, porque nadie sabe qué lee cada una.
 Es la misma exigencia que el proyecto aplica a todo lo demás: una regla que nadie puede
 comprobar no está verificada, solo declarada.
+
+**Lo que el plan declara puede no estar todavía en el texto, y eso es un dato.**
+`HechoCanonico.escena_de_establecimiento` y `Presagio.escena_de_plantado` son **opcionales**
+desde `SPEC-15`: significan *dónde lo establece o lo planta el texto*, no *dónde nació*. Un
+hecho declarado sin establecer y un presagio `declarado` sin plantar son **defectos
+nombrables**: la obra prometió algo en su plan y el texto no lo entregó. Antes ni siquiera
+se podían escribir.
+
+**Y lo de `Presagio` era peor que lo de `HechoCanonico`.** Con `escena_de_plantado`
+obligatorio, un presagio previsto y no plantado era **inexpresable**, no invisible. La
+diferencia importa: **lo invisible se puede buscar; lo inexpresable ni se puede escribir.**
+
+**Un hecho puede establecerse en una escena que el plan no previó, y se marca.** Prohibirlo
+obligaría a replanificar por cada hallazgo del texto; no marcarlo perdería la diferencia
+entre lo planificado y lo improvisado, que es justo lo que declarar los hechos conserva.
 
 **Qué hechos existen lo declara el plan; quién los sabe es otra cosa.** `HechoCanonico`
 responde a *"¿esto es verdad en la ficción?"* y `RegistroDeConocimiento` a *"¿quién lo sabe,
@@ -419,6 +434,7 @@ Estas son las que conviene fijar antes de escribir esquema o código.
 
 * [ ] **Umbrales.** Las invariantes `menor` (INV-15, INV-16) necesitan números concretos antes de poder ejecutarse; sin ellos el harness las salta en silencio. **Se contesta sola** con una traza real.
 * [ ] **Corpus de fixtures.** Qué obra o fragmento sirve de caso base para los tests negativos de cada invariante.
+* [ ] **Una invariante para lo declarado y nunca entregado.** `SPEC-15` hizo nombrable un defecto que antes no existía: un `HechoCanonico` declarado y nunca establecido, y un `Presagio` `declarado` y nunca plantado. **No se amplía `INV-09`**, y el motivo es que no son el mismo daño: un presagio nunca plantado **incumple el plan**; uno plantado y no pagado **rompe una promesa al lector**. El segundo lo nota quien lee; el primero, solo quien compara plan y texto. Probablemente sea `menor` — pero desde `SPEC-04` un `menor` **no bloquea el cierre de capítulo**, así que una obra podría firmarse habiendo incumplido su propio plan. Merece mirarse con calma antes de fijar la severidad.
 * [ ] **Si `FraseRecurrente` se convierte en invariante.** La clase guarda la señal; nadie la comprueba todavía. Puede quedarse como material para el Revisor o pasar a ser `INV-18`.
 * [ ] **Los pesos por severidad.** Hacen falta para `Escena.borrador_aceptado`: sin un número no se puede elegir el menos malo. Salen de medir sobre esta implementación, no de copiar los de `main`. **Se contesta sola** con una traza real.
 * [ ] **Desempate juez vs. regla.** Con INV-03 ya de tipo `regla` y el juez como desempate, la pregunta es operativa y no teórica: falta decidir qué gana cuando la regla no ve nada y el juez marca. Aplica igual a INV-11 y a INV-14. **Deja de ser ciega, pero no se contesta sola**: el dato informa, no decide. **La traza dirá cuántas veces discrepan y en qué dirección, no quién gana.**

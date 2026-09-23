@@ -1,9 +1,11 @@
 ---
 id: SPEC-15
 titulo: Qué hechos existen lo declara el plan; quién los sabe es otra cosa
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aplicada
+aprobada_por: "@Santiago Espinosa Domínguez"
+fecha_aprobacion: 2026-09-23
+fecha_aplicacion: 2026-09-23
+commit_de_aplicacion: PENDIENTE
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
 version: 1
@@ -112,4 +114,11 @@ prompt y se diagnosticó mirando el estado, no un error.
 | 2 | `estado_de_presagio` gana un valor para "declarado y sin plantar". ¿Cuál? | `declarado`, y va **antes** de `plantado`: es el estado en el que nace un presagio que el plan previó |
 | 3 | ¿Los hechos se declaran en `Escaleta` o en `Brief`? | En `Escaleta`. El `Brief` es lo que el autor pide; la `Escaleta` es el plan, y un hecho canónico es material de plan |
 | 4 | ¿Un hecho puede establecerse en una escena que el plan no previó? | Sí, y se marca. Prohibirlo obligaría a replanificar por cada hallazgo del texto; no marcarlo perdería la diferencia entre lo planificado y lo improvisado |
-| 5 | ¿`INV-09` pasa a mirar también los `declarado`? | **No en esta spec.** Su enunciado no cambia y ampliarlo es una decisión de severidad: un presagio nunca plantado no es lo mismo que uno plantado y no pagado |
+| 5 | ¿`INV-09` pasa a mirar también los `declarado`? | **No, y no se amplía: pide invariante propia.** Su enunciado no cambia y ampliarlo es una decisión de severidad: un presagio nunca plantado no es lo mismo que uno plantado y no pagado |
+
+
+Las cinco se respondieron el 2026-09-23. La 5 abrió una decisión, anotada en
+`Docs/definitions.md`: **lo declarado y nunca entregado pide invariante propia**, porque un
+presagio nunca plantado incumple el plan y uno plantado y no pagado rompe una promesa al
+lector — y con la puerta de capítulo, una severidad `menor` significaría que la obra se
+firma habiendo incumplido su propio plan.
