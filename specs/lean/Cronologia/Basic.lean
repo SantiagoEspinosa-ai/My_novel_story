@@ -110,6 +110,36 @@ structure Personaje where
   nacimiento : Option Fecha := none
   deriving Repr, Inhabited
 
+/-- Lo que el generador **no pudo** mirar.
+
+    Existe por la Regla 8: *no se pudo comprobar* no es *se comprobo y esta
+    bien*. Sin esto, una obra que llega con cero eventos —porque sus escenas no
+    declaran `t_fabula`, o porque la tabla esta vacia— produce cero violaciones
+    y Lean dice «puede publicarse». El veredicto seria correcto y la conclusion
+    falsa.
+
+    El caso se midio de verdad (`F-52`): en una base donde `evento_cronologico`
+    **no existia**, el generador murio con `no such table` y eso salvo la
+    situacion. Pero la salvo por accidente del caso: **una tabla vacia es un
+    escenario mas probable que una ausente**, y ahi no muere nadie. Esta
+    estructura es lo que convierte esa suerte en diseño. -/
+structure Cobertura where
+  eventos                : Nat
+  eventosSinFechaLegible : Nat := 0
+  personajesSinNacimiento : Nat := 0
+  eventosConExclusion    : Nat := 0
+  /-- Capitulos cuyo identificador no deja deducir su orden. Si hay alguno, el
+      eje del discurso es una suposicion y `L-1` no se puede afirmar. -/
+  capitulosNoOrdenables  : Nat := 0
+  deriving Repr, Inhabited
+
+/-- Tres respuestas posibles, no dos. -/
+inductive Veredicto where
+  | limpio
+  | conViolaciones
+  | sinVeredicto
+  deriving Repr, DecidableEq
+
 structure Obra where
   id         : String
   personajes : List Personaje

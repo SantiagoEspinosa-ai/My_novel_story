@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sqlite3
 import sys
 from datetime import datetime
@@ -58,6 +59,36 @@ def _instante(texto):
         return None
 
 
+_DIGITOS_FINALES = re.compile(r"(\d+)\s*$")
+
+
+def clave_de_capitulo(capitulo):
+    """Orden del capitulo, deducido de su identificador.
+
+    **Ordenar los capitulos por su identificador como cadena es un bug que
+    solo aparece al llegar al decimo.** Con `cap-1`..`cap-9` el orden
+    alfabetico coincide con el numerico y todo parece bien; con diez
+    capitulos, `cap-10` se coloca entre `cap-1` y `cap-2`. El eje del discurso
+    queda mal y `L-1` empieza a levantar inversiones que no existen, que es
+    justo como se pierde una invariante correcta: alguien concluye que da
+    falsos positivos.
+
+    En el repositorio conviven las dos convenciones, `cap-01` y `cap-1`, asi
+    que no se puede confiar en el relleno con ceros. Se extrae el numero final
+    y se ordena por el.
+
+    Devuelve `(orden, None)` si se pudo deducir, y `(None, capitulo)` si no.
+    Un capitulo que no se deja ordenar **no se adivina**: se cuenta, y su
+    presencia deja la obra sin veredicto.
+    """
+    if capitulo is None:
+        return (None, "")
+    encontrado = _DIGITOS_FINALES.search(str(capitulo))
+    if not encontrado:
+        return (None, str(capitulo))
+    return (int(encontrado.group(1)), None)
+
+
 def _minutos(t: datetime) -> int:
     return int((t - EPOCA).total_seconds() // 60)
 
@@ -76,7 +107,12 @@ def leer(con: sqlite3.Connection, obra: str) -> dict:
     con.row_factory = sqlite3.Row
     eventos = [dict(f) for f in con.execute(
         "SELECT id, t_fabula, duracion_min, lugar, escena, capitulo "
-        "FROM evento_cronologico WHERE obra = ? ORDER BY capitulo, id", (obra,))]
+        "FROM evento_cronologico WHERE obra = ?", (obra,))]
+    # El orden NO se deja a SQL: `capitulo` es TEXT y ordenarlo como cadena
+    # rompe al llegar al decimo capitulo. Ver `clave_de_capitulo`.
+    eventos.sort(key=lambda e: (clave_de_capitulo(e["capitulo"])[0] is None,
+                                clave_de_capitulo(e["capitulo"])[0] or 0,
+                                e["id"]))
 
     participaciones = {}
     for e in eventos:
@@ -140,11 +176,16 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
     """
     eventos, sin_fecha_legible, personajes = [], [], {}
     eventos_con_exclusion, deltas_ilegibles = 0, 0
+    capitulos_no_ordenables = set()
 
     # El orden de discurso es el mismo criterio que usa `consultas.orden_temporal`:
     # por capitulo y luego por identificador de evento. Se guarda como rango y no
     # como el `orden` de la escena porque no todos los eventos tienen escena.
     for discurso, e in enumerate(datos["eventos"], start=1):
+        orden_cap, sin_orden = clave_de_capitulo(e["capitulo"])
+        if orden_cap is None:
+            capitulos_no_ordenables.add(sin_orden)
+
         t = _instante(e["t_fabula"])
         if t is None:
             sin_fecha_legible.append(e["id"])
@@ -192,7 +233,9 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
         n_sin_fecha=len(sin_fecha_legible),
         personajes=",\n".join(filas_personaje) or "",
         eventos=",\n".join(eventos) or "",
-        obra_txt=_txt(obra))
+        obra_txt=_txt(obra),
+        n_exclusion=eventos_con_exclusion,
+        n_no_ordenables=len(capitulos_no_ordenables))
 
     return texto, {
         "eventos_convertidos": len(eventos),
@@ -204,6 +247,9 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
         # aqui o en el delta, no en la invariante (`F-46`).
         "eventos_con_exclusion": eventos_con_exclusion,
         "deltas_ilegibles": deltas_ilegibles,
+        # Si esto no es cero, el eje del discurso es una suposicion y Lean
+        # devuelve "sin veredicto" en vez de aprobar.
+        "capitulos_no_ordenables": sorted(capitulos_no_ordenables),
     }
 
 
@@ -223,6 +269,15 @@ CABECERA = '''/-
 import Cronologia.Basic
 
 namespace Cronologia
+
+/-- Lo que se pudo mirar y lo que no. `MainReal` lo usa para poder decir "sin
+    veredicto" en vez de aprobar una obra que nadie llego a comprobar. -/
+def coberturaReal : Cobertura :=
+  {{ eventos := {n_eventos}
+  , eventosSinFechaLegible := {n_sin_fecha}
+  , personajesSinNacimiento := {n_sin_nacimiento}
+  , eventosConExclusion := {n_exclusion}
+  , capitulosNoOrdenables := {n_no_ordenables} }}
 
 def obraReal : Obra :=
   {{ id := {obra_txt}

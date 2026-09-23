@@ -119,6 +119,25 @@ def exclusion (o : Obra) : Informe :=
 def verificar (o : Obra) : Informe :=
   Informe.unir (Informe.unir (orden o) (edad o)) (Informe.unir (ubicuidad o) (exclusion o))
 
+/-- El veredicto, que **no** es solo «hay violaciones o no».
+
+    La Regla 8 otra vez, en el terreno de la verificacion formal: una obra de
+    la que no se pudo convertir ningun evento no esta limpia, es que no se ha
+    mirado. Y un capitulo cuyo identificador no deja deducir su orden hace que
+    el eje del discurso sea una suposicion, asi que `L-1` tampoco se puede
+    afirmar sobre ella. En los dos casos la respuesta es `sinVeredicto`, que es
+    distinto de las otras dos y tiene que verse distinto. -/
+def veredictoDe (c : Cobertura) (i : Informe) : Veredicto :=
+  if c.eventos == 0 then Veredicto.sinVeredicto
+  else if c.capitulosNoOrdenables > 0 then Veredicto.sinVeredicto
+  else if i.violaciones.isEmpty then Veredicto.limpio
+  else Veredicto.conViolaciones
+
+def Cobertura.comoTexto (c : Cobertura) : String :=
+  s!"eventos: {c.eventos} · sin fecha legible: {c.eventosSinFechaLegible} · " ++
+  s!"sin nacimiento: {c.personajesSinNacimiento} · con exclusion: {c.eventosConExclusion} · " ++
+  s!"capitulos no ordenables: {c.capitulosNoOrdenables}"
+
 def Informe.pasa (i : Informe) : Bool := i.violaciones.isEmpty
 
 def Informe.comoTexto (i : Informe) : String :=

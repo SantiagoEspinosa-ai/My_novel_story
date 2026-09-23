@@ -15,6 +15,15 @@ import Cronologia.Basic
 
 namespace Cronologia
 
+/-- Lo que se pudo mirar y lo que no. `MainReal` lo usa para poder decir "sin
+    veredicto" en vez de aprobar una obra que nadie llego a comprobar. -/
+def coberturaReal : Cobertura :=
+  { eventos := 5
+  , eventosSinFechaLegible := 0
+  , personajesSinNacimiento := 1
+  , eventosConExclusion := 1
+  , capitulosNoOrdenables := 0 }
+
 def obraReal : Obra :=
   { id := "obra-x"
   , personajes :=
