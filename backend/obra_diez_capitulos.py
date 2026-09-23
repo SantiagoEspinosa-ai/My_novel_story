@@ -35,7 +35,11 @@ from app.features.consolidacion import aplicar, memoria, mundo
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, obra
 
-RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "obra10.db")
+# La base se elige por variable de entorno para poder repetir la obra sin
+# pisar la anterior: **la comparacion entre las dos es el dato**, asi que
+# borrar la primera seria tirar la mitad de la medida.
+RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    os.environ.get("HARNESS_BASE", "obra10.db"))
 
 INMUTABLE = """Terror domestico. Tercera persona limitada sobre Marta, pasado.
 Prosa seca; el miedo viene de lo que no se explica. Nada de sangre.
@@ -178,6 +182,10 @@ def preparar(con):
     for cap, _titulo, escenas in CAPITULOS:
         repo.guardar_escaleta(con, cap, [
             {"id": "{0}-e{1}".format(cap, n), "orden": n,
+             # `SPEC-21` C-1 y la decision del autor: el alcance de la escena
+             # anterior es el **capitulo**. Sin declararlo, todas las escenas
+             # de la obra caen en el mismo grupo y el corte no existe.
+             "capitulo": cap,
              "cambio_de_valor": {"eje": eje, "signo": "negativo"},
              "pov": "per-marta", "lugar": lugar,
              "beats": [{"id": "{0}-b{1}".format(cap, n), "establece": establece}],
@@ -206,6 +214,10 @@ def main():
     arranque = time.time()
     total = {"escenas": 0, "usd": 0.0, "delegaciones": 0, "sin_coste": 0,
              "bloqueos": 0, "rendidas": 0, "desatascos": 0}
+    # `F-41`: las escenas que se quedaron sin resumen. Se cuentan aparte
+    # porque una escena sin memoria no es lo mismo que una que no tenia nada
+    # que resumir, y con el silencio de antes eran indistinguibles.
+    sin_resumen = []
     medidas = []
     parada_final = None
 
@@ -221,6 +233,7 @@ def main():
             total["delegaciones"] += g.coste["delegaciones"]
             total["sin_coste"] += g.coste["sin_coste"]
             total["rendidas"] += len(g.rendidas)
+            sin_resumen.extend(g.sin_resumen)
             medidas.extend(g.medidas)
             print("  hechas {0} | saltadas {1} | {2:.4f} USD".format(
                 len(g.escenas_hechas), len(g.saltadas), g.coste["usd"]), flush=True)
@@ -252,12 +265,25 @@ def main():
     print("delegaciones: {0} | SIN coste medido: {1}".format(
         total["delegaciones"], total["sin_coste"]))
     print("coste leido: {0:.4f} USD".format(total["usd"]))
+    print("escenas SIN resumen (F-41): {0}{1}".format(
+        len(sin_resumen), " -> " + ", ".join(sin_resumen) if sin_resumen else ""))
     print("minutos: {0:.1f}".format((time.time() - arranque) / 60))
 
     if medidas:
         print("\n=== EL CONTEXTO (VER-37) ===")
         print("primera escena: {0} tokens".format(medidas[0]["total"]))
         print("ultima escena:  {0} tokens".format(medidas[-1]["total"]))
+        # Lo que la longitud existe para contestar: si crece **entre**
+        # capitulos o se reinicia en cada uno (`F-40`, `F-45`).
+        por_capitulo = {}
+        for m in medidas:
+            cap = m["escena"].rsplit("-e", 1)[0]
+            por_capitulo.setdefault(cap, []).append(m["total"])
+        print("\nmedia por capitulo:")
+        for cap in sorted(por_capitulo):
+            v = por_capitulo[cap]
+            print("  {0}  primera {1:5}  ultima {2:5}  media {3:6.0f}".format(
+                cap, v[0], v[-1], sum(v) / len(v)))
         print("maximo:         {0} tokens".format(max(m["total"] for m in medidas)))
         recortes = sum(1 for m in medidas if m["recortes"])
         print("escenas con recorte: {0} de {1}".format(recortes, len(medidas)))
