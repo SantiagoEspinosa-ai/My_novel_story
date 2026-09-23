@@ -89,8 +89,19 @@ def registrar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
 
 
 def leer(con: sqlite3.Connection):
-    with con:
-        con.executescript(SQL)
+    # Preguntar no es escribir: leer la procedencia de una base abierta en
+    # solo lectura tiene que funcionar, porque es justo lo que se hace al
+    # auditar un artefacto que no se quiere tocar.
+    try:
+        with con:
+            con.executescript(SQL)
+    except sqlite3.OperationalError:
+        fila = con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name='procedencia'").fetchone()
+        if fila is None:
+            return {"version": None, "creada_en": None, "brief": None,
+                    "sistema": None}
     filas = dict((f[0], (f[1], f[2])) for f in con.execute(
         "SELECT clave, valor, cuando FROM procedencia"))
     v = filas.get("version_del_harness")

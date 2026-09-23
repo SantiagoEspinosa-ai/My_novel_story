@@ -92,9 +92,139 @@ class EstiloDeLaObra(_DelDominio):
         default_factory=list, description="Fragmentos que fijan el tono")
 
 
+class LugarDelPlan(_DelDominio):
+    """De `Lugar`. `nombre` es obligatorio en el dominio y aqui tambien."""
+
+    id: str = Field(min_length=1)
+    nombre: str = Field(min_length=1)
+    accesos: list[str] = Field(
+        default_factory=list,
+        description="`Lugar.accesos_y_salidas`, que es lo que lee `INV-02`")
+
+
+class PersonajeDelPlan(_DelDominio):
+    """De `Personaje`."""
+
+    id: str = Field(min_length=1)
+    nombre: str = Field(min_length=1, description="`nombre_canonico`")
+    empieza_en: str = Field(min_length=1)
+    estado_vital: enums.EstadoVital = enums.EstadoVital.VIVO
+
+
+class ConocimientoInicial(_DelDominio):
+    """`SPEC-17` C-1: quien sabe que **antes de la escena 1**."""
+
+    sujeto: str
+    hecho: str
+    grado: enums.GradoDeConocimiento = enums.GradoDeConocimiento.SABE
+
+
+class HechoDelPlan(_DelDominio):
+    """`SPEC-15`: los `HechoCanonico` los declara el plan, no el texto."""
+
+    id: str = Field(min_length=1)
+    enunciado: str = Field(min_length=1)
+
+
+class EscenaDelPlan(_DelDominio):
+    """Lo que la escaleta declara **antes de que exista texto**."""
+
+    eje: str = Field(min_length=1, description="`cambio_de_valor.eje`")
+    signo: str = "negativo"
+    lugar: str = Field(min_length=1)
+    pov: str = Field(min_length=1)
+    sinopsis: str = ""
+    establece: list[str] = Field(
+        default_factory=list,
+        description="`Beat.establece[]` (`SPEC-19`): que hechos promete "
+                    "establecer esta escena")
+
+
+class CapituloDelPlan(_DelDominio):
+    id: str = Field(min_length=1)
+    titulo: str = ""
+    escenas: list[EscenaDelPlan] = Field(min_length=1)
+
+
+class PlanDeLaObra(_DelDominio):
+    """La obra entera, fuera del codigo.
+
+    Estaba en el guion, y por eso cambiar `capitulos: 3` en el fichero fallaba:
+    el fichero decia una cosa y el codigo traia otra. Ahora **editar el fichero
+    cambia la obra**, que es lo unico que hace verdad la frase.
+    """
+
+    mundo: "MundoDelPlan"
+    hechos: list[HechoDelPlan] = Field(default_factory=list)
+    capitulos: list[CapituloDelPlan] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _las_referencias_existen(self):
+        """Lo que se cita tiene que estar declarado, y se comprueba **aqui**.
+
+        Un identificador que no existe no revienta: **se degrada**. Un lugar
+        inventado en una escena llega a `INV-02`, que busca sus accesos, no
+        encuentra la fila y no comprueba nada — la asimetria de la que no
+        protege ningun esquema si el esquema no mira.
+        """
+        lugares = {l.id for l in self.mundo.lugares}
+        hechos = {h.id for h in self.hechos}
+        personajes = {p.id for p in self.mundo.personajes}
+        for l in self.mundo.lugares:
+            for destino in l.accesos:
+                if destino not in lugares:
+                    raise ValueError(
+                        "`{0}` tiene acceso a `{1}`, que no esta declarado. "
+                        "`INV-02` recorre el grafo por el `id`, asi que un "
+                        "destino inexistente hace la accesibilidad "
+                        "incomprobable".format(l.id, destino))
+        for p in self.mundo.personajes:
+            if p.empieza_en not in lugares:
+                raise ValueError("`{0}` empieza en `{1}`, que no existe".format(
+                    p.id, p.empieza_en))
+        for k in self.mundo.conocimiento_inicial:
+            if k.hecho not in hechos:
+                raise ValueError(
+                    "el conocimiento inicial cita `{0}`, que no esta "
+                    "declarado".format(k.hecho))
+            if k.sujeto not in personajes:
+                raise ValueError(
+                    "el conocimiento inicial cita `{0}`, que no es un "
+                    "personaje declarado".format(k.sujeto))
+        for c in self.capitulos:
+            for i, e in enumerate(c.escenas, 1):
+                if e.lugar not in lugares:
+                    raise ValueError(
+                        "{0} escena {1} ocurre en `{2}`, que no esta "
+                        "declarado".format(c.id, i, e.lugar))
+                if e.pov not in personajes:
+                    raise ValueError(
+                        "{0} escena {1} tiene el POV en `{2}`, que no es un "
+                        "personaje declarado".format(c.id, i, e.pov))
+                for h in e.establece:
+                    if h not in hechos:
+                        raise ValueError(
+                            "{0} escena {1} promete establecer `{2}`, que no "
+                            "esta declarado. Un beat **no inventa hechos, los "
+                            "situa** (`SPEC-19`)".format(c.id, i, h))
+        return self
+
+
+class MundoDelPlan(_DelDominio):
+    lugares: list[LugarDelPlan] = Field(min_length=1)
+    personajes: list[PersonajeDelPlan] = Field(min_length=1)
+    conocimiento_inicial: list[ConocimientoInicial] = Field(default_factory=list)
+
+
 class BriefDeObra(_DelDominio):
     """Lo que define una novela concreta, fuera del codigo."""
 
+    obra_id: str = Field(
+        default="obra-1", min_length=1,
+        description="El identificador de la `Obra`. **Una obra, no una por "
+                    "capitulo**: cuando cada capitulo era su propia obra, "
+                    "`escena.capitulo` no tenia a que apuntar y los hechos "
+                    "colisionaban (`F-53`, `F-56`)")
     titulo: str = Field(min_length=1)
     premisa: str = Field(min_length=1)
     genero: str | None = None
@@ -106,6 +236,31 @@ class BriefDeObra(_DelDominio):
         default="",
         description="El bloque 1 del contexto: premisa, estilo y reglas del "
                     "mundo tal como las lee el Escritor")
+    plan: PlanDeLaObra | None = None
+
+    @model_validator(mode="after")
+    def _la_forma_cuadra_con_el_plan(self):
+        """La forma y el plan no pueden decir cosas distintas.
+
+        Se valida **dentro del esquema** y no al arrancar el guion: antes
+        quedaba una ventana en la que el fichero decia una cosa y el codigo
+        otra, y esa ventana es donde vivio `F-53` durante diez capitulos.
+        """
+        if self.plan is None:
+            return self
+        if len(self.plan.capitulos) != self.forma.capitulos:
+            raise ValueError(
+                "`forma.capitulos` dice {0} y el plan trae {1} capitulos. La "
+                "forma se lee de un vistazo y el plan es lo que se genera: si "
+                "discrepan, uno de los dos miente".format(
+                    self.forma.capitulos, len(self.plan.capitulos)))
+        for c in self.plan.capitulos:
+            if len(c.escenas) != self.forma.escenas_por_capitulo:
+                raise ValueError(
+                    "`forma.escenas_por_capitulo` dice {0} y {1} trae {2} "
+                    "escenas".format(self.forma.escenas_por_capitulo, c.id,
+                                     len(c.escenas)))
+        return self
 
     @property
     def huella(self) -> str:

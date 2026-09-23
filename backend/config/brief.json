@@ -1,15 +1,17 @@
 {
+  "obra_id": "obra-la-casa",
   "titulo": "La casa exacta",
   "premisa": "Marta hereda la casa de su tia Ubalda y empieza a contar los peldanos. La casa no es hostil: es exacta, y eso es lo que asusta.",
   "genero": "terror",
   "subgenero": "terror domestico",
-
   "forma": {
     "capitulos": 10,
     "escenas_por_capitulo": 6,
-    "palabras_por_escena": [250, 800]
+    "palabras_por_escena": [
+      250,
+      800
+    ]
   },
-
   "estilo": {
     "persona": "tercera_limitada",
     "tiempo_verbal": "pasado",
@@ -23,6 +25,695 @@
       "Las escenas son cortas. Se corta antes de explicar."
     ]
   },
-
-  "inmutable": "Terror domestico. Tercera persona limitada sobre Marta, pasado.\nProsa seca; el miedo viene de lo que no se explica. Nada de sangre.\nLa casa heredada no es hostil: es exacta, y eso es lo que asusta.\nLas escenas son cortas. Se corta antes de explicar."
+  "inmutable": "Terror domestico. Tercera persona limitada sobre Marta, pasado.\nProsa seca; el miedo viene de lo que no se explica. Nada de sangre.\nLa casa heredada no es hostil: es exacta, y eso es lo que asusta.\nLas escenas son cortas. Se corta antes de explicar.",
+  "plan": {
+    "mundo": {
+      "lugares": [
+        {
+          "id": "lug-salon",
+          "nombre": "Salon",
+          "accesos": [
+            "lug-cocina",
+            "lug-pasillo"
+          ]
+        },
+        {
+          "id": "lug-cocina",
+          "nombre": "Cocina",
+          "accesos": [
+            "lug-salon"
+          ]
+        },
+        {
+          "id": "lug-pasillo",
+          "nombre": "Pasillo",
+          "accesos": [
+            "lug-salon",
+            "lug-sotano",
+            "lug-dormitorio",
+            "lug-desvan"
+          ]
+        },
+        {
+          "id": "lug-sotano",
+          "nombre": "Sotano",
+          "accesos": [
+            "lug-pasillo"
+          ]
+        },
+        {
+          "id": "lug-dormitorio",
+          "nombre": "Dormitorio",
+          "accesos": [
+            "lug-pasillo"
+          ]
+        },
+        {
+          "id": "lug-desvan",
+          "nombre": "Desvan",
+          "accesos": [
+            "lug-pasillo"
+          ]
+        }
+      ],
+      "personajes": [
+        {
+          "id": "per-marta",
+          "nombre": "Marta",
+          "empieza_en": "lug-salon",
+          "estado_vital": "vivo"
+        },
+        {
+          "id": "per-ana",
+          "nombre": "Ana",
+          "empieza_en": "lug-cocina",
+          "estado_vital": "vivo"
+        }
+      ],
+      "conocimiento_inicial": [
+        {
+          "sujeto": "per-marta",
+          "hecho": "hec-herencia",
+          "grado": "sabe"
+        },
+        {
+          "sujeto": "per-ana",
+          "hecho": "hec-herencia",
+          "grado": "sabe"
+        },
+        {
+          "sujeto": "per-ana",
+          "hecho": "hec-ana-vivio-aqui",
+          "grado": "sabe"
+        },
+        {
+          "sujeto": "per-marta",
+          "hecho": "hec-ana-vivio-aqui",
+          "grado": "ignora"
+        }
+      ]
+    },
+    "hechos": [
+      {
+        "id": "hec-herencia",
+        "enunciado": "Marta heredo la casa de su tia Ubalda"
+      },
+      {
+        "id": "hec-sotano-cerrado",
+        "enunciado": "El sotano esta cerrado por fuera"
+      },
+      {
+        "id": "hec-llave-perdida",
+        "enunciado": "La llave del sotano no aparece"
+      },
+      {
+        "id": "hec-reloj-sin-cuerda",
+        "enunciado": "El reloj del salon anda sin que nadie le de cuerda"
+      },
+      {
+        "id": "hec-peldano-de-mas",
+        "enunciado": "La escalera tiene un peldano mas al bajar que al subir"
+      },
+      {
+        "id": "hec-ana-vivio-aqui",
+        "enunciado": "Ana vivio en la casa de nina y no lo ha contado"
+      },
+      {
+        "id": "hec-ubalda-no-salia",
+        "enunciado": "La tia Ubalda llevaba anos sin salir de la casa"
+      },
+      {
+        "id": "hec-cuarto-tapiado",
+        "enunciado": "Hay un cuarto tapiado detras del desvan"
+      },
+      {
+        "id": "hec-cartas",
+        "enunciado": "En el desvan hay cartas de Ubalda sin enviar"
+      },
+      {
+        "id": "hec-nombre-repetido",
+        "enunciado": "En las cartas aparece el nombre de Marta antes de nacer"
+      }
+    ],
+    "capitulos": [
+      {
+        "id": "cap-01",
+        "titulo": "Llegar",
+        "escenas": [
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Marta recorre la casa y cuenta los peldanos.",
+            "establece": [
+              "hec-peldano-de-mas"
+            ]
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "La puerta del sotano no cede.",
+            "establece": [
+              "hec-sotano-cerrado"
+            ]
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Marta busca la llave en todos los cajones.",
+            "establece": [
+              "hec-llave-perdida"
+            ]
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "El reloj sigue andando por la noche.",
+            "establece": [
+              "hec-reloj-sin-cuerda"
+            ]
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Ana llama por telefono y no pregunta por la casa.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Marta no duerme y cuenta desde la cama.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-02",
+        "titulo": "Ana",
+        "escenas": [
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Ana llega con una maleta pequena.",
+            "establece": []
+          },
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana se mueve por la casa sin preguntar donde esta nada.",
+            "establece": [
+              "hec-ana-vivio-aqui"
+            ]
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "Marta le ensena la puerta y Ana no la mira.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Discuten por la herencia sin nombrarla.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Marta cuenta los peldanos otra vez y salen distintos.",
+            "establece": []
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana propone vender.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-03",
+        "titulo": "Ubalda",
+        "escenas": [
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Aparecen las facturas: Ubalda no salia.",
+            "establece": [
+              "hec-ubalda-no-salia"
+            ]
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "Marta mide la escalera con una cinta.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana se enfada cuando Marta pregunta por la infancia.",
+            "establece": []
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Alguien ha parado el reloj.",
+            "establece": []
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "Marta decide forzar la puerta y no lo hace.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "La casa suena a la misma hora.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-04",
+        "titulo": "El desvan",
+        "escenas": [
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "Marta sube al desvan por primera vez.",
+            "establece": []
+          },
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "Encuentra las cartas de Ubalda.",
+            "establece": [
+              "hec-cartas"
+            ]
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "Hay una pared que suena hueca.",
+            "establece": [
+              "hec-cuarto-tapiado"
+            ]
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Marta no le cuenta a Ana lo del desvan.",
+            "establece": []
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana pregunta que hacia arriba.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Marta lee una carta y la deja a medias.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-05",
+        "titulo": "El nombre",
+        "escenas": [
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "En una carta esta su nombre, fechada antes.",
+            "establece": [
+              "hec-nombre-repetido"
+            ]
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Marta comprueba la fecha tres veces.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Se lo ensena a Ana y Ana no se sorprende.",
+            "establece": []
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "La puerta del sotano esta entreabierta.",
+            "establece": []
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Marta cierra la puerta y no baja.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Cuenta los peldanos desde arriba.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-06",
+        "titulo": "Lo que Ana sabia",
+        "escenas": [
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana cuenta que vivio aqui de nina.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Marta deja de creer lo que Ana dice.",
+            "establece": []
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "Las dos oyen algo abajo.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Marta duerme con la luz dada.",
+            "establece": []
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Ana se va a dormir temprano.",
+            "establece": []
+          },
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "Marta relee las cartas buscando a Ana.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-07",
+        "titulo": "La pared",
+        "escenas": [
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "Marta golpea la pared hueca.",
+            "establece": []
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "Detras hay un hueco y no un cuarto.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "El reloj vuelve a andar.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana pregunta por los golpes y Marta miente.",
+            "establece": []
+          },
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "En el hueco hay ropa de nina.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Marta no cuenta los peldanos esa noche.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-08",
+        "titulo": "Bajar",
+        "escenas": [
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "Marta fuerza la puerta del sotano.",
+            "establece": []
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-sotano",
+            "pov": "per-marta",
+            "sinopsis": "El sotano esta vacio y limpio.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-sotano",
+            "pov": "per-marta",
+            "sinopsis": "Hay catorce peldanos bajando y quince subiendo.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Ana la encuentra sentada en la escalera.",
+            "establece": []
+          },
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana admite que Ubalda la echo de la casa.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Marta cuenta en voz alta y no para.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-09",
+        "titulo": "La exactitud",
+        "escenas": [
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Todo esta donde Marta lo dejo, y mas ordenado.",
+            "establece": []
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "La puerta vuelve a estar cerrada.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-cocina",
+            "pov": "per-marta",
+            "sinopsis": "Ana hace la maleta.",
+            "establece": []
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Marta le pide que se quede y no lo dice asi.",
+            "establece": []
+          },
+          {
+            "eje": "conocimiento",
+            "signo": "negativo",
+            "lugar": "lug-desvan",
+            "pov": "per-marta",
+            "sinopsis": "Falta una carta.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Marta oye contar a alguien.",
+            "establece": []
+          }
+        ]
+      },
+      {
+        "id": "cap-10",
+        "titulo": "Quedarse",
+        "escenas": [
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Ana se va sin despedirse.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-pasillo",
+            "pov": "per-marta",
+            "sinopsis": "Marta baja al sotano sin linterna.",
+            "establece": []
+          },
+          {
+            "eje": "seguridad",
+            "signo": "negativo",
+            "lugar": "lug-sotano",
+            "pov": "per-marta",
+            "sinopsis": "Abajo esta exactamente lo que esperaba.",
+            "establece": []
+          },
+          {
+            "eje": "control",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "Marta le da cuerda al reloj.",
+            "establece": []
+          },
+          {
+            "eje": "cordura",
+            "signo": "negativo",
+            "lugar": "lug-dormitorio",
+            "pov": "per-marta",
+            "sinopsis": "Se acuesta y cuenta hasta catorce.",
+            "establece": []
+          },
+          {
+            "eje": "vinculo",
+            "signo": "negativo",
+            "lugar": "lug-salon",
+            "pov": "per-marta",
+            "sinopsis": "La casa queda en orden.",
+            "establece": []
+          }
+        ]
+      }
+    ]
+  }
 }

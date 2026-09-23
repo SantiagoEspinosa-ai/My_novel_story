@@ -166,3 +166,100 @@ def test_escenas_por_capitulo_tambien_se_comprueba(tmp_path):
 def test_si_cuadra_no_dice_nada(tmp_path):
     b = carga.cargar_brief(_escribir(tmp_path, "brief.json", BRIEF_MINIMO))
     assert carga.comprobar_forma(b, capitulos=3, escenas_por_capitulo=4) is None
+
+
+# --- El plan entero en el fichero: editar y que cambie la obra ------------
+
+PLAN_MINIMO = {
+    "mundo": {
+        "lugares": [{"id": "lug-salon", "nombre": "El salon",
+                     "accesos": ["lug-cocina"]},
+                    {"id": "lug-cocina", "nombre": "La cocina",
+                     "accesos": ["lug-salon"]}],
+        "personajes": [{"id": "per-marta", "nombre": "Marta",
+                        "empieza_en": "lug-salon"}],
+        "conocimiento_inicial": [{"sujeto": "per-marta", "hecho": "hec-uno",
+                                  "grado": "sabe"}],
+    },
+    "hechos": [{"id": "hec-uno", "enunciado": "Marta heredo la casa"}],
+    "capitulos": [
+        {"id": "cap-01", "titulo": "Llegar", "escenas": [
+            {"eje": "cordura", "lugar": "lug-salon", "pov": "per-marta",
+             "sinopsis": "Marta cuenta los peldanos.", "establece": ["hec-uno"]},
+            {"eje": "seguridad", "lugar": "lug-cocina", "pov": "per-marta",
+             "sinopsis": "La puerta no cede."},
+        ]},
+        {"id": "cap-02", "titulo": "Ana", "escenas": [
+            {"eje": "vinculo", "lugar": "lug-salon", "pov": "per-marta",
+             "sinopsis": "Ana llega."},
+            {"eje": "control", "lugar": "lug-cocina", "pov": "per-marta",
+             "sinopsis": "Ana propone vender."},
+        ]},
+    ],
+}
+BRIEF_CON_PLAN = dict(BRIEF_MINIMO,
+                      forma={"capitulos": 2, "escenas_por_capitulo": 2,
+                             "palabras_por_escena": [250, 800]},
+                      plan=PLAN_MINIMO)
+
+
+def test_el_brief_trae_la_obra_entera(tmp_path):
+    b = carga.cargar_brief(_escribir(tmp_path, "brief.json", BRIEF_CON_PLAN))
+    assert [c.id for c in b.plan.capitulos] == ["cap-01", "cap-02"]
+    assert b.plan.capitulos[0].escenas[0].establece == ["hec-uno"]
+    assert [h.id for h in b.plan.hechos] == ["hec-uno"]
+
+
+def test_la_forma_y_el_plan_no_pueden_divergir(tmp_path):
+    """Se valida **dentro del esquema**, asi que el fichero no puede estar mal:
+    antes se comprobaba al arrancar el guion, y eso dejaba una ventana en la
+    que el fichero decia una cosa y el codigo otra."""
+    malo = dict(BRIEF_CON_PLAN, forma={"capitulos": 5, "escenas_por_capitulo": 2,
+                                       "palabras_por_escena": [250, 800]})
+    with pytest.raises(carga.ConfiguracionInvalida, match="capitulos"):
+        carga.cargar_brief(_escribir(tmp_path, "brief.json", malo))
+
+
+def test_capitulos_con_distinto_numero_de_escenas_se_rechazan(tmp_path):
+    """`escenas_por_capitulo` es **un** numero, asi que todos los capitulos
+    tienen que traer esa cantidad. Si no, la forma miente sobre la mitad."""
+    plan = json.loads(json.dumps(PLAN_MINIMO))
+    plan["capitulos"][1]["escenas"].pop()
+    malo = dict(BRIEF_CON_PLAN, plan=plan)
+    with pytest.raises(carga.ConfiguracionInvalida, match="escenas"):
+        carga.cargar_brief(_escribir(tmp_path, "brief.json", malo))
+
+
+def test_un_hecho_que_un_beat_promete_tiene_que_existir(tmp_path):
+    """`SPEC-19`: un beat **no inventa hechos, los situa**. Un identificador
+    que no este declarado llegaria al prompt y el modelo no podria citarlo."""
+    plan = json.loads(json.dumps(PLAN_MINIMO))
+    plan["capitulos"][0]["escenas"][0]["establece"] = ["hec-que-no-existe"]
+    malo = dict(BRIEF_CON_PLAN, plan=plan)
+    with pytest.raises(carga.ConfiguracionInvalida, match="hec-que-no-existe"):
+        carga.cargar_brief(_escribir(tmp_path, "brief.json", malo))
+
+
+def test_una_escena_en_un_lugar_que_no_existe_se_rechaza(tmp_path):
+    """`INV-02` llega al grafo de accesos por el `id`. Un lugar que no case con
+    ninguna fila **no se comprueba contra nada**: es la asimetria que la
+    sesion de specs describio, cazada aqui en la frontera."""
+    plan = json.loads(json.dumps(PLAN_MINIMO))
+    plan["capitulos"][0]["escenas"][0]["lugar"] = "lug-inventado"
+    malo = dict(BRIEF_CON_PLAN, plan=plan)
+    with pytest.raises(carga.ConfiguracionInvalida, match="lug-inventado"):
+        carga.cargar_brief(_escribir(tmp_path, "brief.json", malo))
+
+
+def test_un_acceso_a_un_lugar_que_no_existe_tambien(tmp_path):
+    plan = json.loads(json.dumps(PLAN_MINIMO))
+    plan["mundo"]["lugares"][0]["accesos"] = ["lug-fantasma"]
+    malo = dict(BRIEF_CON_PLAN, plan=plan)
+    with pytest.raises(carga.ConfiguracionInvalida, match="lug-fantasma"):
+        carga.cargar_brief(_escribir(tmp_path, "brief.json", malo))
+
+
+def test_el_brief_del_repositorio_trae_su_plan_completo():
+    b = carga.cargar_brief()
+    assert b.plan is not None, "el brief del proyecto trae la obra entera"
+    assert len(b.plan.capitulos) == b.forma.capitulos

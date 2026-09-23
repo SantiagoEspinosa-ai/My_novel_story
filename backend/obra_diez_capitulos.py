@@ -42,11 +42,12 @@ from app.features.brief import repository as brief
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, obra
 
-# La base se elige por variable de entorno para poder repetir la obra sin
-# pisar la anterior: **la comparacion entre las dos es el dato**, asi que
-# borrar la primera seria tirar la mitad de la medida.
-RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                    os.environ.get("HARNESS_BASE", "obra10.db"))
+# La ruta la dice `config/sistema.json`. `HARNESS_BASE` la sustituye para
+# poder repetir una obra sin pisar la anterior: **la comparacion entre las dos
+# es el dato**, asi que borrar la primera seria tirar la mitad de la medida.
+#
+# Se define despues de cargar el sistema, mas abajo, para que no haya dos
+# sitios que digan donde vive la base.
 
 # LA FORMA Y EL TONO SALEN DE `config/brief.json`; LA MAQUINA, DE `sistema.json`
 # ------------------------------------------------------------------------------
@@ -57,146 +58,34 @@ RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 BRIEF = carga.cargar_brief()
 SISTEMA = carga.cargar_sistema()
 
+RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    os.environ.get("HARNESS_BASE", SISTEMA.ruta_de_la_base))
+
 INMUTABLE = BRIEF.inmutable
 
-ACCESOS = {"lug-salon": ["lug-cocina", "lug-pasillo"],
-           "lug-cocina": ["lug-salon"],
-           "lug-pasillo": ["lug-salon", "lug-sotano", "lug-dormitorio", "lug-desvan"],
-           "lug-sotano": ["lug-pasillo"],
-           "lug-dormitorio": ["lug-pasillo"],
-           "lug-desvan": ["lug-pasillo"]}
+# TODO LO QUE DEFINE LA OBRA SALE DE `config/brief.json`
+# -------------------------------------------------------
+# Aqui vivian el mundo, los hechos, el conocimiento inicial y las sesenta
+# escenas con su sinopsis. Mientras estuvieron aqui, cambiar `capitulos: 3` en
+# el fichero **fallaba**: el fichero decia una cosa y el codigo traia otra, que
+# es la ventana donde vivio `F-53` durante diez capitulos.
+#
+# Ahora editar el fichero cambia la obra, que es lo unico que hace verdad la
+# frase. Lo que queda en este guion es **como se genera**, no **que** se genera.
+PLAN = BRIEF.plan
+OBRA = BRIEF.obra_id
 
-PERSONAS = {"per-marta": ("vivo", "lug-salon"), "per-ana": ("vivo", "lug-cocina")}
-
-# LA OBRA ES UNA, Y TIENE DIEZ CAPITULOS DENTRO
-# ----------------------------------------------
-# Antes cada capitulo se daba de alta como **una obra distinta**, y con eso nada
-# de lo construido significaba nada: `escena.capitulo` no tenia a que apuntar,
-# el cierre de capitulo evaluaba una obra de seis escenas, la cronologia no
-# cruzaba ningun corte, y los diez `HechoCanonico` -declarados diez veces, uno
-# por "obra"- colisionaban en la misma clave y acababan **todos bajo `cap-10`**.
-# En la primera ejecucion eso dejo a los siete capitulos que corrieron generando
-# con `hechos: (ninguno)`, de modo que el cero de `INV-03` no decia que la obra
-# estuviera limpia: decia que no habia nada que mirar.
-OBRA = "obra-la-casa"
-
-# Los hechos de la obra entera. `SPEC-15`: los declara el plan, no el texto.
-HECHOS = [
-    ("hec-herencia", "Marta heredo la casa de su tia Ubalda"),
-    ("hec-sotano-cerrado", "El sotano esta cerrado por fuera"),
-    ("hec-llave-perdida", "La llave del sotano no aparece"),
-    ("hec-reloj-sin-cuerda", "El reloj del salon anda sin que nadie le de cuerda"),
-    ("hec-peldano-de-mas", "La escalera tiene un peldano mas al bajar que al subir"),
-    ("hec-ana-vivio-aqui", "Ana vivio en la casa de nina y no lo ha contado"),
-    ("hec-ubalda-no-salia", "La tia Ubalda llevaba anos sin salir de la casa"),
-    ("hec-cuarto-tapiado", "Hay un cuarto tapiado detras del desvan"),
-    ("hec-cartas", "En el desvan hay cartas de Ubalda sin enviar"),
-    ("hec-nombre-repetido", "En las cartas aparece el nombre de Marta antes de nacer"),
-]
-
-# `SPEC-17`: quien sabe que **antes de la escena 1**.
+ACCESOS = {l.id: l.accesos for l in PLAN.mundo.lugares}
+PERSONAS = {p.id: (str(p.estado_vital), p.empieza_en) for p in PLAN.mundo.personajes}
+HECHOS = [(h.id, h.enunciado) for h in PLAN.hechos]
 CONOCIMIENTO_INICIAL = [
-    {"sujeto": "per-marta", "hecho": "hec-herencia", "grado": "sabe"},
-    {"sujeto": "per-ana", "hecho": "hec-herencia", "grado": "sabe"},
-    {"sujeto": "per-ana", "hecho": "hec-ana-vivio-aqui", "grado": "sabe"},
-    {"sujeto": "per-marta", "hecho": "hec-ana-vivio-aqui", "grado": "ignora"},
-]
-
-# Diez capitulos de seis escenas. Cada escena: eje, lugar, sinopsis y los
-# hechos que el plan promete que se establecen ahi (`SPEC-19`).
+    {"sujeto": k.sujeto, "hecho": k.hecho, "grado": str(k.grado)}
+    for k in PLAN.mundo.conocimiento_inicial]
 CAPITULOS = [
-    ("cap-01", "Llegar", [
-        ("cordura", "lug-salon", "Marta recorre la casa y cuenta los peldanos.", ["hec-peldano-de-mas"]),
-        ("seguridad", "lug-pasillo", "La puerta del sotano no cede.", ["hec-sotano-cerrado"]),
-        ("control", "lug-cocina", "Marta busca la llave en todos los cajones.", ["hec-llave-perdida"]),
-        ("cordura", "lug-salon", "El reloj sigue andando por la noche.", ["hec-reloj-sin-cuerda"]),
-        ("vinculo", "lug-salon", "Ana llama por telefono y no pregunta por la casa.", []),
-        ("cordura", "lug-dormitorio", "Marta no duerme y cuenta desde la cama.", []),
-    ]),
-    ("cap-02", "Ana", [
-        ("vinculo", "lug-salon", "Ana llega con una maleta pequena.", []),
-        ("conocimiento", "lug-cocina", "Ana se mueve por la casa sin preguntar donde esta nada.", ["hec-ana-vivio-aqui"]),
-        ("seguridad", "lug-pasillo", "Marta le ensena la puerta y Ana no la mira.", []),
-        ("vinculo", "lug-salon", "Discuten por la herencia sin nombrarla.", []),
-        ("cordura", "lug-dormitorio", "Marta cuenta los peldanos otra vez y salen distintos.", []),
-        ("control", "lug-cocina", "Ana propone vender.", []),
-    ]),
-    ("cap-03", "Ubalda", [
-        ("conocimiento", "lug-salon", "Aparecen las facturas: Ubalda no salia.", ["hec-ubalda-no-salia"]),
-        ("cordura", "lug-pasillo", "Marta mide la escalera con una cinta.", []),
-        ("vinculo", "lug-cocina", "Ana se enfada cuando Marta pregunta por la infancia.", []),
-        ("seguridad", "lug-salon", "Alguien ha parado el reloj.", []),
-        ("control", "lug-pasillo", "Marta decide forzar la puerta y no lo hace.", []),
-        ("cordura", "lug-dormitorio", "La casa suena a la misma hora.", []),
-    ]),
-    ("cap-04", "El desvan", [
-        ("seguridad", "lug-desvan", "Marta sube al desvan por primera vez.", []),
-        ("conocimiento", "lug-desvan", "Encuentra las cartas de Ubalda.", ["hec-cartas"]),
-        ("cordura", "lug-desvan", "Hay una pared que suena hueca.", ["hec-cuarto-tapiado"]),
-        ("vinculo", "lug-salon", "Marta no le cuenta a Ana lo del desvan.", []),
-        ("control", "lug-cocina", "Ana pregunta que hacia arriba.", []),
-        ("cordura", "lug-dormitorio", "Marta lee una carta y la deja a medias.", []),
-    ]),
-    ("cap-05", "El nombre", [
-        ("conocimiento", "lug-desvan", "En una carta esta su nombre, fechada antes.", ["hec-nombre-repetido"]),
-        ("cordura", "lug-salon", "Marta comprueba la fecha tres veces.", []),
-        ("vinculo", "lug-cocina", "Se lo ensena a Ana y Ana no se sorprende.", []),
-        ("seguridad", "lug-pasillo", "La puerta del sotano esta entreabierta.", []),
-        ("control", "lug-salon", "Marta cierra la puerta y no baja.", []),
-        ("cordura", "lug-dormitorio", "Cuenta los peldanos desde arriba.", []),
-    ]),
-    ("cap-06", "Lo que Ana sabia", [
-        ("conocimiento", "lug-cocina", "Ana cuenta que vivio aqui de nina.", []),
-        ("vinculo", "lug-salon", "Marta deja de creer lo que Ana dice.", []),
-        ("seguridad", "lug-pasillo", "Las dos oyen algo abajo.", []),
-        ("cordura", "lug-dormitorio", "Marta duerme con la luz dada.", []),
-        ("control", "lug-salon", "Ana se va a dormir temprano.", []),
-        ("conocimiento", "lug-desvan", "Marta relee las cartas buscando a Ana.", []),
-    ]),
-    ("cap-07", "La pared", [
-        ("control", "lug-desvan", "Marta golpea la pared hueca.", []),
-        ("seguridad", "lug-desvan", "Detras hay un hueco y no un cuarto.", []),
-        ("cordura", "lug-salon", "El reloj vuelve a andar.", []),
-        ("vinculo", "lug-cocina", "Ana pregunta por los golpes y Marta miente.", []),
-        ("conocimiento", "lug-desvan", "En el hueco hay ropa de nina.", []),
-        ("cordura", "lug-dormitorio", "Marta no cuenta los peldanos esa noche.", []),
-    ]),
-    ("cap-08", "Bajar", [
-        ("control", "lug-pasillo", "Marta fuerza la puerta del sotano.", []),
-        ("seguridad", "lug-sotano", "El sotano esta vacio y limpio.", []),
-        ("cordura", "lug-sotano", "Hay catorce peldanos bajando y quince subiendo.", []),
-        ("vinculo", "lug-salon", "Ana la encuentra sentada en la escalera.", []),
-        ("conocimiento", "lug-cocina", "Ana admite que Ubalda la echo de la casa.", []),
-        ("cordura", "lug-dormitorio", "Marta cuenta en voz alta y no para.", []),
-    ]),
-    ("cap-09", "La exactitud", [
-        ("cordura", "lug-salon", "Todo esta donde Marta lo dejo, y mas ordenado.", []),
-        ("seguridad", "lug-pasillo", "La puerta vuelve a estar cerrada.", []),
-        ("vinculo", "lug-cocina", "Ana hace la maleta.", []),
-        ("control", "lug-salon", "Marta le pide que se quede y no lo dice asi.", []),
-        ("conocimiento", "lug-desvan", "Falta una carta.", []),
-        ("cordura", "lug-dormitorio", "Marta oye contar a alguien.", []),
-    ]),
-    ("cap-10", "Quedarse", [
-        ("vinculo", "lug-salon", "Ana se va sin despedirse.", []),
-        ("cordura", "lug-pasillo", "Marta baja al sotano sin linterna.", []),
-        ("seguridad", "lug-sotano", "Abajo esta exactamente lo que esperaba.", []),
-        ("control", "lug-salon", "Marta le da cuerda al reloj.", []),
-        ("cordura", "lug-dormitorio", "Se acuesta y cuenta hasta catorce.", []),
-        ("vinculo", "lug-salon", "La casa queda en orden.", []),
-    ]),
-]
-
-# Lo unico que el desatasco automatico tiene permitido decir. Es materia de
-# **contrato** -la diferencia entre revelar y actuar, `SPEC-16`- y no decide
-# nada sobre la ficcion. Lo que el modelo haga con ella es cosa suya.
-INSTRUCCION_DE_CONTRATO = [
-    "Revisa la diferencia entre `revelaciones` y `acciones`. En `revelaciones` "
-    "va todo hecho del que un personaje PASA A ENTERARSE en esta escena. En "
-    "`acciones` va solo aquello de lo que el personaje YA estaba enterado "
-    "antes de empezar. Si obra con algo que acaba de descubrir, declara las "
-    "dos cosas.",
-]
+    (c.id, c.titulo,
+     [(e.eje, e.lugar, e.sinopsis, e.establece, e.pov, e.signo)
+      for e in c.escenas])
+    for c in PLAN.capitulos]
 
 
 def preparar(con):
@@ -220,10 +109,9 @@ def preparar(con):
                         lo que la primera base no puede tener ya nunca
         asegurar        todas las features que van a escribir, no solo tres
     """
-    # La forma la manda el brief: si el plan de este guion no cuadra con ella,
-    # se para **aqui** y no en la escena treinta y siete (`comprobar_forma`).
-    carga.comprobar_forma(BRIEF, capitulos=len(CAPITULOS),
-                          escenas_por_capitulo=len(CAPITULOS[0][2]))
+    # La forma y el plan ya no pueden divergir: se valida **al cargar el
+    # fichero**, dentro del esquema, asi que un brief mal escrito no llega
+    # hasta aqui.
     migraciones.migrar(con)
     # Con que codigo **y con que brief**: las dos mitades del par que permite
     # repetir una tanda exactamente en vez de aproximadamente.
@@ -251,13 +139,14 @@ def preparar(con):
              # anterior es el **capitulo**. Sin declararlo, todas las escenas
              # de la obra caen en el mismo grupo y el corte no existe.
              "capitulo": cap,
-             "cambio_de_valor": {"eje": eje, "signo": "negativo"},
-             "pov": "per-marta", "lugar": lugar,
+             "cambio_de_valor": {"eje": eje, "signo": signo},
+             "pov": pov, "lugar": lugar,
              "beats": [{"id": "{0}-b{1}".format(cap, n), "establece": establece}],
              # Del brief: `INV-17` compara contra esto, asi que cambiar el
              # rango en el fichero cambia lo que la invariante exige.
              "longitud_objetivo": list(BRIEF.forma.palabras_por_escena)}
-            for n, (eje, lugar, _sinopsis, establece) in enumerate(escenas, 1)])
+            for n, (eje, lugar, _sinopsis, establece, pov, signo)
+            in enumerate(escenas, 1)])
     # Una sola vez, para la obra entera. Declararlos por capitulo era lo que
     # los hacia colisionar: son los hechos de **la novela**, no de un capitulo.
     repo.declarar_hechos(con, OBRA, [{"id": h, "enunciado": e} for h, e in HECHOS])
