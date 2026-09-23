@@ -80,6 +80,12 @@ def clave_de_capitulo(capitulo):
     Devuelve `(orden, None)` si se pudo deducir, y `(None, capitulo)` si no.
     Un capitulo que no se deja ordenar **no se adivina**: se cuenta, y su
     presencia deja la obra sin veredicto.
+
+    **Lo que esta funcion no puede resolver sola:** `cap-1` y `cap-01`
+    devuelven los dos el orden 1. Cada uno por separado se lee bien; juntos en
+    la misma obra son dos capitulos distintos con el mismo numero, y desempatar
+    por identificador seria inventarse cual va antes. Esa colision la detecta
+    `generar` y se cuenta tambien como no ordenable.
     """
     if capitulo is None:
         return (None, "")
@@ -177,6 +183,7 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
     eventos, sin_fecha_legible, personajes = [], [], {}
     eventos_con_exclusion, deltas_ilegibles = 0, 0
     capitulos_no_ordenables = set()
+    por_numero = {}
 
     # El orden de discurso es el mismo criterio que usa `consultas.orden_temporal`:
     # por capitulo y luego por identificador de evento. Se guarda como rango y no
@@ -185,6 +192,8 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
         orden_cap, sin_orden = clave_de_capitulo(e["capitulo"])
         if orden_cap is None:
             capitulos_no_ordenables.add(sin_orden)
+        else:
+            por_numero.setdefault(orden_cap, set()).add(str(e["capitulo"]))
 
         t = _instante(e["t_fabula"])
         if t is None:
@@ -215,6 +224,12 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
                 dur=int(e["duracion_min"] or 0), lugar=_txt(e["lugar"]),
                 disc=discurso, cap=_txt(e["capitulo"]),
                 excluye=", ".join(_txt(x) for x in fuera), partes=partes))
+
+    # Dos identificadores distintos con el mismo numero -`cap-1` y `cap-01`-
+    # son dos capitulos que no se pueden ordenar entre si sin inventarse algo.
+    for numero, nombres in por_numero.items():
+        if len(nombres) > 1:
+            capitulos_no_ordenables.update(nombres)
 
     sin_nacimiento = sorted(p for p, n in personajes.items() if not _instante(n))
     filas_personaje = []

@@ -151,6 +151,28 @@ pares adyacentes y Lean todos los pares, así que sobre una obra con varias
 inversiones pueden no coincidir en el recuento aunque coincidan en el
 veredicto.
 
+#### Al volver a medir la coincidencia, hay que comparar lo mismo
+
+La puerta cambió después de esa medida (`0d7bd8b`): `evaluar_cierre` pedía el
+orden temporal de **la obra entera** y filtraba las escenas **por capítulo**,
+cosa que coincidía por accidente mientras cada obra tenía un solo capítulo.
+Ahora filtra de verdad, e imputa la inversión que cruza dos capítulos **al
+posterior**, que es donde el lector la encuentra.
+
+Así que las dos comprobaciones **ya no miran el mismo conjunto**:
+
+| | Qué mira | Cuándo |
+| --- | --- | --- |
+| La puerta | Las escenas **de un capítulo**, más las inversiones que cruzan, imputadas al posterior | Al cerrar cada capítulo |
+| `L-1` | **Todos** los pares de la obra | Cuando la obra está escrita |
+
+No es una discrepancia, es una diferencia de alcance, y por eso hay que
+decirla antes de medir: al comparar hay que **agregar los resultados de la
+puerta de los diez capítulos** y contrastar esa unión contra el conjunto de
+`L-1`. Si se compara un capítulo contra la obra entera, van a salir
+diferencias que no significan nada, y peor: si alguna significara algo, ese
+ruido la taparía.
+
 Y queda una decisión abierta que es del autor, no del código (`F-50`):
 **`INV-08` dice «salvo analepsis declarada» y no hay dónde declararla.**
 `MomentoNarrativo` tiene `t_fabula`, `t_discurso` y `duracion_ficcional`, y
