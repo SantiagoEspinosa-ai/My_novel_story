@@ -6,8 +6,19 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión (sustituir por su identificador)"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
+
+> **Historial.** v2, durante la implementación: tres piezas cambian de carpeta
+> por la regla de dependencias (`A-01`; skill `backend-feature`, reglas 1 y 2) y
+> ninguna cambia de comportamiento. Los modelos de la ficha van a
+> `commons/dominio/destinatario.py` porque `BriefDeObra`, en `commons/`, tiene
+> que llevarlos. El detector de vetadas (`normalizar.py`, `vetadas.py`) y el
+> audit log van a `commons/politica/` porque los usan dos features, `politica`
+> (vía `orquestacion`) y `entrevista`, y una feature no importa de otra. Por el
+> mismo motivo, **copiar las vetadas de la ficha a la tabla de la novela y
+> entregar la obra lo compone `orquestacion/`**, no la entrevista. Se conserva
+> la aprobación: la forma de los pasos y sus pruebas no cambian.
 
 # PLAN-25 — Destinatario, entrevista y palabras vetadas
 
@@ -21,7 +32,9 @@ Dos features nuevas, porque son dos casos de uso distintos (`A-01`, `A-02`):
 | Feature | Qué hace | Ficheros |
 | --- | --- | --- |
 | `features/entrevista/` | La ficha, la entrevista por turnos, el texto libre, las contradicciones y el borrado al entregar | `schemas.py`, `ficha.py`, `contradicciones.py`, `texto_libre.py`, `service.py`, `repository.py`, `router.py`, `tests/` |
-| `features/politica/` | Las palabras vetadas, su normalización, `INV-21` y el audit log | `normalizar.py`, `vetadas.py`, `repository.py`, `tests/` |
+| `features/politica/` | Las listas de palabras vetadas en sus tres niveles | `repository.py`, `tests/` |
+| `commons/politica/` (v2) | El detector de vetadas y el audit log, que usan dos features | `normalizar.py`, `vetadas.py`, `auditoria.py`, `tests/` |
+| `commons/dominio/destinatario.py` (v2) | Los modelos de la ficha, que lleva `BriefDeObra` | — |
 
 Más:
 

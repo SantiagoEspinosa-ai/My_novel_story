@@ -5,7 +5,7 @@ que compara subcadenas veta media novela por un nombre de tres letras, y lo
 hace sin fallar, solo devolviendo capitulos a reescribir una y otra vez.
 """
 
-from app.features.politica.vetadas import coincidencias, formas_de_nombre
+from app.commons.politica.vetadas import coincidencias, formas_de_nombre
 
 
 def _encontradas(texto, vetadas):

@@ -11,6 +11,7 @@ import sqlite3
 import pytest
 
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
+from app.commons.politica import auditoria
 from app.commons.invariantes import registro
 from app.commons.modelo.doble import DobleDelModelo, Guion
 from app.features.consolidacion import aplicar, memoria, mundo
@@ -57,7 +58,7 @@ def _generar(con, pasos, **kw):
 
 
 def _tipos(con):
-    return [d["tipo"] for d in politica.decisiones(con, "cap-1")]
+    return [d["tipo"] for d in auditoria.decisiones(con, "cap-1")]
 
 
 def test_dos_reescrituras_y_la_tercera_limpia_se_acepta(con):
@@ -99,7 +100,7 @@ def test_el_prompt_lleva_las_vetadas_desde_el_primer_intento(con):
 
 def test_la_coincidencia_queda_con_su_fragmento_escena_e_intento(con):
     _generar(con, ["vetada", "bien"])
-    [d] = [d for d in politica.decisiones(con, "cap-1")
+    [d] = [d for d in auditoria.decisiones(con, "cap-1")
            if d["tipo"] == TD.COINCIDENCIA_VETADA]
     assert d["detalle"] == {"vetada": "zoquete", "fragmento": "zoquete",
                             "escena": "e1", "reescritura": 0}

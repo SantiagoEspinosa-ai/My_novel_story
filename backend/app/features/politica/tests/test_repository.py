@@ -15,8 +15,9 @@ from app.commons.configuracion import carga
 from app.commons.configuracion.esquemas import FranjaDeEdad
 from app.commons.dominio.enumeraciones import NivelDeVeto as NV
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
+from app.commons.politica import auditoria
 from app.features.politica import repository as repo
-from app.features.politica.vetadas import coincidencias
+from app.commons.politica.vetadas import coincidencias
 
 FRANJAS = [FranjaDeEdad(nombre="infantil", desde=0, hasta=11),
            FranjaDeEdad(nombre="juvenil", desde=12, hasta=17)]
@@ -86,9 +87,9 @@ def test_una_edad_sin_franja_solo_recibe_global_y_novela(con):
 
 
 def test_el_audit_log_guarda_tipo_obra_y_detalle(con):
-    repo.registrar_decision(con, TD.COINCIDENCIA_VETADA, "obra-a",
+    auditoria.registrar_decision(con, TD.COINCIDENCIA_VETADA, "obra-a",
                             {"vetada": "zoquete", "escena": "e1", "intento": 1})
-    [d] = repo.decisiones(con, "obra-a")
+    [d] = auditoria.decisiones(con, "obra-a")
     assert d["tipo"] == TD.COINCIDENCIA_VETADA
     assert d["detalle"]["vetada"] == "zoquete"
     assert d["momento"]

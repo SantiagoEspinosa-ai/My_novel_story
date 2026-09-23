@@ -7,7 +7,7 @@ coincidencias. De donde salen las formas (los tres niveles) lo decide
 
 from dataclasses import dataclass
 
-from app.features.politica.normalizar import palabras
+from app.commons.politica.normalizar import palabras
 
 
 @dataclass(frozen=True)

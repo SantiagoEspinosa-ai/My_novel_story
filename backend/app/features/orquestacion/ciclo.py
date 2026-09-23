@@ -50,7 +50,7 @@ from app.commons.modelo import proveedor, traza as modulo_traza
 from app.features.consolidacion import aplicar
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import bucle
-from app.features.politica.vetadas import coincidencias
+from app.commons.politica.vetadas import coincidencias
 
 RUBRICA = """Puntua esta escena de terror. Devuelve PASA o FALLO y los problemas
 que encuentres, cada uno con su gravedad y su fragmento literal de evidencia.

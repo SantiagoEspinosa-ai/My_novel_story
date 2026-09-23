@@ -47,8 +47,9 @@ from app.features.cronologia import repository as cronologia
 from app.features.contexto import ensamblado, recorte
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import ciclo, rendicion
+from app.commons.politica import auditoria
 from app.features.politica import repository as politica
-from app.features.politica.vetadas import coincidencias
+from app.commons.politica.vetadas import coincidencias
 
 
 @dataclass
@@ -426,17 +427,17 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
         _acumular_coste(g, c.trazas)
         if c.fallo == "palabra_vetada":
             for co in c.vetadas_encontradas:
-                politica.registrar_decision(
+                auditoria.registrar_decision(
                     con, TD.COINCIDENCIA_VETADA, obra_id,
                     {"vetada": co.vetada, "fragmento": co.fragmento,
                      "escena": escena["id"], "reescritura": reescrituras})
             if reescrituras >= tope_vetadas:
-                politica.registrar_decision(
+                auditoria.registrar_decision(
                     con, TD.PARADA_POR_VETADA, obra_id,
                     {"escena": escena["id"], "reescrituras": reescrituras})
                 break
             reescrituras += 1
-            politica.registrar_decision(
+            auditoria.registrar_decision(
                 con, TD.REESCRITURA_PEDIDA, obra_id,
                 {"escena": escena["id"], "reescritura": reescrituras})
             problemas_de_vetadas = [

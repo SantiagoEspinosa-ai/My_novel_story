@@ -1,4 +1,4 @@
-"""Las palabras vetadas en tres niveles y el audit log (`SPEC-25`).
+"""Las palabras vetadas en tres niveles (`SPEC-25`).
 
 `franja` y `obra` son cadena vacia y no `NULL` cuando no aplican: en SQLite dos
 `NULL` nunca son iguales, asi que `UNIQUE (forma, nivel, franja, obra)` dejaria
@@ -6,14 +6,12 @@ entrar la misma palabra global cada vez que se cargara la lista, y la carga
 dejaria de ser idempotente sin que nada fallara.
 """
 
-import json
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
 
 from app.commons.dominio.enumeraciones import NivelDeVeto as NV
-from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica
-from app.features.politica.vetadas import formas_de_nombre
+from app.commons.politica import auditoria
+from app.commons.politica.vetadas import formas_de_nombre
 
 SQL = """
 CREATE TABLE IF NOT EXISTS palabra_vetada (
@@ -22,13 +20,6 @@ CREATE TABLE IF NOT EXISTS palabra_vetada (
     franja TEXT NOT NULL DEFAULT '',
     obra   TEXT NOT NULL DEFAULT '',
     UNIQUE (forma, nivel, franja, obra)
-);
-CREATE TABLE IF NOT EXISTS decision_de_politica (
-    id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    tipo    TEXT NOT NULL,
-    momento TEXT NOT NULL,
-    obra    TEXT,
-    detalle TEXT NOT NULL DEFAULT '{}'
 );
 """
 
@@ -42,6 +33,7 @@ class Vetada:
 def asegurar_tablas(con: sqlite3.Connection):
     with con:
         con.executescript(SQL)
+    auditoria.asegurar_tabla(con)
 
 
 def _insertar(con, forma, nivel, franja="", obra=""):
@@ -92,30 +84,3 @@ def vetadas_para(con, obra, edad, franjas) -> list:
          obra)).fetchall()
     return [Vetada(f[0], NV(f[1])) for f in filas]
 
-
-def registrar_decision(con, tipo, obra, detalle=None, dentro_de_transaccion=False):
-    """Una fila del audit log (`RF-20`). Nunca se actualiza ni se borra."""
-    def _escribir():
-        con.execute(
-            "INSERT INTO decision_de_politica (tipo, momento, obra, detalle) "
-            "VALUES (?, ?, ?, ?)",
-            (str(TipoDeDecisionDePolitica(tipo)),
-             datetime.now(timezone.utc).isoformat(), obra,
-             json.dumps(detalle or {}, ensure_ascii=False)))
-
-    if dentro_de_transaccion:
-        _escribir()
-    else:
-        with con:
-            _escribir()
-
-
-def decisiones(con, obra=None) -> list:
-    sql = "SELECT tipo, momento, obra, detalle FROM decision_de_politica"
-    args = ()
-    if obra is not None:
-        sql += " WHERE obra = ?"
-        args = (obra,)
-    filas = con.execute(sql + " ORDER BY id", args).fetchall()
-    return [{"tipo": TipoDeDecisionDePolitica(f[0]), "momento": f[1],
-             "obra": f[2], "detalle": json.loads(f[3])} for f in filas]
