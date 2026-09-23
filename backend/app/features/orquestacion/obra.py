@@ -288,6 +288,32 @@ def escenas_que_usan(con, clase, objeto):
     return []
 
 
+def inversiones_del_capitulo(temporal, capitulo_de_cada_evento, capitulo):
+    """Deja solo las inversiones que **este** capitulo tiene que responder.
+
+    `orden_temporal` mira la obra entera, que es lo correcto para lo que hace.
+    Pero `INV-08` es de **nivel capitulo**, asi que evaluarla al cerrar el tres
+    con las inversiones del siete impediria firmar un capitulo por un defecto
+    que no esta en el.
+
+    Hoy no se notaba porque el guion creaba una obra por capitulo y los dos
+    identificadores coincidian: **pasaba por accidente**. Lo predijo la sesion
+    de frontend al arreglar el mismo patron en el endpoint de cierre, y su
+    apuesta era que la coincidencia tapaba mas de un sitio. Tapaba este.
+
+    Una inversion que **cruza** dos capitulos se le imputa al posterior: es
+    donde el lector la encuentra, porque es al llegar ahi cuando el tiempo
+    retrocede.
+    """
+    if not capitulo or not temporal:
+        return temporal
+    del_capitulo = [
+        (a, b) for a, b in temporal.get("inversiones") or []
+        if capitulo_de_cada_evento.get(b) == capitulo
+    ]
+    return dict(temporal, inversiones=del_capitulo)
+
+
 def evaluar_cierre(con, obra, capitulo=None):
     """Dice si el capitulo **podria** cerrarse. No lo cierra.
 
@@ -312,7 +338,11 @@ def evaluar_cierre(con, obra, capitulo=None):
     # `auditoria/` no puede importar (`A-02`). Componer es de aqui, asi que el
     # orden temporal se consulta aqui y se le pasa ya resuelto (`F-47`).
     try:
-        temporal = consultas.orden_temporal(con, obra)
+        temporal = inversiones_del_capitulo(
+            consultas.orden_temporal(con, obra),
+            {e["id"]: e.get("capitulo")
+             for e in consultas.repo.eventos_de(con, obra)},
+            capitulo)
     except Exception:
         # La cronologia puede no estar poblada en una obra que no la use. Que
         # falte el dato no es lo mismo que estar en orden, pero tampoco puede

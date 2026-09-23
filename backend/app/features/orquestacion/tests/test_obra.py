@@ -691,3 +691,40 @@ def test_generar_un_capitulo_dentro_de_una_obra_no_toca_los_demas(con):
     assert g.escenas_hechas == ["c2-e1"], (
         "generar el capitulo dos ha tocado escenas de otro capitulo")
     assert repo.escena(con, "e1")["estado"] == "planificada"
+
+
+def test_cerrar_un_capitulo_no_mira_el_orden_temporal_de_los_demas(con):
+    """El patron que predijo la sesion de frontend: una consulta que recibe un
+    capitulo y filtra por obra **pasa mientras los dos identificadores
+    coincidan**. `evaluar_cierre` filtraba las escenas por capitulo y pedia el
+    orden temporal de la obra entera, asi que una inversion en el capitulo
+    siete habria impedido cerrar el tres.
+
+    Dos capitulos, por la Regla 9: con uno solo, la consulta equivocada sigue
+    devolviendo lo correcto.
+    """
+    inversiones = {"inversiones": [("ev-c7-a", "ev-c7-b")], "sin_fecha_legible": []}
+    de_otro = obra.inversiones_del_capitulo(inversiones, {"ev-c7-a": "cap-7",
+                                                          "ev-c7-b": "cap-7"},
+                                            "cap-3")
+    assert de_otro["inversiones"] == [], "las del siete no bloquean el tres"
+
+    del_mismo = obra.inversiones_del_capitulo(inversiones, {"ev-c7-a": "cap-7",
+                                                            "ev-c7-b": "cap-7"},
+                                              "cap-7")
+    assert del_mismo["inversiones"] == [("ev-c7-a", "ev-c7-b")]
+
+
+def test_una_inversion_que_cruza_dos_capitulos_bloquea_el_posterior(con):
+    """Si el tiempo retrocede al pasar del capitulo tres al cuatro, el defecto
+    es del cuatro: es donde el lector lo encuentra."""
+    inv = {"inversiones": [("ev-c3", "ev-c4")], "sin_fecha_legible": []}
+    caps = {"ev-c3": "cap-3", "ev-c4": "cap-4"}
+    assert obra.inversiones_del_capitulo(inv, caps, "cap-4")["inversiones"]
+    assert not obra.inversiones_del_capitulo(inv, caps, "cap-3")["inversiones"]
+
+
+def test_sin_capitulo_se_mira_la_obra_entera(con):
+    """Cerrar la obra si pregunta por todo, que es otra pregunta."""
+    inv = {"inversiones": [("a", "b")], "sin_fecha_legible": []}
+    assert obra.inversiones_del_capitulo(inv, {}, None) is inv
