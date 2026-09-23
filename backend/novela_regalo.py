@@ -135,8 +135,7 @@ def main(argv=None):
     print("coste leido: {0:.4f} USD{1}".format(
         usd, " (SUELO: hay delegaciones sin coste)" if sin_coste else ""))
     print("tiempo: {0:.0f} s".format(time.time() - arranque))
-    print("
-=== HOOKS (lo que Claude Code ejecuto de verdad) ===")
+    print("\n=== HOOKS (lo que Claude Code ejecuto de verdad) ===")
     if os.path.exists(registro_hooks):
         with open(registro_hooks, encoding="utf-8") as f:
             filas = [json.loads(l) for l in f if l.strip()]
