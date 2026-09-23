@@ -29,7 +29,7 @@ def test_estan_las_dieciocho_y_sin_huecos():
     # la ubicuidad sin decidirlos todavia. Por eso `SPEC-25` tomo `INV-21` y no
     # reutilizo un numero apartado. Cualquier otro hueco sigue fallando aqui.
     reservadas = {19, 20}
-    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 22)
+    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 28)
                    if i not in reservadas]
 
 
@@ -46,11 +46,14 @@ def test_la_clasificacion_es_la_de_definitions():
     assert registro.TODAS["INV-18"].tipo is enums.TipoDeVerificador.REGLA
 
 
-def test_solo_una_invariante_es_de_juez():
-    """`SPEC-04` dejo quince reglas y una de juez."""
+def test_las_invariantes_de_juez_son_las_decididas():
+    """`SPEC-04` dejo quince reglas y una de juez, `INV-10`. `SPEC-26` añadio las
+    dos del Editor, `INV-26` y `INV-27`, numeradas en `PLAN-26`. Una cuarta que
+    aparezca sin spec que la decida hace fallar esto: lo que se puede comprobar
+    con codigo no se delega en un modelo."""
     de_juez = [i for i in registro.TODAS.values()
                if i.tipo is enums.TipoDeVerificador.JUEZ_LLM]
-    assert [i.id for i in de_juez] == ["INV-10"]
+    assert sorted(i.id for i in de_juez) == ["INV-10", "INV-26", "INV-27"]
 
 
 def test_caso_negativo_una_severidad_que_no_coincide_con_la_tabla():
@@ -86,3 +89,23 @@ def test_la_diferencia_entre_mayor_y_menor_esta_en_la_puerta_de_capitulo():
 # posible" admite dos implementaciones que no son equivalentes -el mayor peso
 # de la escala, o un peso que gana a cualquiera- y elegir aqui seria decidir
 # por el documento. Queda anotado y sin codigo.
+
+
+# --- `SPEC-26`: las invariantes nuevas y el plano Terror --------------------
+
+
+def test_las_de_la_novela_regalo_tienen_su_severidad():
+    s = {i: registro.TODAS[i].severidad.value for i in
+         ("INV-22", "INV-23", "INV-24", "INV-25", "INV-26", "INV-27")}
+    assert s == {"INV-22": "bloqueante", "INV-23": "mayor", "INV-24": "bloqueante",
+                 "INV-25": "menor", "INV-26": "mayor", "INV-27": "mayor"}
+    assert registro.TODAS["INV-26"].tipo is enums.TipoDeVerificador.JUEZ_LLM
+    assert registro.TODAS["INV-24"].nivel is enums.NivelDeEvaluacion.OBRA
+
+
+def test_las_de_terror_solo_se_aplican_a_una_obra_de_terror():
+    """`SPEC-26` `RF-20`."""
+    terror = ["INV-10", "INV-11", "INV-12", "INV-14", "INV-16"]
+    assert registro.no_aplican("aventura") == terror
+    assert registro.no_aplican("terror") == []
+    assert registro.aplica("INV-13", "aventura") and registro.aplica("INV-15", "romance")

@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 from app.commons import config
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
+from app.commons.invariantes import registro
 from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.cronologia import consultas
 
@@ -67,6 +68,7 @@ class Generacion:
     # se dio ninguna lista. El informe lo dice, porque un dato ausente no es
     # un verde.
     vetadas_comprobadas: bool = False
+    genero: str | None = None
     coste: dict = field(default_factory=lambda: {
         "usd": 0.0, "delegaciones": 0, "sin_coste": 0})
 
@@ -150,7 +152,7 @@ def reunir_material(con, escena, obra_id, inmutable=""):
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
-                 vetadas=None, tope_vetadas=None):
+                 vetadas=None, tope_vetadas=None, genero=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
@@ -177,7 +179,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # aqui porque componer entre features es de `orquestacion/` (`A-02`), y se
     # le pasa a `escaleta/` como valor.
     repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra))
-    g = Generacion(vetadas_comprobadas=bool(vetadas))
+    g = Generacion(vetadas_comprobadas=bool(vetadas), genero=genero)
     if vetadas:
         politica.asegurar_tablas(con)
     # Una obra son **diez capitulos, no diez obras**. Generar de capitulo en
@@ -587,6 +589,12 @@ def informe(g: Generacion) -> str:
     if g.medidas:
         crecio = g.medidas[-1]["total"] > g.medidas[0]["total"]
         lineas.append("el contexto {0}".format("CRECE" if crecio else "NO crece"))
+    # `SPEC-26` `RF-20`: lo que no aplica se dice, y lo que no se sabe tambien.
+    if g.genero is None:
+        lineas.append("genero no declarado: no se sabe si aplican las "
+                      "invariantes del plano Terror")
+    for inv in registro.no_aplican(g.genero) if g.genero else []:
+        lineas.append("{0} no aplica: la obra no es de terror".format(inv))
     if not g.vetadas_comprobadas:
         lineas.append("INV-21 no se comprobo: no se dio ninguna lista de "
                       "palabras vetadas")

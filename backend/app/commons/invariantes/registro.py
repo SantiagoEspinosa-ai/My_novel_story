@@ -1,4 +1,4 @@
-"""El registro de las invariantes `INV-01`..`INV-17`.
+"""El registro de las invariantes `INV-01`..`INV-27` (`INV-19` e `INV-20` reservadas).
 
 Es la copia en codigo de la tabla de `Docs/definitions.md`, y `VER-38` existe
 para comprobar que las dos digan lo mismo. Por eso se escribe a mano: si se
@@ -124,9 +124,41 @@ _LISTA = [
        "de los tres niveles, tras normalizar",
        "capitulo", "bloqueante", "regla",
        "Borrador.texto, PalabraVetada.forma, Destinatario.edad"),
+    # `SPEC-26`: la novela regalo. `INV-26` e `INV-27` los numero `PLAN-26`
+    # porque `CLAUDE.md` exige que toda comprobacion cite su identificador.
+    _r("INV-22", "Los nombres del destinatario y de los personajes aparecen escritos "
+       "exactamente como en la story bible",
+       "escena", "bloqueante", "regla",
+       "Borrador.texto, Personaje.nombre_canonico, Destinatario.nombre"),
+    _r("INV-23", "Las palabras clave de cada imprescindible aparecen en su capitulo "
+       "previsto", "escena", "mayor", "regla",
+       "Borrador.texto, Escaleta.imprescindibles"),
+    _r("INV-24", "Cada imprescindible aparece en al menos un capitulo de la novela",
+       "obra", "bloqueante", "regla", "Escaleta.imprescindibles, relacion usa"),
+    _r("INV-25", "La prosa no se repite: el nombre del destinatario no supera su "
+       "umbral por capitulo y ninguna frase larga se repite entre capitulos",
+       "obra", "menor", "regla", "Borrador.texto, FraseRecurrente"),
+    _r("INV-26", "El Editor da a cada criterio de un capitulo al menos la nota umbral",
+       "escena", "mayor", "juez_llm", "Borrador.texto, ValoracionDelEditor"),
+    _r("INV-27", "El juicio de obra no encuentra un arco roto ni un final abrupto",
+       "obra", "mayor", "juez_llm",
+       "resumenes de capitulo, Borrador.texto del ultimo capitulo"),
 ]
 
 TODAS = {i.id: i for i in _LISTA}
+
+# `SPEC-26` `RF-20`: las del plano Terror de `Docs/definitions.md`. `INV-13`
+# (un hecho revelado dos veces) e `INV-15` (la voz) valen para cualquier genero.
+PLANO_TERROR = ("INV-10", "INV-11", "INV-12", "INV-14", "INV-16")
+
+
+def aplica(id_inv, genero) -> bool:
+    """Si una invariante se aplica a una obra de este genero."""
+    return id_inv not in PLANO_TERROR or genero == "terror"
+
+
+def no_aplican(genero) -> list:
+    return [i for i in PLANO_TERROR if not aplica(i, genero)]
 
 
 def de_nivel(nivel: NivelDeEvaluacion):

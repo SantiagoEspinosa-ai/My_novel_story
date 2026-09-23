@@ -8,8 +8,15 @@ no sobra: un plan correcto que se ejecuta mal sigue fallando.
 """
 
 from app.commons.dominio.enumeraciones import EjeDeValor, SignoDeCambio
+from app.commons.invariantes import registro
 
 INVARIANTES_PREVISTAS = ("INV-01", "INV-07", "INV-12", "INV-16")
+
+
+def invariantes_previstas(genero):
+    """`SPEC-26` `RF-20`: la curva de miedo (`INV-12`, `INV-16`) solo se preve en
+    una obra de terror. En otra seria exigirle al plan algo que no quiere."""
+    return tuple(i for i in INVARIANTES_PREVISTAS if registro.aplica(i, genero))
 SUSTITUYE_AL_AUDITOR = False
 
 
