@@ -91,6 +91,53 @@ def capitulos_a_regenerar(con, hecho, origenes=None):
     return _capitulos(repo.usos_de_hecho(con, hecho, PARA_REGENERACION, origenes))
 
 
+# El conjunto que se mediria si `menciona` entrase. No es todavia el que usa
+# `capitulos_a_regenerar`: `SPEC-21` C-2 lo deja **pendiente de la medida**.
+PARA_REGENERACION_CON_MENCION = PARA_REGENERACION + (U.MENCIONA,)
+
+
+def arrastre_de_incluir_mencion(con, hechos):
+    """Cuanto crece la regeneracion selectiva si `menciona` entrara.
+
+    ESTA FUNCION ES LA MEDIDA, Y EXISTE PARA NO DECIDIR A OJO
+    ----------------------------------------------------------
+    Excluir `menciona` del conjunto de la regeneracion elige el fallo
+    **silencioso** en el unico eje que mide el codigo, y este proyecto ha
+    preferido tres veces el ruidoso (`SPEC-10` C-2, `SPEC-18` C-3, `RF-26`). El
+    argumento en contra era de coste -"arrastraria media novela"- y **nunca se
+    comprobo**. Como el coste se puede medir gratis sobre cualquier generacion
+    ya hecha, se mide.
+
+    Lo que cuenta es **cuantos capitulos se añaden**, no cuantas menciones hay:
+    un capitulo que ya entraba por `depende` y ademas nombra el hecho no supone
+    trabajo nuevo, y contarlo inflaria la medida haciendo parecer caro justo lo
+    que no lo es.
+
+    `hechos` es una lista de identificadores. Llega como argumento porque la
+    tabla de usos no guarda la obra y esta feature no consulta las de otras
+    (`A-02`); quien tiene la lista es `orquestacion/`.
+
+    Los totales son **la suma por hecho**, no capitulos distintos: cada hecho es
+    un cambio hipotetico del lector por separado, y un capitulo que arrastran
+    dos hechos cuesta dos regeneraciones, no una. Quien quiera el detalle lo
+    tiene en `por_hecho`.
+    """
+    por_hecho, declarado, con_mencion = {}, 0, 0
+    for hecho in hechos:
+        sin = _capitulos(repo.usos_de_hecho(con, hecho, PARA_REGENERACION))
+        todos = _capitulos(repo.usos_de_hecho(
+            con, hecho, PARA_REGENERACION_CON_MENCION))
+        anadidos = [c for c in todos if c not in sin]
+        por_hecho[hecho] = {"capitulos_hoy": sin,
+                            "capitulos_que_se_añaden": anadidos}
+        declarado += len(sin)
+        con_mencion += len(todos)
+    return {"declarado": declarado,
+            "con_mencion": con_mencion,
+            "crecimiento": con_mencion - declarado,
+            "por_hecho": por_hecho}
+
+
 def capitulos_de_la_ficha(con, hecho):
     return _capitulos(repo.usos_de_hecho(con, hecho, PARA_FICHA))
 
