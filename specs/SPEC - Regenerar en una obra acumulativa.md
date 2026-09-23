@@ -322,4 +322,34 @@ proyecto ya ha elegido tres veces.
 | 2 | **¿Qué se le promete al lector?** ¿«Reescribimos lo que dependía de esto» o «reescribimos de aquí al final»? | `S-1` y `S-3` prometen cosas distintas y las dos son defendibles. La promesa se escribe antes de construirla |
 | 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, `S-2` es el mínimo y `S-3` deja de bastar |
 | 4 | **¿Una obra puede quedar en dos versiones vivas, o la nueva sustituye a la vieja?** | Es `S-4`, y también decide qué significa «se conserva la versión anterior» |
-| 5 | **¿Cuánto arrastra un cambio medio?** No está medido y se puede medir con una obra ya generada, sin pagar ninguna generación nueva | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
+| 5 | **¿Cuánto arrastra un cambio medio?** No está medido, y **hoy no se puede medir aunque haya obra**: ver la nota de abajo | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
+
+### Por qué la pregunta 5 todavía no se puede contestar
+
+Esta spec dijo antes que bastaba con una obra ya generada. **Es falso, y el motivo no es la
+calidad de la obra:** el ensamblador ofrece a **todas** las escenas **todos** los hechos
+declarados de la obra —la consulta que los trae filtra por obra y no por escena—, así que el
+conjunto de lecturas observado de hechos **es el mismo para toda la obra**. La fracción que
+mide la pregunta 5 sale **1,0 para cualquier hecho, por construcción**. No es un número con
+ruido: es un número sin resolución.
+
+Tres consecuencias que conviene no confundir:
+
+- **El registro no está mal.** `lectura_de_contexto` apunta fielmente lo que entró; lo que
+  entró era todo. Tampoco lo corrompe `F-40` —el defecto del orden de escena—, porque los
+  hechos y el registro de conocimiento no pasaban por el filtro de `orden` que aquel rompía:
+  sus damnificados eran los resúmenes, las fichas y la escena anterior.
+- **La mitad de conocimiento sí tiene señal.** El registro de conocimiento se lee tal como
+  está en ese momento y crece al consolidar, así que varía escena a escena. Pero responde otra
+  pregunta —qué se sabía ya cuando se escribió— y no de qué depende esta escena.
+- **El lado declarado sí es por escena**, porque `acciones` lo es. De modo que, para
+  *decidir qué regenerar*, el observado sigue siendo la dirección correcta; para *medir cuánto
+  se separan el observado y el declarado*, hoy la comparación sería «todo» contra «lo que diga
+  el modelo», que mide el techo y no la separación.
+
+**Lo que haría medible la pregunta 5** es que el ensamblador deje de ofrecer todos los hechos
+a todas las escenas. Y esa noción ya está escrita en el proyecto: la forma reducida del bloque
+del estado dice *«los hechos permanentes y cualquier hecho que el delta referencie»*. Existe,
+está declarada, y **solo se aplica al recortar** — es decir, nunca, porque el contexto real
+mide tres órdenes de magnitud menos que el techo. Es la misma decisión abierta que el reparto
+por niveles: un mecanismo diseñado que no se ha ejercido ni una vez.
