@@ -54,6 +54,19 @@ Un modo entra **solo si se puede escribir cómo se manifestaría en una novela d
 terror generada por este sistema**. *Alucinación* no es un modo de fallo, es una
 categoría; *el delta declara un movimiento que el texto no narra* sí lo es.
 
+**Un modo de fallo tiene tres destinos, no dos.** Los dos primeros se conocían: se **tapa**
+con un validador, o se **asume** como punto ciego escrito. El tercero apareció al aplicar
+`SPEC-14`: **deja de ser posible porque cambió lo que lo producía**. `MF-25` —el interbloqueo
+del presupuesto— salía de cruzar la reserva de `P-2` con la exclusividad de `P-5`; al
+retirar la reserva no quedó nada que retener, y el modo desapareció con su causa en vez de
+taparse.
+
+Y **lo destapó una prueba que dejó de tener sentido, no una relectura**:
+`test_el_presupuesto_se_libera_tambien_cuando_falla` se quedó sin objeto al quitar la
+reserva, y preguntarse qué la sustituía fue lo que llevó a ver que no la sustituía nada. Un
+modo retirado se marca tachado y su identificador no se reutiliza, igual que uno cubierto:
+lo que cambia es que no deja hueco detrás.
+
 La columna de validador se deja **vacía cuando no hay ninguno**. Un hueco marcado
 vale más que una fila rellenada por compromiso, y los huecos son el resultado
 útil de esta sección.
@@ -326,7 +339,7 @@ ver la nota bajo la tabla de nivel artefacto.
 | | |
 | --- | --- |
 | **Modos de fallo catalogados** | **24 vigentes** (`MF-01`…`MF-25`, con `MF-25` retirado por `SPEC-14`: dejó de ser posible) |
-| **Validadores definidos** | **58** (`VER-01`…`VER-61`, con `VER-44`, `VER-41` y `VER-57` quemados) |
+| **Validadores definidos** | **59** (`VER-01`…`VER-62`, con `VER-44`, `VER-41` y `VER-57` quemados) |
 | **De ellos, no verificables hoy** | 6 (`VER-32`…`VER-37`) |
 | **Validadores implementados** | **0** |
 | **Con su caso negativo escrito** | 19 — en las cuatro fases de `PLAN-01` |
@@ -334,7 +347,7 @@ ver la nota bajo la tabla de nivel artefacto.
 | **Escritos y retirados a modo de prueba** | 5 — `VER-23`, `VER-28`, `VER-38`, `VER-45`, `VER-46` |
 | **Bloqueados por falta de código de producción** | 18 |
 | **Implementables hoy y sin implementar** | 2 — `VER-56` y `VER-59`, que solo necesitan los documentos |
-| **Puntos ciegos asumidos** | **14 activos**, más `PC-10` y `PC-11` cerrados por `SPEC-03` y `PC-14` quemado |
+| **Puntos ciegos asumidos** | **13 activos**, más `PC-10`, `PC-11` y `PC-16` cerrados y `PC-14` quemado |
 
 **Estos recuentos se revisan al cerrar cada fase de `PLAN-01`.** No llevan marca
 `Caduca con:` a propósito: una marca avisa **una vez**, y una tabla de recuentos deja de ser
@@ -408,6 +421,7 @@ implantación".
 | VER-08 | El texto completo de una escena se guarda pero no se recupera por similitud | T | integration testing | La búsqueda vectorial solo devuelve fichas, resúmenes y presagios | Comprueba el **índice**, no el **camino de lectura**: leer el texto por clave primaria lo esquiva *(lo cubre `VER-07`)* | `commons/db/tests/` |
 | VER-09 | El estado del mundo se reconstruye acumulando deltas en orden, **contrastado con una implementación de referencia** | T | property-based testing | Reconstruir con el aplicador de producción y con un **aplicador de referencia ingenuo escrito solo para la prueba** da el mismo estado (Regla 3) | Comprueba que el estado **se construye bien desde el delta**, no que el **delta sea cierto** *(lo cubre parcialmente `VER-39`)* | `features/consolidacion/tests/` |
 | **VER-61** | El contador de delegaciones **no está por debajo del suelo reconstruible** desde los artefactos de la obra | T | integration testing | Se reconstruye desde los artefactos cuántas delegaciones hicieron falta **como mínimo** y se compara con el contador. **Tres resultados con significado distinto**: contador > suelo es normal —hay reintentos sin artefacto—; contador = suelo es sospechoso en una obra con reescrituras; contador < suelo es **error**, se perdieron delegaciones que sí produjeron trabajo | **Compara contra un suelo, no contra una medida.** No ve las delegaciones que no dejaron ningún artefacto, y sin los intentos conservados en disco no puede calcular el suelo: entonces lo dice y no concluye, en vez de dar por bueno un suelo de cero | `commons/trabajos/tests/` |
+| **VER-62** | El modelo registrado en cada delegación de una obra coincide con el declarado al empezarla | A | static analysis | Se recorren las trazas de la obra y se comparan con el modelo declarado. Cero discrepancias. Las trazas **sin modelo registrado** se devuelven aparte: no cuentan como conformidad | **No ve el enrutado si la traza registra lo que se pidió en vez de lo que respondió.** Entonces estaría en verde mientras el cambio ocurre, y sería un eco: la Regla 3 otra vez. Cerrarlo pide que el registro venga de la respuesta |
 | **VER-60** | El texto de una escena en el manuscrito es byte a byte el del `Borrador` que se auditó | T | integration testing | Se ensambla un manuscrito con escenas `aceptada` y `aceptada_por_rendicion` y se compara cada una con su `Borrador`. Cero diferencias | Compara el **texto**, no el **orden ni lo que falta**: un manuscrito al que le falte una escena entera, o que las ponga desordenadas, pasa |
 | VER-10 | Ninguna escena pasa a `consolidada` sin su delta aplicado (`INV-05`) | T | unit testing | Intentar consolidar sin delta aplicado falla; la escena siguiente no se puede generar | Comprueba que el delta **se aplicó**, no que se aplicara **entero** *(lo cubre `VER-42`)* | `features/consolidacion/tests/` |
 | VER-11 | `bloqueante` detiene la escena en la puerta; `mayor` y `menor` generan hallazgo y dejan seguir, y un `mayor` abierto impide cerrar el capítulo | T | unit testing | Un hallazgo de cada severidad produce exactamente el comportamiento declarado, **incluida la diferencia entre `mayor` y `menor` en la puerta de cierre de capítulo** (`SPEC-04` C-2) | Comprueba el comportamiento **dada** una severidad, no que la **asignada sea la correcta** *(lo cubre `VER-38`)* | `commons/invariantes/tests/` |
@@ -524,7 +538,7 @@ dejaría pasar.
 | **PC-13** | **Un criterio de salida puede remitir a algo que no existe, y no hay forma automática razonable de detectarlo** (`MF-24`) | `VER-23` dice *"el conjunto de identificadores solo crece"* y no dice respecto a qué. El validador se implementa, pasa, y la fila cuenta como cobertura de algo que nunca se acordó | **Se evaluó el validador y se rechazó por ruido.** La comprobación automatizable —*todo criterio cita al menos una referencia que resuelve*— marcaría **32 de los 54 criterios**, y casi todos son prosa perfectamente anclada: *"se encola, se mata el proceso, se levanta"* no cita nada y no le hace falta. Lo que distingue un criterio colgante es que usa un artículo definido sin antecedente —*"la prioridad declarada"*, *"solo crece"*— y eso es una propiedad del lenguaje, no de los tokens. **Lo que sí lo contiene es la lista de comprobación de la revisión**, que es como se encontraron los dos casos: una persona leyendo. Se añade allí *"ningún criterio remite a algo que no esté escrito"* |
 | **PC-14** | *(quemado)* | Se propuso en sesión —«el Auditor solo ve resúmenes»— y **se retiró al comprobarlo**: `INV-09` compara filas de `Presagio`, no líneas de un resumen. El identificador no se reutiliza | — |
 | **PC-15** | **Nadie comprueba el tope global de llamadas.** `SPEC-11` `C-1` lo declara y ningún validador lo mira | Un bucle mal cerrado encadena llamadas y el contador no frena porque nadie ha comprobado que se consulte antes de cada una | **Barato en cuanto exista la traza**: contar llamadas por escena y por obra y cruzarlas contra el tope. No se hace ahora porque no hay traza |
-| **PC-16** | **Nadie comprueba que el modelo del Juez sea fijo dentro de una obra.** `SPEC-11` `C-3` lo declara | El modelo cambia a mitad de obra y las puntuaciones dejan de ser comparables, así que `Escena.borrador_aceptado` elige con dos varas distintas. Nada avisa | **Barato en cuanto exista la traza**, que ya registra qué modelo se usó: agrupar por obra y contar modelos distintos |
+| ~~**PC-16**~~ | ~~Nadie comprueba que el modelo del Juez sea fijo dentro de una obra~~ | ~~El modelo cambia a mitad y las puntuaciones dejan de ser comparables~~ | **CERRADO por `VER-62`.** Dejó de ser opcional al elegir Fable como Escritor: **un modelo puede enrutar a otro por sus propias salvaguardas**, así que el cambio puede ocurrir dentro de una obra sin que nadie lo pida. Una regla que depende de que nadie la incumpla adrede no vale cuando el incumplimiento puede ser automático. El identificador no se reutiliza |
 | **PC-17** | **Nadie comprueba que el Juez no vea las reglas del proyecto.** `SPEC-11` `C-4` lo declara, y es la regla que sostiene que su desempate valga algo | El prompt del Juez incluye los enunciados de las invariantes. Su veredicto pasa a confirmar lo que la regla ya dijo, y `VER-35` mide una concordancia que no significa nada | **No se puede comprobar hasta que haya un Juez.** Es el más caro de los tres y el que más sostiene: un desempate que ve lo mismo que la regla no desempata, confirma. **Y desde `SPEC-14` tiene un mecanismo concreto y frágil**: en esta arquitectura la regla se implementa con `omitClaudeMd: true` en la definición del subagente, que necesita una versión mínima de la herramienta y **lo que no reconoce lo ignora en silencio**. Una decisión de aislamiento que depende de una opción que puede fallar callando |
 
 ---
@@ -656,6 +670,7 @@ repositorio. Encontraron dos el primer día:
 | `VER-59` | Una forma reducida del bloque de estado que retire `ubicaciones` | Falla: `INV-02` la lee y es `bloqueante` de escena |
 | `VER-60` | Un ensamblador que normaliza comillas al montar el manuscrito | Falla: el informe describiría un texto que ya no es el entregado |
 | `VER-61` | Una delegación que se emitió, dejó artefacto y no se anotó | Falla: el contador queda por debajo del suelo |
+| `VER-62` | Una delegación enrutada a otro modelo por las salvaguardas del primero | Falla: dos puntuaciones de modelos distintos no son comparables |
 
 ### Lo que el documento no aguantó al llevarlo a código
 
