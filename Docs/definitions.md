@@ -315,6 +315,14 @@ decidir. Sin esta columna esa regla es una intención, porque nadie sabe qué le
 Es la misma exigencia que el proyecto aplica a todo lo demás: una regla que nadie puede
 comprobar no está verificada, solo declarada.
 
+**Qué hechos existen lo declara el plan; quién los sabe es otra cosa.** `HechoCanonico`
+responde a *"¿esto es verdad en la ficción?"* y `RegistroDeConocimiento` a *"¿quién lo sabe,
+y desde cuándo?"*. Son dos preguntas y juntarlas sale caro: al derivar la lista de hechos
+disponibles del registro de conocimiento se creó un **punto muerto** —no había hechos hasta
+que alguien los supiera, y nadie podía saberlos hasta que existieran— y una generación
+entera de seis escenas salió hueca sin que nada fallara (`F-29`). Es la misma forma de error
+que confundir `certeza` con `durabilidad`: dos ejes independientes tratados como uno.
+
 **La durabilidad decide qué se recorta del estado, no qué necesita una puerta.** Son dos
 ejes que se confunden al escribir y solo se separan cruzando dos tablas. Al implementar
 `PLAN-01` C1 salió el caso: la forma reducida del estado del mundo se quedaba con los hechos
