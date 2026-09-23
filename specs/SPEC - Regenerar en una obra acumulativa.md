@@ -290,6 +290,76 @@ toma con estas cinco salidas delante.** Al aprobarla tiene que quedar escrito:
 
 Y una cosa que no depende de la elección: **guardar el delta** (`G-05`) se hace igual.
 
+## Lo que queda decidido
+
+Tres de las cuatro preguntas están respondidas. **Ninguna dependía de la medida**, y por eso
+se pudieron tomar antes de tenerla.
+
+### `D-1` · Un verde heredado no vale (pregunta 3)
+
+Una escena posterior cuyas puertas pasaron contra el estado viejo **deja de contar como
+verificada**. Aceptarlo habría sido firmar una obra con parte de sus puertas evaluadas sobre
+otra obra sin que nadie lo sepa, que es exactamente el silencio de `MF-26`.
+
+Dos consecuencias:
+
+- **El mínimo pasa a ser `S-2`.** La salida elegida tiene que invalidar o rehacer esos verdes:
+  `S-1` los rehace escribiendo de nuevo, `S-2` los reverifica. No hay tercera forma.
+- **Hay que construir la reverificación**, que hoy no existe, y **su valor no se agota en la
+  regeneración**: es lo que permite **revalidar una obra entera después de cualquier cambio**.
+  Eso la convierte de coste de esta función en capacidad del harness, y conviene dimensionarla
+  como tal y no como un apaño de `S-2`.
+
+### `D-2` · Dos versiones vivas, no sustitución (pregunta 4)
+
+Se adopta `S-4`: la regeneración produce una versión nueva de la obra que comparte por
+referencia los capítulos que no cambiaron, y la anterior sigue siendo navegable entera.
+
+Lo que lo cierra no es el coste, es que **elimina la contradicción con `RF-30` en vez de
+gestionarla**: un capítulo `cerrado` no se reabre porque **no se toca**, se escribe otro en la
+versión nueva. La enumeración `estado_de_capitulo` se queda como está, con sus dos valores y
+su única transición.
+
+Y trae su propio requisito: **«se conserva la versión anterior» solo es comprobable si las
+versiones tienen identidad propia.** No es una opinión — `CE-5` de `specs/tla/` lo demostró:
+con la versión representada como el conjunto de sus capítulos, regenerar y volver a aprobarlos
+todos producía un valor **idéntico** al anterior, y la propiedad `VersionesSoloCrecen` pasaba
+**por no poder distinguir nada**. El campo que le da identidad es lo que la hace violarse de
+inmediato. Está registrado como `F-43` y se cruza con `G-07`, que llegó a lo mismo por el otro
+lado.
+
+### `D-3` · Lo que se le promete al lector, y el punto ciego dicho (pregunta 2)
+
+La promesa es **«reescribimos lo que dependía de esto»**, y va con su punto ciego declarado
+al lector: **si la prosa contradice sin que el delta lo declare, no se toca.**
+
+Las otras dos promesas se descartan por lo que tendrían de falso:
+
+- **Coherencia total** no se promete porque **no se puede cumplir**. Las puertas leen el
+  delta, no la prosa (`PC-5`, `MF-18`).
+- **«Nada más cambia»** no se promete porque obligaría a **rechazar peticiones legítimas**:
+  *«que el hermano no muera»* es exactamente lo que alguien va a pedir.
+
+El criterio que decide entre decir el punto ciego y callarlo: **un lector avisado puede
+revisar; uno al que le prometes coherencia total y no se la das, no.** Un punto ciego dicho
+sigue siendo utilizable; uno callado decide por su cuenta, que es lo mismo que ya se dijo de
+un sesgo.
+
+### Pendiente · La salida final, con el umbral fijado de antemano (pregunta 1)
+
+Queda `S-1` contra `S-2`, y espera al arrastre medido. **El umbral está fijado antes de ver el
+número**, y eso es parte de la decisión y no un comentario:
+
+| Arrastre medio | Salida |
+| --- | --- |
+| ~2 capítulos | `S-1` es honesta y barata, y no hay más que hablar |
+| ~8 capítulos | `S-1` significa reescribir la novela en cada petición; `S-2` es la única viable |
+
+Fijarlo antes importa por una razón concreta y ya documentada: **el sesgo conocido de esta
+medida apunta a la baja** —un registro incompleto produce arrastres pequeños— y un arrastre
+pequeño recomienda justo la salida que menos trabajo cuesta. Con el umbral escrito de
+antemano, el número decide; sin él, el número se interpreta.
+
 ## Qué queda explícitamente fuera
 
 - **La interfaz.** Qué se le enseña al lector y cuándo es de `SPEC-22`, y depende de lo que se
@@ -316,9 +386,12 @@ proyecto ya ha elegido tres veces.
 
 ## Preguntas que hay que responder antes de aprobar
 
-| # | Pregunta | Por qué bloquea |
+| # | Pregunta | Estado |
 | --- | --- | --- |
-| 1 | **¿Qué salida se toma?** | Es lo único que esta spec pide |
+| 3 | ¿Se acepta un verde heredado? | **Respondida: no** (`D-1`). El mínimo es `S-2` y hay que construir la reverificación |
+| 4 | ¿Dos versiones vivas o sustitución? | **Respondida: dos vivas** (`D-2`). Elimina la contradicción con `RF-30` en vez de gestionarla |
+| 2 | ¿Qué se le promete al lector? | **Respondida** (`D-3`): «reescribimos lo que dependía de esto», con el punto ciego dicho |
+| 1 | **¿Qué salida se toma?** | **Pendiente del arrastre medido**, con el umbral ya fijado. Es lo único que falta para aprobar |
 | 2 | **¿Qué se le promete al lector?** ¿«Reescribimos lo que dependía de esto» o «reescribimos de aquí al final»? | `S-1` y `S-3` prometen cosas distintas y las dos son defendibles. La promesa se escribe antes de construirla |
 | 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, la salida tiene que **invalidar o rehacer** los verdes posteriores: `S-1` los rehace y `S-2` los reverifica, así que el mínimo es `S-2`. `S-3` no hereda ninguno —el estado no se mueve— pero **no cubre la función**: en cuanto una petición mueva el estado hay que escalarla, así que no vale como salida única |
 | 4 | **¿Una obra puede quedar en dos versiones vivas, o la nueva sustituye a la vieja?** | Es `S-4`, y también decide qué significa «se conserva la versión anterior» |
