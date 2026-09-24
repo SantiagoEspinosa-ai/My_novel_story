@@ -372,6 +372,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/generacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Generacion
+         * @description `RF-14`..`RF-17`, `RF-20`: los capitulos con su fase, las notas del Editor al
+         *     cerrarse cada uno y el coste de la ultima generacion.
+         */
+        get: operations["generacion_obras__id_obra__generacion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/obras/{id_obra}/indice": {
         parameters: {
             query?: never;
@@ -575,6 +596,22 @@ export interface components {
             orden: number;
         };
         /**
+         * CapituloEnGeneracion
+         * @description `RF-14`: `fase` es la de la ultima fila de progreso con este capitulo, o nula si la
+         *     generacion no ha llegado a el. Nula no es un valor de `fase_de_generacion`.
+         */
+        CapituloEnGeneracion: {
+            /** Desde */
+            desde: string | null;
+            fase: components["schemas"]["FaseDeGeneracion"] | null;
+            /** Motivo */
+            motivo: string | null;
+            /** Notas */
+            notas: components["schemas"]["NotaDelEditor"][];
+            /** Numero */
+            numero: number;
+        };
+        /**
          * CapituloEnlazado
          * @description Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo.
          */
@@ -629,6 +666,30 @@ export interface components {
             /** Tipo */
             tipo: string;
         };
+        /**
+         * CosteDeLaGeneracion
+         * @description `RF-19`, `RF-20`. `usd` es nulo si ninguna delegacion trajo coste; con alguna sin
+         *     coste, es un suelo y `es_suelo` lo dice.
+         */
+        CosteDeLaGeneracion: {
+            /** Delegaciones */
+            delegaciones: number;
+            /** Es Suelo */
+            es_suelo: boolean;
+            /** Generacion */
+            generacion: string;
+            /** Sin Coste */
+            sin_coste: number;
+            /** Usd */
+            usd: number | null;
+        };
+        /**
+         * CriterioDeEdicion
+         * @description Los criterios del Editor (`SPEC-26` `RF-09`). Ninguno es de terror: la
+         *     rubrica del Juez de terror sigue existiendo para las obras de terror.
+         * @enum {string}
+         */
+        CriterioDeEdicion: "continuidad" | "tono" | "arco" | "coherencia_de_personajes" | "ritmo" | "personalizacion";
         /** EscenaDeVersionSalida */
         EscenaDeVersionSalida: {
             estado: components["schemas"]["EstadoDeEscena"];
@@ -777,6 +838,16 @@ export interface components {
             /** Personajes */
             personajes: components["schemas"]["FichaDePersonaje"][];
         };
+        /** GeneracionEnVivo */
+        GeneracionEnVivo: {
+            /** Capitulos */
+            capitulos: components["schemas"]["CapituloEnGeneracion"][];
+            coste: components["schemas"]["CosteDeLaGeneracion"] | null;
+            /** Obra */
+            obra: string;
+            /** Total De Capitulos */
+            total_de_capitulos: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -856,6 +927,22 @@ export interface components {
             id: string;
             /** Titulo */
             titulo: string;
+        };
+        /**
+         * NotaDelEditor
+         * @description Una `ValoracionDelEditor` del borrador aceptado. `bajo_el_umbral` es `INV-26`
+         *     (`nota < umbral`), resuelto en el backend.
+         */
+        NotaDelEditor: {
+            /** Bajo El Umbral */
+            bajo_el_umbral: boolean;
+            criterio: components["schemas"]["CriterioDeEdicion"];
+            /** Instruccion */
+            instruccion: string | null;
+            /** Justificacion */
+            justificacion: string;
+            /** Nota */
+            nota: number;
         };
         /**
          * ObraSalida
@@ -1702,6 +1789,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Fichas"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generacion_obras__id_obra__generacion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneracionEnVivo"];
                 };
             };
             /** @description Validation Error */

@@ -263,6 +263,64 @@
         "title": "CapituloDelIndice",
         "type": "object"
       },
+      "CapituloEnGeneracion": {
+        "additionalProperties": false,
+        "description": "`RF-14`: `fase` es la de la ultima fila de progreso con este capitulo, o nula si la\ngeneracion no ha llegado a el. Nula no es un valor de `fase_de_generacion`.",
+        "properties": {
+          "desde": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desde"
+          },
+          "fase": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FaseDeGeneracion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "notas": {
+            "items": {
+              "$ref": "#/components/schemas/NotaDelEditor"
+            },
+            "title": "Notas",
+            "type": "array"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "numero",
+          "fase",
+          "motivo",
+          "desde",
+          "notas"
+        ],
+        "title": "CapituloEnGeneracion",
+        "type": "object"
+      },
       "CapituloEnlazado": {
         "description": "Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo.",
         "properties": {
@@ -367,6 +425,61 @@
         ],
         "title": "ContradiccionSalida",
         "type": "object"
+      },
+      "CosteDeLaGeneracion": {
+        "additionalProperties": false,
+        "description": "`RF-19`, `RF-20`. `usd` es nulo si ninguna delegacion trajo coste; con alguna sin\ncoste, es un suelo y `es_suelo` lo dice.",
+        "properties": {
+          "delegaciones": {
+            "title": "Delegaciones",
+            "type": "integer"
+          },
+          "es_suelo": {
+            "title": "Es Suelo",
+            "type": "boolean"
+          },
+          "generacion": {
+            "title": "Generacion",
+            "type": "string"
+          },
+          "sin_coste": {
+            "title": "Sin Coste",
+            "type": "integer"
+          },
+          "usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usd"
+          }
+        },
+        "required": [
+          "generacion",
+          "usd",
+          "delegaciones",
+          "sin_coste",
+          "es_suelo"
+        ],
+        "title": "CosteDeLaGeneracion",
+        "type": "object"
+      },
+      "CriterioDeEdicion": {
+        "description": "Los criterios del Editor (`SPEC-26` `RF-09`). Ninguno es de terror: la\nrubrica del Juez de terror sigue existiendo para las obras de terror.",
+        "enum": [
+          "continuidad",
+          "tono",
+          "arco",
+          "coherencia_de_personajes",
+          "ritmo",
+          "personalizacion"
+        ],
+        "title": "CriterioDeEdicion",
+        "type": "string"
       },
       "EscenaDeVersionSalida": {
         "additionalProperties": false,
@@ -723,6 +836,44 @@
         "title": "Fichas",
         "type": "object"
       },
+      "GeneracionEnVivo": {
+        "additionalProperties": false,
+        "properties": {
+          "capitulos": {
+            "items": {
+              "$ref": "#/components/schemas/CapituloEnGeneracion"
+            },
+            "title": "Capitulos",
+            "type": "array"
+          },
+          "coste": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeLaGeneracion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "obra": {
+            "title": "Obra",
+            "type": "string"
+          },
+          "total_de_capitulos": {
+            "title": "Total De Capitulos",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "obra",
+          "total_de_capitulos",
+          "capitulos",
+          "coste"
+        ],
+        "title": "GeneracionEnVivo",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -881,6 +1032,47 @@
           "capitulos"
         ],
         "title": "Indice",
+        "type": "object"
+      },
+      "NotaDelEditor": {
+        "additionalProperties": false,
+        "description": "Una `ValoracionDelEditor` del borrador aceptado. `bajo_el_umbral` es `INV-26`\n(`nota < umbral`), resuelto en el backend.",
+        "properties": {
+          "bajo_el_umbral": {
+            "title": "Bajo El Umbral",
+            "type": "boolean"
+          },
+          "criterio": {
+            "$ref": "#/components/schemas/CriterioDeEdicion"
+          },
+          "instruccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruccion"
+          },
+          "justificacion": {
+            "title": "Justificacion",
+            "type": "string"
+          },
+          "nota": {
+            "title": "Nota",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "criterio",
+          "nota",
+          "justificacion",
+          "instruccion",
+          "bajo_el_umbral"
+        ],
+        "title": "NotaDelEditor",
         "type": "object"
       },
       "ObraSalida": {
@@ -2385,6 +2577,49 @@
         "summary": "Fichas",
         "tags": [
           "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/generacion": {
+      "get": {
+        "description": "`RF-14`..`RF-17`, `RF-20`: los capitulos con su fase, las notas del Editor al\ncerrarse cada uno y el coste de la ultima generacion.",
+        "operationId": "generacion_obras__id_obra__generacion_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneracionEnVivo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generacion",
+        "tags": [
+          "regalo"
         ]
       }
     },
