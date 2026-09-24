@@ -6,6 +6,7 @@ no decide. Cada `include_router` que se anada aqui llega con su feature entera
 """
 
 import contextlib
+import os
 import sqlite3
 
 from fastapi import FastAPI
@@ -45,8 +46,22 @@ def activar_observabilidad(aplicacion, ruta_env=None):
     return exportador
 
 
+def fijar_base(aplicacion):
+    """`F-70`: sin esto cada peticion abria una base en memoria nueva y nada sobrevivia
+    a la peticion siguiente. La base es la de `HARNESS_BASE` o, sin ella,
+    `ruta_de_la_base` de `config/sistema.json`. Si ya viene fijada, se respeta."""
+    if getattr(aplicacion.state, "ruta_db", None):
+        return aplicacion.state.ruta_db
+    from app.commons.configuracion.carga import cargar_sistema
+    ruta = os.environ.get("HARNESS_BASE") or cargar_sistema().ruta_de_la_base
+    preparar_base(ruta).close()
+    aplicacion.state.ruta_db = ruta
+    return ruta
+
+
 @contextlib.asynccontextmanager
 async def _ciclo_de_vida(aplicacion):
+    fijar_base(aplicacion)
     activar_observabilidad(aplicacion)
     yield
 
