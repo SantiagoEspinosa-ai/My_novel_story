@@ -108,7 +108,7 @@ Sin migraciones de tablas existentes: las dos nuevas las crea su feature.
 | E12 (extensión en los briefs) | `SPEC-32` aplicada |
 | E13 (la puerta en la tabla) | `SPEC-30` aplicada |
 | La parte de E7 que toca las tools | `SPEC-28` aplicada |
-| R0–R7 | E1–E13, es decir, `SPEC-29`, `SPEC-30` y `SPEC-32` aplicadas, **y el arreglo de los identificadores globales** (hallazgo 9) |
+| R0–R7 | E1–E13, es decir, `SPEC-29`, `SPEC-30` y `SPEC-32` aplicadas. El arreglo de los identificadores globales (hallazgo 9, `F-64`) ya está hecho |
 
 **Por qué las ejecuciones esperan a las tres.** Una ejecución antes de tiempo describe un
 sistema que no es el que se entrega, y se pagaría dos veces.

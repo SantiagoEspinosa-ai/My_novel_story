@@ -133,3 +133,30 @@ def test_dar_de_alta_dos_veces_no_duplica_ni_renumera():
         repositorio.alta_de_obra(con, "obra-1", datos, ["cap-01", "cap-02"])
     assert con.execute(
         "SELECT COUNT(*) FROM capitulo WHERE obra='obra-1'").fetchone()[0] == 2
+
+
+# --- `F-64`: un capitulo de otra obra no se pisa en silencio ---------------------
+
+def test_dar_de_alta_capitulos_que_son_de_otra_obra_falla_sin_tocar_nada():
+    """`capitulo` tiene clave global y se escribia con `INSERT OR REPLACE`: la
+    segunda obra se quedaba los capitulos de la primera sin que nada fallara. Aqui
+    falla **antes** de escribir, y la primera obra queda como estaba."""
+    import sqlite3
+    import pytest
+    from app.features.brief import repository as repo
+    con = sqlite3.connect(":memory:")
+    repo.alta_de_obra(con, "obra-a", {"titulo": "A", "premisa": "p"}, ["cap-01", "cap-02"])
+    with pytest.raises(repo.CapituloDeOtraObra) as e:
+        repo.alta_de_obra(con, "obra-b", {"titulo": "B", "premisa": "p"}, ["cap-01"])
+    assert "cap-01" in str(e.value) and "obra-a" in str(e.value)
+    assert con.execute("SELECT obra FROM capitulo WHERE id='cap-01'").fetchone()[0] == "obra-a"
+    assert con.execute("SELECT COUNT(*) FROM obra WHERE id='obra-b'").fetchone()[0] == 0
+
+
+def test_repetir_el_alta_de_la_misma_obra_sigue_siendo_idempotente():
+    import sqlite3
+    from app.features.brief import repository as repo
+    con = sqlite3.connect(":memory:")
+    for _ in range(2):
+        repo.alta_de_obra(con, "obra-a", {"titulo": "A", "premisa": "p"}, ["cap-01", "cap-02"])
+    assert con.execute("SELECT COUNT(*) FROM capitulo WHERE obra='obra-a'").fetchone()[0] == 2

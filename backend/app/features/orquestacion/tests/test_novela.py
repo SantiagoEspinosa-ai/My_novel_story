@@ -169,7 +169,19 @@ class _Fijo:
         return self.r
 
 
-def _agentes():
+class _EscritorQueCopiaElPov(_Fijo):
+    """Copia del prompt el identificador del POV, como haria el modelo: con los
+    identificadores de la obra acotados (`F-64`), `per-irene` a secas ya no es el
+    POV de nadie, y un doble que lo tuviera escrito a fuego pasaria por otra cosa."""
+
+    def llamar(self, prompt):
+        import re
+        self.llamadas.append(prompt)
+        m = re.search(r"[\w-]*per-irene", prompt)
+        return dict(self.r, pov_usado=m.group(0) if m else "per-irene")
+
+
+def _agentes(obra=None):
     # La premisa, distinta de la sinopsis del capitulo 1 a proposito: si fueran
     # la misma frase, una prueba de que llega la premisa pasaria por la sinopsis.
     planificador = _Fijo({"titulo": "El mapa de Irene",
@@ -178,8 +190,8 @@ def _agentes():
     revisor = _Fijo({"aprobado": True, "objeciones": []})
     # El POV del plan de prueba es `per-irene`; el doble de serie declara
     # `per-marta` y `INV-04` lo pararia, con razon.
-    escritor = _Fijo({"texto": " ".join(["palabra"] * 1198 + ["Irene", "mapa"]),
-                      "pov_usado": "per-irene", "delta": DELTA_OK})
+    escritor = _EscritorQueCopiaElPov({"texto": " ".join(["palabra"] * 1198 + ["Irene", "mapa"]),
+                                       "pov_usado": "per-irene", "delta": DELTA_OK})
     editor = _Fijo({"valoraciones": [
         {"criterio": c, "nota": 4, "justificacion": "bien"} for c in
         ("continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
@@ -196,7 +208,7 @@ def test_escribir_encadena_plan_montaje_y_generacion(con, tmp_path):
     r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                         carpeta_de_reglas=str(tmp_path))
     assert r["plan"].version == 1
-    assert r["generacion"].escenas_hechas == ["cap-01-e1"]
+    assert r["generacion"].escenas_hechas == ["obra-x-cap-01-e1"], "acotada a su obra (`F-64`)"
     prompt = agentes["escritor"].llamadas[0]
     assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt
     assert "aventura" in prompt and "divertido" in prompt
@@ -229,7 +241,7 @@ def test_escribir_encadena_plan_montaje_y_primer_capitulo(con, tmp_path):
     r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                         carpeta_de_reglas=str(tmp_path))
     assert r["plan"].version == 1 and r["cierre"] is None
-    assert r["generacion"].escenas_hechas == ["cap-01-e1"]
+    assert r["generacion"].escenas_hechas == ["obra-x-cap-01-e1"], "acotada a su obra (`F-64`)"
     prompt = agentes["escritor"].llamadas[0]
     assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt
 
@@ -275,9 +287,30 @@ def test_el_destinatario_actua_sobre_su_recuerdo_sin_disparar_inv03(con, tmp_pat
     agentes = _agentes()
     agentes["escritor"] = _Fijo({
         "texto": " ".join(["palabra"] * 1198 + ["Irene", "mapa"]),
-        "pov_usado": "per-irene",
-        "delta": dict(DELTA_OK, acciones=[{"personaje": "per-irene", "hecho": "imp-01"}])})
+        "pov_usado": "obra-x-per-irene",
+        "delta": dict(DELTA_OK, acciones=[{"personaje": "obra-x-per-irene", "hecho": "imp-01"}])})
     r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                         carpeta_de_reglas=str(tmp_path))
     assert r["generacion"].parada is None
     assert not con.execute("SELECT 1 FROM hallazgo WHERE invariante='INV-03'").fetchone()
+
+
+# --- `F-64`: dos novelas en la misma base no se pisan ----------------------------
+
+def test_dos_novelas_con_el_mismo_plan_en_la_misma_base_no_se_pisan(con, tmp_path):
+    """El Planificador pone los mismos identificadores en todas las novelas
+    (`cap-01`, `per-irene`, `lug-casa`), y `escena`, `capitulo`, `entidad` y `lugar`
+    tienen clave global. Antes de `F-64`, la segunda novela no fallaba: pisaba."""
+    for obra in ("obra-a", "obra-b"):
+        novela.escribir(con, obra, ficha(), _agentes(obra), hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path))
+    for obra in ("obra-a", "obra-b"):
+        escenas = escaleta.escenas_de(con, obra)
+        assert len(escenas) == 10, obra
+    ids_a = {e["id"] for e in escaleta.escenas_de(con, "obra-a")}
+    ids_b = {e["id"] for e in escaleta.escenas_de(con, "obra-b")}
+    assert not ids_a & ids_b, "ninguna escena comparte identificador entre novelas"
+    capitulos = con.execute("SELECT obra, COUNT(*) FROM capitulo GROUP BY obra").fetchall()
+    assert {tuple(f) for f in capitulos} == {("obra-a", 10), ("obra-b", 10)}
+    personajes = con.execute("SELECT COUNT(*) FROM entidad WHERE id LIKE '%per-irene'").fetchone()[0]
+    assert personajes == 2, "cada novela tiene su propia Irene"

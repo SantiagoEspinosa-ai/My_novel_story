@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from app.commons import config
 from app.commons.configuracion.esquemas import PlanDeLaObra
 from app.commons.dominio.destinatario import EXTENSION
+from app.features.planificacion.ids import acotar_a_la_obra
 from app.features.planificacion import cobertura
 from app.features.planificacion import repository as repo
 
@@ -119,7 +120,8 @@ def planificar(con, obra, ficha, planificador, revisor,
             maximo=EXTENSION["palabras_por_capitulo"][1],
             objeciones=_objeciones(anteriores)))
         try:
-            plan = _leer_plan(bruto)
+            # `F-64`: acotados a la obra en el unico punto por el que entran.
+            plan = acotar_a_la_obra(_leer_plan(bruto), obra)
         except (ValueError, ValidationError) as e:
             anteriores = ["el plan no cumple el esquema: {0}".format(str(e)[:600])]
             repo.guardar(con, obra, version, None, False, "esquema", anteriores)

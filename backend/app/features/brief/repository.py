@@ -49,6 +49,17 @@ def crear(con, datos: dict) -> str:
     return id_obra
 
 
+class CapituloDeOtraObra(Exception):
+    """`F-64`: un capitulo con el identificador de otro de otra obra.
+
+    `capitulo` tiene clave global, y antes se escribia con `INSERT OR REPLACE`: la
+    segunda obra se quedaba los capitulos de la primera y no fallaba nada. Ahora
+    falla antes de escribir. El camino normal no llega aqui, porque el plan acota
+    sus identificadores a la obra (`planificacion.ids`); esto es para el que entra
+    por otro sitio.
+    """
+
+
 def alta_de_obra(con, id_obra, datos, capitulos):
     """Da de alta una obra **con sus capitulos y su orden**, en un solo sitio.
 
@@ -73,6 +84,12 @@ def alta_de_obra(con, id_obra, datos, capitulos):
     puede dejar la obra con el doble de capitulos.
     """
     asegurar_tablas(con)
+    ajenos = [(c, f[0]) for c in capitulos for f in con.execute(
+        "SELECT obra FROM capitulo WHERE id = ? AND obra <> ?", (c, id_obra))]
+    if ajenos:
+        raise CapituloDeOtraObra(
+            "estos capitulos ya son de otra obra y no se pisan: {0}".format(
+                ", ".join("{0} (de {1})".format(c, o) for c, o in ajenos)))
     guia = {k: datos.get(k) for k in ("persona", "tiempo_verbal")}
     with con:
         con.execute(
