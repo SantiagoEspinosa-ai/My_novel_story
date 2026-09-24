@@ -86,7 +86,7 @@ El orden no es casual y es una decisión (`D-4`): el contrato primero, las pági
 | --- | --- |
 | Las vistas de operación —Puertas, Continuidad, Trabajos— | `docs/architecture.md` ya las enumera. Esta spec cubre la lectura de la obra y la petición de cambio |
 | Autenticación y control de acceso | El proyecto no los tiene. `D-1` decide que no aparece un actor nuevo, que es otra cosa |
-| Publicar la obra a un formato de libro | Portada y dedicatoria son de la interfaz de lectura, no de una exportación |
+| Publicar la obra a un formato de libro | La interfaz de lectura no exporta. La exportación a PDF, con su portada, su índice y sus fichas, la cubre `SPEC-27` (corrección documental, `EX-09`) |
 | La implementación del backend que falta | La lista de §5 es una dependencia, no el plan de trabajo de esta spec |
 | Elegir tecnología dentro del frontend | React y FSD v2.1 ya están decididos (`CLAUDE.md`, `A-09`); lo demás es del plan |
 | Crear o diseñar CI | `D-3` decide que el validador corre allí y deja dicho que allí no hay nada todavía |

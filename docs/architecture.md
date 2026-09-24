@@ -118,6 +118,7 @@ backend/
       politica/              # listas de palabras vetadas en tres niveles (SPEC-25)
       orquestacion/          # compone las anteriores; unica autorizada a hacerlo
       lectura/               # consultas de solo lectura que alimentan el frontend
+      manuscrito/            # la obra entera: el texto sin tocar, el libro como dato y su PDF (SPEC-27)
 ```
 
 **La raíz de estas rutas es `backend/app/`, y se escriben relativas a ella.** Cuando
@@ -761,6 +762,13 @@ lo único que hace útil al informe.
 **Desde `SPEC-10` hace más falta que antes.** Una escena en `aceptada_por_rendicion` llega
 al manuscrito **con sus hallazgos abiertos**: si algo la retoca por el camino, esos hallazgos
 describen un texto que ya no existe. Lo comprueba `VER-60`.
+
+**El PDF hereda la misma regla** (`SPEC-27` `RF-02`, `PLAN-27`). `exportar.capitulos_de` da el
+texto elegido de cada escena tal cual, sin recortar los bordes (`F-63`); `libro.componer` lo
+convierte en portada, capítulos y fichas **sin estados ni hallazgos** (`RF-06`); y `pdf.a_pdf`
+lo escribe con una fuente Unicode del repositorio para no sustituir rayas ni comillas. Solo se
+exporta lo que la puerta publicó (`service.exportar_pdf`, `RF-01`). `manuscrito/` lee las tablas
+por SQL y no importa ninguna feature.
 
 ## Pruebas
 
