@@ -150,3 +150,27 @@ def test_el_brief_de_vetadas_invita_a_una_variante_de_cada_vetada():
         for variante in b.variantes_que_intenta[vetada]:
             assert variante != vetada
             assert coincidencias(variante, formas), (vetada, variante)
+
+
+# --- `PLAN-31` E12: la extension en los briefs (`SPEC-32`) --------------------------
+
+def test_un_brief_sin_extension_no_carga():
+    """`SPEC-32`: la extension se pregunta, y un brief que no la fija se ejecutaria con el
+    rango entero de 1.000-1.500 palabras, que no es ninguna de las tres opciones."""
+    datos = _datos_de("brief-incoherencia-temporal.json")
+    del datos["ficha"]["extension"]
+    with pytest.raises(briefs.BriefInvalido):
+        briefs.validar(datos)
+    guion = _datos_de("brief-contradicciones.json")
+    for t in guion["guion"]["turnos"]:
+        (t.get("ficha_esperada") or {}).pop("extension", None)
+    with pytest.raises(briefs.BriefInvalido):
+        briefs.validar(guion)
+
+
+def test_cada_brief_fija_una_de_las_extensiones_de_spec_32():
+    from app.commons.dominio.enumeraciones import ExtensionDeCapitulo
+    for ruta in _ficheros():
+        b = briefs.cargar(ruta)
+        ficha = b.ficha or [t.ficha_esperada for t in b.guion.turnos if t.ficha_esperada][-1]
+        assert ficha.extension in set(ExtensionDeCapitulo), ruta.name

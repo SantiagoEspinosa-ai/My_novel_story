@@ -116,6 +116,14 @@ class BriefDeEvaluacion(_Estricto):
         if (self.ficha is None) == (self.guion is None):
             raise ValueError("un brief lleva una ficha o un guion de entrevista, uno de "
                              "los dos: {0}".format("los dos" if self.ficha else "ninguno"))
+        # `SPEC-32` (`PLAN-31` E12): la extension se pregunta. En el modelo de la ficha es
+        # opcional por las fichas antiguas; un brief de evaluacion la fija siempre, y en
+        # un guion la fija la ficha con la que la entrevista deberia cerrar.
+        fichas = [self.ficha] if self.ficha else [
+            t.ficha_esperada for t in self.guion.turnos if t.ficha_esperada]
+        if not fichas or fichas[-1].extension is None:
+            raise ValueError("el brief no fija la extension de capitulo (SPEC-32): corta, "
+                             "media o larga")
         return self
 
 
