@@ -5,13 +5,15 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 2
+version: 3
 ---
 
 > **Historial.** v1: redactada con la decisión del autor sobre el presupuesto
 > (2026-09-23), con `O-1` y `O-2` abiertas y tres propuestas. v2: el autor decide
 > qué se ajusta y quién revisa, y confirma las tres propuestas. Sin cuestiones
-> abiertas.
+> abiertas. v3 (2026-09-24), corrección documental que conserva la aprobación: `VER-30`,
+> que la spec citaba, está obsoleta desde `SPEC-26` v3; y la cifra de 21,6 USD no era la
+> única medida. Lo encontró `PLAN-31`.
 
 # SPEC-31 — Evaluación del sistema
 
@@ -25,8 +27,8 @@ completa con la misma rúbrica del LLM-as-judge, y un red-team log. Y cierra:
 *«un proyecto sin evals con resultados medibles… no aprueba»*.
 
 Hoy hay **un brief de cinco** (`harness/evals/brief-incoherencia-temporal.json`,
-sin ejecutar), `harness/adversarial/` está declarada y no existe, y `VER-30`
-está sin implementar. Son `EX-05` y `EX-06` de `docs/cobertura-examen.md`.
+sin ejecutar), y `harness/adversarial/` está declarada y no existe. La fila de
+red-teaming que había, `VER-30`, está obsoleta: trataba de las reglas de terror. Son `EX-05` y `EX-06` de `docs/cobertura-examen.md`.
 
 ## El presupuesto es una decisión, no un requisito
 
@@ -34,8 +36,10 @@ está sin implementar. Son `EX-05` y `EX-06` de `docs/cobertura-examen.md`.
 **decisión de presupuesto**; el enunciado no pone ninguno.
 
 Lo que hay que saber para leerlo: **el coste de una novela con el pipeline actual
-está sin medir**. La única cifra, 21,6 USD (`harness/evals/medidas.md`), es de la
-obra anterior: 54 escenas, una escalera de modelos y sin Editor ni Planificador.
+está sin medir**. Hay dos cifras y ninguna lo es: 21,6 USD (`harness/evals/medidas.md`)
+es de la obra anterior —54 escenas, una escalera de modelos y sin Editor ni
+Planificador—, y 3,7715 USD en 7 delegaciones (`bf42074`) es un solo capítulo de la
+novela regalo que no se aceptó.
 No se sabe en qué dirección sesga: había más texto por capítulo, pero ahora hay
 más agentes por capítulo. **No sirve como estimación**, y por eso el techo se
 comprueba contra lo gastado, no contra una previsión.
@@ -93,5 +97,5 @@ comprueba contra lo gastado, no contra una previsión.
 ## Lo que la gobierna
 
 `EXAMEN.md` § "Evaluación del sistema", §5b y § `/docs` (red-team log);
-`SPEC-26` `RF-09` y `RF-10`; `SPEC-29`; `SPEC-30`; `VER-30`;
+`SPEC-26` `RF-09` y `RF-10`; `SPEC-29`; `SPEC-30`;
 `docs/architecture.md` § "El harness"; `harness/evals/`.

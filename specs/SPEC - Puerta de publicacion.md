@@ -5,13 +5,15 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 2
+version: 3
 ---
 
 > **Historial.** v1: redactada con la decisión del autor sobre la rendición
 > (2026-09-23), con `O-1` a `O-3` abiertas. v2: el autor fija el tope en 2, decide
 > que los hallazgos de obra del Editor bloquean y confirma las tres propuestas. Sin
-> cuestiones abiertas.
+> cuestiones abiertas. v3 (2026-09-24), corrección documental que conserva la aprobación:
+> la regla de TLA+ que modela la rendición es `ExigirValidacionCompleta`, no
+> `PublicarAlAgotarTope`, que es el freno de delegaciones. Lo encontró `PLAN-30`.
 
 # SPEC-30 — La puerta de publicación
 
@@ -37,8 +39,9 @@ estados"), así que un capítulo rendido puede tener abiertos solo hallazgos
 Se mantiene, y el motivo es del autor: **un capítulo que se rindió no es un
 capítulo que pasó.**
 
-Es la misma regla que ya verifica el modelo TLA+: `PublicarAlAgotarTope = FALSE`
-en `specs/tla/HarnessNovela.cfg`. Y tiene un coste que hay que saber: una novela
+Es la misma regla que ya verifica el modelo TLA+: `ExigirValidacionCompleta = TRUE`
+en `specs/tla/HarnessNovela.cfg`, que impide aceptar un capítulo con la escalera agotada
+sin haber pasado los validadores (`CE-2`). Y tiene un coste que hay que saber: una novela
 con un capítulo rendido **no se publica nunca** sin volver a escribir ese
 capítulo. Cuántas novelas caen ahí está **sin medir**.
 
