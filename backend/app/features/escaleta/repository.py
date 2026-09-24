@@ -76,6 +76,18 @@ CREATE TABLE IF NOT EXISTS hallazgo (
     descripcion TEXT NOT NULL,
     motivo_de_cierre TEXT
 );
+-- `PLAN-31` E4: la relacion `valorado_en` (`Borrador` -> `ValoracionDelEditor`). Las
+-- seis notas de cada version, tambien las que pasan: el hallazgo `INV-26` solo guarda
+-- las que bajan del umbral, y como texto.
+CREATE TABLE IF NOT EXISTS valoracion_del_editor (
+    escena        TEXT NOT NULL,
+    version       INTEGER NOT NULL,
+    criterio      TEXT NOT NULL,
+    nota          INTEGER NOT NULL,
+    justificacion TEXT NOT NULL,
+    instruccion   TEXT,
+    PRIMARY KEY (escena, version, criterio)
+);
 """
 
 CUENTAN_COMO_ABIERTOS = (EH.ABIERTO.value, EH.SIN_VEREDICTO.value)
@@ -404,3 +416,25 @@ def aceptar_borrador(con, escena, version, rindiendose):
     with con:
         con.execute("UPDATE escena SET estado = ?, borrador_aceptado = ? WHERE id = ?",
                     (estado.value, version, escena))
+
+
+def guardar_valoraciones_del_editor(con, escena, version, valoraciones):
+    """Las notas del Editor a **esta version** del borrador (`PLAN-31` E4). Llegan ya
+    validadas como `ValoracionDelEditor`: una ilegible no llega aqui."""
+    asegurar_tablas(con)
+    with con:
+        for v in valoraciones:
+            con.execute(
+                "INSERT OR REPLACE INTO valoracion_del_editor (escena, version, criterio, "
+                "nota, justificacion, instruccion) VALUES (?, ?, ?, ?, ?, ?)",
+                (escena, version, str(v.criterio), v.nota, v.justificacion,
+                 v.instruccion))
+
+
+def valoraciones_del_editor(con, escena):
+    asegurar_tablas(con)
+    filas = con.execute(
+        "SELECT escena, version, criterio, nota, justificacion, instruccion "
+        "FROM valoracion_del_editor WHERE escena = ? ORDER BY version, criterio", (escena,))
+    return [{"escena": f[0], "version": f[1], "criterio": f[2], "nota": f[3],
+             "justificacion": f[4], "instruccion": f[5]} for f in filas]
