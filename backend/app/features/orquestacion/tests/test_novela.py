@@ -600,3 +600,23 @@ def test_reanudar_no_reenvia_las_rondas_del_plan(con, tmp_path):
     novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
                     carpeta_de_reglas=str(tmp_path), observacion=obs)
     assert not [s for s in _enviados(obs, "score") if s["nombre"].endswith(".plan")]
+
+
+def test_cada_coincidencia_esta_en_el_audit_log_y_en_el_envio(con, tmp_path):
+    """`SPEC-29` `RF-06`: la coincidencia de una vetada de novela queda en los dos sitios,
+    y a Langfuse va su nivel y su id, no la palabra."""
+    from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
+    agentes = _agentes()
+    agentes["escritor"] = _EscritorQueCopiaElPov({
+        "texto": " ".join(["palabra"] * 1197 + ["Irene", "mapa", "hospital"]),
+        "pov_usado": "per-irene", "delta": DELTA_OK})
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), observacion=obs)
+    auditadas = con.execute("SELECT COUNT(*) FROM decision_de_politica WHERE tipo = ?",
+                            (str(TD.COINCIDENCIA_VETADA),)).fetchone()[0]
+    enviadas = [s for s in _enviados(obs, "score")
+                if s["nombre"] == "INV-21" and s["categoria"] == "falla"]
+    assert auditadas and len(enviadas) == auditadas
+    assert all(s["nivel"] == "novela" and "termino" not in s for s in enviadas)
+    assert "hospital" not in repr(obs.exportador.enviados)

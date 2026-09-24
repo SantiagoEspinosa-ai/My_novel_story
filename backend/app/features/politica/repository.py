@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS palabra_vetada (
 class Vetada:
     forma: str
     nivel: NV
+    # `SPEC-29` `RF-06`: el `rowid`. Una vetada que no es global sube a Langfuse por
+    # este id y su nivel, nunca por su forma: puede ser el nombre de una persona.
+    id: int | None = None
 
 
 def asegurar_tablas(con: sqlite3.Connection):
@@ -85,10 +88,10 @@ def vetadas_para(con, obra, edad, franjas) -> list:
     """Lo que no puede aparecer en esta obra: global, su franja y la novela."""
     franja = franja_de(edad, franjas) if edad is not None else None
     filas = con.execute(
-        "SELECT forma, nivel FROM palabra_vetada "
+        "SELECT forma, nivel, rowid FROM palabra_vetada "
         "WHERE nivel = ? OR (nivel = ? AND franja = ?) OR (nivel = ? AND obra = ?) "
         "ORDER BY rowid",
         (str(NV.GLOBAL), str(NV.FRANJA_DE_EDAD), franja or "", str(NV.NOVELA),
          obra)).fetchall()
-    return [Vetada(f[0], NV(f[1])) for f in filas]
+    return [Vetada(f[0], NV(f[1]), f[2]) for f in filas]
 

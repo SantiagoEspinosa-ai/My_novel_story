@@ -87,6 +87,7 @@ class Ciclo:
     nombres_encontrados: list = field(default_factory=list)
     # `SPEC-29` `RF-04`: que se llego a comprobar, para no enviar «pasa» de lo que no
     # se miro. Los imprescindibles, por su id: su elemento es dato del destinatario.
+    vetadas_comprobadas: bool = False
     nombres_comprobados: bool = False
     imprescindibles_comprobados: list = field(default_factory=list)
     imprescindibles_ausentes: list = field(default_factory=list)
@@ -247,6 +248,7 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
     # texto con una vetada no se va a aceptar diga lo que diga la rubrica. Pagar
     # la delegacion del Juez sobre el seria pagar por un veredicto que no cuenta.
     if vetadas:
+        c.vetadas_comprobadas = True
         c.vetadas_encontradas = coincidencias(texto, vetadas)
         if c.vetadas_encontradas:
             c.fallo = "palabra_vetada"

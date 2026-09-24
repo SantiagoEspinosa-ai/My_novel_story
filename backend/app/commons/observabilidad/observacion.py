@@ -30,6 +30,9 @@ class Observacion:
         self.traza = _id()
         self.perdidas = 0
         self._padres = []  # los grupos abiertos, del mas externo al mas interno
+        # `RF-06`: el catalogo de vetadas de la obra, `{forma: Vetada}`, para enviar una
+        # coincidencia por su nivel y su id sin enviar la forma cuando no es global.
+        self.vetadas = {}
         self.emitir("traza", TrazaEnviada(id=self.traza, nombre=nombre, sesion=self.sesion))
 
     def emitir(self, tipo, objeto):

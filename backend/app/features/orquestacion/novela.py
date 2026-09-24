@@ -304,8 +304,13 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
     politica.cargar_listas(con, listas or carga.cargar_vetadas())
     politica.vetar_en_novela(con, obra, palabras=ficha.vetadas,
                              nombres=ficha.nombres_vetados)
-    vetadas = [v.forma for v in politica.vetadas_para(con, obra, ficha.destinatario.edad,
-                                                      sistema.franjas_de_edad)]
+    catalogo = politica.vetadas_para(con, obra, ficha.destinatario.edad,
+                                     sistema.franjas_de_edad)
+    vetadas = [v.forma for v in catalogo]
+    if observacion is not None:
+        # Una forma en varios niveles se envia como la mas publica: la global ya lo es.
+        for v in sorted(catalogo, key=lambda v: v.nivel.value != "global", reverse=True):
+            observacion.vetadas[v.forma] = v
     nombres = sorted({ficha.destinatario.nombre} | {p.nombre for p in aprobado.plan.mundo.personajes})
     imprescindibles = {}
     for n, imp in enumerate(aprobado.plan.imprescindibles, 1):

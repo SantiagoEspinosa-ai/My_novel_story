@@ -142,3 +142,51 @@ def test_las_rondas_del_plan_dan_scores_de_schema_cobertura_y_revisor():
     assert por_ronda[("cobertura.plan", "ronda-2")] == "falla"
     assert por_ronda[("revisor.plan", "ronda-3")] == "pasa"
     assert "HUECO" not in repr(obs.exportador.enviados)
+
+
+# --- `PLAN-29` E7: las vetadas, con su nivel ---------------------------------------
+
+def _vetadas(obs, catalogo, encontradas):
+    from types import SimpleNamespace
+    obs.vetadas = catalogo
+    observar.del_ciclo(obs, _ciclo(fallo="palabra_vetada", vetadas_comprobadas=True,
+                                   vetadas_encontradas=[SimpleNamespace(vetada=f,
+                                                                        fragmento=f)
+                                                        for f in encontradas]))
+    return [s for s in _scores(obs) if s["nombre"] == "INV-21"]
+
+
+def _v(forma, nivel, id_):
+    from app.commons.dominio.enumeraciones import NivelDeVeto
+    from app.features.politica.repository import Vetada
+    return Vetada(forma, NivelDeVeto(nivel), id_)
+
+
+def test_una_coincidencia_global_sube_con_su_termino():
+    s = _vetadas(_obs(), {"zoquete": _v("zoquete", "global", 3)}, ["zoquete"])
+    assert s == [{"traza": s[0]["traza"], "nombre": "INV-21", "categoria": "falla",
+                  "nivel": "global", "referencia": "vetada-global-3", "termino": "zoquete"}]
+
+
+def test_una_coincidencia_de_novela_sube_con_su_nivel_y_su_id_y_sin_el_termino():
+    obs = _obs()
+    s = _vetadas(obs, {"marisol": _v("marisol", "novela", 41)}, ["marisol"])
+    assert s[0]["nivel"] == "novela" and s[0]["referencia"] == "vetada-novela-41"
+    assert "termino" not in s[0]
+    assert "marisol" not in repr(obs.exportador.enviados)
+
+
+def test_una_coincidencia_de_franja_no_lleva_el_termino():
+    obs = _obs()
+    s = _vetadas(obs, {"calavera": _v("calavera", "franja_de_edad", 7)}, ["calavera"])
+    assert s[0]["nivel"] == "franja_de_edad" and "termino" not in s[0]
+    assert "calavera" not in repr(obs.exportador.enviados)
+
+
+def test_sin_coincidencias_inv21_pasa_si_se_comprobo():
+    obs = _obs()
+    observar.del_ciclo(obs, _ciclo(vetadas_comprobadas=True))
+    assert _por_nombre(obs)["INV-21"]["categoria"] == "pasa"
+    obs = _obs()
+    observar.del_ciclo(obs, _ciclo())
+    assert "INV-21" not in _por_nombre(obs), "sin lista no se miro: no se dice que pase"

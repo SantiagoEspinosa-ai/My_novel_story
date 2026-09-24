@@ -113,3 +113,15 @@ def test_un_fichero_de_listas_con_un_campo_de_mas_es_error(tmp_path):
                     encoding="utf-8")
     with pytest.raises(carga.ConfiguracionInvalida):
         carga.cargar_vetadas(ruta)
+
+
+def test_vetadas_para_devuelve_el_id_de_cada_forma(con):
+    """`PLAN-29` E7: una vetada de novela sube a Langfuse por su id, nunca por su forma."""
+    repo.vetar_en_novela(con, "obra-a", palabras=["marisol"], nombres=[])
+    vetadas = repo.vetadas_para(con, "obra-a", 8, FRANJAS)
+    ids = [v.id for v in vetadas]
+    assert all(isinstance(i, int) for i in ids) and len(set(ids)) == len(ids)
+    marisol = [v for v in vetadas if v.forma == "marisol"][0]
+    fila = con.execute("SELECT forma FROM palabra_vetada WHERE rowid = ?",
+                       (marisol.id,)).fetchone()
+    assert fila[0] == "marisol"

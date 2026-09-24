@@ -7,7 +7,7 @@ lleva al destinatario dentro. Y lo que no se llego a mirar no se envia como «pa
 validador que no corre no es un validador que paso.
 """
 
-from app.commons.dominio.enumeraciones import EstadoDeHallazgo
+from app.commons.dominio.enumeraciones import EstadoDeHallazgo, NivelDeVeto
 from app.features.verificacion.puertas import INVARIANTES_DE_LA_PUERTA
 
 _SIN = EstadoDeHallazgo.SIN_VEREDICTO
@@ -33,6 +33,7 @@ def del_ciclo(obs, c):
     obs.score(nombre="schema", categoria="pasa")
     for inv in INVARIANTES_DE_LA_PUERTA:
         obs.score(nombre=inv, categoria=_categoria(g.hallazgos, inv))
+    _vetadas(obs, c)
     if c.fallo == "palabra_vetada":
         return
     if c.nombres_comprobados:
@@ -48,6 +49,26 @@ def del_ciclo(obs, c):
             obs.score(nombre="INV-26.{0}".format(val["criterio"]), valor=val["nota"])
     elif v.get("veredicto") == "SIN_VEREDICTO":
         obs.score(nombre="INV-26", categoria="sin_veredicto")
+
+
+def _vetadas(obs, c):
+    """`INV-21` (`RF-06`): un score por coincidencia, siempre con su nivel, y con el
+    termino solo si es global. La coincidencia tambien queda en el audit log, que lo
+    escribe `obra._intentar` y no cambia."""
+    if not c.vetadas_comprobadas:
+        return
+    if not c.vetadas_encontradas:
+        obs.score(nombre="INV-21", categoria="pasa")
+        return
+    for co in c.vetadas_encontradas:
+        v = obs.vetadas.get(co.vetada)
+        if v is None:
+            # Sin catalogo no se sabe el nivel: se envia sin nada que la identifique.
+            obs.score(nombre="INV-21", categoria="falla")
+            continue
+        obs.score(nombre="INV-21", categoria="falla", nivel=v.nivel,
+                  referencia="vetada-{0}-{1}".format(v.nivel.value, v.id),
+                  termino=v.forma if v.nivel is NivelDeVeto.GLOBAL else None)
 
 
 def de_las_rondas_del_plan(obs, versiones):
