@@ -901,3 +901,35 @@ def test_el_gasto_se_anota_por_capitulo_y_sobrevive_a_una_caida(tmp_path):
     c.close()
     otra = sqlite3.connect(base)
     assert [f["capitulo"] for f in libro.filas(otra)] == ["1", "2"]
+
+
+# --- `PLAN-31` E9: el coste en el guion de la novela regalo ------------------------
+
+def test_novela_regalo_con_dobles_informa_el_juicio_de_obra_en_el_coste(tmp_path, monkeypatch,
+                                                                       capsys):
+    """El guion sumaba el ciclo, el Planificador y el Revisor, y el juicio de obra se
+    perdia. Ahora entra en el total y se dice aparte, con su nombre."""
+    from app.commons.modelo.contador import Contador
+    from app.commons.observabilidad.exportador import ExportadorEnMemoria
+    guion = _guion()
+    assert guion.Contador is Contador, "uno solo, el de commons, con su prueba"
+    agentes = _agentes_para_la_novela_entera()
+    agentes["editor"] = _EditorDeLaPuerta(agentes["editor"].r, juicios=[
+        {"arco_cerrado": True, "final_abrupto": False, "justificacion": "bien"}])
+    medidos = _con_coste(agentes, coste=0.01)
+    medidos["planificador"] = Contador(medidos["planificador"])
+    medidos["revisor"] = Contador(medidos["revisor"])
+    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno: medidos)
+    monkeypatch.setattr(guion, "crear_exportador", lambda: ExportadorEnMemoria())
+    escribir = guion.novela.escribir
+    monkeypatch.setattr(guion.novela, "escribir",
+                        lambda *a, **kw: escribir(*a, **dict(kw, lean=_LeanFijo())))
+    ruta_ficha = tmp_path / "ficha.json"
+    ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
+    codigo = guion.main([str(ruta_ficha), "--base", str(tmp_path / "r.db"), "--obra", "obra-x"])
+    salida = capsys.readouterr().out
+    assert codigo == 0, salida
+    # 10 capitulos x 3 + el juicio de obra + el Planificador y el Revisor.
+    assert "delegaciones: 33 | sin coste medido: 0" in salida, salida
+    assert "0.3300 USD" in salida
+    assert "cierre (juicio de obra y puerta de publicacion): 1 delegaciones, 0.0100 USD" in salida
