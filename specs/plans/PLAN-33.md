@@ -6,8 +6,16 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión («Aprobado PLAN-33. Empieza y realiza todo»)"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
-version: 2
+version: 3
 ---
+
+> **v3 (2026-09-24), lo hecho frente a lo planeado.** E0 a E15 hechos. Se juntaron en un commit
+> los pasos que no tenian sentido por separado: E2 con E3 y E7 con E8 (la pagina usa la pieza),
+> E10, E11 y la parte de backend de E13 (el congelado va con sus rutas, `RF-33`), y E12 con la
+> parte de frontend de E13. La confirmacion vive en `pages/entrevista` y no en `features/`: la
+> estanteria enlaza a la entrevista y steiger funde un slice con una sola referencia. Las
+> migraciones son la **17** y la **18**: `examen-cierre` ya tenia la 16. E15 fue un recorrido
+> con Playwright **sin agente**, por no gastar; encontro `F-200`. **E16 no se ha ejecutado.**
 
 > **v2 (2026-09-24), corrección de ubicación al implementar E4.** `docs/architecture.md`: *una
 > feature no importa de otra, y `orquestacion/` es la única autorizada a componer*. El plan ponía

@@ -174,3 +174,35 @@ confirmación no se pudo ejercer: el backend no tiene salida elegida hasta la Pa
 **Lo que no prueba.** Una sola pasada, con un agente que ya dio por buena una web con defectos
 (`F-84`); esta vez sí vio los `500`, que estaban en la consola. La confirmación y el seguimiento
 de un trabajo real siguen sin ejercer fuera de las pruebas con dobles (`VER-111`).
+
+### La novela regalo en la web, en un navegador real y sin agente (`PLAN-33` E15, 2026-09-24)
+
+**Sobre qué.** Las páginas de `SPEC-33`: la estantería, la entrevista como conversación, la
+confirmación antes de gastar y la generación en vivo. Una base con datos **inventados**
+(`backend/semilla_regalo.py`) servida por `uvicorn` en el 8010 y Vite en el 5183: el 8000 y el
+5173 los tenía otra sesión con la novela de ejemplo.
+
+**Cómo, y por qué no con el agente.** Edge sin cabeza movido por Playwright desde un guion
+(`frontend/scripts/recorrido-regalo.mjs`), **sin modelo y sin gastar**. La inspección con el
+agente del browser MCP, como la de E13 o E18, lanza una sesión de Claude Code y gasta, y
+`PLAN-33` no gasta fuera de E16: queda **pendiente de un sí**. El guion no pulsa «Responder»
+(llamaría al Entrevistador) ni «Sí, escribir la novela» (gasta).
+
+**Qué comprobó.** 16 comprobaciones, las 16 en verde y sin errores de consola: las cuatro
+obras con un solo «Generar novela», el aviso y la contradicción dentro de su turno, la
+confirmación con 14,70 de 50 USD «como mínimo» y la referencia de 16,89 USD con su fuente, las
+fases, la nota 2/5 «bajo el umbral», el coste en vivo 2,40 USD «como mínimo», y ningún scroll
+horizontal a 1280 ni a 390 px.
+
+**Qué detectó la revisión de las capturas, y las comprobaciones no.**
+
+| Hallazgo | Qué se veía | Cambio |
+| --- | --- | --- |
+| `F-200` | Los capítulos 1 y 2, terminados y con sus notas, decían «resumiendo»: el pipeline no cierra capítulos y no hay fase de «terminado» | **Corregido**: la fase solo en el capítulo en curso y el `estado_de_escena` en los demás, con sus dos pruebas rojas antes. Las comprobaciones pasaban porque también se escribieron sobre fases inventadas |
+| — | Las notas del Editor salían desvaídas | **Sin cambio**: la captura caía a mitad de la animación de entrada; a 1,5 s la opacidad es 1 |
+| — | La última pregunta de la entrevista, tapada por el formulario fijo | **Sin cambio**: artefacto de la captura de página entera; con la página desplazada al final, la pregunta queda por encima del formulario |
+| — | A 390 px, la línea del coste se partía en tres columnas estrechas | **Corregido**: la línea se parte en renglones |
+
+**Lo que no prueba.** Que el camino con el modelo real funcione: ni un turno de la entrevista ni
+una generación se lanzaron desde la web. Es `PLAN-33` E16, que gasta: la referencia es la
+novela de ejemplo, 16,89 USD, y lo que costaría esta está sin medir.

@@ -5,8 +5,16 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión (decisión literal citada abajo)"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
-version: 3
+version: 4
 ---
+
+> **v4 (2026-09-24), lo que dejo al descubierto la implementacion; no cambia ninguna decision.**
+> - `RF-14`: la fase de un capitulo **que ya paso** es su ultima fila de progreso, casi siempre
+>   `resumiendo`, porque el pipeline no cierra capitulos (`F-200`). La fase se ensena solo en el
+>   capitulo en curso; en los demas, el `estado_de_escena` de sus escenas (`CLAUDE.md`).
+> - `RF-24`: la inspeccion de `PLAN-33` E15 fue en un navegador real movido por un guion, **sin
+>   el agente del browser MCP**, porque ese agente gasta y el plan no gasta fuera de E16. La del
+>   agente queda pendiente de un si (`VER-133`).
 
 > **v3 (2026-09-24), aprobada.** Decisión literal del autor: *«Aprobada, con las propuestas de
 > las cuestiones 2 a 5. Techo propio para las generaciones desde la web: 50 USD. Separado del de

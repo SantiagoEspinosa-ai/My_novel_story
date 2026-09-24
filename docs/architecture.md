@@ -119,6 +119,7 @@ backend/
       evaluacion/            # briefs de evaluacion, libro de gasto, tabla por brief y rastro de exfiltracion (SPEC-31)
       orquestacion/          # compone las anteriores; unica autorizada a hacerlo
       lectura/               # consultas de solo lectura que alimentan el frontend
+      regalo/                # la novela regalo en la web: estanteria, gasto y generacion en vivo, solo lectura (SPEC-33)
       manuscrito/            # la obra entera: el texto sin tocar, el libro como dato y su PDF (SPEC-27)
 ```
 
@@ -178,7 +179,7 @@ de features: dónde va cada fichero y quién puede importar a quién.
 ```
 frontend/src/
   app/          # arranque, providers, enrutado
-  pages/        # composición por ruta: Obra, Escena, Puertas, Continuidad, Trabajos
+  pages/        # composición por ruta: Obra, Escena, Puertas, Continuidad, Trabajos; y la novela regalo (SPEC-33): Estantería, Entrevista, Generación
   features/     # interacciones reutilizables: aceptar, rechazar, pedir reescritura
   entities/     # modelos de dominio reutilizables: escena, hallazgo, personaje
   shared/       # cliente de la API, componentes sin lógica de negocio, utilidades
