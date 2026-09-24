@@ -16,7 +16,10 @@ router = APIRouter(tags=["lectura"])
 
 
 def conexion(request: Request):
-    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"))
+    # F-133: FastAPI la crea, la usa y la cierra en hilos distintos del pool. Se usa en
+    # serie, nunca a la vez: no comprobar el hilo es seguro.
+    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"),
+                          check_same_thread=False)
     try:
         yield con
     finally:
