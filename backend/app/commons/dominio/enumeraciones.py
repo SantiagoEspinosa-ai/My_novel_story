@@ -343,3 +343,30 @@ class CriterioDeEdicion(_Vocabulario):
     COHERENCIA_DE_PERSONAJES = "coherencia_de_personajes"
     RITMO = "ritmo"
     PERSONALIZACION = "personalizacion"
+
+
+# --- `SPEC-23`, `PLAN-23`: regenerar en una obra acumulativa ---------------
+
+class SalidaDeRegeneracion(_Vocabulario):
+    """`S-1` y `S-2`. La elige la medida del arrastre (`SPEC-23` v2), no una opinion."""
+
+    CASCADA = "cascada"
+    SELECTIVA = "selectiva"
+
+
+class EstadoDeVerificacion(_Vocabulario):
+    """El estado de una escena **en una version**, que no es `estado_de_escena`.
+
+    `sin_reverificar` es el verde heredado de otra version: **no cuenta como verde**
+    (`D-1`). No añade ninguna transicion a la maquina de `estado_de_escena`."""
+
+    VERIFICADA = "verificada"
+    SIN_REVERIFICAR = "sin_reverificar"
+    FALLIDA = "fallida"
+
+
+class ClaseDePeticion(_Vocabulario):
+    """`C-4`: lo que el lector puede pedir. Un hecho o un nombre."""
+
+    HECHO = "hecho"
+    NOMBRE = "nombre"

@@ -201,3 +201,15 @@ def test_sin_hechos_el_resumidor_sabe_que_la_lista_va_vacia(con):
                    DobleQueDevuelve({"veredicto": "PASA", "problemas": []}), r, _mundo(),
                    techo=10_000)
     assert "hechos_clave vacia" in r.prompts[0]
+
+
+def test_el_delta_se_guarda_con_la_version_del_borrador_que_se_consolido(con):
+    """`PLAN-23` A1, hallazgo 9: sin la version, una reescritura a delta fijo posterior
+    no se distingue del texto que levanto el acta, y la medida no puede avisar."""
+    from app.features.consolidacion import deltas
+    c = ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(),
+                       DobleQueDevuelve({"veredicto": "PASA", "problemas": []}),
+                       DobleQueDevuelve({"texto": "Marta baja.", "hechos_clave": []}),
+                       _mundo(), techo=10_000)
+    assert c.consolidada is True
+    assert deltas.ultimo(con, "e1")["version"] == c.generacion.version

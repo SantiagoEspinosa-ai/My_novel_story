@@ -80,7 +80,7 @@ class Generacion:
         return self.parada is None
 
 
-def _orden_de_capitulos(con, obra):
+def _orden_de_capitulos(con, obra, version=None):
     """`{id_capitulo: posicion}` segun `brief/`, o vacio si no consta.
 
     Vacio no es un problema cuando la obra tiene un solo capitulo: entonces el
@@ -88,6 +88,12 @@ def _orden_de_capitulos(con, obra):
     Con varios y sin este dato, las escenas se quedan sin situar y
     `asignar_t_discurso` lo dice en vez de colocarlas a ojo.
     """
+    # `PLAN-23` A6: con versiones, el orden es el de la version, no el de la tabla
+    # `capitulo`, donde el capitulo 2 viejo y el nuevo tienen los dos posicion 2.
+    from app.features.brief import repository as brief
+    numero = version if version is not None else brief.version_vigente(con, obra)
+    if numero is not None:
+        return {c: n for n, c in enumerate(brief.capitulos_de_version(con, obra, numero), 1)}
     try:
         filas = con.execute(
             "SELECT id, orden FROM capitulo WHERE obra = ? ORDER BY orden", (obra,))
@@ -98,8 +104,15 @@ def _orden_de_capitulos(con, obra):
         return {}
 
 
-def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=False):
-    """Lo que hay disponible para montar el contexto de esta escena."""
+def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=False,
+                    version=None):
+    """Lo que hay disponible para montar el contexto de esta escena.
+
+    `version` es la de la obra que se escribe; sin ella, la vigente. La memoria y la
+    escena anterior son **de esa version** (`PLAN-23` A6): con dos, el capitulo
+    sustituido y el nuevo comparten `t_discurso` (`C-6`)."""
+    from app.features.orquestacion import regeneracion
+    de_la_version = [e["id"] for e in regeneracion.escenas_de_version(con, obra_id, version)]
     orden = escena["orden"]
     t_discurso = escena.get("t_discurso")
     if t_discurso is None:
@@ -136,7 +149,9 @@ def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=
     if anterior is None and anterior_cruza_capitulo:
         previa = con.execute(
             "SELECT id, borrador_aceptado FROM escena WHERE obra = ? AND t_discurso < ? "
-            "ORDER BY t_discurso DESC LIMIT 1", (obra_id, t_discurso)).fetchone()
+            "AND id IN ({0}) ORDER BY t_discurso DESC LIMIT 1".format(
+                ",".join("?" * len(de_la_version))),
+            [obra_id, t_discurso] + de_la_version).fetchone()
         if previa is not None:
             texto = _texto_elegido(con, {"id": previa[0], "borrador_aceptado": previa[1]})
             anterior = (texto,) if texto else None
@@ -149,8 +164,9 @@ def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=
         # anterior. Los resumenes **tienen** que cruzar el corte de capitulo;
         # la escena anterior no. Son dos alcances distintos y por eso no puede
         # servir el mismo campo para los dos.
-        "resumenes": memoria.resumenes_hasta(con, t_discurso, obra=obra_id),
-        "fichas": memoria.fichas_en(con, t_discurso, obra=obra_id),
+        "resumenes": memoria.resumenes_hasta(con, t_discurso, obra=obra_id,
+                                             escenas=de_la_version),
+        "fichas": memoria.fichas_en(con, t_discurso, obra=obra_id, escenas=de_la_version),
         "escena_anterior": anterior[0] if anterior else "",
         # Vacio legitimo y vacio por fallo **no pueden verse igual** (Regla 8).
         # Que la escena 1 de un capitulo no tenga anterior es lo correcto; que
@@ -159,7 +175,9 @@ def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=
         "falta_escena_anterior": orden > 1 and anterior is None,
         "mundo": modulo_mundo.leer(con),
         "problemas": repo.hallazgos_abiertos(con, escena["id"]),
-        "hechos": repo.hechos_declarados(con, obra_id),
+        # Los de la version (`PLAN-23` A7): con el enunciado nuevo de su peticion y los
+        # nombres nuevos de sus renombrados. `menciona` se calcula contra estos.
+        "hechos": regeneracion.hechos_de_version(con, obra_id, version),
         "inmutable": inmutable,
     }
 
@@ -200,7 +218,10 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # El orden de los capitulos sale de `brief/`, que es otra feature: se lee
     # aqui porque componer entre features es de `orquestacion/` (`A-02`), y se
     # le pasa a `escaleta/` como valor.
-    repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra))
+    from app.features.orquestacion import regeneracion
+    de_la_version = regeneracion.escenas_de_version(con, obra)
+    repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra),
+                            escenas=[e["id"] for e in de_la_version])
     g = Generacion(vetadas_comprobadas=bool(vetadas), genero=genero)
     if vetadas:
         politica.asegurar_tablas(con)
@@ -208,8 +229,10 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # capitulo es lo que permite reintentar uno sin tocar los demas, que es como
     # el guion de la obra larga se desatasca. Sin `capitulo` se genera la obra
     # entera, que es lo que quiere una ejecucion de un tiron.
+    # Sin `capitulo`, las de la version vigente (`PLAN-23` A6), leidas despues de
+    # numerarlas: el `t_discurso` recien asignado tiene que llegar a `reunir_material`.
     escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
-               else repo.escenas_de(con, obra))
+               else regeneracion.escenas_de_version(con, obra))
     for escena in escenas:
         if hasta is not None and escena["orden"] > hasta:
             break
@@ -380,8 +403,9 @@ def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
     # La puerta es **de capitulo**: evaluarla sobre la obra entera preguntaria
     # si se puede firmar la novela, que es otra pregunta y siempre diria que no
     # mientras quede un capitulo por escribir.
+    from app.features.orquestacion import regeneracion
     escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
-               else repo.escenas_de(con, obra))
+               else regeneracion.escenas_de_version(con, obra))
     estados = [EE(e["estado"]) for e in escenas]
     # `INV-21`, segunda linea: cada escena ya se comprobo antes de consolidarse,
     # pero un texto puede llegar por otro camino -una edicion a mano- y el

@@ -111,7 +111,7 @@ def guardar_resumen(con, escena, t_discurso, texto, hechos_clave=None,
                      json.dumps(hechos_clave)))
 
 
-def resumenes_hasta(con, t_discurso_actual, obra=None):
+def resumenes_hasta(con, t_discurso_actual, obra=None, escenas=None):
     """Los resumenes de las escenas anteriores **de esta obra**, en orden.
 
     El `t` de una obra es su orden narrativo, no el reloj de quien la genero.
@@ -132,8 +132,12 @@ def resumenes_hasta(con, t_discurso_actual, obra=None):
         filas = con.execute(
             "SELECT escena, texto, hechos_clave FROM resumen "
             "WHERE t_discurso < ? AND obra = ? ORDER BY t_discurso", (t_discurso_actual, obra))
+    # `escenas` (`PLAN-23` A6): las de la version que se lee. Con dos versiones, el
+    # capitulo sustituido y el nuevo tienen el mismo `t_discurso` (`C-6`), y sin este
+    # filtro el Escritor recibiria el resumen de los dos.
+    dentro = None if escenas is None else set(escenas)
     return [{"escena": f[0], "texto": f[1], "hechos_clave": json.loads(f[2])}
-            for f in filas]
+            for f in filas if dentro is None or f[0] in dentro]
 
 
 def actualizar_fichas(con, escena, t_discurso, entidades, obra=None):
@@ -154,7 +158,7 @@ def actualizar_fichas(con, escena, t_discurso, entidades, obra=None):
                         (entidad, obra, t_discurso, escena, resumen))
 
 
-def fichas_en(con, t_discurso_actual, obra=None):
+def fichas_en(con, t_discurso_actual, obra=None, escenas=None):
     """La version mas reciente de cada ficha **en o antes** de este orden.
 
     Acotada a la obra por lo mismo que `resumenes_hasta` (`F-40`).
@@ -169,7 +173,10 @@ def fichas_en(con, t_discurso_actual, obra=None):
             "SELECT entidad, resumen, version_en_t FROM ficha "
             "WHERE t_discurso <= ? AND obra = ? ORDER BY t_discurso", (t_discurso_actual, obra))
     ultimas = {}
+    dentro = None if escenas is None else set(escenas)
     for entidad, resumen, version in filas:
+        if dentro is not None and version not in dentro:
+            continue
         ultimas[entidad] = {"entidad": entidad, "resumen": resumen,
                             "version_en_t": version}
     return list(ultimas.values())

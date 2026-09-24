@@ -55,8 +55,11 @@ La **Escena** es la unidad atómica: la unidad que se genera, se verifica y se r
 | POV | Punto de vista y distancia narrativa de una escena. | **personaje**, **persona** → `persona_narrativa`, **tiempo\_verbal** → `tiempo_verbal`, distancia, fiabilidad |
 | MomentoNarrativo | Posición de la escena en la fábula (cronología) y en el discurso (orden de lectura). | **t\_fabula**, **t\_discurso**, duracion\_ficcional |
 | LineaArgumental | Hilo de trama que atraviesa varias escenas. | **id**, tipo, escenas\[\], estado |
+| VersionDeObra | Una versión de la obra: la lista ordenada de sus capítulos, con identidad propia (`SPEC-23` `D-2`). La regeneración crea una nueva y la anterior no cambia. | **obra** → Obra, **numero** (la identidad; la `ronda` de `CE-5`), anterior → VersionDeObra, **capitulos\[\]** → Capitulo (en orden; un capítulo que no cambió se **comparte por referencia**), peticion → PeticionDeCambio, **commit** (con qué código se creó: `MF-27`), creada\_en |
 
 **Cambio de valor.** Toda escena mueve un valor dramático de un polo a otro (seguro→amenazado, ignorante→informado, unido→aislado). Es el criterio de existencia de la escena: si no cambia nada, sobra. Modelarlo como par `{eje, signo}` permite verificarlo automáticamente y detectar tramos planos.
+
+**Una versión se distingue por su número, no por sus capítulos** (`SPEC-23` `D-2`, `CE-5`, `F-43`). Con la versión representada como el conjunto de sus capítulos, regenerar y volver a aprobarlos todos daba un valor idéntico al anterior, y «se conserva la versión anterior» pasaba por no poder distinguir nada. Un capítulo compartido es **la misma fila** en las dos versiones; uno nuevo en la misma posición es otro capítulo, con otro `id`.
 
 **Momento narrativo doble.** Guardar `t_fabula` y `t_discurso` por separado es lo que habilita analepsis, relatos enmarcados y narradores no fiables sin romper la continuidad.
 
@@ -75,7 +78,7 @@ El canon es lo que es verdad dentro de la ficción, con independencia de cómo s
 | EventoCronologico | Suceso situado en la fábula, se narre o no. | **id**, **t\_fabula** (fecha absoluta ISO-8601), participantes\[\] → Personaje (+ tipo\_de\_presencia → `tipo_de_presencia`), consecuencias\[\], lugar → Lugar, capitulo → Capitulo, duracion (minutos), escena → Escena |
 
 **La unidad de la cronología es el evento y no el capítulo** (`SPEC-21` C-3). Un capítulo es un intervalo, no un instante: con un instante por capítulo, *«nadie está en dos lugares a la vez»* es falsa por construcción en cuanto un capítulo dure lo bastante para que alguien viaje. Una escena aporta un evento; puede haber más. Y `t_fabula` es **absoluta** porque es lo único que permite demostrar a la vez el orden —que se compara—, la ubicuidad —que necesita intervalos— y la edad, que sólo se puede restar de algo absoluto.
-| EstadoDelMundo | Instantánea del canon en un momento `t`. | **t**, entidades\_vivas\[\], ubicaciones, posesiones, relaciones, hechos\_vigentes\[\] |
+| EstadoDelMundo | Instantánea del canon en un momento `t`. | **t**, entidades\_vivas\[\], ubicaciones, posesiones, relaciones, hechos\_vigentes\[\], huella (la lista ordenada de deltas aplicados para llegar a él, más la semilla: identifica el estado contra el que se verificó algo, `SPEC-23` `C-3`) |
 | RegistroDeConocimiento | Quién sabe qué y desde cuándo. | **sujeto**, **hecho**, desde\_escena (**opcional desde `SPEC-17`**: vacío significa *anterior al relato*), tipo\_de\_sujeto → `tipo_de_sujeto`, grado → `grado_de_conocimiento`, **fuente** → Escena \| Personaje \| `anterior_al_relato` |
 
 **El registro de conocimiento merece rango propio.** Tiene tres tipos de sujeto —personaje, narrador y lector— y casi todos los fallos de tensión, así como los agujeros de trama, son incoherencias en esa tabla: un personaje que actúa sabiendo algo que aún no ha descubierto, o una revelación que el lector ya tenía.
@@ -114,7 +117,9 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 
 **El plan declara quién sabe qué al empezar, y no solo qué hechos existen** (`SPEC-17` C-1). Sin esto el `RegistroDeConocimiento` arranca vacío y **ninguna acción es posible en la primera escena de una obra** (`F-32`): un personaje llega sabiendo cosas de antes del relato —Ana heredó la casa— y eso no es una revelación de ninguna escena.
 | Borrador | Texto generado de una escena, con versión. | **escena**, **version**, **pov\_usado** (`persona` → `persona_narrativa`, `tiempo_verbal` → `tiempo_verbal`), texto, modelo, prompt\_hash |
-| DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, **cambio\_de\_valor** (`{eje, signo}`), cambios\_de\_estado\_vital\[\] (`{personaje, de, a}`, con `de` y `a` → `estado_vital`), ~~muertes~~ (obsoleto: lo sustituye cambios\_de\_estado\_vital), movimientos, revelaciones (`{sujeto, hecho}`: el sujeto **pasa a conocer** ese hecho desde esta escena), **acciones** (`{personaje, hecho}`: el personaje **obró sirviéndose** de ese hecho), setups\_pagados, cambios\_de\_posesion, deterioros |
+| DeltaDeEscena | Diff estructurado que la escena devuelve junto al texto. | **escena**, version (la del `Borrador` del que vino; ausente si no consta, nunca cero), **cambio\_de\_valor** (`{eje, signo}`), cambios\_de\_estado\_vital\[\] (`{personaje, de, a}`, con `de` y `a` → `estado_vital`), ~~muertes~~ (obsoleto: lo sustituye cambios\_de\_estado\_vital), movimientos, revelaciones (`{sujeto, hecho}`: el sujeto **pasa a conocer** ese hecho desde esta escena), **acciones** (`{personaje, hecho}`: el personaje **obró sirviéndose** de ese hecho), setups\_pagados, cambios\_de\_posesion, deterioros |
+
+**Una petición no edita el canon: vale en la versión nueva.** El enunciado nuevo de un hecho y el nombre nuevo de un personaje viven en la petición, y los de una versión son los del plan con los de su cadena de peticiones. `HechoCanonico` no se edita y la story bible no se versiona (`PLAN-23` `C-4`); la versión anterior sigue leyendo lo que leía.
 
 **`revelaciones` y `acciones` son cosas distintas, y confundirlas dejó el sistema muerto sin que nada fallara** (`SPEC-16`, `F-31`). Revelar es **aprender**: es el momento en que el sujeto se entera, y es lo que escribe el `RegistroDeConocimiento`. Actuar es **obrar sirviéndose de lo ya sabido**, y es lo único que `INV-03` comprueba. Mientras `INV-03` miró las revelaciones exigía saber de antes para poder aprender, así que **ningún personaje podía llegar a saber nada nunca**.
 | Ficha | Resumen recuperable de una entidad, para inyectar en contexto. | **entidad**, resumen, version\_en\_t |
@@ -122,6 +127,7 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | AnclaDeEstilo | Pasaje ejemplar que fija la voz. | **texto**, que\_ejemplifica |
 | FraseRecurrente | Frase que el sistema ha visto repetirse y que puede acabar siendo una muletilla. | **texto**, **desde\_capitulo**, **apariciones**, ultima\_aparicion |
 | PaseDeRevision | Pasada específica sobre el texto ya generado. | **tipo** → `tipo_de_pase`, ambito, hallazgos\[\] |
+| PeticionDeCambio | Lo que el lector pide cambiar de una versión de la obra (`SPEC-23`, `PLAN-23` `C-4`). No edita nada: produce una versión nueva. | **obra** → Obra, **version\_de\_partida** → VersionDeObra, **clase** → `clase_de_peticion`, hecho → HechoCanonico, enunciado\_nuevo, personaje → Personaje, nombre\_nuevo, **texto** (las palabras del lector), salida → `salida_de_regeneracion`, capitulos\_propuestos\[\] → Capitulo. Con `hecho`, lleva `hecho` y `enunciado_nuevo`; con `nombre`, `personaje` y `nombre_nuevo` |
 
 ### Jerarquía de memoria
 
@@ -168,9 +174,12 @@ La novela se escribe **para alguien** (`SPEC-25`). Estas clases recogen quién e
 | AntiPatron | Fallo recurrente que se vigila explícitamente. | **id**, **sintoma**, senal\_detectable, correccion |
 | Rubrica | Criterios y escala que usa un juez LLM. | **dimension**, niveles\[\], ejemplos\_ancla\[\] |
 | ValoracionDelEditor | La nota del Editor a un criterio de un capítulo (`SPEC-26` `RF-09`). No reescribe: juzga y da una instrucción. | **criterio** → `criterio_de_edicion`, **nota** (1 a 5), **justificacion**, instruccion |
+| Reverificacion | Las puertas deterministas de una escena, vueltas a pasar **en una versión** contra el estado que esa versión reconstruye (`SPEC-23` `D-1`). Sin modelo. | **version** → VersionDeObra, **escena** → Escena, **huella\_del\_estado** (la `huella` del `EstadoDelMundo` previo a la escena), **estado** → `estado_de_verificacion`, hallazgos\[\] (de esta versión; **no son filas de `Hallazgo`**, que no sabe de versiones) |
 | VeredictoDePublicacion | El resultado de una ronda de la puerta de publicación (`SPEC-30`): si la versión se publica y por qué no. Lo lee la exportación a PDF (`SPEC-27`) | **obra**, **ronda**, **publica**, condiciones\[\] (cada una: la condición de `RF-01` que falla, su invariante, su capítulo, el detalle y si es reintentable), codigo\_lean, no\_ejecutadas\[\] (hoy `INV-06`: `SPEC-30` `RF-12`) |
 
 **`Invariante` y `Hallazgo` guardan cosas distintas.** `invariante` dice **qué regla se violó** y `verificador` **quién lo detectó**: la misma `INV-03` puede marcarla un juez o una regla de continuidad, y saber cuál de los dos fue es lo que permite resolver el desempate. Por eso `Hallazgo` lleva los dos y ninguno sustituye al otro.
+
+**Un verde solo cuenta contra la huella de su versión** (`SPEC-23` `D-1`, `MF-26`). Una `Reverificacion` cuya `huella_del_estado` no es la del estado vigente de su versión no cuenta: la escena está `sin_reverificar`, que es un verde heredado y **no es un verde**. Es un estado de la escena **en una versión** y no de `estado_de_escena`: no añade ninguna transición a la máquina.
 
 La tabla de "Invariantes verificables" de más abajo es el catálogo de instancias de `Invariante`: dieciséis, con su identificador publicado.
 
@@ -202,6 +211,7 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 | Relación | Dominio | Rango | Cardinalidad | Para qué sirve |
 | --- | --- | --- | --- | --- |
 | contiene | Obra, Parte, Capitulo | Parte, Capitulo, Escena | 1:N | Jerarquía estructural |
+| incluye | VersionDeObra | Capitulo | N:M (+ `orden`) | Qué capítulos forman una versión y en qué orden. No basta `contiene`: un capítulo compartido está en dos versiones (`SPEC-23` `D-2`) |
 | realiza | Escena | Beat | N:M | Trazabilidad de función |
 | sirve\_a | Beat | ArcoNarrativo | N:M | Justifica la existencia de la escena |
 | ocurre\_en | Escena | Lugar | N:1 | Continuidad espacial |
@@ -261,8 +271,11 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `tipo_de_contradiccion` | FichaDeEntrevista.contradicciones\_resueltas | edad\_frente\_a\_genero, edad\_frente\_a\_ocasion, recuerdo\_frente\_a\_edad, juicio\_del\_modelo |
 | `tipo_de_decision_de_politica` | DecisionDePolitica.tipo | coincidencia\_vetada, reescritura\_pedida, parada\_por\_vetada, instruccion\_en\_texto\_libre, contradiccion\_detectada, contradiccion\_resuelta, borrado\_al\_entregar, herramienta\_denegada, nombre\_mal\_escrito, parada\_por\_nombre |
 | `criterio_de_edicion` | ValoracionDelEditor.criterio | continuidad, tono, arco, coherencia\_de\_personajes, ritmo, personalizacion |
+| `clase_de_peticion` | PeticionDeCambio.clase | hecho, nombre (`PLAN-23` `C-4`) |
+| `salida_de_regeneracion` | PeticionDeCambio.salida | cascada (`S-1`), selectiva (`S-2`) (`SPEC-23` v2: la elige la medida del arrastre) |
+| `estado_de_verificacion` | Reverificacion.estado | verificada, sin\_reverificar (heredada: **no cuenta como verde**, `D-1`), fallida |
 
-**«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —contar también los `menciona` reescribe media novela por una alusión de paso—. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.
+**«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —y cuenta también `menciona`, **pendiente de medida** (`SPEC-21` C-2): excluirlo porque *«reescribiría media novela por una alusión de paso»* era una intuición de coste que no se había medido, y `menciona` es el único de los cuatro que mide el código—. Hoy `PARA_REGENERACION` sigue siendo `establece` y `depende` hasta que la medida lo confirme. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.
 
 **Cuál de los cuatro cuenta lo decide cada consumidor, no esta tabla.** Es deliberado: cambiar de opinión es cambiar el conjunto de tipos que se consulta, y no hay migración detrás porque las cuatro clases de fila ya están escritas.
 

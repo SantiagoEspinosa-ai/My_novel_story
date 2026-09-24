@@ -77,7 +77,8 @@ def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=(), umbral_nombre=None
             longitud_frase=None) -> Evaluacion:
     veredictos.asegurar_tablas(con)
     ronda = veredictos.rondas(con, obra) + 1
-    escenas = escaleta.escenas_de(con, obra)
+    # `PLAN-23` A6: la version vigente.
+    escenas = _de_la_version(con, obra)
     antes = [h for h in _abiertos_de_obra(con, escenas) if h["invariante"] in NIVEL_OBRA]
 
     cierre = novela.cerrar(con, obra, ficha, juez_de_obra, umbral_nombre, longitud_frase)
@@ -216,7 +217,9 @@ def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
             problemas=_lista(c["detalle"] for c in condiciones),
             capitulos=_lista("{0}: {1}".format(c, "; ".join(m)) for c, m in implicados.items()),
             resumenes=_lista("{0}: {1}".format(r["escena"], r["texto"])
-                             for r in memoria.resumenes_hasta(con, 10 ** 9, obra=obra))))
+                             for r in memoria.resumenes_hasta(
+                                 con, 10 ** 9, obra=obra, escenas=[
+                                     e["id"] for e in _de_la_version(con, obra)]))))
         instrucciones = (bruto.get("instrucciones") if isinstance(bruto, dict) else None) or []
         for i in instrucciones:
             if not isinstance(i, dict):
@@ -227,3 +230,8 @@ def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
                 continue
             for escena in escaleta.escenas_de_capitulo(con, capitulo):
                 reescribir(con, escena["id"], [texto])
+
+
+def _de_la_version(con, obra):
+    from app.features.orquestacion import regeneracion
+    return regeneracion.escenas_de_version(con, obra)

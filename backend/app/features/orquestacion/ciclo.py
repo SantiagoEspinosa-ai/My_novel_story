@@ -341,8 +341,10 @@ def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo",
     el delta (`SPEC-21` C-4). Este modulo no mira que hay dentro.
     """
     try:
+        # Con la version del borrador (`PLAN-23` A1, hallazgo 9): es lo que deja ver
+        # despues si el texto aceptado ya no es el que levanto el acta.
         aplicar.consolidar(con, escena_id, c.generacion.leida_delta or {},
-                           al_consolidar=al_consolidar)
+                           version=c.generacion.version, al_consolidar=al_consolidar)
         repo.marcar_consolidada(con, escena_id)
         c.consolidada = True
     except (aplicar.DeltaIncompatible, aplicar.YaConsolidada) as e:

@@ -287,7 +287,161 @@ TODAS = [
         lambda con: (anadir_columnas(con, "entidad", {"nombre_canonico": "TEXT"}),
                      anadir_columnas(con, "lugar", {"nombre": "TEXT"})),
     ),
+    Migracion(
+        12,
+        "la obra tiene versiones con identidad, y un capitulo nuevo no pisa al viejo",
+        # `SPEC-23` `D-2`, `PLAN-23` A3. Crea `version_de_obra` y
+        # `capitulo_de_version`, da la version 1 a cada obra con sus capitulos por
+        # `orden`, y recrea `capitulo` **sin** `UNIQUE (obra, orden)`: con esa
+        # restriccion y el `INSERT OR REPLACE` del alta, el capitulo 3 de la version
+        # 1 desaparecia al escribir el capitulo 3 de la version 2 (hallazgo 4, Regla 7).
+        lambda con: _migrar_a_versiones(con),
+    ),
+    Migracion(
+        13,
+        "la reverificacion de una escena en una version, con la huella de su estado",
+        # `SPEC-23` `D-1`, `PLAN-23` A4. Tabla nueva: no hay filas que migrar, pero
+        # `esquema_version` tiene que decir cuando aparecio (`VER-21`).
+        lambda con: [con.execute(s) for s in sentencias(REVERIFICACION_SQL)],
+    ),
+    Migracion(
+        14,
+        "la peticion de cambio del lector: un hecho o un nombre",
+        # `SPEC-23`, `PLAN-23` A7, `C-4`. Tabla nueva, sin filas que migrar.
+        lambda con: [con.execute(s) for s in sentencias(PETICION_SQL)],
+    ),
 ]
+
+# `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la
+# migracion, que no puede importar de una feature (`VER-14`), y `brief.asegurar_tablas`.
+# Una sola copia: dos `CREATE TABLE` de la misma tabla acaban divergiendo.
+#
+# **Una version creada no cambia** (`VersionesSoloCrecen` de `specs/tla/`, en la
+# base): los disparadores abortan cualquier `UPDATE` o `DELETE`.
+VERSIONES_SQL = """
+CREATE TABLE IF NOT EXISTS version_de_obra (
+    obra      TEXT    NOT NULL,
+    numero    INTEGER NOT NULL,
+    anterior  INTEGER,
+    peticion  INTEGER,
+    "commit"  TEXT    NOT NULL,
+    creada_en TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (obra, numero)
+);
+CREATE TABLE IF NOT EXISTS capitulo_de_version (
+    obra     TEXT    NOT NULL,
+    numero   INTEGER NOT NULL,
+    orden    INTEGER NOT NULL,
+    capitulo TEXT    NOT NULL,
+    PRIMARY KEY (obra, numero, orden)
+);
+CREATE TRIGGER IF NOT EXISTS version_de_obra_no_se_modifica
+    BEFORE UPDATE ON version_de_obra
+    BEGIN SELECT RAISE(ABORT, 'una version creada no cambia'); END;
+CREATE TRIGGER IF NOT EXISTS version_de_obra_no_se_borra
+    BEFORE DELETE ON version_de_obra
+    BEGIN SELECT RAISE(ABORT, 'una version creada no cambia'); END;
+CREATE TRIGGER IF NOT EXISTS capitulo_de_version_no_se_modifica
+    BEFORE UPDATE ON capitulo_de_version
+    BEGIN SELECT RAISE(ABORT, 'una version creada no cambia'); END;
+CREATE TRIGGER IF NOT EXISTS capitulo_de_version_no_se_borra
+    BEFORE DELETE ON capitulo_de_version
+    BEGIN SELECT RAISE(ABORT, 'una version creada no cambia'); END;
+"""
+
+
+# `PLAN-23` A4. Aqui por lo mismo que `VERSIONES_SQL`: una sola copia para la migracion
+# y para `features/verificacion/`. **No son filas de `hallazgo`**, que no sabe de
+# versiones: un fallo de reverificacion de un capitulo compartido apareceria tambien en
+# la version anterior, y esa dejaria de poder cerrarse (hallazgo 7).
+REVERIFICACION_SQL = """
+CREATE TABLE IF NOT EXISTS reverificacion (
+    obra              TEXT    NOT NULL,
+    version           INTEGER NOT NULL,
+    escena            TEXT    NOT NULL,
+    huella_del_estado TEXT    NOT NULL,
+    estado            TEXT    NOT NULL,
+    hallazgos         TEXT    NOT NULL DEFAULT '[]',
+    cuando            TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (obra, version, escena, huella_del_estado)
+);
+"""
+
+
+# `PLAN-23` A7. Una sola copia, como las dos de arriba. `capitulos_propuestos` es la
+# lista que el lector acepto, en JSON: la que se comparo con la propuesta.
+PETICION_SQL = """
+CREATE TABLE IF NOT EXISTS peticion_de_cambio (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    obra                 TEXT    NOT NULL,
+    version_de_partida   INTEGER NOT NULL,
+    clase                TEXT    NOT NULL,
+    hecho                TEXT,
+    enunciado_nuevo      TEXT,
+    personaje            TEXT,
+    nombre_nuevo         TEXT,
+    texto                TEXT    NOT NULL,
+    salida               TEXT,
+    capitulos_propuestos TEXT    NOT NULL DEFAULT '[]',
+    creada_en            TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+"""
+
+
+def sentencias(script):
+    """Parte un script en sentencias completas, disparadores incluidos.
+
+    `executescript` haria `COMMIT` en mitad de la transaccion de la migracion, y
+    partir por `;` rompe un disparador, que lleva `;` dentro de su `BEGIN ... END`.
+    """
+    actual = ""
+    for linea in script.splitlines(keepends=True):
+        actual += linea
+        if sqlite3.complete_statement(actual):
+            if actual.strip():
+                yield actual
+            actual = ""
+
+
+def _crear_versiones(con):
+    for sentencia in sentencias(VERSIONES_SQL):
+        con.execute(sentencia)
+
+
+def _migrar_a_versiones(con):
+    _crear_versiones(con)
+    if not tiene_tabla(con, "capitulo"):
+        return 0
+    con.execute("""
+        CREATE TABLE capitulo_nuevo (
+            id     TEXT PRIMARY KEY,
+            obra   TEXT NOT NULL REFERENCES obra(id),
+            orden  INTEGER NOT NULL,
+            estado TEXT NOT NULL DEFAULT 'abierto'
+        )""")
+    con.execute("INSERT INTO capitulo_nuevo (id, obra, orden, estado) "
+                "SELECT id, obra, orden, estado FROM capitulo")
+    con.execute("DROP TABLE capitulo")
+    con.execute("ALTER TABLE capitulo_nuevo RENAME TO capitulo")
+    # El commit de la version 1 de una obra ya escrita es el de la base, si consta.
+    # Si no, `sin_determinar`: la version existe y no se sabe con que codigo se hizo.
+    commit = "sin_determinar"
+    if tiene_tabla(con, "procedencia"):
+        fila = con.execute("SELECT valor FROM procedencia "
+                           "WHERE clave = 'version_del_harness'").fetchone()
+        commit = fila[0] if fila else commit
+    obras = [f[0] for f in con.execute("SELECT DISTINCT obra FROM capitulo ORDER BY obra")]
+    for obra in obras:
+        if con.execute("SELECT 1 FROM version_de_obra WHERE obra = ?", (obra,)).fetchone():
+            continue
+        con.execute('INSERT INTO version_de_obra (obra, numero, "commit") VALUES (?, 1, ?)',
+                    (obra, commit))
+        capitulos = [f[0] for f in con.execute(
+            "SELECT id FROM capitulo WHERE obra = ? ORDER BY orden, id", (obra,))]
+        for orden, capitulo in enumerate(capitulos, 1):
+            con.execute("INSERT INTO capitulo_de_version (obra, numero, orden, capitulo) "
+                        "VALUES (?, 1, ?, ?)", (obra, orden, capitulo))
+    return len(obras)
 
 
 def _migrar_memoria_a_obra(con):

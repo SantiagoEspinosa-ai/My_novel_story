@@ -120,3 +120,110 @@ def leer(con) -> dict:
         conocimiento[(s, h)] = {"desde": desde, "grado": grado}
     return {"entidades_vivas": vivas, "ubicaciones": ubic,
             "accesos": accesos, "conocimiento": conocimiento}
+
+
+# --- `PLAN-23` A2: el mundo desde la semilla y los deltas guardados ------------
+
+def _copia(m):
+    return {"entidades_vivas": dict(m.get("entidades_vivas") or {}),
+            "ubicaciones": dict(m.get("ubicaciones") or {}),
+            "accesos": {k: list(v) for k, v in (m.get("accesos") or {}).items()},
+            "conocimiento": {k: dict(v) for k, v in (m.get("conocimiento") or {}).items()}}
+
+
+def _incompatibilidad(m, delta):
+    """Lo mismo que hace fallar `aplicar.consolidar`, en diccionarios. `None` si entra."""
+    vivas = m["entidades_vivas"]
+    for mv in delta.get("movimientos", []):
+        if mv["personaje"] not in vivas:
+            return ("el delta mueve a {0}, que no existe en el estado en t".format(
+                mv["personaje"]))
+    # Los cambios de estado vital se aplican despues de los movimientos, y en orden:
+    # dos cambios sobre el mismo personaje se encadenan como en la base.
+    estado = dict(vivas)
+    for c in delta.get("cambios_de_estado_vital", []):
+        if estado.get(c["personaje"]) != c["de"]:
+            return ("el delta lleva a {0} de {1} a {2}, y su estado en t no es "
+                    "{1}".format(c["personaje"], c["de"], c["a"]))
+        estado[c["personaje"]] = c["a"]
+    return None
+
+
+def acumular(semilla, deltas):
+    """El mundo tras aplicar `deltas` -pares `(escena, delta)`, en orden- a la semilla.
+
+    **Puro**: no lee ni escribe la base y no toca la semilla. Devuelve
+    `(mundo, incompatibles)`, con el mundo en la forma de `leer`. Un delta que no
+    entra **no se aplica entero** -como en `aplicar.consolidar`, que es atomico- y se
+    anota con su escena y su motivo, sin lanzar excepcion: quien reverifica necesita
+    saber donde deja de sostenerse la obra, no que se pare la cuenta.
+    """
+    m = _copia(semilla)
+    incompatibles = []
+    for escena, delta in deltas:
+        delta = delta or {}
+        motivo = _incompatibilidad(m, delta)
+        if motivo is not None:
+            incompatibles.append({"escena": escena, "motivo": motivo})
+            continue
+        for mv in delta.get("movimientos", []):
+            m["ubicaciones"][mv["personaje"]] = mv["a"]
+        for c in delta.get("cambios_de_estado_vital", []):
+            m["entidades_vivas"][c["personaje"]] = c["a"]
+        # `INSERT OR IGNORE`: lo que ya constaba no se pisa, tampoco su `desde`.
+        for rev in delta.get("revelaciones", []):
+            m["conocimiento"].setdefault((rev["sujeto"], rev["hecho"]),
+                                         {"desde": escena, "grado": "sabe"})
+    return m, incompatibles
+
+
+def rebobinar(con, m):
+    """Escribe el mundo `m` en `entidad`, `lugar` y `conocimiento`, **en una sola
+    transaccion** (`PLAN-23` `C-2`): el mundo vivo es el de la version que se escribe.
+
+    Conserva la fecha de nacimiento, que no es estado sino dato del personaje. Lo que
+    no esta en `m` deja de existir en el mundo vivo. La fuente del conocimiento se
+    reconstruye como la escribe la consolidacion: la escena que lo revelo, o
+    `anterior_al_relato` si no tiene escena.
+    """
+    asegurar_tablas(con)
+    with con:
+        vivas = m.get("entidades_vivas") or {}
+        ubic = m.get("ubicaciones") or {}
+        con.execute("DELETE FROM entidad WHERE id NOT IN ({0})".format(
+            ",".join("?" * len(vivas))), list(vivas))
+        for id_e, vital in vivas.items():
+            con.execute("INSERT INTO entidad (id, vital, lugar) VALUES (?, ?, ?) "
+                        "ON CONFLICT(id) DO UPDATE SET vital = excluded.vital, "
+                        "lugar = excluded.lugar", (id_e, vital, ubic.get(id_e)))
+        con.execute("DELETE FROM lugar")
+        for id_l, vecinos in (m.get("accesos") or {}).items():
+            con.execute("INSERT INTO lugar (id, accesos) VALUES (?, ?)",
+                        (id_l, json.dumps(vecinos)))
+        con.execute("DELETE FROM conocimiento")
+        for (sujeto, hecho), v in (m.get("conocimiento") or {}).items():
+            con.execute("INSERT INTO conocimiento (sujeto, hecho, desde_escena, grado, "
+                        "fuente) VALUES (?, ?, ?, ?, ?)",
+                        (sujeto, hecho, v.get("desde"), v.get("grado", "sabe"),
+                         v.get("desde") or ANTERIOR_AL_RELATO))
+
+
+def huella(semilla, deltas):
+    """Lo que identifica un estado del mundo (`PLAN-23` `C-3`): la semilla y la lista
+    ordenada de deltas `(escena, delta)` aplicados para llegar a el, resumidas en un
+    hash. Dos estados con la misma huella son el mismo; un verde cuya huella no es la
+    del estado vigente de su version **no cuenta** (`D-1`)."""
+    import hashlib
+    canon = {
+        "semilla": {
+            "entidades_vivas": sorted((semilla.get("entidades_vivas") or {}).items()),
+            "ubicaciones": sorted((semilla.get("ubicaciones") or {}).items()),
+            "accesos": sorted((k, sorted(v)) for k, v in (semilla.get("accesos") or {}).items()),
+            "conocimiento": sorted(
+                (list(k), v.get("desde"), v.get("grado"))
+                for k, v in (semilla.get("conocimiento") or {}).items()),
+        },
+        "deltas": [[escena, delta] for escena, delta in deltas],
+    }
+    texto = json.dumps(canon, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()

@@ -71,6 +71,10 @@ def _filas(con, obra):
     # escaletas anteriores a `SPEC-21` y no hay donde situarlas sin inventar.
     # Las bases anteriores a `SPEC-21` tampoco tienen tabla `capitulo`: sin ella
     # no hay orden de capitulo que respetar, y se ordena por el de la escena.
+    # `PLAN-23` A6: con versiones, las de la vigente; sin ellas, las de la obra.
+    vigente = _de_la_version_vigente(con, obra)
+    if vigente is not None:
+        return vigente
     try:
         return con.execute(
             "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, c.orden "
@@ -107,6 +111,28 @@ def _texto_de(con, escena, aceptado):
         "SELECT texto FROM borrador WHERE escena = ? "
         "ORDER BY version DESC LIMIT 1", (escena,)).fetchone()
     return fila[0] if fila else None
+
+
+def _de_la_version_vigente(con, obra):
+    """Las escenas de la version vigente, en su orden, o `None` si la obra no tiene
+    versiones (`PLAN-23` A6). Con dos versiones, la tabla `capitulo` tiene el capitulo
+    sustituido y el nuevo en la misma posicion, y el manuscrito tendria dos capitulos 2.
+
+    Lee las tablas de versiones por SQL, como ya leia `capitulo`: es el acoplamiento
+    que esta feature ya tenia (`F-28`), dicho aqui en vez de callado."""
+    try:
+        fila = con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
+                           (obra,)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if fila is None or fila[0] is None:
+        return None
+    return con.execute(
+        "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, v.orden AS orden_cap "
+        "FROM capitulo_de_version v JOIN escena e "
+        "  ON e.capitulo = v.capitulo AND e.obra = v.obra "
+        "WHERE v.obra = ? AND v.numero = ? ORDER BY v.orden, e.orden, e.id",
+        (obra, fila[0])).fetchall()
 
 
 def manuscrito(con, obra, con_titulos=True) -> Manuscrito:

@@ -27,7 +27,9 @@ class NoExisteEnLaObra(LookupError):
 
 
 def leer_hechos(con, obra, entrada: sb.EntradaHechos) -> sb.SalidaHechos:
-    propias = {e["id"] for e in escaleta.escenas_de(con, obra)}
+    # `PLAN-23` A6: las escenas de la version vigente, no las de la obra entera.
+    from app.features.orquestacion import regeneracion
+    propias = {e["id"] for e in regeneracion.escenas_de_version(con, obra)}
     hechos = [h for h in escaleta.hechos_declarados(con, obra)
               if entrada.hecho is None or h["id"] == entrada.hecho]
     return sb.SalidaHechos(hechos=[
@@ -41,11 +43,14 @@ def leer_ficha(con, obra, entrada: sb.EntradaFicha) -> sb.SalidaFicha:
     plan = planes.aprobado(con, obra)
     if plan is None:
         raise NoExisteEnLaObra("la obra no tiene plan aprobado")
+    # `PLAN-23` A7: el nombre de la version que se escribe, la vigente (`C-4`).
+    from app.features.orquestacion import regeneracion
+    nombres = regeneracion.nombres_de_version(con, obra)
     for p in plan.mundo.personajes:
         if p.id == entrada.id:
             vigente = aplicar.estado(con).get(p.id)
             return sb.SalidaFicha(personaje=sb.FichaDePersonaje(
-                id=p.id, nombre_canonico=p.nombre,
+                id=p.id, nombre_canonico=nombres.get(p.id, p.nombre),
                 estado_vital=vigente[0] if vigente else p.estado_vital))
     for l in plan.mundo.lugares:
         if l.id == entrada.id:
