@@ -141,3 +141,23 @@ def test_extension_de_capitulo_tiene_los_literales_de_definitions():
     """`SPEC-32` `RF-06`..`RF-08`: la extension se pregunta, con opciones cerradas.
     Los nombres son vocabulario; el rango de palabras de cada una, configuracion."""
     assert [e.value for e in enums.ExtensionDeCapitulo] == ["corta", "media", "larga"]
+
+
+# --- `SPEC-23`, `PLAN-23` A0: versiones, peticiones y reverificacion --------
+
+
+def test_los_valores_de_estado_de_verificacion_son_los_de_definitions():
+    """`D-1`: `sin_reverificar` es un verde heredado y **no cuenta como verde**.
+    No es un valor de `estado_de_escena`: no añade ninguna transicion a la maquina."""
+    assert [e.value for e in enums.EstadoDeVerificacion] == [
+        "verificada", "sin_reverificar", "fallida"]
+
+
+def test_los_valores_de_salida_de_regeneracion_son_los_de_definitions():
+    """`S-1` y `S-2`: las dos salidas entre las que decide la medida."""
+    assert [s.value for s in enums.SalidaDeRegeneracion] == ["cascada", "selectiva"]
+
+
+def test_los_valores_de_clase_de_peticion_son_los_de_definitions():
+    """`C-4`: se pide un cambio de un hecho o un cambio de nombre, y nada mas."""
+    assert [c.value for c in enums.ClaseDePeticion] == ["hecho", "nombre"]
