@@ -122,7 +122,9 @@ def main(argv=None):
                     + ag["revisor"].delegaciones)
 
     print("\n=== PLAN ===")
-    print("aprobado en la ronda {0}".format(r["plan"].version))
+    print("aprobado en la ronda {0}{1}".format(
+        r["plan"].version, " (reutilizado al reanudar: no se volvio a planificar)"
+        if r["plan"].reutilizado else ""))
     print("\n=== CAPITULOS ===")
     print("hechos: {0}".format(", ".join(g.escenas_hechas) or "(ninguno)"))
     print("rendidos: {0}".format(g.rendidas or "(ninguno)"))

@@ -423,3 +423,14 @@ def test_el_codigo_de_salida_es_1_si_la_puerta_no_abre():
     assert guion.codigo_de_salida({"publicacion": Publicacion(True, 1)}) == 0
     assert guion.codigo_de_salida({"publicacion": Publicacion(False, 3, {"motivo": "tope"})}) == 1
     assert guion.codigo_de_salida({"publicacion": None}) == 0, "sin puerta (--capitulos), no es un fallo"
+
+
+def test_relanzar_escribir_no_vuelve_a_planificar(con, tmp_path):
+    agentes = _agentes()
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    llamadas = (len(agentes["planificador"].llamadas), len(agentes["revisor"].llamadas))
+    r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path))
+    assert (len(agentes["planificador"].llamadas), len(agentes["revisor"].llamadas)) == llamadas
+    assert r["plan"].reutilizado

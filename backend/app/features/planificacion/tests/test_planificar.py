@@ -131,3 +131,26 @@ def test_el_prompt_del_planificador_lleva_la_longitud_elegida(con):
                        Agente([{"aprobado": True, "objeciones": []}]))
     assert "1350" in planificador.llamadas[0] and "1500" in planificador.llamadas[0]
     assert "1000" not in planificador.llamadas[0]
+
+
+# --- Reanudar sin volver a planificar -------------------------------------------
+
+def test_con_un_plan_aprobado_se_reutiliza_sin_llamar_a_nadie(con):
+    """Relanzar tras una caida volvia a pagar al Planificador y al Revisor, y el
+    plan nuevo podia no cuadrar con la obra ya montada: el checkpoint que pide el
+    enunciado tiene que reanudar, no rehacer."""
+    primero = service.reanudar_o_planificar(con, "obra-x", ficha(), Agente([_plan()]),
+                                            Agente([APROBADO]))
+    planificador, revisor = Agente([_plan()]), Agente([APROBADO])
+    segundo = service.reanudar_o_planificar(con, "obra-x", ficha(), planificador, revisor)
+    assert planificador.llamadas == [] and revisor.llamadas == []
+    assert segundo.reutilizado and not primero.reutilizado
+    assert segundo.version == primero.version
+    assert segundo.plan == primero.plan
+    assert segundo.titulo == "El mapa de Irene"
+
+
+def test_sin_plan_aprobado_se_planifica(con):
+    r = service.reanudar_o_planificar(con, "obra-x", ficha(), Agente([_plan()]),
+                                      Agente([APROBADO]))
+    assert r.version == 1 and not r.reutilizado

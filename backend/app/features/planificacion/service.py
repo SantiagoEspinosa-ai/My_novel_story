@@ -80,6 +80,8 @@ class PlanAprobado:
     version: int
     titulo: str
     premisa: str
+    reutilizado: bool = False
+    """Se tomo de `plan_de_obra` al reanudar, sin volver a planificar."""
 
 
 def _objeciones(lista):
@@ -142,3 +144,22 @@ def planificar(con, obra, ficha, planificador, revisor,
     raise PlanNoAprobado(
         "el plan no se aprobo en {0} rondas; las ultimas objeciones: {1}".format(
             tope, "; ".join(anteriores)))
+
+
+def reanudar_o_planificar(con, obra, ficha, planificador, revisor,
+                          tope=config.TOPE_REVISIONES_DE_PLAN, **kw) -> PlanAprobado:
+    """El plan aprobado de la obra si ya lo tiene; si no, se planifica.
+
+    Relanzar tras una caida volvia a pagar al Planificador y al Revisor, y el
+    plan nuevo podia no cuadrar con la obra ya montada, que `montar` no reinicia.
+    El checkpoint que pide el enunciado tiene que reanudar, no rehacer. El
+    titulo y la premisa salen de la ficha (`SPEC-25` v3), asi que no hace falta
+    guardarlos con el plan.
+    """
+    repo.asegurar_tablas(con)
+    plan = repo.aprobado(con, obra)
+    if plan is None:
+        return planificar(con, obra, ficha, planificador, revisor, tope=tope, **kw)
+    version = con.execute("SELECT MAX(version) FROM plan_de_obra WHERE obra = ? AND "
+                          "aprobado = 1", (obra,)).fetchone()[0]
+    return PlanAprobado(plan, version, ficha.titulo, ficha.premisa, reutilizado=True)

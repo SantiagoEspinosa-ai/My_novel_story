@@ -240,10 +240,10 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
     from app.features.politica import repository as politica
 
     sistema = sistema or carga.cargar_sistema()
-    aprobado = planificacion.planificar(con, obra, ficha, agentes["planificador"],
-                                        agentes["revisor"],
-                                        tope=sistema.topes.revisiones_de_plan,
-                                        sistema=sistema)
+    # Reanudar no rehace el plan: si la obra ya tiene uno aprobado, se usa ese.
+    aprobado = planificacion.reanudar_o_planificar(
+        con, obra, ficha, agentes["planificador"], agentes["revisor"],
+        tope=sistema.topes.revisiones_de_plan, sistema=sistema)
     montar(con, obra, ficha, aprobado, sistema)
 
     politica.asegurar_tablas(con)
