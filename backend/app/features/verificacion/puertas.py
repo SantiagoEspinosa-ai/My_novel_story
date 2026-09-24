@@ -88,12 +88,16 @@ def verificar(escena, delta, mundo):
     # deja la propia escena: un desaparecido que reaparece en ella, y el delta lo dice, puede
     # estar presente. Punto ciego, el de siempre: las puertas leen el delta, no la prosa, y
     # una vuelta que el delta declara y el texto no cuenta pasa.
-    vital = dict(mundo["entidades_vivas"]) if presentes else {}
+    # `F-148`: esa formulacion solo miraba la reaparicion. Un vivo que desaparece o muere
+    # en la escena es el mismo acto por el otro lado, asi que pasa quien esta vivo **antes
+    # o despues** de los cambios de su escena. El que no lo esta en ninguno de los dos, no.
+    antes = dict(mundo["entidades_vivas"]) if presentes else {}
+    vital = dict(antes)
     for c in (delta or {}).get("cambios_de_estado_vital", []) or []:
         if c.get("personaje") and c.get("a"):
             vital[c["personaje"]] = c["a"]
     for p in presentes:
-        if vital.get(p) != "vivo":
+        if vital.get(p) != "vivo" and antes.get(p) != "vivo":
             h.append(_hallazgo("INV-02", escena["id"],
                                "{0} esta presente y su estado_vital es {1}".format(
                                    p, vital.get(p))))

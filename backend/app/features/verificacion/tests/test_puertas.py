@@ -275,3 +275,27 @@ def test_inv02_un_desaparecido_que_la_escena_no_devuelve_sigue_bloqueando():
            "personajes_presentes": ["gato"], "lugar": "salon"}
     assert any(x.invariante == "INV-02"
                for x in puertas.verificar(esc, {}, _mundo_con_gato()))
+
+
+def test_inv02_un_vivo_que_desaparece_en_la_escena_puede_estar_presente():
+    """`F-148`, el espejo del de arriba. La formulacion de `F-79` -cuenta el estado que deja
+    la escena- solo miraba la reaparicion: un personaje presente que desaparece durante la
+    escena quedaba presente y desaparecido, y la demo de la cascada paro en el capitulo 8.
+    Pasa si esta vivo antes **o** despues de los cambios de su escena."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "vinculo", "signo": "negativo"},
+           "personajes_presentes": ["marta"], "lugar": "salon"}
+    delta = {"cambios_de_estado_vital": [{"personaje": "marta", "de": "vivo",
+                                          "a": "desaparecido"}]}
+    assert not [x for x in puertas.verificar(esc, delta, _mundo())
+                if x.invariante == "INV-02"]
+
+
+def test_inv02_quien_no_esta_vivo_ni_antes_ni_despues_sigue_bloqueando():
+    """La otra cara: el arreglo de `F-148` no deja pasar a un desaparecido que la escena no
+    devuelve, aunque el delta cambie su estado a otro que tampoco es `vivo`."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "vinculo", "signo": "negativo"},
+           "personajes_presentes": ["gato"], "lugar": "salon"}
+    delta = {"cambios_de_estado_vital": [{"personaje": "gato", "de": "desaparecido",
+                                          "a": "muerto"}]}
+    assert any(x.invariante == "INV-02"
+               for x in puertas.verificar(esc, delta, _mundo_con_gato()))
