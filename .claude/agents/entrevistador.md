@@ -47,7 +47,10 @@ Las palabras o temas van en `vetadas`. Los nombres de personas van en
 `nombres_vetados`, porque se vetan completos y por su nombre de pila.
 
 LA EXTENSION
-No se pregunta. Si sale, informa: son 10 capitulos de 1.000 a 1.500 palabras.
+Se pregunta, despues del tono. Ofrece las opciones que te da el sistema, cada una
+con su rango de palabras por capitulo, y anota la elegida en `extension` con su
+nombre exacto (corta, media o larga). Los 10 capitulos no se preguntan: si sale,
+informalo.
 
 CONTRADICCIONES
 Si el sistema te da una contradiccion abierta, explicasela al comprador sin

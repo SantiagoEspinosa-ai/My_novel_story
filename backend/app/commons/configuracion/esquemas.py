@@ -440,11 +440,11 @@ def rango_de_palabras(extension=None, sistema=None) -> tuple:
     """
     if extension is None:
         return PALABRAS_POR_CAPITULO
-    opciones = sistema.extensiones if sistema is not None else _extensiones_por_defecto()
+    opciones = sistema.extensiones if sistema is not None else extensiones_por_defecto()
     return tuple(opciones[enums.ExtensionDeCapitulo(extension)])
 
 
-def _extensiones_por_defecto():
+def extensiones_por_defecto():
     return {enums.ExtensionDeCapitulo.CORTA: (1000, 1150),
             enums.ExtensionDeCapitulo.MEDIA: (1150, 1350),
             enums.ExtensionDeCapitulo.LARGA: (1350, 1500)}
@@ -462,7 +462,7 @@ class ConfiguracionDelSistema(_DelDominio):
         default_factory=ReglasDeContradiccion)
     edicion: Edicion = Field(default_factory=Edicion)
     extensiones: dict[enums.ExtensionDeCapitulo, tuple[int, int]] = Field(
-        default_factory=_extensiones_por_defecto,
+        default_factory=extensiones_por_defecto,
         description="`SPEC-32` `RF-07`: palabras por capitulo de cada opcion")
 
     @model_validator(mode="after")

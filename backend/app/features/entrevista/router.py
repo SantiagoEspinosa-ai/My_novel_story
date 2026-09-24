@@ -66,6 +66,11 @@ def _reglas():
     return carga.cargar_sistema().contradicciones
 
 
+def _extensiones():
+    """`SPEC-32` `RF-07`: las opciones que se ofrecen salen de `sistema.json`."""
+    return carga.cargar_sistema().extensiones
+
+
 def _existe(con, id_e):
     if repo.leer(con, id_e) is None:
         raise HTTPException(404, "no existe la entrevista {0}".format(id_e))
@@ -106,7 +111,7 @@ def turno(id_e: str, entrada: RespuestaEntrada, request: Request,
     id_t = cola.encolar(con, "turno_de_entrevista", {"entrevista": id_e})
     tareas.add_task(_ejecutar, _ruta(request), id_t, lambda c: turno_a_dict(
         service.turno(c, id_e, entrada.respuesta, fabrica(), reglas,
-                      date.today().year)))
+                      date.today().year, extensiones=_extensiones())))
     return {"id_trabajo": id_t}
 
 

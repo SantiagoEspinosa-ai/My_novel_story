@@ -184,3 +184,41 @@ def test_una_entrevista_cerrada_no_admite_turnos(con):
     service.cerrar(con, e.id)
     with pytest.raises(service.EntrevistaCerrada):
         _turno(con, e.id, Entrevistador([_dice(ficha_completa())]))
+
+
+# --- `SPEC-32` `RF-06`, `RF-07`: la extension se pregunta ------------------------
+
+def test_la_primera_pregunta_no_fija_las_palabras(con):
+    """Antes anunciaba «de 1000 a 1500 palabras cada uno»: la extension no se
+    preguntaba, se informaba. Ahora se pregunta; los diez capitulos si se anuncian."""
+    e = service.crear(con)
+    assert "10 capitulos" in e.pregunta
+    assert "palabras" not in e.pregunta
+
+
+def test_el_prompt_ofrece_las_tres_opciones_de_extension(con):
+    e = service.crear(con)
+    agente = Entrevistador([_dice(ficha_completa())])
+    _turno(con, e.id, agente)
+    prompt = agente.llamadas[0]
+    assert "no se pregunta" not in prompt
+    for opcion, (desde, hasta) in (("corta", (1000, 1150)), ("media", (1150, 1350)),
+                                   ("larga", (1350, 1500))):
+        assert "{0}: de {1} a {2} palabras".format(opcion, desde, hasta) in prompt
+
+
+def test_las_opciones_del_prompt_salen_de_la_configuracion(con):
+    """Si el prompt tuviera los rangos escritos, cambiar `sistema.json` no
+    cambiaria lo que se le ofrece al comprador: dos copias que divergen."""
+    from app.commons.dominio.enumeraciones import ExtensionDeCapitulo as X
+    e = service.crear(con)
+    agente = Entrevistador([_dice(ficha_completa())])
+    service.turno(con, e.id, "r", agente, REGLAS, anio_actual=2026, extensiones={
+        X.CORTA: (1000, 1100), X.MEDIA: (1100, 1300), X.LARGA: (1300, 1500)})
+    assert "corta: de 1000 a 1100 palabras" in agente.llamadas[0]
+
+
+def test_la_ficha_cerrada_lleva_la_extension_elegida(con):
+    e = service.crear(con)
+    _turno(con, e.id, Entrevistador([_dice(ficha_completa(extension="larga"))]))
+    assert service.cerrar(con, e.id).extension.value == "larga"
