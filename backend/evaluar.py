@@ -354,6 +354,10 @@ def main(argv=None, dobles=None):
 
     def seguir(numero, coste):
         anotar_plan()
+        if not coste.get("delegaciones"):
+            # `F-119`: un capitulo que se salto al reanudar no gasto nada; anotarlo con
+            # cero pisaba lo que ya estaba medido.
+            return libro.puede_empezar(con_libro, techo)
         anotar(str(numero), obra, coste)
         for k in anotado:
             anotado[k] += coste.get(k) or 0

@@ -55,10 +55,15 @@ def test_un_tramo_sin_ninguna_delegacion_con_coste_se_guarda_sin_medir(con):
     assert libro.texto_del_total(libro.gastado(con)).startswith("sin medir")
 
 
-def test_anotar_dos_veces_el_mismo_tramo_no_lo_suma_dos_veces(con):
+def test_anotar_dos_veces_el_mismo_tramo_suma_los_dos_gastos(con):
+    """`F-119`: esta prueba decia lo contrario -«anotar dos veces no lo suma»-, y esa regla
+    es la que, al reanudar, dejo que los capitulos saltados pisaran lo medido. Se reescribe:
+    cada anotacion es gasto nuevo (el intento parado y el que termina), y lo que no gasto
+    nada no se anota."""
     _anotar(con, capitulo="1", usd=1.0)
     _anotar(con, capitulo="1", usd=1.0)
-    assert libro.gastado(con).usd == 1.0
+    assert libro.gastado(con).usd == 2.0
+
 
 
 def test_la_pasada_es_antes_o_despues(con):

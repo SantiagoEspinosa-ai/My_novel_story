@@ -122,3 +122,31 @@ antes de gastar una novela entera. Todas con coste medido:
 **Gastado hasta aquí contra el techo de 150 USD de `SPEC-31`**: 2,1650 de `R0` más 0,2429 de
 diagnóstico, **2,4079 USD**. Es la suma de lo leído; no incluye ninguna ejecución de otras
 sesiones.
+
+## R1 · La novela de ejemplo, completa y publicada (2026-09-24)
+
+`evaluar.py harness/evals/brief-base.json --pasada antes --confirmo-el-gasto`, y después
+`--reanudar brief-base-antes-1`. Datos inventados (`ejemplos/brief-ejemplo.json`). Obra
+`brief-base-antes-1`, en su propia base.
+
+| Cifra | Valor | ¿Qué mide? |
+| --- | --- | --- |
+| Rondas del plan | **1** | Aprobado a la primera |
+| Primera ejecución | 8 capítulos, parada en el 9 por `INV-02` (`F-79`) | El reencuentro que la regla no dejaba escribir |
+| Reanudación | capítulos 9 y 10 y la puerta | **El checkpoint, ejercido por primera vez con datos reales**: no se volvió a planificar, y el `INV-02` del intento parado quedó `resuelto` (`F-118`) |
+| Publicación | **publicada**, ronda 1 de la puerta, Lean `0` | Primera versión de una novela regalo que pasa la puerta |
+| Coste de la novela entera | **16,8905 USD en 36 delegaciones, todas con coste medido** | Libro de gasto y Langfuse, iguales. Incluye el plan, los diez capítulos, el intento parado del 9 (1,107342) y el cierre |
+| Tiempo | 1.949 s la primera ejecución y 462 s la reanudación | Sin las decisiones y arreglos de en medio |
+| Hallazgos abiertos | 2 `INV-17` `mayor` (capítulos 3 y 5, fuera del rango de palabras) y 7 `INV-25` `menor` | No bloquean la publicación |
+
+**Cómo leer el coste.** Es una novela, no una media: con el Editor juzgando de verdad, cada
+capítulo puede pedir hasta tres reescrituras, y cuántas pide cambia de brief a brief. Es la cifra
+que el libro usa como «mayor coste medido de una novela completa» para decidir cuántos briefs caben.
+
+**Lo que no está limpio, dicho.**
+- **Dos códigos.** Los capítulos 1 a 8 se escribieron con `f986cf5`; el 9, el 10 y la puerta, con
+  `8ed4680` (con los arreglos de `F-79`, `F-113`, `F-117` y `F-118`). La procedencia de la base
+  guarda una sola versión y no pisa, así que dice `f986cf5` para toda la obra: **es una limitación
+  conocida** (la procedencia es una por base; `PLAN-23` hallazgo 18).
+- **El libro se reparó a mano**, con `anotar`, tras `F-119`. Cuadra con Langfuse, que no se tocó.
+- **La traza del intento parado del 9 se perdió** (`F-120`); su coste no.

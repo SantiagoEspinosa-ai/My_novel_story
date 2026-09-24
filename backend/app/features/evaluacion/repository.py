@@ -52,8 +52,12 @@ def asegurar_tablas(con: sqlite3.Connection):
 
 def anotar(con, ejecucion, brief, pasada, capitulo, usd, delegaciones, sin_coste,
            version_del_escritor=None, obra=None, base=None):
-    """`capitulo` es el numero del capitulo, o `entrevista`, `plan` o `cierre`. Anotar
-    otra vez el mismo tramo lo sustituye: relanzar no suma dos veces lo mismo."""
+    """`capitulo` es el numero del capitulo, o `entrevista`, `plan` o `cierre`.
+
+    `F-119`: anotar otra vez el mismo tramo **suma**. Antes lo sustituia, y al reanudar
+    la novela de ejemplo los capitulos 1 a 8 -saltados, con coste 0- pisaron 11,9010 USD
+    medidos. Cada anotacion es gasto nuevo: el intento parado de un capitulo y el que lo
+    termina son dos. Lo que no gasto nada no se anota (`evaluar.py`)."""
     if pasada not in PASADAS:
         raise ValueError("la pasada es {0}, no «{1}»".format(" o ".join(PASADAS), pasada))
     capitulo = str(capitulo)
@@ -63,10 +67,19 @@ def anotar(con, ejecucion, brief, pasada, capitulo, usd, delegaciones, sin_coste
     medido = usd if delegaciones > sin_coste else None
     asegurar_tablas(con)
     with con:
+        # Un `usd` a NULL es «sin medir», no cero: sumarlo con otro da el otro, y dos
+        # nulos siguen siendo nulo. `sin_coste` y `delegaciones` dicen si es un suelo.
         con.execute(
-            "INSERT OR REPLACE INTO gasto_de_evaluacion (ejecucion, brief, pasada, capitulo, "
+            "INSERT INTO gasto_de_evaluacion (ejecucion, brief, pasada, capitulo, "
             "usd, delegaciones, sin_coste, version_del_escritor, obra, base) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(ejecucion, capitulo) DO UPDATE SET "
+            "usd = CASE WHEN usd IS NULL AND excluded.usd IS NULL THEN NULL "
+            "           ELSE COALESCE(usd, 0) + COALESCE(excluded.usd, 0) END, "
+            "delegaciones = delegaciones + excluded.delegaciones, "
+            "sin_coste = sin_coste + excluded.sin_coste, "
+            "version_del_escritor = excluded.version_del_escritor, "
+            "cuando = datetime('now')",
             (ejecucion, brief, pasada, capitulo, medido, delegaciones, sin_coste,
              version_del_escritor, obra, base))
 

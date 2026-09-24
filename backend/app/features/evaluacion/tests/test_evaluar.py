@@ -244,3 +244,24 @@ def test_reanudar_una_ejecucion_que_no_existe_se_niega(tmp_path, capsys):
                                 "--reanudar", "brief-base-antes-7"),
                           dobles=_dobles(_Llamados()))
     assert codigo == 5 and "brief-base-antes-7" in capsys.readouterr().out
+
+
+def test_reanudar_no_pisa_lo_anotado_y_suma_el_intento_parado(tmp_path, capsys):
+    """`F-119`: al reanudar, `seguir` anotaba otra vez los capitulos saltados, con coste 0, y
+    el libro los **sustituia**: en la novela de ejemplo se borraron 11,9010 USD medidos de los
+    capitulos 1 a 8, sin que nada fallara. Y el intento parado de un capitulo y el que lo
+    termina son dos gastos: se suman, no se pisan."""
+    evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto"),
+                 dobles=_dobles(_ConPovMalUnaVez()))
+    antes = {f["capitulo"]: (f["usd"], f["delegaciones"])
+             for f in libro.filas(sqlite3.connect(str(tmp_path / "evaluacion.db")))}
+    evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto",
+                       "--reanudar", "brief-base-antes-1"), dobles=_dobles(_Llamados()))
+    capsys.readouterr()
+    filas = libro.filas(sqlite3.connect(str(tmp_path / "evaluacion.db")))
+    despues = {f["capitulo"]: (f["usd"], f["delegaciones"]) for f in filas}
+    for cap in ("1", "2"):
+        assert despues[cap] == antes[cap], "el capitulo {0} ya hecho no se toca".format(cap)
+    # El 3: una delegacion del intento parado y las tres del que lo termina. No se compara
+    # con `traza_de_delegacion`: al reanudar, la traza del intento parado se pisa (`F-120`).
+    assert (antes["3"][1], despues["3"][1]) == (1, 4), "el intento parado y el que termina"
