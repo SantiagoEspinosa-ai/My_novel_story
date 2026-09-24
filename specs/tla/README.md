@@ -318,7 +318,7 @@ contesta algo ilegible. `PasarSinVeredicto` y `PasarLimpio` son la misma acción
 (`Consolidar`), y lo que las distingue es `juzgado`. Es el camino que `F-76` recorrió de verdad
 en `R0`.
 
-**Cambio en el código:** ninguno; `F-113` es una decisión de contrato del autor.
+**Cambio en el código:** `F-113`, cerrado con la decisión del autor (`SPEC-30` v5, `RF-01` condición 5): un `INV-26` en `sin_veredicto` impide publicar y es reintentable, la corrección que este modelo ya tenía. La prueba que lo reproduce fue roja antes.
 
 ### CE-12 · El tope de delegaciones de la obra no salta nunca (`F-114`)
 

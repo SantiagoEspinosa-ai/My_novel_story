@@ -142,3 +142,21 @@ def test_un_evento_sin_capitulo_se_informa_y_no_se_pierde():
                                "detalle": "va antes"}], CAPITULOS, [])
     assert r.por_capitulo == {}
     assert r.sin_capitulo == ["L-1: va antes"]
+
+
+def test_un_capitulo_que_el_editor_no_juzgo_no_publica():
+    """`F-113`, decision del autor (2026-09-24): un `INV-26` `sin_veredicto` -el Editor no
+    devolvio un juicio legible- impide publicar. *«No auditarse nunca gana por defecto.»*
+    Es el camino de `F-76` en `R0`: un capitulo aceptado sin que nadie lo juzgara."""
+    d = decidir(rendidos=[], hallazgos=[_h("INV-26", S.MAYOR, estado=EH.SIN_VEREDICTO)],
+                lean=LIMPIO)
+    assert not d.publica
+    c = d.condiciones[0]
+    assert (c.invariante, c.capitulo, c.reintentable) == ("INV-26", "cap-03", True)
+
+
+def test_una_nota_baja_del_editor_abierta_no_bloquea_la_publicacion():
+    """El control: un `INV-26` abierto es un juicio que se hizo y dio nota baja; sigue
+    siendo `mayor` y no impide publicar. Lo que impide es que no hubiera juicio."""
+    d = decidir(rendidos=[], hallazgos=[_h("INV-26", S.MAYOR)], lean=LIMPIO)
+    assert d.publica

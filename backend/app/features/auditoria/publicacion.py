@@ -100,6 +100,13 @@ def decidir(rendidos, hallazgos, lean, no_ejecutadas=NO_EJECUTADAS) -> Decision:
     condiciones += [Condicion("RF-01.4", "INV-27", h.get("capitulo"),
                               h.get("descripcion", ""), True)
                     for h in abiertos if h["invariante"] == "INV-27"]
+    # `F-113`, decision del autor (2026-09-24): un capitulo que el Editor no llego a juzgar
+    # no se publica. «No auditarse nunca gana por defecto.» Reintentable: reescribir el
+    # capitulo lo vuelve a pasar por el Editor.
+    condiciones += [Condicion("RF-01.5", "INV-26", h.get("capitulo"),
+                              h.get("descripcion", ""), True)
+                    for h in hallazgos
+                    if h["invariante"] == "INV-26" and h["estado"] is EH.SIN_VEREDICTO]
     return Decision(publica=not condiciones, condiciones=condiciones,
                     no_ejecutadas=[NoEjecutada(i, m) for i, m in no_ejecutadas])
 

@@ -5,10 +5,13 @@ estado: aplicada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-23
-version: 4
+version: 5
 fecha_aplicacion: 2026-09-24
 commit_de_aplicacion: a8b8311
 ---
+
+> **v5 (2026-09-24), decisión del autor en sesión** (`F-113`, encontrado por TLC en `CE-11`):
+> `RF-01` gana la condición 5. La spec sigue aplicada; el cambio va en su propio commit.
 
 > **Historial.** v1: redactada con la decisión del autor sobre la rendición
 > (2026-09-23), con `O-1` a `O-3` abiertas. v2: el autor fija el tope en 2, decide
@@ -58,7 +61,9 @@ capítulo. Cuántas novelas caen ahí está **sin medir**.
   2. no queda abierta ninguna invariante `bloqueante` de nivel capítulo ni de
      nivel obra (`INV-24` entre ellas);
   3. Lean devuelve `0`;
-  4. no queda abierto ningún hallazgo de obra del Editor (`RF-07`).
+  4. no queda abierto ningún hallazgo de obra del Editor (`RF-07`);
+  5. **ningún capítulo quedó sin juicio del Editor**: un `INV-26` en `sin_veredicto` impide
+     publicar, y es reintentable. *«No auditarse nunca gana por defecto.»*
 - **RF-02.** Lean se ejecuta **de forma automática** al llegar a la puerta, sobre
   un fichero generado desde la story bible en SQLite, y su código de salida es el
   veredicto. Nadie lo lanza a mano.
