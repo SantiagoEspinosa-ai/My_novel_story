@@ -40,6 +40,19 @@ def test_las_palabras_en_minuscula_no_cuentan_como_nombres():
     assert p.nombres_mal_escritos("una irena de papel", ["Irene"]) == []
 
 
+def test_una_palabra_comun_con_mayuscula_no_es_errata_si_el_texto_la_usa_en_minuscula():
+    """`F-71`: con «Nala», «Nada» a principio de frase era una errata del nombre. Si el
+    propio texto escribe «nada» en minuscula, es una palabra, no un nombre."""
+    assert p.nombres_mal_escritos("Nada salio bien, y no quedo nada. Llego Nala.",
+                                  ["Nala"]) == []
+
+
+def test_la_errata_de_verdad_se_sigue_detectando_junto_a_palabras_comunes():
+    [m] = p.nombres_mal_escritos("Nada salio bien, y no quedo nada. Llego Nela.",
+                                 ["Nala"])
+    assert m.escrito == "Nela" and m.correcto == "Nala"
+
+
 def test_una_clave_con_otro_plural_o_acento_cuenta_como_presente():
     imp = [{"elemento": "viaje", "palabras_clave": ["tren", "Lisboa"]}]
     assert p.claves_ausentes("Los trenes iban a Lisbóa.", imp) == []

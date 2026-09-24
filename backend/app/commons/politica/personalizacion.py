@@ -63,10 +63,16 @@ def nombres_mal_escritos(texto: str, nombres) -> list:
     """
     conocidas = sorted({parte for n in nombres for parte in n.split() if len(parte) >= 3})
     exactas = set(conocidas)
+    # `F-71`: una palabra que el propio texto usa en minuscula es una palabra, no un
+    # nombre: «Nada» a principio de frase no es una errata de «Nala». Punto ciego: una
+    # errata que coincida con una palabra comun usada en minuscula en el texto pasa.
+    en_minuscula = {m.group() for m in PALABRA.finditer(texto) if m.group().islower()}
     encontrados = []
     for m in PALABRA.finditer(texto):
         palabra = m.group()
         if not palabra[0].isupper() or palabra in exactas:
+            continue
+        if palabra.lower() in en_minuscula:
             continue
         candidatas = [(_distancia(palabra.casefold(), c.casefold()), c) for c in conocidas]
         candidatas = [(d, c) for d, c in candidatas if 0 < d <= _tolerancia(c)
