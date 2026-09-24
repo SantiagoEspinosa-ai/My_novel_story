@@ -1,0 +1,46 @@
+{
+  "obra": "brief-base-antes-1",
+  "umbral": 3,
+  "sesgo": "a la baja, hacia S-1",
+  "medido": true,
+  "commit": "f986cf5",
+  "arrastre_medio": 2.3333333333333335,
+  "numerador": 7,
+  "denominador": 3,
+  "salida": "cascada",
+  "detalle": [
+    {
+      "hecho": "imp-01",
+      "origen": "imprescindible",
+      "capitulos": [
+        "brief-base-antes-1-cap-01",
+        "brief-base-antes-1-cap-07",
+        "brief-base-antes-1-cap-08"
+      ],
+      "capitulos_por_mencion": 3,
+      "usos_sin_capitulo": 0
+    },
+    {
+      "hecho": "imp-02",
+      "origen": "imprescindible",
+      "capitulos": [
+        "brief-base-antes-1-cap-02"
+      ],
+      "capitulos_por_mencion": 1,
+      "usos_sin_capitulo": 0
+    },
+    {
+      "hecho": "imp-03",
+      "origen": "imprescindible",
+      "capitulos": [
+        "brief-base-antes-1-cap-01",
+        "brief-base-antes-1-cap-04",
+        "brief-base-antes-1-cap-07"
+      ],
+      "capitulos_por_mencion": 3,
+      "usos_sin_capitulo": 0
+    }
+  ],
+  "reescritas_tras_consolidar": [],
+  "acta_sin_version": []
+}

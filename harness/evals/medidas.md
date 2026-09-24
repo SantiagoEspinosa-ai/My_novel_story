@@ -150,3 +150,18 @@ que el libro usa como «mayor coste medido de una novela completa» para decidir
   conocida** (la procedencia es una por base; `PLAN-23` hallazgo 18).
 - **El libro se reparó a mano**, con `anotar`, tras `F-119`. Cuadra con Langfuse, que no se tocó.
 - **La traza del intento parado del 9 se perdió** (`F-120`); su coste no.
+
+## Concurrencia: dos ejecuciones a la vez caben en 100.000 tokens (2026-09-24)
+
+Regla del autor: en serie, salvo que la medida diga que dos a la vez caben. Medido sobre las 36
+delegaciones de `R1`:
+
+| Cifra | Valor |
+| --- | --- |
+| Lo que ensambla el harness por delegación (`tokens_para_recortar`), máximo | 3.264 |
+| Entrada más salida del sobre por delegación (`tokens_estimados`), máximo | 8.696 (Escritor; Editor 4.552, Resumidor 4.580) |
+| Contexto propio de Claude Code en caché, en una delegación medida (`cache_creation_input_tokens`) | 21.231 |
+| **Dos ejecuciones a la vez, cota** | 2 × (8.696 + 21.231) = **59.854** |
+
+Cabe con holgura, así que los cuatro briefs van **de dos en dos**. La cota sesga **al alza**: suma
+el máximo de cada agente como si coincidieran, y la caché de Claude Code de una sola delegación.

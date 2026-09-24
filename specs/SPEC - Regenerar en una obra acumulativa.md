@@ -6,9 +6,14 @@ aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
-version: 3
+version: 4
 ---
 
+> **v4 (2026-09-24), la medida (`PLAN-23` B1):** arrastre medio **2,33 capítulos** (7/3) sobre la novela
+> de ejemplo `brief-base-antes-1`, generada con `f986cf5` (`harness/evals/arrastre-SPEC-23.json`), **con sesgo a la
+> baja, hacia `S-1`**, y con solo 3 hechos con usos, los tres imprescindibles. Con la regla de v2 (≤ 3), la
+> salida es **`S-1`, cascada**. La regla ya estaba escrita antes de ver el número: el número decide.
+>
 > **Historial.** v1: en revisión, con `D-1`, `D-2` y `D-3` respondidas y la salida pendiente
 > del arrastre medido. v2 (2026-09-24): el autor fija el umbral en **3 capítulos** y aprueba la spec
 > antes de la medida, porque las versiones con identidad (`D-2`), guardar el delta (`G-05`) y la
