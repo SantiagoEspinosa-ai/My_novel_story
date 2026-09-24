@@ -103,20 +103,31 @@ def aplicar_conocimiento(con, escena, delta):
             (rev["sujeto"], rev["hecho"], escena, escena))
 
 
-def leer(con) -> dict:
+def leer(con, obra=None) -> dict:
     """El mundo en `t`, en la forma que esperan las puertas.
 
     No lee ningun texto: sale de las tablas que los deltas han ido dejando.
+
+    `F-100`, salida (a) del autor: con `obra`, solo las entidades, los lugares y el
+    conocimiento cuyo identificador lleva el prefijo de esa obra, que es como los deja
+    `planificacion.acotar_a_la_obra` desde `F-64`. Sin esto, la segunda novela de una base
+    recibia el mundo de la primera. **Solo vale donde los identificadores estan acotados**
+    -la novela regalo-: por eso es opcional, y la salida (b), una columna `obra` con su
+    migracion, queda anotada.
     """
     asegurar_tablas(con)
+    prefijo = (obra + "-%") if obra else "%"
     vivas, ubic = {}, {}
-    for id_e, vital, lugar in con.execute("SELECT id, vital, lugar FROM entidad"):
+    for id_e, vital, lugar in con.execute(
+            "SELECT id, vital, lugar FROM entidad WHERE id LIKE ?", (prefijo,)):
         vivas[id_e] = vital
         ubic[id_e] = lugar
-    accesos = {i: json.loads(a) for i, a in con.execute("SELECT id, accesos FROM lugar")}
+    accesos = {i: json.loads(a) for i, a in con.execute(
+        "SELECT id, accesos FROM lugar WHERE id LIKE ?", (prefijo,))}
     conocimiento = {}
     for s, h, desde, grado in con.execute(
-            "SELECT sujeto, hecho, desde_escena, grado FROM conocimiento"):
+            "SELECT sujeto, hecho, desde_escena, grado FROM conocimiento WHERE sujeto LIKE ?",
+            (prefijo,)):
         conocimiento[(s, h)] = {"desde": desde, "grado": grado}
     return {"entidades_vivas": vivas, "ubicaciones": ubic,
             "accesos": accesos, "conocimiento": conocimiento}

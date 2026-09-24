@@ -58,11 +58,8 @@ def _dos_novelas(tmp_path):
     return a, b, prompts_a, prompts_b
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "F-100: `consolidacion/mundo.leer(con)` no filtra por obra y `obra.reunir_material` lo "
-    "manda entero al Escritor: el prompt de la B lleva los personajes, los lugares y el "
-    "conocimiento de la A (`obra-a-per-rodrigo`, `obra-a-per-canela`). `entidad`, `lugar` y "
-    "`conocimiento` no tienen columna de obra: el arreglo decide algo y no es de este plan"))
+# `F-100`: fue un `xfail` estricto hasta que la salida (a) del autor -el mundo acotado por el
+# prefijo de obra en la novela regalo- lo hizo pasar; el `XPASS` estricto lo aviso.
 def test_la_segunda_novela_no_recibe_nada_de_la_primera(tmp_path):
     a, b, prompts_a, prompts_b = _dos_novelas(tmp_path)
     assert prompts_b, "la novela B tiene que haber llamado a algun agente"

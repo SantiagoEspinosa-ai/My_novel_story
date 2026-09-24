@@ -105,7 +105,7 @@ def _orden_de_capitulos(con, obra, version=None):
 
 
 def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=False,
-                    version=None):
+                    version=None, acotar_mundo=False):
     """Lo que hay disponible para montar el contexto de esta escena.
 
     `version` es la de la obra que se escribe; sin ella, la vigente. La memoria y la
@@ -173,7 +173,8 @@ def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=
         # no la tenga la 4 es un defecto, y con la misma cadena vacia nadie lo
         # veria.
         "falta_escena_anterior": orden > 1 and anterior is None,
-        "mundo": modulo_mundo.leer(con),
+        # `F-100` (a): el mundo de esta obra, donde sus identificadores estan acotados.
+        "mundo": modulo_mundo.leer(con, obra=obra_id if acotar_mundo else None),
         "problemas": repo.hallazgos_abiertos(con, escena["id"]),
         # Los de la version (`PLAN-23` A7): con el enunciado nuevo de su peticion y los
         # nombres nuevos de sus renombrados. `menciona` se calcula contra estos.
@@ -187,7 +188,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
                  vetadas=None, tope_vetadas=None, genero=None, nombres=None,
                  imprescindibles=None, editor=False, anterior_cruza_capitulo=False,
-                 observacion=None, tope_transporte=None, delegaciones_previas=0):
+                 observacion=None, tope_transporte=None, delegaciones_previas=0,
+                 acotar_mundo=False):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Con `observacion` (`SPEC-29` `RF-04`), cada intento deja sus scores.
@@ -258,7 +260,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
             return g
 
         material = reunir_material(con, escena, obra, inmutable,
-                                   anterior_cruza_capitulo=anterior_cruza_capitulo)
+                                   anterior_cruza_capitulo=anterior_cruza_capitulo,
+                                   acotar_mundo=acotar_mundo)
         bloques = ensamblado.montar(material)
         tamanos = ensamblado.tamanos(bloques)
 
@@ -727,7 +730,7 @@ def _mismo_delta(a, b):
 def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
                         instrucciones=None, inmutable="", techo=100_000, vetadas=None,
                         nombres=None, imprescindibles=None, anterior_cruza_capitulo=False,
-                        observacion=None):
+                        observacion=None, acotar_mundo=False):
     """Reescribe **solo el texto** de una escena ya consolidada, y lo acepta solo si
     los hechos no cambian (`SPEC-30` v4 `RF-10`, `C-1`; `SPEC-23` `S-3`).
 
@@ -745,7 +748,8 @@ def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
         repo.aceptar_reescritura(con, escena_id, repo.intentos_de(con, escena_id))
         escena = repo.escena(con, escena_id)
     material = reunir_material(con, escena, obra, inmutable,
-                               anterior_cruza_capitulo=anterior_cruza_capitulo)
+                               anterior_cruza_capitulo=anterior_cruza_capitulo,
+                               acotar_mundo=acotar_mundo)
     bloques = ensamblado.montar(material)
     tamanos = ensamblado.tamanos(bloques)
     try:

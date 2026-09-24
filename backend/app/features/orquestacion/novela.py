@@ -438,6 +438,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 tope_delegaciones=sistema.topes.delegaciones_por_obra,
                 tope_transporte=sistema.topes.reintentos_de_transporte,
                 delegaciones_previas=total.delegaciones,
+                acotar_mundo=True,
                 capitulo=cap, vetadas=vetadas, nombres=nombres,
                 imprescindibles=imprescindibles, editor=True, anterior_cruza_capitulo=True,
                 genero=ficha.genero.value if ficha.genero else None,
@@ -486,7 +487,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 inmutable=inmutable(ficha, aprobado.premisa),
                 techo=sistema.presupuesto.techo_de_contexto, vetadas=vetadas,
                 nombres=nombres, imprescindibles=imprescindibles,
-                anterior_cruza_capitulo=True, observacion=observacion)
+                anterior_cruza_capitulo=True, observacion=observacion, acotar_mundo=True)
 
         from app.features.orquestacion import progreso
         progreso.fijar(con, obra, "en_la_puerta", total=donde["total"])
