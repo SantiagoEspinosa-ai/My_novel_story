@@ -568,3 +568,35 @@ def test_el_juicio_de_la_obra_cuelga_del_cierre(con, tmp_path):
     cierre = [s for s in spans if s["nombre"] == "cierre"][0]
     assert [s for s in spans if s["tipo"] == "rol" and s.get("padre") == cierre["id"]]
     assert len([s for s in spans if s["nombre"] == "capitulo"]) == 10
+
+
+# --- `PLAN-29` E6: los scores de los validadores, en una generacion ---------------
+
+def test_una_generacion_observada_da_scores_de_la_puerta_del_editor_y_del_plan(con, tmp_path):
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), observacion=obs)
+    nombres = {s["nombre"] for s in _enviados(obs, "score")}
+    assert {"schema", "INV-01", "INV-17", "INV-22", "INV-26.tono"} <= nombres
+    assert {"schema.plan", "cobertura.plan", "revisor.plan"} <= nombres
+    assert all(s.get("capitulo") == 1 for s in _enviados(obs, "score")
+               if s["nombre"] == "INV-17")
+
+
+def test_la_novela_entera_da_scores_de_imprescindibles_y_del_cierre(con, tmp_path):
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), _agentes_para_la_novela_entera(),
+                    carpeta_de_reglas=str(tmp_path), lean=_LeanFijo(), observacion=obs)
+    scores = _enviados(obs, "score")
+    inv23 = [s for s in scores if s["nombre"] == "INV-23"]
+    assert inv23 and all(s["referencia"].startswith("imp-") for s in inv23)
+    assert {"INV-24", "INV-25", "INV-27"} <= {s["nombre"] for s in scores}
+
+
+def test_reanudar_no_reenvia_las_rondas_del_plan(con, tmp_path):
+    novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), observacion=obs)
+    assert not [s for s in _enviados(obs, "score") if s["nombre"].endswith(".plan")]

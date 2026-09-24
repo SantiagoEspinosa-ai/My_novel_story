@@ -49,7 +49,7 @@ from app.features.cronologia import extraccion
 from app.features.cronologia import repository as cronologia
 from app.features.contexto import ensamblado, recorte
 from app.features.escaleta import repository as repo
-from app.features.orquestacion import ciclo, rendicion
+from app.features.orquestacion import ciclo, observar, rendicion
 from app.commons.politica import auditoria
 from app.features.politica import repository as politica
 from app.commons.politica.vetadas import coincidencias
@@ -167,8 +167,12 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  techo=100_000, hasta=None, tope_intentos=None,
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
                  vetadas=None, tope_vetadas=None, genero=None, nombres=None,
-                 imprescindibles=None, editor=False, anterior_cruza_capitulo=False):
+                 imprescindibles=None, editor=False, anterior_cruza_capitulo=False,
+                 observacion=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
+
+    Con `observacion` (`SPEC-29` `RF-04`), cada intento deja sus scores.
+
 
     Cada escena tiene hasta `tope_intentos` (`TOPE_INTENTOS_ESCENA`), y los
     problemas de un intento entran en el prompt del siguiente: si no, el
@@ -248,7 +252,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                                 instrucciones, vetadas=vetadas,
                                 tope_vetadas=tope_vetadas, nombres=nombres,
                                 imprescindibles=(imprescindibles or {}).get(escena["id"]),
-                                es_editor=editor, textos=textos)
+                                es_editor=editor, textos=textos,
+                                observacion=observacion)
 
         if c.fallo:
             g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -413,7 +418,8 @@ def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
 
 def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id,
               techo, tope, g, instrucciones=None, vetadas=None, tope_vetadas=0,
-              nombres=None, imprescindibles=None, es_editor=False, textos=None):
+              nombres=None, imprescindibles=None, es_editor=False, textos=None,
+              observacion=None):
     """Hasta `tope` intentos, y los problemas de uno entran en el siguiente.
 
     Se para en cuanto sale limpia, y **tambien en cuanto una `bloqueante`
@@ -448,6 +454,7 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                            vetadas=vetadas, nombres=nombres,
                            imprescindibles=imprescindibles, es_editor=es_editor,
                            textos=textos)
+        observar.del_ciclo(observacion, c)
         g.delegaciones += ciclo.coste_total(c.trazas)["delegaciones"]
         # `F-49`: la traza sobrevive al proceso. Es lo que hace que la
         # contencion de `PC-9` -saber que bloques quedaron fuera- valga
@@ -661,7 +668,8 @@ def _mismo_delta(a, b):
 
 def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
                         instrucciones=None, inmutable="", techo=100_000, vetadas=None,
-                        nombres=None, imprescindibles=None, anterior_cruza_capitulo=False):
+                        nombres=None, imprescindibles=None, anterior_cruza_capitulo=False,
+                        observacion=None):
     """Reescribe **solo el texto** de una escena ya consolidada, y lo acepta solo si
     los hechos no cambian (`SPEC-30` v4 `RF-10`, `C-1`; `SPEC-23` `S-3`).
 
@@ -694,6 +702,7 @@ def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
                        imprescindibles=(imprescindibles or {}).get(escena_id),
                        es_editor=True, textos=ensamblado.aplicar_recorte(bloques, plan),
                        consolidar=False)
+    observar.del_ciclo(observacion, c)
     ciclo.guardar_trazas(con, c)
     if c.fallo:
         return {"aceptada": False, "motivo": c.fallo}

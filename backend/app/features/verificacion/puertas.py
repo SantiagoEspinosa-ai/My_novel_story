@@ -15,6 +15,10 @@ from app.commons.invariantes.registro import TODAS
 
 VERIFICADOR = "verificador_de_reglas"
 
+# `SPEC-29` `RF-04`: para enviar «pasa» hay que saber que se miro. Una prueba compara
+# esta lista con las que `verificar` puede emitir, para que no se desalineen.
+INVARIANTES_DE_LA_PUERTA = ("INV-01", "INV-02", "INV-03", "INV-04", "INV-17", "INV-18")
+
 
 def _hallazgo(inv, escena, descripcion):
     return Hallazgo(invariante=inv, verificador=VERIFICADOR, escena=escena,

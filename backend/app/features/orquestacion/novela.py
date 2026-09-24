@@ -17,6 +17,7 @@ from app.features.consolidacion import aplicar, deltas, memoria, mundo
 from app.features.cronologia import repository as usos
 from app.features.escaleta import repository as escaleta
 from app.features.observabilidad import repository as observabilidad
+from app.features.orquestacion import observar
 from app.features.orquestacion.obra import _texto_elegido
 
 
@@ -245,6 +246,15 @@ def _observados(agentes, observacion):
             for k, a in agentes.items()}
 
 
+def _scores_del_plan(con, obra, observacion):
+    """`SPEC-29` `RF-04`: las rondas del plan salen de `plan_de_obra`, que es donde
+    `planificar` deja cada una con su origen."""
+    if observacion is None:
+        return
+    from app.features.planificacion import repository as planes
+    observar.de_las_rondas_del_plan(observacion, planes.versiones(con, obra))
+
+
 def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=None,
              sistema=None, listas=None, lean=None, observacion=None):
     """Ficha → plan aprobado → obra montada → capitulos → cierre de la novela.
@@ -279,9 +289,15 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
     sistema = sistema or carga.cargar_sistema()
     # Reanudar no rehace el plan: si la obra ya tiene uno aprobado, se usa ese.
     with _grupo(observacion, "planificacion"):
-        aprobado = planificacion.reanudar_o_planificar(
-            con, obra, ficha, agentes["planificador"], agentes["revisor"],
-            tope=sistema.topes.revisiones_de_plan, sistema=sistema)
+        try:
+            aprobado = planificacion.reanudar_o_planificar(
+                con, obra, ficha, agentes["planificador"], agentes["revisor"],
+                tope=sistema.topes.revisiones_de_plan, sistema=sistema)
+        except planificacion.PlanNoAprobado:
+            _scores_del_plan(con, obra, observacion)
+            raise
+        if not aprobado.reutilizado:
+            _scores_del_plan(con, obra, observacion)
     montar(con, obra, ficha, aprobado, sistema)
 
     politica.asegurar_tablas(con)
@@ -325,7 +341,8 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 tope_delegaciones=sistema.topes.delegaciones_por_obra,
                 capitulo=cap, vetadas=vetadas, nombres=nombres,
                 imprescindibles=imprescindibles, editor=True, anterior_cruza_capitulo=True,
-                genero=ficha.genero.value if ficha.genero else None)
+                genero=ficha.genero.value if ficha.genero else None,
+                observacion=observacion)
         for campo in ("escenas_hechas", "rendidas", "saltadas", "sin_resumen",
                       "medidas", "trazas_no_guardadas"):
             getattr(total, campo).extend(getattr(g, campo))
@@ -351,7 +368,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 inmutable=inmutable(ficha, aprobado.premisa),
                 techo=sistema.presupuesto.techo_de_contexto, vetadas=vetadas,
                 nombres=nombres, imprescindibles=imprescindibles,
-                anterior_cruza_capitulo=True)
+                anterior_cruza_capitulo=True, observacion=observacion)
 
         with _grupo(observacion, "cierre"):
             publicada = puerta.publicar(
@@ -361,6 +378,8 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 tope=sistema.topes.reintentos_de_publicacion, vetadas=vetadas,
                 umbral_nombre=sistema.edicion.umbral_repeticion_nombre,
                 longitud_frase=sistema.edicion.longitud_frase_repetida)
+            for ev in publicada.evaluaciones or []:
+                observar.del_cierre(observacion, ev.cierre, ev.ronda)
         if publicada.evaluaciones:
             cierre = publicada.evaluaciones[0].cierre
     return {"plan": aprobado, "generacion": total, "cierre": cierre, "publicacion": publicada}

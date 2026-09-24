@@ -85,6 +85,11 @@ class Ciclo:
     trazas: list = field(default_factory=list)
     vetadas_encontradas: list = field(default_factory=list)
     nombres_encontrados: list = field(default_factory=list)
+    # `SPEC-29` `RF-04`: que se llego a comprobar, para no enviar «pasa» de lo que no
+    # se miro. Los imprescindibles, por su id: su elemento es dato del destinatario.
+    nombres_comprobados: bool = False
+    imprescindibles_comprobados: list = field(default_factory=list)
+    imprescindibles_ausentes: list = field(default_factory=list)
 
 
 def preparar_directorio_aislado(definicion, nombre="juez"):
@@ -249,13 +254,19 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
     # `INV-22` (`SPEC-26` `RF-13`): igual que `INV-21`, antes del Juez y con el
     # fragmento exacto, porque es el mismo tipo de error.
     if nombres:
+        c.nombres_comprobados = True
         c.nombres_encontrados = nombres_mal_escritos(texto, nombres)
         if c.nombres_encontrados:
             c.fallo = "nombre_mal_escrito"
             return c
     # `INV-23` (`RF-14`): `mayor`, asi que no para: entra en los hallazgos de
     # este intento, se guarda como los de la puerta y provoca otro intento.
-    for elemento, clave in claves_ausentes(texto, imprescindibles or []):
+    ausentes = claves_ausentes(texto, imprescindibles or [])
+    c.imprescindibles_comprobados = [i["id"] for i in imprescindibles or [] if i.get("id")]
+    c.imprescindibles_ausentes = sorted({i["id"] for i in imprescindibles or []
+                                         if i.get("id") and i["elemento"] in
+                                         {e for e, _ in ausentes}})
+    for elemento, clave in ausentes:
         h = Hallazgo(invariante="INV-23", verificador="verificador_de_reglas",
                      escena=escena_id, severidad=TODAS["INV-23"].severidad,
                      estado=EstadoDeHallazgo.ABIERTO,
