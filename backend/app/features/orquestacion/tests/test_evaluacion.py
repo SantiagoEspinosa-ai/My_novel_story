@@ -160,3 +160,24 @@ def test_una_novela_entera_con_dobles_da_pases_con_constancia(tmp_path):
     assert celdas["INV-06"].resultado is R.NO_EJECUTADO
     assert celdas["entrevista.instrucciones"].resultado is R.NO_APLICA
     assert celdas["INV-08"].resultado is R.SIN_VEREDICTO, "se evalua y no deja rastro"
+
+
+# --- `PLAN-31` E13: la puerta en la tabla (`SPEC-30`) --------------------------------
+
+def test_la_columna_de_la_puerta_sale_del_veredicto_de_la_puerta(con):
+    """La columna `publicacion` no se deduce de los hallazgos: la dice la ultima ronda de
+    `veredicto_de_publicacion`. Un capitulo rendido no deja ningun hallazgo nuevo y la
+    puerta no publica igual (`INV-29`); una segunda ronda que publica es un pase con un
+    disparo."""
+    _borrador(con)
+    escaleta.marcar_consolidada(con, "obra-x-e1")
+    decision = puerta.decidir(["obra-x-cap-01"], [], puerta.ResultadoLean(0))
+    veredictos.guardar(con, "obra-x", decision, 0)
+    celdas = evaluacion.resultados(con, "obra-x")
+    assert celdas["publicacion"].resultado is R.FALLO
+    assert celdas["INV-29"].resultado is R.FALLO
+    assert not [h for h in escaleta.hallazgos_de(con, "obra-x-e1")], "sin ningun hallazgo"
+    veredictos.guardar(con, "obra-x", puerta.decidir([], [], puerta.ResultadoLean(0)), 0)
+    celdas = evaluacion.resultados(con, "obra-x")
+    assert celdas["publicacion"].texto == "pasó (1 disparo)"
+    assert celdas["INV-29"].resultado is R.PASO
