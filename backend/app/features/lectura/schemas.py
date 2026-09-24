@@ -9,7 +9,8 @@ consta viaja nulo, nunca como cero ni como lista vacia (`RF-35`).
 from pydantic import BaseModel, Field
 
 from app.commons.dominio.enumeraciones import EstadoDeCapitulo, EstadoDeEscena
-from app.commons.dominio.enumeraciones import EstadoDeHallazgo, Severidad
+from app.commons.dominio.enumeraciones import EstadoDeHallazgo, EstadoVital, RolDramatico
+from app.commons.dominio.enumeraciones import Severidad
 
 
 class HallazgoAbierto(BaseModel):
@@ -81,3 +82,38 @@ class CapituloLeido(BaseModel):
     orden: int
     estado: EstadoDeCapitulo
     escenas: list[EscenaLeida] = Field(description="En orden de lectura")
+
+
+class CapituloEnlazado(BaseModel):
+    """Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo."""
+
+    id: str = Field(description="El id del Capitulo; nunca el de la obra (RF-37)")
+    orden: int
+
+
+class FichaDePersonaje(BaseModel):
+    """`Personaje` (`RF-43`). Lo que la base no guarda viaja nulo: «sin dato», no «ninguno»."""
+
+    id: str
+    nombre_canonico: str | None = Field(description="Nulo si la base no lo guarda (PLAN-27 E2)")
+    alias: list[str] | None = Field(description="Nulo: la base no guarda alias")
+    rol_dramatico: RolDramatico | None = Field(description="Nulo: la base no lo guarda")
+    estado_vital: EstadoVital | None
+    capitulos_donde_aparece: list[CapituloEnlazado] | None = Field(
+        description="Por participa_en y Capitulo.orden. Nulo si la obra no declara sus "
+                    "personajes_presentes: no declarado, que no es nadie (RF-44)")
+
+
+class FichaDeLugar(BaseModel):
+    """`Lugar` (`RF-43`)."""
+
+    id: str
+    nombre: str | None = Field(description="Nulo si la base no lo guarda (PLAN-27 E2)")
+    atmosfera: str | None = Field(description="Nula: la base no la guarda")
+    capitulos_donde_aparece: list[CapituloEnlazado] = Field(
+        description="Por ocurre_en y Capitulo.orden (RF-44)")
+
+
+class Fichas(BaseModel):
+    personajes: list[FichaDePersonaje]
+    lugares: list[FichaDeLugar]

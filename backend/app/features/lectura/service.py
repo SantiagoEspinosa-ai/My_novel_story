@@ -5,7 +5,7 @@ capitulo, si una escena se rindio y que hallazgos cuentan como abiertos. La inte
 pinta tal cual llega.
 """
 
-from app.commons.obra import texto
+from app.commons.obra import apariciones, texto
 from app.features.lectura import repository as repo
 from app.features.lectura import vista
 
@@ -51,3 +51,22 @@ def escena(con, id_escena):
     """La misma forma que dentro de su capitulo: una sola regla para las dos."""
     fila = repo.escena(con, id_escena)
     return None if fila is None else _escena_leida(con, fila)
+
+
+def fichas(con, id_obra):
+    """Las fichas de la obra, con los capitulos donde aparece cada entidad (`RF-43`, `RF-44`).
+
+    `alias`, `rol_dramatico` y `atmosfera` viajan nulos: la base no los guarda.
+    """
+    if repo.obra(con, id_obra) is None:
+        return None
+    de_personajes, declarados = apariciones.de_personajes(con, id_obra)
+    de_lugares = apariciones.de_lugares(con, id_obra)
+    personajes = [
+        dict(id=p, alias=None, rol_dramatico=None, **repo.canon_de_personaje(con, p),
+             capitulos_donde_aparece=de_personajes.get(p, []) if declarados else None)
+        for p in repo.personajes_de_la_obra(con, id_obra)]
+    lugares = [dict(id=id_l, atmosfera=None, **repo.canon_de_lugar(con, id_l),
+                    capitulos_donde_aparece=de_lugares.get(id_l, []))
+               for id_l in repo.lugares_de_la_obra(con, id_obra)]
+    return {"personajes": personajes, "lugares": lugares}

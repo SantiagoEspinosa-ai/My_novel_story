@@ -9,6 +9,8 @@ las hay (`escena.obra` y `escena.capitulo`): con una obra por capitulo, pregunta
 una de las dos salia bien por accidente (Regla 11, `SPEC-22` `RF-37`).
 """
 
+import json
+
 HALLAZGO_ABIERTO = ("abierto", "sin_veredicto")
 
 
@@ -60,3 +62,53 @@ def hallazgos_abiertos(con, id_escena):
                 "SELECT invariante, verificador, severidad, estado, descripcion "
                 "FROM hallazgo WHERE escena = ? AND estado IN (?, ?) ORDER BY id",
                 (id_escena,) + HALLAZGO_ABIERTO)]
+
+
+def _columnas(con, tabla):
+    return {f[1] for f in con.execute("PRAGMA table_info({0})".format(tabla))}
+
+
+def personajes_de_la_obra(con, id_obra):
+    """Los `id` de personaje que las escenas de la obra nombran (pov y presentes).
+
+    `entidad` no tiene columna de obra (`F-64`), asi que no se listan sus filas: saldrian
+    los personajes de todas las obras de la base.
+    """
+    ids = set()
+    for pov, presentes in con.execute(
+            "SELECT pov, personajes_presentes FROM escena WHERE obra = ?", (id_obra,)):
+        if pov:
+            ids.add(pov)
+        if presentes:
+            ids.update(json.loads(presentes))
+    return sorted(ids)
+
+
+def lugares_de_la_obra(con, id_obra):
+    return [f[0] for f in con.execute(
+        "SELECT DISTINCT lugar FROM escena WHERE obra = ? AND lugar IS NOT NULL "
+        "ORDER BY lugar", (id_obra,))]
+
+
+def canon_de_personaje(con, id_personaje):
+    """`nombre_canonico` y `estado_vital` si la base los guarda; si no, `None`.
+
+    La columna del nombre llega con `PLAN-27` E2. Hasta entonces no existe y el nombre
+    viaja nulo: **no se finge** con el identificador.
+    """
+    vacio = {"nombre_canonico": None, "estado_vital": None}
+    columnas = _columnas(con, "entidad")
+    if not columnas:
+        return vacio
+    nombre = "nombre_canonico" if "nombre_canonico" in columnas else "NULL"
+    f = con.execute("SELECT {0}, vital FROM entidad WHERE id = ?".format(nombre),
+                    (id_personaje,)).fetchone()
+    return vacio if f is None else {"nombre_canonico": f[0], "estado_vital": f[1]}
+
+
+def canon_de_lugar(con, id_lugar):
+    """`nombre` si la base lo guarda (`PLAN-27` E2); si no, `None`."""
+    if "nombre" not in _columnas(con, "lugar"):
+        return {"nombre": None}
+    f = con.execute("SELECT nombre FROM lugar WHERE id = ?", (id_lugar,)).fetchone()
+    return {"nombre": f[0] if f else None}

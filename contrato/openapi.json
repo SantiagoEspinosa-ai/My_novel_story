@@ -131,6 +131,26 @@
         "title": "CapituloDelIndice",
         "type": "object"
       },
+      "CapituloEnlazado": {
+        "description": "Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo.",
+        "properties": {
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden"
+        ],
+        "title": "CapituloEnlazado",
+        "type": "object"
+      },
       "CapituloLeido": {
         "description": "Un capitulo de corrido: sus escenas en orden, **una por bloque** (`RF-41`).\n\nLo ensambla el backend -que escenas entran y en que orden-, pero no junta los\ntextos: cada escena lleva el suyo con su estado y sus hallazgos (`RF-39`).",
         "properties": {
@@ -298,6 +318,170 @@
         "title": "EstadoDeHallazgo",
         "type": "string"
       },
+      "EstadoVital": {
+        "enum": [
+          "vivo",
+          "muerto",
+          "desaparecido"
+        ],
+        "title": "EstadoVital",
+        "type": "string"
+      },
+      "FichaDeLugar": {
+        "description": "`Lugar` (`RF-43`).",
+        "properties": {
+          "atmosfera": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nula: la base no la guarda",
+            "title": "Atmosfera"
+          },
+          "capitulos_donde_aparece": {
+            "description": "Por ocurre_en y Capitulo.orden (RF-44)",
+            "items": {
+              "$ref": "#/components/schemas/CapituloEnlazado"
+            },
+            "title": "Capitulos Donde Aparece",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si la base no lo guarda (PLAN-27 E2)",
+            "title": "Nombre"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "atmosfera",
+          "capitulos_donde_aparece"
+        ],
+        "title": "FichaDeLugar",
+        "type": "object"
+      },
+      "FichaDePersonaje": {
+        "description": "`Personaje` (`RF-43`). Lo que la base no guarda viaja nulo: «sin dato», no «ninguno».",
+        "properties": {
+          "alias": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo: la base no guarda alias",
+            "title": "Alias"
+          },
+          "capitulos_donde_aparece": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CapituloEnlazado"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por participa_en y Capitulo.orden. Nulo si la obra no declara sus personajes_presentes: no declarado, que no es nadie (RF-44)",
+            "title": "Capitulos Donde Aparece"
+          },
+          "estado_vital": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstadoVital"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nombre_canonico": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si la base no lo guarda (PLAN-27 E2)",
+            "title": "Nombre Canonico"
+          },
+          "rol_dramatico": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RolDramatico"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo: la base no lo guarda"
+          }
+        },
+        "required": [
+          "id",
+          "nombre_canonico",
+          "alias",
+          "rol_dramatico",
+          "estado_vital",
+          "capitulos_donde_aparece"
+        ],
+        "title": "FichaDePersonaje",
+        "type": "object"
+      },
+      "Fichas": {
+        "properties": {
+          "lugares": {
+            "items": {
+              "$ref": "#/components/schemas/FichaDeLugar"
+            },
+            "title": "Lugares",
+            "type": "array"
+          },
+          "personajes": {
+            "items": {
+              "$ref": "#/components/schemas/FichaDePersonaje"
+            },
+            "title": "Personajes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "personajes",
+          "lugares"
+        ],
+        "title": "Fichas",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -455,6 +639,18 @@
         ],
         "title": "RespuestaEntrada",
         "type": "object"
+      },
+      "RolDramatico": {
+        "enum": [
+          "protagonista",
+          "antagonista",
+          "aliado",
+          "guardian_del_umbral",
+          "victima",
+          "testigo"
+        ],
+        "title": "RolDramatico",
+        "type": "string"
       },
       "Severidad": {
         "enum": [
@@ -1233,6 +1429,49 @@
         "summary": "Entregar",
         "tags": [
           "ciclo"
+        ]
+      }
+    },
+    "/obras/{id_obra}/fichas": {
+      "get": {
+        "description": "Las fichas de personajes y lugares, cada una con los capitulos donde aparece.",
+        "operationId": "fichas_obras__id_obra__fichas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fichas"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Fichas",
+        "tags": [
+          "lectura"
         ]
       }
     },

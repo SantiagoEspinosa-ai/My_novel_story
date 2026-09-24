@@ -67,19 +67,32 @@ def sembrar(ruta):
         _borrador(con, "esc-b2", 1, "Texto rendido inventado.")
         _hallazgo(con, "INV-17", "regla", "esc-b2", "mayor", "abierto",
                   "fuera de rango (inventado)")
-        # esc-a1: generada, presentes sin declarar, un sin_veredicto y un resuelto.
-        _escena(con, "esc-a1", OBRA, 1, "cap-a", "generada")
-        _borrador(con, "esc-a1", 1, "Texto generado inventado.")
+        # esc-a1: generada, un sin_veredicto y un resuelto. Su texto **menciona** a
+        # per-dos, que no esta presente: una mencion no es aparecer (`RF-44`).
+        _escena(con, "esc-a1", OBRA, 1, "cap-a", "generada", presentes=["per-uno"])
+        _borrador(con, "esc-a1", 1, "Texto generado inventado. Se acordaron de per-dos.")
         _hallazgo(con, "INV-27", "juez_llm", "esc-a1", "mayor", "sin_veredicto",
                   "el juez no contesto (inventado)")
         _hallazgo(con, "INV-03", "regla", "esc-a1", "bloqueante", "resuelto",
                   "ya arreglado (inventado)")
         # esc-a2: planificada, sin ningun borrador.
         _escena(con, "esc-a2", OBRA, 2, "cap-a", "planificada", presentes=[])
-        # La otra obra: un capitulo, una escena en el mismo lugar que esc-b1.
+        # La otra obra: un capitulo, una escena en el mismo lugar que esc-b1, con los
+        # presentes **sin declarar** (como una novela regalo antes de `PLAN-27` E3).
         _escena(con, "esc-z1", OTRA, 1, "cap-z", "generada", lugar="lug-casa",
-                presentes=["per-dos"])
+                presentes=None)
         _borrador(con, "esc-z1", 1, "Texto de la otra obra.")
+        # El canon: `entidad` y `lugar` son de `consolidacion/`, que `preparar_base` no
+        # crea. Sin columna de nombre, como antes de `PLAN-27` E2.
+        con.execute("CREATE TABLE IF NOT EXISTS entidad (id TEXT PRIMARY KEY, vital TEXT NOT "
+                    "NULL, lugar TEXT NOT NULL, fecha_de_nacimiento TEXT)")
+        con.execute("CREATE TABLE IF NOT EXISTS lugar (id TEXT PRIMARY KEY, accesos TEXT NOT "
+                    "NULL DEFAULT '[]')")
+        for id_p, vital in (("per-uno", "vivo"), ("per-dos", "desaparecido")):
+            con.execute("INSERT INTO entidad (id, vital, lugar) VALUES (?, ?, 'lug-casa')",
+                        (id_p, vital))
+        for id_l in ("lug-casa", "lug-faro"):
+            con.execute("INSERT INTO lugar (id) VALUES (?)", (id_l,))
     con.close()
 
 
