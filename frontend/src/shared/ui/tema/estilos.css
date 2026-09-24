@@ -118,12 +118,15 @@ h1, h2, h3 { font-family: var(--fuente-titulos); font-weight: 600; letter-spacin
 .texto p { margin: 0; }
 .sin-texto { font-style: italic; color: var(--color-textoSuave); }
 .capitulo h1 { font-size: 2.2rem; margin: 0 0 var(--espacio-s); }
+/* F-82: la etiqueta del capitulo quedaba pegada a la primera tarjeta. */
+.capitulo > .etiqueta { margin-bottom: var(--espacio-l); }
 .bloque-de-escena { margin-bottom: var(--espacio-xl); }
 .escena-incompleta { padding: var(--espacio-m); border-radius: var(--radio-s); background: var(--color-acentoSuave); color: var(--color-texto); }
 
 /* --- Fichas --------------------------------------------------------------------------- */
 .fichas__rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--espacio-l); }
-.ficha h3 { margin: 0 0 var(--espacio-s); font-size: 1.15rem; }
+.ficha h3 { margin: 0 0 var(--espacio-s); font-size: 1.15rem; overflow-wrap: anywhere; }
+.ficha__aviso { margin: calc(-1 * var(--espacio-xs)) 0 var(--espacio-m); font-family: var(--fuente-interfaz); font-size: 0.8rem; }
 .ficha dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px var(--espacio-m); font-size: 0.9rem; }
 .ficha dt { color: var(--color-textoSuave); }
 .ficha dd { margin: 0; }

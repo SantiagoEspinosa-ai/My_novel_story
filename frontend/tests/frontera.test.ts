@@ -41,3 +41,10 @@ describe("frontera", () => {
     expect(() => fetch("/api/obras/x/indice")).toThrow(MENSAJE_FETCH);
   });
 });
+
+describe("documento", () => {
+  it("index.html declara su icono y el navegador no pide /favicon.ico (F-83)", () => {
+    const html = readFileSync(join(RAIZ, "index.html"), "utf-8");
+    expect(html).toMatch(/<link rel="icon"[^>]*href="data:image\/svg\+xml/);
+  });
+});

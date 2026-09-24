@@ -39,8 +39,10 @@ describe("Fichas", () => {
   it("un nombre nulo pinta el id y lo dice", async () => {
     const todas = await montar();
     const nombre = within(ficha(todas, "per-dos")).getByTestId("nombre");
-    expect(nombre).toHaveTextContent("per-dos");
-    expect(nombre).toHaveTextContent("sin nombre guardado");
+    // F-81: el aviso va fuera del titulo, en su propia linea; dentro partia el titulo en dos.
+    expect(nombre).toHaveTextContent(/^per-dos$/);
+    expect(within(ficha(todas, "per-dos")).getByTestId("aviso-de-nombre"))
+      .toHaveTextContent("sin nombre guardado");
     expect(within(ficha(todas, "per-uno")).getByTestId("nombre")).toHaveTextContent(/^Nombre inventado$/);
   });
 

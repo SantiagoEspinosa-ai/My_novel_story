@@ -35,9 +35,12 @@ function Capitulos({ obra, capitulos, ausente }: {
 
 function Nombre({ id, nombre }: { id: string; nombre: string | null }) {
   return (
-    <h3 data-testid="nombre">
-      {nombre ?? <>{id} <small className="sin-dato">(sin nombre guardado)</small></>}
-    </h3>
+    <>
+      <h3 data-testid="nombre">{nombre ?? id}</h3>
+      {nombre === null && (
+        <p className="ficha__aviso sin-dato" data-testid="aviso-de-nombre">sin nombre guardado</p>
+      )}
+    </>
   );
 }
 
