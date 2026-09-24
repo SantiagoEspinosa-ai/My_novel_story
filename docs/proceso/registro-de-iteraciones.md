@@ -33,7 +33,7 @@ No pasó del capítulo 1. Cuatro hallazgos:
 | --- | --- | --- | --- |
 | `F-59` | Una vetada global con «ñ» se normalizaba perdiendo la «ñ» y **vetaba una preposición común**: ningún capítulo podía pasar `INV-21` | La normalización conserva la «ñ», que no es una tilde sino otra letra; y una prueba recorre la lista real buscando vetadas que coincidan con palabras comunes | Cerrado (`b18b286`) |
 | `F-60` | `INV-03` bloqueaba al destinatario **por usar sus propios recuerdos**: nadie declaraba lo que ya sabía al empezar | Montar la obra siembra el conocimiento inicial de los imprescindibles | Cerrado (`7b4aff2`) |
-| `F-61` | Los hooks **no dejaron constancia** | Diagnóstico: Claude Code solo los carga desde la raíz del repositorio | Abierto, con la causa diagnosticada (`6c175a5`) |
+| `F-61` | Los hooks **no dejaron constancia** | Diagnóstico (`6c175a5`): Claude Code solo los carga desde la raíz del repositorio. Arreglo: las delegaciones arrancan en la raíz | Cerrado (`1ad5691`); en la segunda ejecución real los hooks ya se ejecutan |
 | `F-62` | El Planificador devolvió **dos planes fuera de esquema** antes del bueno | Su prompt y su definición dicen que un campo de más hace rechazar el plan entero | Cerrado (`3dbc2d1`) |
 
 ## Tras Lean

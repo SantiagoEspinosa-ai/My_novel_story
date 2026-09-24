@@ -128,8 +128,8 @@ campos de tokens), `lectura_de_contexto` (qué entró en cada contexto), `decisi
 | Contradicciones de la entrevista | Programático | Durante la entrevista | Se pregunta al comprador | Construido |
 | Cobertura del plan (`SPEC-26` `RF-06`) | Programático | Antes del Revisor del plan | El plan vuelve al Planificador | Construido |
 | Revisor del plan | Semántico | Tras la cobertura | Objeciones, hasta 3 revisiones | Construido |
-| `validar_capitulo.py` | Programático, hook `Stop` | Al terminar el Escritor, dentro de su sesión | Se le devuelve en la misma sesión | Construido; **no dejó constancia** en la ejecución real (`F-61`) |
-| `policy.py` | Programático, hook `PreToolUse` | Antes de cada herramienta de un agente del pipeline | Se niega y va al audit log | Construido; allowlist por agente pendiente (`SPEC-28`) |
+| `validar_capitulo.py` | Programático, hook `Stop` | Al terminar el Escritor, dentro de su sesión | Se le devuelve en la misma sesión | Construido; desde `1ad5691` (`F-61`) se ejecuta en las ejecuciones reales |
+| `policy.py` | Programático, hook `PreToolUse` | Antes de cada herramienta de un agente del pipeline | Se niega y va al audit log | Construido; allowlist por agente desde `SPEC-28` |
 | `INV-21` palabras vetadas | Programático, `bloqueante` | Tras el Escritor, antes del Editor | Reescritura, tope 2; agotado, se para | Construido |
 | `INV-22` nombres exactos | Programático, `bloqueante` | Tras el Escritor, antes del Editor | Reescritura, tope 2; agotado, se para | Construido |
 | `INV-23` palabras clave de los imprescindibles | Programático, `mayor` | Tras el Escritor | Reescritura dentro de los intentos de calidad | Construido |

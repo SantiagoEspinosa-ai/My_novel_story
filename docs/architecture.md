@@ -903,6 +903,24 @@ Dos scripts en `backend/hooks/`, declarados en `.claude/settings.json`:
 | Hook | Evento | Qué hace | A quién |
 | --- | --- | --- | --- |
 | `validar_capitulo.py` | `Stop` | Comprueba longitud, vetadas y nombres del último mensaje; si falla, sale con 2 y Claude Code se lo devuelve **en la misma sesión**, una sola vez (`stop_hook_active`) | Solo al Escritor |
-| `policy.py` | `PreToolUse` | Niega cualquier herramienta y lo apunta en el audit log (`herramienta_denegada`) | A cualquier agente del pipeline; el Editor y el Juez lo reciben en su directorio aislado con ruta absoluta |
+| `policy.py` | `PreToolUse` | Allowlist por agente (`SPEC-28` `RF-07`): el Escritor y el Editor pueden llamar a `mcp__story_bible__hechos`, `ficha` y `cronologia`; cualquier otra herramienta se niega y queda en el audit log (`herramienta_denegada`) | A cualquier agente del pipeline; el Editor y el Juez lo reciben en su directorio aislado con ruta absoluta |
 
-**Solo actúan sobre el pipeline**: `SesionDelegada` lanza cada delegación con `HARNESS_AGENTE` y, si las hay, `HARNESS_REGLAS`; sin esa variable los dos scripts salen con 0. Una sesión interactiva en el mismo proyecto no se toca. **Las puertas del código siguen mandando**: el hook es una primera línea más barata que una delegación nueva, no la única. Y mientras los agentes tengan `tools: []`, el de policy no se dispara nunca en la práctica.
+**Solo actúan sobre el pipeline**: `SesionDelegada` lanza cada delegación con `HARNESS_AGENTE` y, si las hay, `HARNESS_REGLAS`; sin esa variable los dos scripts salen con 0. Una sesión interactiva en el mismo proyecto no se toca. **Las puertas del código siguen mandando**: el hook es una primera línea más barata que una delegación nueva, no la única. Desde `SPEC-28` el de policy sí se dispara: el Escritor y el Editor tienen tools.
+
+### Las tools de lectura de la story bible (`SPEC-28`)
+
+Un servidor MCP propio por stdio (`backend/herramientas/story_bible.py`, sobre
+`commons/modelo/mcp.py`) ofrece tres tools de solo lectura —`hechos`, `ficha` y `cronologia`—
+con esquema de entrada y de salida (`commons/dominio/story_bible.py`). Las atiende
+`orquestacion/story_bible.py`: valida, lee **solo la obra de la delegación** (la fija el harness;
+no es argumento), valida la salida, estima los tokens de lo devuelto y deja una fila en
+`llamada_a_herramienta`, sin argumentos ni resultado. Ninguna devuelve el texto de una escena.
+
+Cuatro barreras, porque ninguna está probada todavía contra Claude Code real: toda delegación
+del pipeline lleva `--tools ""`; el Escritor y el Editor, además, `--strict-mcp-config`,
+`--mcp-config` (en un fichero) y `--allowedTools` con sus tres tools; el hook de policy es una
+allowlist; y el frontmatter las declara.
+
+**Punto ciego declarado**: lo que un agente trae con una tool entra en su contexto sin pasar por
+el presupuesto de `CLAUDE.md`, que es sobre lo que mandamos. Se mide y se registra junto a la
+traza; no se presupuesta, porque el harness no administra el contexto de la sesión delegada.

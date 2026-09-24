@@ -86,8 +86,9 @@ solo produce hechos que el comprador confirma, y nunca llega al Escritor (`SPEC-
 **Qué es.** Scripts que Claude Code ejecuta en momentos fijos de una sesión. **Aquí.** Uno
 de validación del capítulo al terminar el Escritor, y otro de policy antes de cada
 herramienta, solo sobre las delegaciones del pipeline (`SPEC-26` `RF-17`..`RF-19`).
-**Estado.** Construidos; en la primera ejecución real **no dejaron constancia**, porque
-Claude Code solo los carga desde la raíz del repositorio (`F-61`).
+**Estado.** Construidos. En la primera ejecución real no dejaron constancia, porque Claude
+Code solo los carga desde la raíz del repositorio (`F-61`); cerrado en `1ad5691`, y en la
+segunda ejecución real ya se ejecutan. El de policy es desde `SPEC-28` una allowlist por agente.
 
 ## Skills y subagentes
 

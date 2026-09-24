@@ -31,8 +31,8 @@ garantiza que siga existiendo, y es exactamente lo que pasó con `sqlite-vec`.
 
 ## Subagentes
 
-Definidos en `.claude/agents/`, todos con `tools: []` hasta que `SPEC-28` dé tools al
-Escritor y al Editor. Cada uno se lanza en su propia sesión (`A-03`, `SPEC-14`).
+Definidos en `.claude/agents/`. El Escritor y el Editor tienen las tres tools de lectura de la
+story bible (`SPEC-28`); el resto, `tools: []`. Cada uno se lanza en su propia sesión (`A-03`, `SPEC-14`).
 
 | Subagente | Propósito | Resultado conocido |
 | --- | --- | --- |
@@ -51,11 +51,12 @@ Dos, declarados en `.claude/settings.json` y con el código en `backend/hooks/`
 
 - `validar_capitulo.py` (`Stop`): longitud, nombres y vetadas del último mensaje del
   Escritor; si falla, se le devuelve en la misma sesión.
-- `policy.py` (`PreToolUse`): niega cualquier herramienta y lo deja en el audit log.
+- `policy.py` (`PreToolUse`): una allowlist por agente (`SPEC-28`): el Escritor y el Editor pueden llamar a sus tres tools de lectura de la story bible; cualquier otra herramienta se niega y queda en el audit log.
 
-Solo actúan sobre las delegaciones del pipeline, nunca sobre una sesión interactiva. **En la
-primera ejecución real no dejaron constancia**: Claude Code solo los carga desde la raíz del
-repositorio (`F-61`, abierto).
+Solo actúan sobre las delegaciones del pipeline, nunca sobre una sesión interactiva. En la
+primera ejecución real no dejaron constancia, porque Claude Code solo los carga desde la raíz
+del repositorio; **`F-61` está cerrado** (`1ad5691`): las delegaciones arrancan en la raíz, y en
+la segunda ejecución real los hooks ya se ejecutan, según la sesión que la lanzó.
 
 ## Comandos propios
 
