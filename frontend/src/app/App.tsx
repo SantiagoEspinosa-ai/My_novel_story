@@ -1,6 +1,7 @@
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { PaginaCapitulo } from "@/pages/capitulo";
 import { PaginaEscena } from "@/pages/escena";
+import { PaginaFichas } from "@/pages/fichas";
 import { PaginaIndice } from "@/pages/indice";
 import { PaginaPortada } from "@/pages/portada";
 import { ClienteProvider, type Cliente } from "@/shared/api";
@@ -15,6 +16,7 @@ export function App({ cliente }: { cliente: Cliente }) {
           <Route path="/obras/:obra/indice" element={<PaginaIndice />} />
           <Route path="/obras/:obra/capitulos/:capitulo" element={<PaginaCapitulo />} />
           <Route path="/obras/:obra/escenas/:escena" element={<PaginaEscena />} />
+          <Route path="/obras/:obra/fichas" element={<PaginaFichas />} />
           <Route path="*" element={<Inicio />} />
         </Routes>
       </BrowserRouter>
