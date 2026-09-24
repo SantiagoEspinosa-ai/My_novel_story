@@ -33,14 +33,17 @@ from app.commons.trabajos import cola
 from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.escaleta import repository as repo
 from app.features.brief import repository as brief
-from app.features.orquestacion import entrega, regeneracion
+from app.features.orquestacion import entrega, lectura_de_version, regeneracion
 from app.features.orquestacion import schemas
 
 router = APIRouter(tags=["ciclo"])
 
 
 def conexion(request: Request):
-    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"))
+    # F-133: FastAPI la crea, la usa y la cierra en hilos distintos del pool. Se usa en
+    # serie, nunca a la vez: no comprobar el hilo es seguro.
+    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"),
+                          check_same_thread=False)
     try:
         yield con
     finally:
@@ -117,7 +120,7 @@ def cerrar_capitulo(id_capitulo: str, con: sqlite3.Connection = Depends(conexion
             "menores_que_se_dejan_pasar": cierre.menores_que_se_dejan_pasar}
 
 
-@router.get("/trabajos/{id_trabajo}")
+@router.get("/trabajos/{id_trabajo}", response_model=schemas.TrabajoSalida)
 def consultar_trabajo(id_trabajo: str, con: sqlite3.Connection = Depends(conexion)):
     """El estado de un trabajo encolado: su resultado, o el motivo si fallo.
 
@@ -205,3 +208,30 @@ def cambios(id_obra: str, entrada: schemas.CambioEntrada, request: Request,
         raise HTTPException(409, str(e))
     tareas.add_task(_atender, getattr(request.app.state, "ruta_db", ":memory:"), id_trabajo)
     return {"id_trabajo": id_trabajo}
+
+
+# --- Leer una version (`PLAN-22` E15) ---------------------------------------------------
+# Las lecturas con la version como parametro. Viven aqui y no en `lectura/` porque
+# componen la lectura con la marca y la reverificacion de `regeneracion` (`A-02`).
+
+@router.get("/obras/{id_obra}/versiones/{numero}/indice",
+            response_model=schemas.IndiceDeVersion, tags=["lectura"])
+def indice_de_version(id_obra: str, numero: int, con: sqlite3.Connection = Depends(conexion)):
+    """El indice de una version: cada capitulo con su marca de cambio y cada escena con
+    su estado, sus hallazgos y su `estado_de_verificacion` en esa version (`RF-52`..`RF-54`)."""
+    resultado = lectura_de_version.indice(con, id_obra, numero)
+    if resultado is None:
+        raise HTTPException(404, "la obra {0} no tiene version {1}".format(id_obra, numero))
+    return resultado
+
+
+@router.get("/obras/{id_obra}/versiones/{numero}/capitulos/{id_capitulo}",
+            response_model=schemas.CapituloLeidoDeVersion, tags=["lectura"])
+def capitulo_de_version(id_obra: str, numero: int, id_capitulo: str,
+                        con: sqlite3.Connection = Depends(conexion)):
+    """Un capitulo de una version, entero. `404` si no es de esa version (`RF-53`)."""
+    resultado = lectura_de_version.capitulo(con, id_obra, numero, id_capitulo)
+    if resultado is None:
+        raise HTTPException(404, "el capitulo {0} no es de la version {1} de {2}".format(
+            id_capitulo, numero, id_obra))
+    return resultado

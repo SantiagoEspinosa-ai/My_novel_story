@@ -18,6 +18,9 @@ export function App({ cliente }: { cliente: Cliente }) {
           <Route path="/obras/:obra" element={<PaginaPortada />} />
           <Route path="/obras/:obra/indice" element={<PaginaIndice />} />
           <Route path="/obras/:obra/capitulos/:capitulo" element={<PaginaCapitulo />} />
+          <Route path="/obras/:obra/versiones/:numero/indice" element={<PaginaIndice />} />
+          <Route path="/obras/:obra/versiones/:numero/capitulos/:capitulo"
+            element={<PaginaCapitulo />} />
           <Route path="/obras/:obra/escenas/:escena" element={<PaginaEscena />} />
           <Route path="/obras/:obra/fichas" element={<PaginaFichas />} />
           <Route path="*" element={<Inicio />} />

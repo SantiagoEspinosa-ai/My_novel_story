@@ -1,16 +1,26 @@
 import type { EscenaLeida, Hallazgo } from "@/shared/api";
-import { ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, EtiquetaDeEstado, SEVERIDAD } from "@/shared/ui";
+import {
+  ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, ESTADO_DE_VERIFICACION, EtiquetaDeEstado, SEVERIDAD,
+} from "@/shared/ui";
 
 // Una escena se pinta **siempre** con su estado y sus hallazgos abiertos (SPEC-22 RF-39,
 // VER-18): un texto suelto induce a darlo por bueno. Si la respuesta llega sin alguno de
 // los dos, no se pinta el texto: se dice que falta. Nada se calcula aqui: la rendicion
 // llega resuelta (RF-40) y cada hallazgo trae su estado. Cada estado va con color y texto.
 
-type EscenaPintable = Omit<EscenaLeida, "borrador"> & { borrador?: EscenaLeida["borrador"] };
+type EscenaPintable = Omit<EscenaLeida, "borrador" | "personajes_presentes"> & {
+  borrador?: EscenaLeida["borrador"];
+};
 
-export function EscenaConEstado({ escena, conTexto = true }: {
+// En una version, cada escena trae ademas su `estado_de_verificacion` (RF-54): se pinta al
+// lado de su estado, y un `sin_reverificar` -un verde heredado- no se pinta como verde.
+// Fuera de una version no se pasa, y no se inventa.
+type Verificacion = "verificada" | "sin_reverificar" | "fallida";
+
+export function EscenaConEstado({ escena, conTexto = true, verificacion }: {
   escena: EscenaPintable;
   conTexto?: boolean;
+  verificacion?: Verificacion;
 }) {
   if (!escena || !escena.estado || !Array.isArray(escena.hallazgos_abiertos)) {
     return (
@@ -28,6 +38,10 @@ export function EscenaConEstado({ escena, conTexto = true }: {
         <EtiquetaDeEstado distintivo={distintivo} data-testid="estado-de-escena"
           data-estado={escena.estado} data-rendida={String(escena.se_acepto_rindiendose)}
           texto={escena.se_acepto_rindiendose ? "aceptada por rendición" : undefined} />
+        {verificacion && (
+          <EtiquetaDeEstado distintivo={ESTADO_DE_VERIFICACION[verificacion]}
+            data-testid="verificacion" data-verificacion={verificacion} />
+        )}
         <Hallazgos hallazgos={escena.hallazgos_abiertos} />
       </header>
       {conTexto && (

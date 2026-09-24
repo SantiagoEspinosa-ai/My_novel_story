@@ -69,6 +69,9 @@ class EscenaLeida(EscenaDelIndice):
 
     borrador: BorradorElegido | None = Field(
         description="Nulo si la escena no tiene ningun borrador (p. ej. planificada)")
+    personajes_presentes: list[str] | None = Field(
+        description="Escena.personajes_presentes: los que la pagina ofrece para renombrar. "
+                    "Nulo si la escena no los declara: no declarado, que no es nadie")
 
 
 class CapituloLeido(BaseModel):
@@ -133,3 +136,19 @@ class ProgresoDeGeneracion(BaseModel):
                                               "y las llamadas a tool de la obra (UTC)")
     segundos_desde_la_ultima_actividad: int = Field(
         description="Calculados por el servidor al responder, con su reloj")
+
+
+class HechoUsado(BaseModel):
+    """Un `HechoCanonico` que la escena usa, con su enunciado."""
+
+    id: str
+    enunciado: str
+
+
+class HechosDeEscena(BaseModel):
+    """Lo que la pagina ofrece al seleccionar un fragmento (`PLAN-22` E14): los hechos de
+    `uso_de_hecho` de la escena, de **su** obra, uno por hecho. Vacia, no nula, si no usa
+    ninguno: se miro y no habia."""
+
+    escena: str = Field(description="El id de la Escena")
+    hechos_que_usa: list[HechoUsado] = Field(description="Por id de hecho")

@@ -263,6 +263,51 @@
         "title": "CapituloDelIndice",
         "type": "object"
       },
+      "CapituloDelIndiceDeVersion": {
+        "properties": {
+          "compartido": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True si es el mismo capitulo que el de su posicion en la anterior; False si cambio; nulo si la version no tiene anterior",
+            "title": "Compartido"
+          },
+          "escenas": {
+            "items": {
+              "$ref": "#/components/schemas/EscenaDelIndiceDeVersion"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeCapitulo"
+          },
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "orden": {
+            "description": "Orden de lectura; la lista ya viene en este orden",
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden",
+          "estado",
+          "escenas",
+          "compartido"
+        ],
+        "title": "CapituloDelIndiceDeVersion",
+        "type": "object"
+      },
       "CapituloEnlazado": {
         "description": "Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo.",
         "properties": {
@@ -314,6 +359,55 @@
           "escenas"
         ],
         "title": "CapituloLeido",
+        "type": "object"
+      },
+      "CapituloLeidoDeVersion": {
+        "properties": {
+          "compartido": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compartido"
+          },
+          "escenas": {
+            "items": {
+              "$ref": "#/components/schemas/EscenaLeidaDeVersion"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeCapitulo"
+          },
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "numero": {
+            "description": "VersionDeObra.numero",
+            "title": "Numero",
+            "type": "integer"
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden",
+          "estado",
+          "escenas",
+          "numero",
+          "compartido"
+        ],
+        "title": "CapituloLeidoDeVersion",
         "type": "object"
       },
       "CapitulosPorSalida": {
@@ -417,6 +511,55 @@
         "title": "EscenaDelIndice",
         "type": "object"
       },
+      "EscenaDelIndiceDeVersion": {
+        "properties": {
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban",
+            "title": "Capitulo"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "estado_de_verificacion": {
+            "$ref": "#/components/schemas/EstadoDeVerificacion",
+            "description": "sin_reverificar es un verde heredado de otra version: no es verde"
+          },
+          "hallazgos_abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbierto"
+            },
+            "title": "Hallazgos Abiertos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "se_acepto_rindiendose": {
+            "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
+            "title": "Se Acepto Rindiendose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "capitulo",
+          "estado",
+          "se_acepto_rindiendose",
+          "hallazgos_abiertos",
+          "estado_de_verificacion"
+        ],
+        "title": "EscenaDelIndiceDeVersion",
+        "type": "object"
+      },
       "EscenaLeida": {
         "description": "Una escena para leer: la del indice mas su texto. **Nunca** el texto sin estado.",
         "properties": {
@@ -457,6 +600,21 @@
             "title": "Id",
             "type": "string"
           },
+          "personajes_presentes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Escena.personajes_presentes: los que la pagina ofrece para renombrar. Nulo si la escena no los declara: no declarado, que no es nadie",
+            "title": "Personajes Presentes"
+          },
           "se_acepto_rindiendose": {
             "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
             "title": "Se Acepto Rindiendose",
@@ -469,9 +627,86 @@
           "estado",
           "se_acepto_rindiendose",
           "hallazgos_abiertos",
-          "borrador"
+          "borrador",
+          "personajes_presentes"
         ],
         "title": "EscenaLeida",
+        "type": "object"
+      },
+      "EscenaLeidaDeVersion": {
+        "properties": {
+          "borrador": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BorradorElegido"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si la escena no tiene ningun borrador (p. ej. planificada)"
+          },
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban",
+            "title": "Capitulo"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "estado_de_verificacion": {
+            "$ref": "#/components/schemas/EstadoDeVerificacion"
+          },
+          "hallazgos_abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbierto"
+            },
+            "title": "Hallazgos Abiertos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "personajes_presentes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Escena.personajes_presentes: los que la pagina ofrece para renombrar. Nulo si la escena no los declara: no declarado, que no es nadie",
+            "title": "Personajes Presentes"
+          },
+          "se_acepto_rindiendose": {
+            "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
+            "title": "Se Acepto Rindiendose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "capitulo",
+          "estado",
+          "se_acepto_rindiendose",
+          "hallazgos_abiertos",
+          "borrador",
+          "personajes_presentes",
+          "estado_de_verificacion"
+        ],
+        "title": "EscenaLeidaDeVersion",
         "type": "object"
       },
       "EstadoDeCapitulo": {
@@ -504,6 +739,19 @@
           "sin_veredicto"
         ],
         "title": "EstadoDeHallazgo",
+        "type": "string"
+      },
+      "EstadoDeTrabajo": {
+        "enum": [
+          "en_cola",
+          "esperando_presupuesto",
+          "en_curso",
+          "terminado",
+          "fallido",
+          "abandonado",
+          "detenido_por_presupuesto"
+        ],
+        "title": "EstadoDeTrabajo",
         "type": "string"
       },
       "EstadoDeVerificacion": {
@@ -744,6 +992,49 @@
         "title": "HallazgoAbierto",
         "type": "object"
       },
+      "HechoUsado": {
+        "description": "Un `HechoCanonico` que la escena usa, con su enunciado.",
+        "properties": {
+          "enunciado": {
+            "title": "Enunciado",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "enunciado"
+        ],
+        "title": "HechoUsado",
+        "type": "object"
+      },
+      "HechosDeEscena": {
+        "description": "Lo que la pagina ofrece al seleccionar un fragmento (`PLAN-22` E14): los hechos de\n`uso_de_hecho` de la escena, de **su** obra, uno por hecho. Vacia, no nula, si no usa\nninguno: se miro y no habia.",
+        "properties": {
+          "escena": {
+            "description": "El id de la Escena",
+            "title": "Escena",
+            "type": "string"
+          },
+          "hechos_que_usa": {
+            "description": "Por id de hecho",
+            "items": {
+              "$ref": "#/components/schemas/HechoUsado"
+            },
+            "title": "Hechos Que Usa",
+            "type": "array"
+          }
+        },
+        "required": [
+          "escena",
+          "hechos_que_usa"
+        ],
+        "title": "HechosDeEscena",
+        "type": "object"
+      },
       "Indice": {
         "description": "La portada y el indice de una obra, resueltos (`RF-38`, `RF-46`).\n\nNo lleva partes: la base no tiene tabla `parte` y el plan de la novela regalo no las\ndeclara (`PLAN-22` cuestion 3). No se pinta lo que no hay.",
         "properties": {
@@ -784,6 +1075,65 @@
           "capitulos"
         ],
         "title": "Indice",
+        "type": "object"
+      },
+      "IndiceDeVersion": {
+        "properties": {
+          "anterior": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anterior"
+          },
+          "capitulos": {
+            "description": "En el orden de la version",
+            "items": {
+              "$ref": "#/components/schemas/CapituloDelIndiceDeVersion"
+            },
+            "title": "Capitulos",
+            "type": "array"
+          },
+          "dedicatoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nula si la obra no tiene; nunca un relleno",
+            "title": "Dedicatoria"
+          },
+          "id": {
+            "description": "El id de la Obra",
+            "title": "Id",
+            "type": "string"
+          },
+          "numero": {
+            "description": "VersionDeObra.numero",
+            "title": "Numero",
+            "type": "integer"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "dedicatoria",
+          "capitulos",
+          "numero",
+          "anterior"
+        ],
+        "title": "IndiceDeVersion",
         "type": "object"
       },
       "ObraSalida": {
@@ -1131,6 +1481,60 @@
         ],
         "title": "TiempoVerbal",
         "type": "string"
+      },
+      "TrabajoSalida": {
+        "additionalProperties": false,
+        "description": "Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su\nvocabulario lo declara `docs/architecture.md` § \"Los estados de un trabajo\".\n`abandonado` no es `fallido` (no se sabe si llego a pasar): viajan distintos.",
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeTrabajo"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "resultado": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          },
+          "volvio_tras_abandono": {
+            "title": "Volvio Tras Abandono",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "estado",
+          "resultado",
+          "motivo",
+          "volvio_tras_abandono"
+        ],
+        "title": "TrabajoSalida",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -1837,6 +2241,49 @@
         ]
       }
     },
+    "/escenas/{id_escena}/hechos": {
+      "get": {
+        "description": "Los hechos que usa una escena, con su enunciado: lo que la pagina ofrece al lector\ncuando selecciona un fragmento para pedir un cambio (`PLAN-22` E14).",
+        "operationId": "hechos_de_escena_escenas__id_escena__hechos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HechosDeEscena"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hechos De Escena",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
     "/escenas/{id_escena}/rechazar": {
       "post": {
         "operationId": "rechazar_escenas__id_escena__rechazar_post",
@@ -2338,6 +2785,121 @@
         ]
       }
     },
+    "/obras/{id_obra}/versiones/{numero}/capitulos/{id_capitulo}": {
+      "get": {
+        "description": "Un capitulo de una version, entero. `404` si no es de esa version (`RF-53`).",
+        "operationId": "capitulo_de_version_obras__id_obra__versiones__numero__capitulos__id_capitulo__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "numero",
+            "required": true,
+            "schema": {
+              "title": "Numero",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id_capitulo",
+            "required": true,
+            "schema": {
+              "title": "Id Capitulo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapituloLeidoDeVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Capitulo De Version",
+        "tags": [
+          "ciclo",
+          "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/versiones/{numero}/indice": {
+      "get": {
+        "description": "El indice de una version: cada capitulo con su marca de cambio y cada escena con\nsu estado, sus hallazgos y su `estado_de_verificacion` en esa version (`RF-52`..`RF-54`).",
+        "operationId": "indice_de_version_obras__id_obra__versiones__numero__indice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "numero",
+            "required": true,
+            "schema": {
+              "title": "Numero",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndiceDeVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Indice De Version",
+        "tags": [
+          "ciclo",
+          "lectura"
+        ]
+      }
+    },
     "/trabajos/{id_trabajo}": {
       "get": {
         "description": "El estado de un trabajo encolado: su resultado, o el motivo si fallo.\n\nEs la otra mitad de todos los `202`: sin esto el cliente sabe que se encolo\nalgo y no tiene forma de saber que paso.",
@@ -2357,7 +2919,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/TrabajoSalida"
+                }
               }
             },
             "description": "Successful Response"
