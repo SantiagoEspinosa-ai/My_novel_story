@@ -524,6 +524,15 @@
         "title": "EstadoDeHallazgo",
         "type": "string"
       },
+      "EstadoDeHechoPropuesto": {
+        "enum": [
+          "propuesto",
+          "confirmado",
+          "descartado"
+        ],
+        "title": "EstadoDeHechoPropuesto",
+        "type": "string"
+      },
       "EstadoDeVerificacion": {
         "description": "El estado de una escena **en una version**, que no es `estado_de_escena`.\n\n`sin_reverificar` es el verde heredado de otra version: **no cuenta como verde**\n(`D-1`). No añade ninguna transicion a la maquina de `estado_de_escena`.",
         "enum": [
@@ -762,11 +771,56 @@
         "title": "HallazgoAbierto",
         "type": "object"
       },
-      "HistorialSalida": {
+      "HechoPropuesto": {
+        "additionalProperties": false,
         "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeHechoPropuesto",
+            "default": "propuesto"
+          },
+          "id": {
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "texto": {
+            "minLength": 1,
+            "title": "Texto",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "texto"
+        ],
+        "title": "HechoPropuesto",
+        "type": "object"
+      },
+      "HistorialSalida": {
+        "description": "La conversacion y lo que la pagina necesita para actuar (`SPEC-33` `RF-08`..`RF-10`).\n`puede_cerrar` lo resuelve el backend con la misma regla que `cerrar`.",
+        "properties": {
+          "cerrada": {
+            "title": "Cerrada",
+            "type": "boolean"
+          },
+          "hechos_propuestos": {
+            "items": {
+              "$ref": "#/components/schemas/HechoPropuesto"
+            },
+            "title": "Hechos Propuestos",
+            "type": "array"
+          },
+          "obra": {
+            "title": "Obra",
+            "type": "string"
+          },
           "primera_pregunta": {
             "title": "Primera Pregunta",
             "type": "string"
+          },
+          "puede_cerrar": {
+            "title": "Puede Cerrar",
+            "type": "boolean"
           },
           "turnos": {
             "items": {
@@ -777,6 +831,10 @@
           }
         },
         "required": [
+          "obra",
+          "cerrada",
+          "puede_cerrar",
+          "hechos_propuestos",
           "primera_pregunta",
           "turnos"
         ],

@@ -696,6 +696,11 @@ export interface components {
          */
         EstadoDeHallazgo: "abierto" | "resuelto" | "descartado" | "sin_veredicto";
         /**
+         * EstadoDeHechoPropuesto
+         * @enum {string}
+         */
+        EstadoDeHechoPropuesto: "propuesto" | "confirmado" | "descartado";
+        /**
          * EstadoDeVerificacion
          * @description El estado de una escena **en una version**, que no es `estado_de_escena`.
          *
@@ -798,10 +803,31 @@ export interface components {
              */
             verificador: string;
         };
-        /** HistorialSalida */
+        /** HechoPropuesto */
+        HechoPropuesto: {
+            /** @default propuesto */
+            estado: components["schemas"]["EstadoDeHechoPropuesto"];
+            /** Id */
+            id: string;
+            /** Texto */
+            texto: string;
+        };
+        /**
+         * HistorialSalida
+         * @description La conversacion y lo que la pagina necesita para actuar (`SPEC-33` `RF-08`..`RF-10`).
+         *     `puede_cerrar` lo resuelve el backend con la misma regla que `cerrar`.
+         */
         HistorialSalida: {
+            /** Cerrada */
+            cerrada: boolean;
+            /** Hechos Propuestos */
+            hechos_propuestos: components["schemas"]["HechoPropuesto"][];
+            /** Obra */
+            obra: string;
             /** Primera Pregunta */
             primera_pregunta: string;
+            /** Puede Cerrar */
+            puede_cerrar: boolean;
             /** Turnos */
             turnos: components["schemas"]["TurnoDeEntrevistaSalida"][];
         };

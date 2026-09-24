@@ -11,7 +11,8 @@ describe("cliente", () => {
     });
     const metodos = Object.keys(cliente) as (keyof typeof cliente)[];
     expect(metodos.length).toBeGreaterThanOrEqual(4);
-    for (const m of metodos) await cliente[m]("x-1");
+    // PLAN-33: algunos metodos piden dos argumentos; con uno basta para ver la ruta.
+    for (const m of metodos) await (cliente[m] as (a: string) => Promise<unknown>)("x-1");
     expect(pedidas).toHaveLength(metodos.length);
     for (const url of pedidas) expect(url.startsWith("/api/")).toBe(true);
   });

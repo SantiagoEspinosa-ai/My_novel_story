@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.commons.dominio.destinatario import HechoPropuesto
+
 
 class RespuestaEntrada(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -38,6 +40,13 @@ class TurnoDeEntrevistaSalida(BaseModel):
 
 
 class HistorialSalida(BaseModel):
+    """La conversacion y lo que la pagina necesita para actuar (`SPEC-33` `RF-08`..`RF-10`).
+    `puede_cerrar` lo resuelve el backend con la misma regla que `cerrar`."""
+
+    obra: str
+    cerrada: bool
+    puede_cerrar: bool
+    hechos_propuestos: list[HechoPropuesto]
     primera_pregunta: str
     turnos: list[TurnoDeEntrevistaSalida]
 

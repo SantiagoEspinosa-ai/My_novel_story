@@ -314,11 +314,21 @@ def estado(con, id_e, reglas, anio_actual) -> Turno:
     return Turno(e, pregunta, _estado(e, reglas, anio_actual))
 
 
-def historial(con, id_e) -> dict:
+def historial(con, id_e, reglas=None, anio_actual=None) -> dict:
     """`SPEC-33` `RF-10`: la conversacion entera, para reconstruirla al recargar.
-    La primera pregunta no es de ningun turno: la hace el sistema al crear."""
-    _leer(con, id_e)
-    return {"primera_pregunta": PRIMERA_PREGUNTA, "turnos": repo.turnos(con, id_e)}
+    La primera pregunta no es de ningun turno: la hace el sistema al crear.
+
+    Trae tambien lo que la pagina necesita para actuar (`RF-08`, `RF-09`): si se puede
+    cerrar, si ya esta cerrada y los hechos propuestos. Lo resuelve el backend, con la
+    misma regla que `cerrar`: la web no lo calcula."""
+    e = _leer(con, id_e)
+    s = _estado(e, reglas or ReglasDeContradiccion(), anio_actual or date.today().year)
+    return {"obra": e.obra, "cerrada": e.cerrada,
+            "puede_cerrar": not (e.cerrada or s["falta"] or s["contradicciones"]
+                                 or s["avisos"]),
+            "hechos_propuestos": [h.model_dump(mode="json")
+                                  for h in e.ficha.hechos_propuestos],
+            "primera_pregunta": PRIMERA_PREGUNTA, "turnos": repo.turnos(con, id_e)}
 
 
 def cerrar(con, id_e, reglas=None, anio_actual=None):
