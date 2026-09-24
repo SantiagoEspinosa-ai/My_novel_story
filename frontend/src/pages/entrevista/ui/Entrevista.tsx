@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { ConfirmarGeneracion } from "./ConfirmarGeneracion";
 import { Turno } from "./Turno";
 import { ErrorDeLaApi, useCliente, type Historial } from "@/shared/api";
 import { INTERVALO_DE_REGALO_MS } from "@/shared/config";
@@ -9,12 +10,11 @@ import "./entrevista.css";
 // La entrevista como conversacion (SPEC-33 RF-05..RF-10). Una pregunta cada vez y las
 // anteriores encima. La conversacion es el historial del backend, asi que sobrevive a
 // recargar; la pagina no calcula nada: si se puede cerrar lo dice `puede_cerrar`.
-export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS, alCerrar }: {
+export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
   intervaloMs?: number;
-  /** Lo que se ensena al cerrar la ficha: aqui entra lanzar la generacion (RF-11). */
-  alCerrar?: (h: Historial) => React.ReactNode;
 }) {
   const { entrevista = "" } = useParams();
+  const navegar = useNavigate();
   const cliente = useCliente();
   const [historial, setHistorial] = useState<Historial | null>(null);
   const [errorDeCarga, setErrorDeCarga] = useState<string | null>(null);
@@ -107,7 +107,9 @@ export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS, alCerra
       {historial.cerrada ? (
         <section className="tarjeta entrevista__cerrada">
           <p>La ficha está cerrada.</p>
-          {alCerrar?.(historial)}
+          {/* RF-11: con la ficha cerrada se puede escribir la novela, tras confirmar (RF-12). */}
+          <ConfirmarGeneracion obra={historial.obra}
+            alLanzar={() => navegar(`/obras/${encodeURIComponent(historial.obra)}/generacion`)} />
         </section>
       ) : (
         <form className="entrevista__responder"

@@ -1,0 +1,40 @@
+/* SPEC-33 RF-01: la estanteria. Tarjetas tipograficas con el color del tema, sin imagen.
+   Solo variables del tema (SPEC-22 RF-59): cambiar la paleta es cambiar tokens.ts. */
+.estanteria__cabecera {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: var(--espacio-l);
+  flex-wrap: wrap; margin-bottom: var(--espacio-xl);
+}
+.estanteria__cabecera h1 { margin: 0; font-family: var(--fuente-titulos); font-size: 2.6rem; }
+.estanteria__antetitulo {
+  margin: 0; font-family: var(--fuente-interfaz); font-size: 0.8rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--color-detalle);
+}
+.boton--grande { font-size: 1.05rem; padding: var(--espacio-m) var(--espacio-xl); }
+.estanteria__vacia { color: var(--color-textoSuave); font-style: italic; }
+.estanteria__baldas {
+  list-style: none; padding: 0; margin: 0; display: grid; gap: var(--espacio-xl) var(--espacio-l);
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+.libro {
+  position: relative; display: grid; grid-template-rows: 1fr auto; min-height: 21rem;
+  background: var(--color-superficie); border: 1px solid var(--color-linea);
+  border-radius: var(--radio-s) var(--radio-m) var(--radio-m) var(--radio-s);
+  box-shadow: var(--sombra-media); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+}
+.libro:hover { transform: translateY(-4px); box-shadow: var(--sombra-portada); }
+.libro__lomo { position: absolute; inset: 0 auto 0 0; width: 10px; background: var(--color-acento); }
+.libro[data-fase="publicada"] .libro__lomo { background: var(--color-detalle); }
+.libro[data-fase="sin_generacion"] .libro__lomo { background: var(--color-linea); }
+.libro__portada {
+  display: flex; flex-direction: column; justify-content: center; gap: var(--espacio-m);
+  padding: var(--espacio-xl) var(--espacio-l) var(--espacio-l) calc(var(--espacio-l) + 10px);
+  text-align: center; border-bottom: 1px solid var(--color-linea);
+}
+.libro__titulo { margin: 0; font-family: var(--fuente-titulos); font-size: 1.5rem; line-height: 1.2; }
+.libro__dedicatoria { margin: 0; font-family: var(--fuente-lectura); font-style: italic; color: var(--color-textoSuave); }
+.libro__para { margin: 0; font-family: var(--fuente-interfaz); font-size: 0.85rem; color: var(--color-textoSuave); }
+.libro__pie {
+  display: flex; flex-wrap: wrap; gap: var(--espacio-s); align-items: center; justify-content: space-between;
+  padding: var(--espacio-m) var(--espacio-m) var(--espacio-m) calc(var(--espacio-m) + 10px);
+}
+@media (prefers-reduced-motion: reduce) { .libro { transition: none; } .libro:hover { transform: none; } }

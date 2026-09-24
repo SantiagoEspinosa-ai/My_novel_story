@@ -16,6 +16,9 @@ export type Historial = Esquemas["HistorialSalida"];
 export type GeneracionEnVivo = Esquemas["GeneracionEnVivo"];
 export type CapituloEnGeneracion = Esquemas["CapituloEnGeneracion"];
 export type CosteDeLaGeneracion = Esquemas["CosteDeLaGeneracion"];
+export type ConfirmacionDeGasto = Esquemas["ConfirmacionDeGasto"];
+export type Estanteria = Esquemas["Estanteria"];
+export type ObraEnLaEstanteria = Esquemas["ObraEnLaEstanteria"];
 /**
  * Lo que la pagina lee de `GET /trabajos/{id}`. En esta rama el congelado no lo tipa; lo tipa
  * `PLAN-22` E14 (`TrabajoSalida`), y al fusionarlo este tipo pasa a salir de alli.
@@ -93,6 +96,11 @@ export function crearCliente(fetchInyectado: Fetch) {
       enviar<unknown>(`/entrevistas/${e(entrevista)}/cerrar`),
     trabajo: (id: string) => leer<Trabajo>(`/trabajos/${e(id)}`),
     generacion: (obra: string) => leer<GeneracionEnVivo>(`/obras/${e(obra)}/generacion`),
+    estanteria: () => leer<Estanteria>("/obras"),
+    gasto: () => leer<ConfirmacionDeGasto>("/generaciones/gasto"),
+    // SPEC-33 RF-11: gasta dinero. Solo lo llama la confirmacion, despues de ensenar las cifras.
+    lanzar: (obra: string) =>
+      enviar<{ id_trabajo: string; generacion: string }>(`/obras/${e(obra)}/generaciones`),
   };
 }
 

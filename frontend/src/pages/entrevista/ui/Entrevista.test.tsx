@@ -3,7 +3,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
-import { fetchConMetodo, historialAbierto, historialCerrado, historialListo } from "@/shared/testing";
+import {
+  confirmacionConUltima, fetchConMetodo, historialAbierto, historialCerrado, historialListo,
+} from "@/shared/testing";
 import { PaginaEntrevista } from "./Entrevista";
 
 const E = "/api/entrevistas/ent-inventada";
@@ -17,6 +19,7 @@ function montar(rutas: Parameters<typeof fetchConMetodo>[0]) {
         <Routes>
           <Route path="/entrevistas/:entrevista"
             element={<PaginaEntrevista intervaloMs={10} />} />
+          <Route path="/obras/:obra/generacion" element={<p>pagina de la generacion</p>} />
         </Routes>
       </MemoryRouter>
     </ClienteProvider>,
@@ -112,6 +115,19 @@ describe("Entrevista", () => {
     await waitFor(() =>
       expect(screen.getByTestId("hecho-hp-1")).toHaveTextContent("confirmado"));
     expect(pedidas.map((p) => p.clave)).toContain(`POST ${E}/hechos/hp-1/confirmar`);
+  });
+
+  it("una entrevista cerrada ofrece escribir la novela y lleva a su generación", async () => {
+    montar({
+      [`GET ${E}/turnos`]: [{ cuerpo: historialCerrado }],
+      ["GET /api/generaciones/gasto"]: [{ cuerpo: confirmacionConUltima }],
+      [`POST /api/obras/${historialCerrado.obra}/generaciones`]: [
+        { estado: 202, cuerpo: { id_trabajo: "trab-9", generacion: "gen-9" } }],
+    });
+    const boton = await screen.findByRole("button", { name: /Sí, escribir la novela/ });
+    await waitFor(() => expect(boton).toBeEnabled());
+    fireEvent.click(boton);
+    expect(await screen.findByText("pagina de la generacion")).toBeInTheDocument();
   });
 
   it("una entrevista cerrada no ofrece responder y lo dice", async () => {
