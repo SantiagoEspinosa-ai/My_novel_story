@@ -82,3 +82,27 @@ proyecto aplica en `F-30`, `F-52` y la Regla 8.
 | `escena.capitulo` | `None` en todas | Relleno |
 | Estructura | Diez obras de seis escenas | **Una obra, diez capítulos** |
 | Cronología de fábula | Imposible por construcción | Medible por primera vez |
+
+
+## R0 · Primera ejecución real aceptada de la novela regalo (2026-09-24)
+
+`novela_regalo.py ejemplos/brief-ejemplo.json --capitulos 1 --base ejemplo.db --obra
+obra-ejemplo`, con el código de la rama `examen-cierre` en el commit `97c2b95`. Datos inventados.
+
+| Cifra | Valor | ¿Qué mide? |
+| --- | --- | --- |
+| Rondas del plan | **1** | El plan se aprobó a la primera (tras `F-62` y `F-68`) |
+| Capítulo 1 | **aceptado**, 1.102 palabras (`corta`: 1.000–1.150) | Primera escena de la novela regalo que llega a consolidarse |
+| Delegaciones | 5, **todas con coste medido** | Planificador, Revisor, Escritor, Editor, Resumidor |
+| Coste | **2,1650 USD** | Leído del sobre de cada delegación. Langfuse suma lo mismo: 2,165 |
+| Tiempo | 426 s | Del plan al resumen del capítulo 1 |
+| Contexto enviado | 620 tokens estimados | Primer capítulo: sin capítulo anterior ni resúmenes, **sesga a la baja** |
+| Hooks | `validar_capitulo` sobre el Escritor, código 0; `policy` 3 veces sobre el Escritor y 4 sobre el Editor, código 0 | **Primera vez** que los dos hooks actúan sobre un capítulo real |
+| Tools | 7 llamadas: el Escritor `ficha` ×3 (`ok`); el Editor `ficha` ×2 (`no_existe`), `hechos` y `cronologia` (`ok`) | Primera ejecución real de las tools (`PLAN-28` E10) |
+| Cronología y usos | 1 evento, 2 participaciones; 3 usos de hecho | Primeras filas reales de `evento_cronologico` y `uso_de_hecho` |
+| Langfuse | 15 observaciones en la sesión de la obra: 5 de rol con coste, 7 de tool, 3 de grupo | `PLAN-29` E13(b) |
+
+**Lo que no vale como medida de calidad:** `INV-26` salió `sin_veredicto` (`F-76`) y el
+Resumidor falló (`F-77`), así que este capítulo **no lo juzgó el Editor** y quedó sin resumen.
+Los dos están arreglados después de esta ejecución. Su coste **no se multiplica por diez** para
+presentarlo como coste de una novela (`PLAN-31` R0).

@@ -787,3 +787,15 @@ def test_un_transporte_agotado_sale_como_informe_y_no_como_traza(tmp_path, monke
     assert codigo == 1
     assert "PARADA POR TRANSPORTE" in salida and "TimeoutExpired" in salida
     assert "sin medir" in salida and "=== LANGFUSE ===" in salida
+
+
+def test_el_informe_cuenta_las_palabras_del_texto_elegido_aunque_no_se_marcara(con):
+    """`F-78`: en la primera ejecucion real aceptada, la escena salio limpia y se
+    consolido sin `borrador_aceptado`, y el informe decia «sin medir» teniendo el texto.
+    Cuenta lo mismo que lee el manuscrito: el aceptado o, si no consta, el ultimo."""
+    novela.montar(con, "obra-x", ficha(), _aprobado())
+    with con:
+        con.execute("INSERT INTO borrador (escena, version, texto, modelo, prompt_hash) "
+                    "VALUES ('cap-01-e1', 1, 'una dos tres', 'doble', 'h')")
+    assert _guion().palabras_de(con, "cap-01-e1") == 3
+    assert _guion().palabras_de(con, "cap-02-e1") is None

@@ -282,7 +282,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                 # usos justo de las escenas que mas falta hace poder revisar.
                 al_consolidar=ciclo._acta_de(
                     _acta_de_la_escena(escena, obra, material["hechos"]),
-                    texto_rendido, elegido))
+                    texto_rendido, elegido),
+                hechos=material["hechos"])
             g.rendidas.append((escena["id"], version, len(intentos)))
             if c.fallo:
                 g.parada = {"escena": escena["id"], "motivo": c.fallo,

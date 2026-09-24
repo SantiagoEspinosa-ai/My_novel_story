@@ -38,6 +38,7 @@ from app.commons.dominio.destinatario import FichaDeEntrevista  # noqa: E402
 from app.commons.modelo import proveedor  # noqa: E402
 from app.commons.observabilidad.langfuse import crear_exportador  # noqa: E402
 from app.commons.observabilidad.observacion import Observacion  # noqa: E402
+from app.features.manuscrito import exportar  # noqa: E402
 from app.features.orquestacion import ciclo, novela  # noqa: E402
 from app.features.planificacion import repository as planes  # noqa: E402
 from app.features.planificacion.service import PlanNoAprobado  # noqa: E402
@@ -105,6 +106,14 @@ def scores_de_hooks(observacion, filas):
     for fila in filas:
         observacion.score(nombre="hook.{0}".format(fila["hook"]),
                           categoria="pasa" if fila.get("codigo") == 0 else "falla")
+
+
+def palabras_de(con, escena):
+    """`F-78`: las palabras del texto elegido -el aceptado o, si no consta, el ultimo-,
+    que es lo que lee el manuscrito. `None` si no hay texto."""
+    fila = con.execute("SELECT borrador_aceptado FROM escena WHERE id = ?", (escena,)).fetchone()
+    texto = exportar._texto_de(con, escena, fila[0] if fila else None)
+    return len(texto.split()) if texto is not None else None
 
 
 def informe_sin_plan(con, obra, ag, error) -> str:
@@ -212,10 +221,7 @@ def main(argv=None):
     print("rendidos: {0}".format(g.rendidas or "(ninguno)"))
     print("parada: {0}".format(g.parada or "(ninguna)"))
     for e in g.escenas_hechas:
-        texto = con.execute("SELECT b.texto FROM borrador b JOIN escena s ON s.id = b.escena "
-                            "WHERE s.id = ? AND b.version = s.borrador_aceptado",
-                            (e,)).fetchone()
-        palabras = len(texto[0].split()) if texto else None
+        palabras = palabras_de(con, e)
         print("  {0}: {1} palabras".format(e, palabras if palabras is not None else "sin medir"))
     print("\n=== CONTEXTO ENVIADO (F-58) ===")
     for m in g.medidas:

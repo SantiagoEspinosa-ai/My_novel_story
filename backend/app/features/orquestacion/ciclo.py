@@ -67,6 +67,18 @@ de vista se sostiene, y si la prosa evita la explicacion de lo que ya se ve.
 
 PROMPT_RESUMEN = "Condensa esta escena.\n\nESCENA\n"
 
+
+def prompt_de_resumen(texto, hechos=None):
+    """`F-77`, Regla 4: la definicion del Resumidor le pide los identificadores «de la
+    lista que te den», asi que el prompt le da la lista. Sin ella, en la primera
+    ejecucion real el modelo pidio la lista en vez de contestar."""
+    lineas = ["- {0}: {1}".format(h["id"], h.get("enunciado") or "")
+              for h in hechos or []]
+    lista = "\n".join(lineas) if lineas else "(ninguno: devuelve hechos_clave vacia)"
+    return ("Condensa esta escena.\n\nHECHOS DE LA OBRA. En hechos_clave van solo "
+            "identificadores de esta lista; si la escena no cuenta ninguno, devuelve "
+            "hechos_clave vacia.\n" + lista + "\n\nESCENA\n" + texto)
+
 RUBRICA_DEL_EDITOR = """Juzga este capitulo de una novela para regalar con tu rubrica.
 Una nota de 1 a 5 por criterio -continuidad, tono, arco,
 coherencia_de_personajes, ritmo, personalizacion-, cada una con su justificacion
@@ -155,7 +167,10 @@ def _editar(con, c, editor, escena_id, texto, trabajo, umbral):
     bruto, _ = _delegar(editor, RUBRICA_DEL_EDITOR + "\n\nCAPITULO\n" + texto,
                         "editor", escena_id, trabajo, c.trazas)
     try:
-        leidas = ValoracionesDelEditor.model_validate(bruto or {})
+        # `F-76`: `medidas` la pone el transporte, no el Editor. Con ella dentro, el
+        # esquema -que no admite campos de mas- rechazaba toda valoracion real.
+        leidas = ValoracionesDelEditor.model_validate(
+            {k: v for k, v in (bruto or {}).items() if k != "medidas"})
     except Exception as e:
         _hallazgo_del_editor(con, escena_id, "sin_veredicto",
                              "el Editor no devolvio una valoracion legible: {0}".format(
@@ -313,11 +328,11 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
     if c.generacion.hallazgos or not consolidar:
         return c
     return consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo,
-                                al_consolidar=_acta_de(acta, texto, c))
+                                al_consolidar=_acta_de(acta, texto, c), hechos=hechos)
 
 
 def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo",
-                         al_consolidar=None):
+                         al_consolidar=None, hechos=None):
     """Aplica el delta y resume. Se llama cuando la escena **ya esta aceptada**:
     o porque salio limpia, o porque se rindio y se eligio su mejor intento.
 
@@ -334,7 +349,7 @@ def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo",
         c.fallo = "delta:" + type(e).__name__
         return c
 
-    bruto, _ = _delegar(resumidor, PROMPT_RESUMEN + texto,
+    bruto, _ = _delegar(resumidor, prompt_de_resumen(texto, hechos),
                         "resumidor", escena_id, trabajo, c.trazas)
     c.resumen = bruto
     return c

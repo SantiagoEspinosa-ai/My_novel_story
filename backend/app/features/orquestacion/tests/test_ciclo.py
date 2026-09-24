@@ -152,3 +152,52 @@ def test_una_delegacion_ilegible_deja_su_coste_en_la_traza(con):
     juez = [t for t in c.trazas if t.agente == "juez"][0]
     assert juez.resultado == "fallo"
     assert juez.medidas["coste_usd"] == 0.05 and juez.modelos == ["m-1"]
+
+
+# --- `F-76` y `F-77`: lo que vio la primera ejecucion real aceptada -----------------
+
+CRITERIOS = ("continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
+             "personalizacion")
+
+
+def test_el_editor_se_lee_aunque_el_transporte_anada_sus_medidas(con):
+    """`F-76`: el transporte mete `medidas` en toda respuesta, y el esquema del Editor
+    prohibe campos de mas: con datos reales, ninguna valoracion validaba nunca."""
+    editor = DobleQueDevuelve({"valoraciones": [
+        {"criterio": c, "nota": 4, "justificacion": "bien"} for c in CRITERIOS]})
+    c = ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(), editor,
+                       DobleQueDevuelve({"texto": "Marta baja.", "hechos_clave": []}),
+                       _mundo(), techo=10_000, es_editor=True)
+    assert "valoraciones" in c.veredicto
+    sin = con.execute("SELECT COUNT(*) FROM hallazgo WHERE invariante='INV-26' "
+                      "AND estado='sin_veredicto'").fetchone()[0]
+    assert sin == 0
+
+
+class _ResumidorQueMira(DobleQueDevuelve):
+    def __init__(self):
+        super().__init__({"texto": "Marta baja.", "hechos_clave": []})
+        self.prompts = []
+
+    def llamar(self, prompt):
+        self.prompts.append(prompt)
+        return super().llamar(prompt)
+
+
+def test_el_resumidor_recibe_la_lista_de_hechos_que_su_contrato_exige(con):
+    """`F-77`, Regla 4: la definicion del Resumidor le pide identificadores «de la lista
+    que te den», y el prompt no le daba ninguna. En real, el modelo pidio la lista en vez
+    de contestar, y la escena se quedo sin resumen."""
+    r = _ResumidorQueMira()
+    ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(),
+                   DobleQueDevuelve({"veredicto": "PASA", "problemas": []}), r, _mundo(),
+                   techo=10_000, hechos=[{"id": "hec-llave", "enunciado": "la llave abre"}])
+    assert "hec-llave" in r.prompts[0] and "la llave abre" in r.prompts[0]
+
+
+def test_sin_hechos_el_resumidor_sabe_que_la_lista_va_vacia(con):
+    r = _ResumidorQueMira()
+    ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(),
+                   DobleQueDevuelve({"veredicto": "PASA", "problemas": []}), r, _mundo(),
+                   techo=10_000)
+    assert "hechos_clave vacia" in r.prompts[0]
