@@ -1,13 +1,20 @@
 ---
 id: SPEC-23
 titulo: Qué es regenerar en una obra cuya continuidad es acumulativa
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-24
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
-version: 1
+version: 2
 ---
+
+> **Historial.** v1: en revisión, con `D-1`, `D-2` y `D-3` respondidas y la salida pendiente
+> del arrastre medido. v2 (2026-09-24): el autor fija el umbral en **3 capítulos** y aprueba la spec
+> antes de la medida, porque las versiones con identidad (`D-2`), guardar el delta (`G-05`) y la
+> reverificación (`D-1`) hacen falta con cualquiera de las dos salidas. La medida sigue decidiendo
+> la salida; lo que ya no espera a ella es la aprobación. La interfaz de la petición es la lectura
+> web (`SPEC-22`).
 
 # SPEC-23 — Regenerar en una obra acumulativa
 
@@ -355,6 +362,21 @@ número**, y eso es parte de la decisión y no un comentario:
 | ~2 capítulos | `S-1` es honesta y barata, y no hay más que hablar |
 | ~8 capítulos | `S-1` significa reescribir la novela en cada petición; `S-2` es la única viable |
 
+**La regla, cerrada por el autor (v2):**
+
+| Arrastre medio medido | Salida |
+| --- | --- |
+| **≤ 3 capítulos** | `S-1` |
+| **> 3 capítulos** | `S-2` |
+
+**Qué se mide.** Sobre la novela de ejemplo completa (`SPEC-27` `RF-03`), la media, entre los hechos
+de la obra con al menos un uso, del número de capítulos distintos que lo usan según `menciona`
+(`SPEC-21`), que es lo que el código calcula sobre el borrador aceptado. Se escribe el número, la
+obra y el commit con que se generó. **Cuándo no vale**: si la obra no está completa o si ningún hecho
+tiene usos, la medida no se toma y la salida no se elige; se dice así y se vuelve al autor. El
+sesgo conocido de esta medida es **a la baja**, hacia `S-1`, que es la salida barata: por eso el
+número se enseña con su dirección de sesgo en el mismo sitio en que se enseña.
+
 Fijarlo antes importa por una razón concreta y ya documentada: **el sesgo conocido de esta
 medida apunta a la baja** —un registro incompleto produce arrastres pequeños— y un arrastre
 pequeño recomienda justo la salida que menos trabajo cuesta. Con el umbral escrito de
@@ -391,7 +413,7 @@ proyecto ya ha elegido tres veces.
 | 3 | ¿Se acepta un verde heredado? | **Respondida: no** (`D-1`). El mínimo es `S-2` y hay que construir la reverificación |
 | 4 | ¿Dos versiones vivas o sustitución? | **Respondida: dos vivas** (`D-2`). Elimina la contradicción con `RF-30` en vez de gestionarla |
 | 2 | ¿Qué se le promete al lector? | **Respondida** (`D-3`): «reescribimos lo que dependía de esto», con el punto ciego dicho |
-| 1 | **¿Qué salida se toma?** | **Pendiente del arrastre medido**, con el umbral ya fijado. Es lo único que falta para aprobar |
+| 1 | **¿Qué salida se toma?** | **Respondida como regla** (v2): ≤ 3 capítulos, `S-1`; > 3, `S-2`. La aplica la medida, no una opinión |
 | 2 | **¿Qué se le promete al lector?** ¿«Reescribimos lo que dependía de esto» o «reescribimos de aquí al final»? | `S-1` y `S-3` prometen cosas distintas y las dos son defendibles. La promesa se escribe antes de construirla |
 | 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, la salida tiene que **invalidar o rehacer** los verdes posteriores: `S-1` los rehace y `S-2` los reverifica, así que el mínimo es `S-2`. `S-3` no hereda ninguno —el estado no se mueve— pero **no cubre la función**: en cuanto una petición mueva el estado hay que escalarla, así que no vale como salida única |
 | 4 | **¿Una obra puede quedar en dos versiones vivas, o la nueva sustituye a la vieja?** | Es `S-4`, y también decide qué significa «se conserva la versión anterior» |
