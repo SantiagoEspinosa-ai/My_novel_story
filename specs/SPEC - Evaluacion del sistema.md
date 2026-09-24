@@ -1,9 +1,9 @@
 ---
 id: SPEC-31
 titulo: Evaluación del sistema — cinco briefs, tuning, revisión humana y red-team
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
 version: 2
 ---
