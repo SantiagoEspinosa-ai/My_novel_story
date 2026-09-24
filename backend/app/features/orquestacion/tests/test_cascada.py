@@ -379,3 +379,19 @@ def test_con_s1_la_promesa_dice_que_se_reescribe_hasta_el_final():
                             "los siguientes")
     assert p["punto_ciego"] == regeneracion.PUNTO_CIEGO
     assert p["capitulos_propuestos"] == CAPS[2:]
+
+
+def test_con_observacion_la_cascada_es_una_traza_con_sus_capitulos_por_numero():
+    """`SPEC-29`: la regeneracion sube como la generacion -un span por llamada a cada rol,
+    colgado de su capitulo, que va por su **numero** en la version- y nada mas."""
+    from app.features.orquestacion.tests.test_novela import _enviados, _observacion
+    con = _base()
+    obs = _observacion(con)
+    _regenerar(con, _hecho(), observacion=obs)
+    spans = _enviados(obs, "span")
+    capitulos = sorted(s["capitulo"] for s in spans
+                       if s["tipo"] == "grupo" and s["nombre"] == "capitulo")
+    assert capitulos == list(range(3, 11))
+    assert {s["nombre"] for s in spans if s["tipo"] == "rol"} >= {
+        "escritor", "editor", "resumidor"}
+    assert [s for s in spans if s["tipo"] == "grupo" and s["nombre"] == "regeneracion"]

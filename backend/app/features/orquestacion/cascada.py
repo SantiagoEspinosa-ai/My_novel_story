@@ -26,6 +26,7 @@ consolido.
 la lista aceptada-: si falta algo, se dice y no se crea ni la version.
 """
 
+import contextlib
 import sqlite3
 
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
@@ -154,12 +155,23 @@ def regenerar(con, peticion, agentes=None, ficha=None, sistema=None, lean=None,
 
     sistema = sistema or carga.cargar_sistema()
     donde = {"capitulo": None, "total": None}
+    grupo = contextlib.nullcontext()
+    if observacion is not None:
+        # `SPEC-29`, como `novela._escribir_observado`: un span por llamada a cada rol, sin
+        # prompt ni respuesta, colgado de `regeneracion` y de su capitulo.
+        from app.features.observabilidad import repository as observabilidad
+        from app.features.orquestacion import prompts
+        prompts.enviar_nuevas(con, observacion)
+        observacion.herramientas_de = lambda d: observabilidad.spans_de_herramientas(con, d)
+        agentes = novela._observados(agentes, observacion)
+        grupo = observacion.grupo("regeneracion")
     preparados = novela.preparar_agentes(con, obra, agentes, sistema, donde)
     try:
-        r = novela.escribir_version(
-            con, obra, ficha, preparados, plan, brief.leer(con, obra)["premisa"],
-            de_la_version[k - 1:], numero, sistema, donde, listas=listas, lean=lean,
-            observacion=observacion, carpeta_de_reglas=carpeta_de_reglas, desde=k)
+        with grupo:
+            r = novela.escribir_version(
+                con, obra, ficha, preparados, plan, brief.leer(con, obra)["premisa"],
+                de_la_version[k - 1:], numero, sistema, donde, listas=listas, lean=lean,
+                observacion=observacion, carpeta_de_reglas=carpeta_de_reglas, desde=k)
     except Exception as e:
         progreso.fijar(con, obra, "parada", motivo=type(e).__name__)
         raise
