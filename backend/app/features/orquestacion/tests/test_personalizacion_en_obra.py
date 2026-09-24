@@ -117,3 +117,16 @@ def test_cada_reescritura_por_nombre_queda_en_el_audit_log_sin_los_nombres(con):
 def test_la_parada_por_nombre_queda_en_el_audit_log(con):
     _generar(con, ["nombre_mal"])
     assert [f[0] for f in _audit(con)].count("parada_por_nombre") == 1
+
+
+def test_un_fallo_de_transporte_se_reintenta_y_la_escena_sale(con):
+    """`F-72`: el reintento de transporte estaba declarado y no existia; un timeout
+    paraba la obra. Se reintenta el ciclo entero, sin gastar intentos ni reescrituras."""
+    g, escritor = _generar(con, ["timeout", "bien"], tope_transporte=3)
+    assert g.llego_al_final and g.parada is None
+
+
+def test_los_reintentos_de_transporte_tienen_tope(con):
+    g, escritor = _generar(con, ["timeout"], tope_transporte=2)
+    assert g.parada["motivo"] == "transporte" and g.parada["escena"] == "e1"
+    assert len(escritor.llamadas) == 3, "el intento y sus dos reintentos, y ninguno mas"

@@ -32,6 +32,7 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from app.commons import config
+from app.commons.modelo import cliente
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
 from app.commons.dominio.enumeraciones import OrigenDeUso, TipoDeUsoDeHecho
@@ -168,7 +169,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
                  vetadas=None, tope_vetadas=None, genero=None, nombres=None,
                  imprescindibles=None, editor=False, anterior_cruza_capitulo=False,
-                 observacion=None):
+                 observacion=None, tope_transporte=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Con `observacion` (`SPEC-29` `RF-04`), cada intento deja sus scores.
@@ -188,6 +189,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # a la primera) y `or` lo convertiria en el de por defecto.
     tope_vetadas = (config.TOPE_REESCRITURAS_POR_VETADA if tope_vetadas is None
                     else tope_vetadas)
+    tope_transporte = (config.TOPE_REINTENTOS_TRANSPORTE if tope_transporte is None
+                       else tope_transporte)
     # Las tablas del acta se aseguran **aqui y no al levantarla**: crearlas
     # abre su propia transaccion, y el acta corre dentro de la del delta.
     # Anidar transacciones en SQLite hace commit del bloque interno, que es
@@ -253,7 +256,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                                 tope_vetadas=tope_vetadas, nombres=nombres,
                                 imprescindibles=(imprescindibles or {}).get(escena["id"]),
                                 es_editor=editor, textos=textos,
-                                observacion=observacion)
+                                observacion=observacion, tope_transporte=tope_transporte)
 
         if c.fallo:
             g.parada = {"escena": escena["id"], "motivo": c.fallo,
@@ -419,7 +422,7 @@ def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
 def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id,
               techo, tope, g, instrucciones=None, vetadas=None, tope_vetadas=0,
               nombres=None, imprescindibles=None, es_editor=False, textos=None,
-              observacion=None):
+              observacion=None, tope_transporte=0):
     """Hasta `tope` intentos, y los problemas de uno entran en el siguiente.
 
     Se para en cuanto sale limpia, y **tambien en cuanto una `bloqueante`
@@ -440,6 +443,10 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
     c = None
     numero = 0
     reescrituras = 0
+    # `F-72`: los fallos de transporte tienen su propio contador. Se reintenta el ciclo
+    # entero -el contexto se vuelve a montar-, como dice `commons/modelo/cliente.py`, y
+    # no gasta intentos de calidad ni reescrituras: el texto no llego a existir.
+    reintentos_de_transporte = 0
     problemas_de_vetadas = None
     while numero < tope:
         c = ciclo.ejecutar(con, escena["id"], tamanos, escritor, juez, resumidor,
@@ -503,6 +510,10 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                  "descripcion": "escribiste «{0}»: el nombre es «{1}»".format(
                      m.escrito, m.correcto)}
                 for m in c.nombres_encontrados]
+            continue
+        if (c.fallo == "transporte" and cliente.se_reintenta(c.fallo)
+                and reintentos_de_transporte < tope_transporte):
+            reintentos_de_transporte += 1
             continue
         problemas_de_vetadas = None
         if c.generacion is not None and c.generacion.version is not None:

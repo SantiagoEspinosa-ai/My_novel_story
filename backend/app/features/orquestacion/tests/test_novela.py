@@ -693,3 +693,60 @@ def test_sin_plan_aprobado_el_guion_informa_y_sale_con_1(tmp_path, monkeypatch, 
     assert "delegaciones: 4 | sin coste medido: 1" in salida
     assert "0.7500 USD" in salida and "SUELO" in salida
     assert "=== LANGFUSE ===" in salida
+
+
+# --- `F-72`: los agentes que no montan contexto reintentan su llamada ------------
+
+class _SeCaeYLuego:
+    """Lanza el fallo de transporte de la delegacion real `veces` veces y luego responde."""
+
+    def __init__(self, respuesta, veces):
+        self.respuesta, self.veces, self.llamadas, self.nombre = respuesta, veces, [], "doble"
+
+    def llamar(self, prompt):
+        from app.commons.modelo import proveedor
+        self.llamadas.append(prompt)
+        if len(self.llamadas) <= self.veces:
+            raise proveedor.FalloDeTransporte("la delegacion no completo: TimeoutExpired")
+        return self.respuesta
+
+
+def test_un_revisor_que_se_cae_una_vez_se_reintenta_y_el_plan_se_aprueba(con, tmp_path):
+    agentes = _agentes()
+    agentes["revisor"] = _SeCaeYLuego({"aprobado": True, "objeciones": []}, veces=1)
+    r = novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path))
+    assert r["plan"].version == 1 and len(agentes["revisor"].llamadas) == 2
+
+
+def test_un_resumidor_que_no_vuelve_agota_su_tope_y_el_fallo_sube(con, tmp_path):
+    """Pasado el tope, el fallo sube: el guion lo informa (`F-72`), no lo esconde."""
+    from app.commons.modelo import proveedor
+    from app.commons.configuracion import carga
+    sistema = carga.cargar_sistema()
+    agentes = _agentes()
+    agentes["resumidor"] = _SeCaeYLuego({"texto": "x", "hechos_clave": []}, veces=99)
+    with pytest.raises(proveedor.FalloDeTransporte):
+        novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path), sistema=sistema)
+    assert len(agentes["resumidor"].llamadas) == 1 + sistema.topes.reintentos_de_transporte
+
+
+def test_un_transporte_agotado_sale_como_informe_y_no_como_traza(tmp_path, monkeypatch, capsys):
+    """`F-72`: pasado el tope, el fallo sube hasta el guion, que lo dice y sale con 1."""
+    from app.commons.modelo import proveedor
+    guion = _guion()
+    ruta_ficha = tmp_path / "ficha.json"
+    ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
+    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno: {
+        "planificador": _Sumado(0.5, 1, 0), "revisor": _Sumado(0.25, 1, 0)})
+
+    def se_cae(con, obra, *a, **kw):
+        raise proveedor.FalloDeTransporte("la delegacion no completo: TimeoutExpired")
+    monkeypatch.setattr(guion.novela, "escribir", se_cae)
+
+    codigo = guion.main([str(ruta_ficha), "--base", str(tmp_path / "r.db"), "--obra", "obra-x"])
+    salida = capsys.readouterr().out
+    assert codigo == 1
+    assert "PARADA POR TRANSPORTE" in salida and "TimeoutExpired" in salida
+    assert "sin medir" in salida and "=== LANGFUSE ===" in salida
