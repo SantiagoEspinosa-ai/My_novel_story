@@ -66,11 +66,11 @@ TOPE_REVISIONES_DE_PLAN = 3
 # vuelve al Editor y la generacion se detiene (`RF-06`).
 TOPE_REINTENTOS_DE_PUBLICACION = 2
 
-# **Provisional: elegido, no medido.** Cuanto tarda `lake build` sobre una copia de
-# `specs/lean/` esta sin medir (lo mide `PLAN-30` E12, y lo deja en `specs/lean/medidas.md`). Un Lean que no acaba a tiempo
-# es «sin veredicto», que bloquea igual que un fallo (`SPEC-30` `RF-09`), asi que
-# quedarse corto cuesta una parada visible, no un verde falso.
-# Caduca con: specs/lean/medidas.md
+# **Elegido con la medida delante** (`specs/lean/medidas.md`, `PLAN-30` E12): una
+# ejecucion en caliente tarda 3,8-3,9 s, y 300 s cubren la compilacion en frio -un clon
+# sin `.lake`-, que esta **sin medir**. Un Lean que no acaba a tiempo es «sin
+# veredicto», que bloquea igual que un fallo (`SPEC-30` `RF-09`), asi que quedarse
+# corto cuesta una parada visible, no un verde falso.
 TIEMPO_MAXIMO_LEAN_SEGUNDOS = 300
 
 # **Contrato, no estimacion.** `SPEC-26` `RF-11`: tres reescrituras despues del
