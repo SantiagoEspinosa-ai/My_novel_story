@@ -656,3 +656,40 @@ def test_los_hooks_del_registro_dan_un_score_cada_uno(con):
         {"hook": "policy", "agente": "editor", "codigo": 2}])
     s = [(e["nombre"], e["categoria"]) for e in _enviados(obs, "score")]
     assert s == [("hook.validar_capitulo", "pasa"), ("hook.policy", "falla")]
+
+
+# --- `F-69`: sin plan aprobado, el guion informa y sale con 1 ---------------------
+
+class _Sumado:
+    """Lo que el guion lee de un `Contador`: cuanto sumo, sin llamar a nadie."""
+
+    def __init__(self, usd, delegaciones, sin_coste):
+        self.usd, self.delegaciones, self.sin_coste = usd, delegaciones, sin_coste
+
+
+def test_sin_plan_aprobado_el_guion_informa_y_sale_con_1(tmp_path, monkeypatch, capsys):
+    """`F-69`: `PlanNoAprobado` subia como traza y el coste del Planificador y del
+    Revisor, que solo vivia en memoria, se perdia sin decir que se perdia."""
+    from app.features.planificacion import repository as planes
+    from app.features.planificacion.service import PlanNoAprobado
+    guion = _guion()
+    ruta_ficha = tmp_path / "ficha.json"
+    ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
+    base = str(tmp_path / "regalo.db")
+    sumados = {"planificador": _Sumado(0.5, 3, 0), "revisor": _Sumado(0.25, 1, 1)}
+    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno: sumados)
+
+    def no_aprueba(con, obra, *a, **kw):
+        planes.asegurar_tablas(con)
+        planes.guardar(con, obra, 1, None, False, "esquema", ["un campo inventado"])
+        raise PlanNoAprobado("el plan no se aprobo en 3 rondas; las ultimas objeciones: x")
+    monkeypatch.setattr(guion.novela, "escribir", no_aprueba)
+
+    codigo = guion.main([str(ruta_ficha), "--base", base, "--obra", "obra-x"])
+    salida = capsys.readouterr().out
+    assert codigo == 1
+    assert "PLAN NO APROBADO" in salida and "no se aprobo en 3 rondas" in salida
+    assert "ronda 1: esquema" in salida
+    assert "delegaciones: 4 | sin coste medido: 1" in salida
+    assert "0.7500 USD" in salida and "SUELO" in salida
+    assert "=== LANGFUSE ===" in salida

@@ -39,6 +39,8 @@ from app.commons.modelo import proveedor  # noqa: E402
 from app.commons.observabilidad.langfuse import crear_exportador  # noqa: E402
 from app.commons.observabilidad.observacion import Observacion  # noqa: E402
 from app.features.orquestacion import ciclo, novela  # noqa: E402
+from app.features.planificacion import repository as planes  # noqa: E402
+from app.features.planificacion.service import PlanNoAprobado  # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
@@ -105,6 +107,36 @@ def scores_de_hooks(observacion, filas):
                           categoria="pasa" if fila.get("codigo") == 0 else "falla")
 
 
+def informe_sin_plan(con, obra, ag, error) -> str:
+    """`F-69`: sin plan aprobado no hay capitulos, pero si rondas y coste. El coste del
+    Planificador y del Revisor solo vive en sus `Contador`; si no se imprime aqui, se
+    pierde sin que nadie lo diga."""
+    lineas = ["\n=== PLAN NO APROBADO ===", str(error)]
+    for v in planes.versiones(con, obra):
+        lineas.append("  ronda {0}: {1}".format(v["version"], v["origen"]))
+    usd = ag["planificador"].usd + ag["revisor"].usd
+    sin_coste = ag["planificador"].sin_coste + ag["revisor"].sin_coste
+    delegaciones = ag["planificador"].delegaciones + ag["revisor"].delegaciones
+    lineas += ["\n=== COSTE ===",
+               "delegaciones: {0} | sin coste medido: {1}".format(delegaciones, sin_coste),
+               "coste leido: {0:.4f} USD{1}".format(
+                   usd, " (SUELO: hay delegaciones sin coste)" if sin_coste else "")]
+    return "\n".join(lineas)
+
+
+def informe_de_hooks(observacion, registro_hooks):
+    print("\n=== HOOKS (lo que Claude Code ejecuto de verdad) ===")
+    if os.path.exists(registro_hooks):
+        with open(registro_hooks, encoding="utf-8") as f:
+            filas = [json.loads(l) for l in f if l.strip()]
+        for fila in filas:
+            print("  {hook} sobre {agente}: codigo {codigo}".format(**fila))
+        scores_de_hooks(observacion, filas)
+    else:
+        print("  NINGUNO: los hooks no dejaron constancia. O Claude Code no los "
+              "lanzo, o no les llego HARNESS_REGISTRO_HOOKS.")
+
+
 def codigo_de_salida(r) -> int:
     """`SPEC-30` `RF-04`: una novela que no pasa la puerta no sale como si hubiera ido
     bien. Sin puerta (`--capitulos`) no es un fallo: no se evaluo."""
@@ -138,9 +170,17 @@ def main(argv=None):
     # sesion de su obra; sin ellas no se envia nada, y el informe lo dice.
     observacion = Observacion(crear_exportador(), con=con, obra=args.obra, nombre="generacion")
     arranque = time.time()
-    r = novela.escribir(con, args.obra, ficha, ag, hasta_capitulo=args.capitulos,
-                        carpeta_de_reglas=tempfile.gettempdir(), sistema=sistema,
-                        observacion=observacion)
+    try:
+        r = novela.escribir(con, args.obra, ficha, ag, hasta_capitulo=args.capitulos,
+                            carpeta_de_reglas=tempfile.gettempdir(), sistema=sistema,
+                            observacion=observacion)
+    except PlanNoAprobado as e:
+        print(informe_sin_plan(con, args.obra, ag, e))
+        print("tiempo: {0:.0f} s".format(time.time() - arranque))
+        informe_de_hooks(observacion, registro_hooks)
+        print("\n=== LANGFUSE ===")
+        print(estado_de_langfuse(observacion, observacion.vaciar()))
+        return 1
     g = r["generacion"]
     usd = g.coste["usd"] + ag["planificador"].usd + ag["revisor"].usd
     sin_coste = g.coste["sin_coste"] + ag["planificador"].sin_coste + ag["revisor"].sin_coste
@@ -170,16 +210,7 @@ def main(argv=None):
     print("coste leido: {0:.4f} USD{1}".format(
         usd, " (SUELO: hay delegaciones sin coste)" if sin_coste else ""))
     print("tiempo: {0:.0f} s".format(time.time() - arranque))
-    print("\n=== HOOKS (lo que Claude Code ejecuto de verdad) ===")
-    if os.path.exists(registro_hooks):
-        with open(registro_hooks, encoding="utf-8") as f:
-            filas = [json.loads(l) for l in f if l.strip()]
-        for fila in filas:
-            print("  {hook} sobre {agente}: codigo {codigo}".format(**fila))
-        scores_de_hooks(observacion, filas)
-    else:
-        print("  NINGUNO: los hooks no dejaron constancia. O Claude Code no los "
-              "lanzo, o no les llego HARNESS_REGISTRO_HOOKS.")
+    informe_de_hooks(observacion, registro_hooks)
     if r["cierre"]:
         print("\n=== CIERRE ===")
         print(r["cierre"]["estado"], r["cierre"]["faltan"] or "")
