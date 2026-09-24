@@ -163,3 +163,13 @@ def test_el_agregado_de_la_novela_suma_sus_capitulos(con):
     g = _grupo(obs, "novela")
     assert g["coste_usd"] == 0.5 and g["coste_es_suelo"] is False
     assert g["tokens_entrada"] == 200
+
+
+def test_un_vaciado_que_no_termina_deja_una_perdida(con):
+    class Colgado(ExportadorEnMemoria):
+        def vaciar(self, timeout=None):
+            return False
+
+    obs = Observacion(Colgado(), con=con, obra="obra-a")
+    assert obs.vaciar(0.01) is False
+    assert [p["tipo"] for p in perdidas.de(con)] == ["vaciado"]

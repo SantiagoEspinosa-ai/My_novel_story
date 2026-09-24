@@ -3,8 +3,9 @@
 #
 # No hay cliente de ningun proveedor de modelos, y eso es deliberado: desde
 # `SPEC-14` el harness **delega en sesiones de Claude Code por subproceso** y
-# ningun codigo suyo toca la red. Si algun dia aparece aqui un SDK, es que esa
-# decision cambio y hay que mirar si la spec lo dice.
+# ningun codigo suyo llama a un modelo por la red. Si algun dia aparece aqui un SDK
+# de un proveedor de modelos, es que esa decision cambio y hay que mirar si la spec lo
+# dice. La unica excepcion de red es la observabilidad (`SPEC-29`), mas abajo.
 fastapi
 uvicorn
 httpx
@@ -13,3 +14,8 @@ pytest
 # `CLAUDE.md`: la busqueda por similitud se hace con una extension vectorial de
 # SQLite y **no se añade un servicio aparte**. Verificada con v0.1.9.
 sqlite-vec
+
+# `SPEC-29`: observabilidad en Langfuse. Lo usa un solo modulo,
+# `app/commons/observabilidad/langfuse.py`; sin claves en `backend/.env` no se importa.
+# Version mayor fijada: la API de v4 va sobre OpenTelemetry y no es la de v2.
+langfuse>=4,<5

@@ -50,6 +50,19 @@ class Observacion:
                                  or getattr(objeto, "rol", None), e)
             return False
 
+    def vaciar(self, timeout=10):
+        """Al terminar: lo que el exportador tenga en cola. Uno que no vacia a tiempo deja
+        su perdida, como cualquier otro envio que no llego (`RF-09`)."""
+        try:
+            ok = self.exportador.vaciar(timeout)
+        except Exception:  # noqa: BLE001
+            ok = False
+        if not ok:
+            self.perdidas += 1
+            if self.con is not None:
+                perdidas.guardar(self.con, self.sesion, "vaciado", None, TimeoutError())
+        return ok
+
     @property
     def padre(self):
         return self._padres[-1]["id"] if self._padres else None
