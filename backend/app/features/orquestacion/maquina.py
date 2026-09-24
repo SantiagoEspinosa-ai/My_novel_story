@@ -26,7 +26,6 @@ DISPARADORES = {
     (E.EN_REVISION, E.GENERADA): "Revisor",
     (E.EN_REVISION, E.ACEPTADA_POR_RENDICION): "Orquestador",
     (E.ACEPTADA, E.CONSOLIDADA): "Consolidador",
-    (E.ACEPTADA_POR_RENDICION, E.CONSOLIDADA): "Consolidador",
 }
 
 

@@ -211,12 +211,11 @@ def test_una_escena_con_un_mayor_se_reintenta_y_acaba_rindiendose(con):
                           techo=1_000_000, hasta=1, tope_intentos=3)
     assert len(escritor.llamadas) == 3, "se agotan los intentos antes de rendirse"
     assert g.escenas_hechas == ["e1"]
-    # Acaba en `consolidada`, no en `aceptada_por_rendicion`: la tabla de
-    # transiciones de `docs/architecture.md` tiene `aceptada_por_rendicion ->
-    # consolidada`, asi que ese estado es de paso. Lo que deja constancia de
-    # que se rindio es `borrador_aceptado` -que dice cual de los intentos se
-    # eligio- y los hallazgos que siguen abiertos.
-    assert repo.escena(con, "e1")["estado"] == "consolidada"
+    # `SPEC-30` v4 `RF-11` (`C-3`): se queda en `aceptada_por_rendicion` tambien
+    # despues de consolidar. Antes acababa en `consolidada` y la rendicion solo la
+    # delataban `rendidas`, que vive en memoria, y los hallazgos abiertos; eso
+    # contradecia a `docs/definitions.md`, que la define como estado.
+    assert repo.escena(con, "e1")["estado"] == "aceptada_por_rendicion"
     assert repo.escena(con, "e1")["borrador_aceptado"] is not None
     # Los tres intentos empatan -el doble falla siempre igual-, y a igualdad
     # gana el primero: la rendicion tiene que ser reproducible.
@@ -738,3 +737,37 @@ def test_el_informe_dice_que_invariantes_estan_obsoletas(con):
     g = obra.generar_obra(con, "cap-1", *_agentes(), techo=1_000_000,
                           genero="aventura")
     assert "obsoletas: INV-10, INV-11, INV-12, INV-16" in obra.informe(g)
+
+
+
+# --- `SPEC-30` v4 `RF-11`: la rendicion sobrevive a la consolidacion -------------
+
+def _consolidada(con, escena):
+    return con.execute("SELECT 1 FROM escena_consolidada WHERE escena = ?",
+                       (escena,)).fetchone() is not None
+
+
+def test_una_escena_rendida_sigue_rendida_despues_de_consolidar(con):
+    """El estado dice que se rindio; que esta consolidada lo dice
+    `escena_consolidada`. Son dos preguntas distintas y ya no se pisan."""
+    obra.generar_obra(con, "cap-1", SiempreCorto(), *_agentes()[1:],
+                      techo=1_000_000, hasta=1, tope_intentos=3)
+    assert repo.escena(con, "e1")["estado"] == "aceptada_por_rendicion"
+    assert _consolidada(con, "e1"), "el delta esta aplicado igual"
+
+
+def test_una_escena_limpia_queda_consolidada(con):
+    obra.generar_obra(con, "cap-1", DobleDelModelo(), *_agentes()[1:],
+                      techo=1_000_000, hasta=1)
+    assert repo.escena(con, "e1")["estado"] == "consolidada"
+    assert _consolidada(con, "e1")
+
+
+def test_relanzar_salta_una_escena_rendida_y_consolidada(con):
+    obra.generar_obra(con, "cap-1", SiempreCorto(), *_agentes()[1:],
+                      techo=1_000_000, hasta=1, tope_intentos=3)
+    escritor = SiempreCorto()
+    obra.generar_obra(con, "cap-1", escritor, *_agentes()[1:],
+                      techo=1_000_000, hasta=1, tope_intentos=3)
+    assert escritor.llamadas == [], "no se reescribe lo que ya esta hecho"
+    assert repo.escena(con, "e1")["estado"] == "aceptada_por_rendicion"

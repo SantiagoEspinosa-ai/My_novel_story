@@ -275,10 +275,15 @@ def marcar_consolidada(con, escena):
     capitulo veia un capitulo con tres escenas a medias y no podia cerrarse
     nunca. El delta se aplicaba igual, de modo que el estado del mundo era
     correcto y el de la escena mentia.
+
+    **Una escena rendida no se toca** (`SPEC-30` v4 `RF-11`): pisarla con
+    `consolidada` borraba el unico dato duradero de que se rindio, que
+    `docs/definitions.md` define como estado para que quien lea la obra lo sepa.
+    Que esta consolidada lo dice `escena_consolidada`.
     """
     with con:
-        con.execute("UPDATE escena SET estado = ? WHERE id = ?",
-                    (EE.CONSOLIDADA.value, escena))
+        con.execute("UPDATE escena SET estado = ? WHERE id = ? AND estado <> ?",
+                    (EE.CONSOLIDADA.value, escena, EE.ACEPTADA_POR_RENDICION.value))
 
 
 def rendir_escena(con, escena, version):

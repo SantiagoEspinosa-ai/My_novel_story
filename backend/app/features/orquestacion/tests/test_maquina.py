@@ -35,9 +35,12 @@ def test_hay_rendicion_desde_en_revision():
     assert E.ACEPTADA_POR_RENDICION in maquina.destinos(E.EN_REVISION)
 
 
-def test_las_dos_formas_de_aceptar_llevan_a_consolidada():
+def test_aceptar_lleva_a_consolidada_y_rendirse_es_terminal():
+    """`SPEC-30` v4 `RF-11`: la rendicion no pasa a `consolidada`, porque ese
+    paso la borraba. Que la escena rendida esta consolidada lo dice
+    `escena_consolidada`, no el estado."""
     assert maquina.destinos(E.ACEPTADA) == {E.CONSOLIDADA}
-    assert maquina.destinos(E.ACEPTADA_POR_RENDICION) == {E.CONSOLIDADA}
+    assert maquina.destinos(E.ACEPTADA_POR_RENDICION) == set()
 
 
 def test_consolidada_es_terminal():

@@ -395,7 +395,8 @@ añade este documento es la columna de quién los mueve.
 | `en_revision` → `generada` | Revisor | Reescritura dirigida |
 | `en_revision` → `aceptada_por_rendicion` | Orquestador | Se agotaron los intentos y ninguna invariante `bloqueante` sigue abierta. Se elige el menos malo |
 | `aceptada` → `consolidada` | Consolidador | Delta aplicado sin conflicto |
-| `aceptada_por_rendicion` → `consolidada` | Consolidador | Delta aplicado sin conflicto |
+
+**Una escena rendida no pasa a `consolidada`** (`SPEC-30` v4 `RF-11`): el Consolidador aplica su delta igual y lo registra en `escena_consolidada`, pero el estado se queda en `aceptada_por_rendicion`. Esa transición existía y borraba el único dato duradero de que la escena se rindió, que `docs/definitions.md` define como estado; y la puerta de publicación necesita leerlo (`INV-29`).
 
 **No hay rendición desde `rechazada`.** Una invariante `bloqueante` abierta no se rinde
 nunca: el delta de una escena rendida entra al canon igual que el de una limpia, y una

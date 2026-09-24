@@ -86,8 +86,8 @@ def test_cuatro_rondas_por_debajo_se_rinde_con_los_hallazgos_visibles(con):
     g, escritor = _generar(con, Editor([_valoraciones(nota_ritmo=1)]))
     assert len(escritor.llamadas) == 4
     assert [r[0] for r in g.rendidas] == ["e1"]
-    # `aceptada_por_rendicion` es de paso y acaba en `consolidada` (ver
-    # `test_obra.py`): la rendicion la delatan `rendidas` y los hallazgos abiertos.
+    # `SPEC-30` v4 `RF-11`: se queda rendida tambien despues de consolidar.
+    assert repo.escena(con, "e1")["estado"] == "aceptada_por_rendicion"
     assert repo.escena(con, "e1")["borrador_aceptado"] is not None
     assert any(h["invariante"] == "INV-26" for h in repo.hallazgos_abiertos(con, "e1"))
 
