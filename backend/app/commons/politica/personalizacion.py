@@ -132,7 +132,11 @@ def frases_repetidas(textos: dict, longitud: int) -> list:
     Lee el texto de la base, **no lo manda al modelo**: `CLAUDE.md` permite que
     una comprobacion determinista lea la obra entera.
     """
-    secuencias = {cap: _secuencia(t) for cap, t in textos.items()}
+    # `F-141`: se compara por raices, pero se cuenta con el texto. Cada palabra guarda su
+    # posicion en el original, y la frase que sale es el fragmento de su primera aparicion.
+    posiciones = {cap: palabras_normalizadas(t) for cap, t in textos.items()}
+    secuencias = {cap: [r for _, _, r in pos] for cap, pos in posiciones.items()}
+    original = {}
     donde = {}
     for cap, sec in secuencias.items():
         for i in range(len(sec) - longitud + 1):
@@ -150,6 +154,9 @@ def frases_repetidas(textos: dict, longitud: int) -> list:
                 fin += 1
             frase = " ".join(sec[i:fin])
             frases.setdefault(frase, set()).add(cap)
+            if frase not in original:
+                pos = posiciones[cap]
+                original[frase] = textos[cap][pos[i][0]:pos[fin - 1][1]]
             i = fin
-    return [FraseRepetida(f, tuple(sorted(c))) for f, c in sorted(frases.items())
+    return [FraseRepetida(original[f], tuple(sorted(c))) for f, c in sorted(frases.items())
             if len(c) > 1]

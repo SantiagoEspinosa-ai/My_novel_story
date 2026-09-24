@@ -95,3 +95,13 @@ def test_la_lista_de_palabras_comunes_es_cerrada_y_esta_escrita():
     """El punto ciego de (a) es la propia lista: se lee, no se deduce."""
     assert "Nadie" in p.PALABRAS_COMUNES and "Nada" in p.PALABRAS_COMUNES
     assert all(w[0].isupper() for w in p.PALABRAS_COMUNES)
+
+
+def test_la_frase_repetida_se_cuenta_con_el_texto_y_no_con_sus_raices():
+    """`F-141`, visto por `INV-30` en real: el lector leia «gat que ha comid en cuatr cas y»
+    en vez de la frase del capitulo. Se compara por raices, pero se cuenta con el texto."""
+    frase = "el gato que ha comido en cuatro casas y nadie lo sabe"
+    textos = {"cap-1": "Al salir, " + frase + ".", "cap-2": "Dijo que " + frase + "."}
+    [r] = p.frases_repetidas(textos, longitud=8)
+    assert "gato que ha comido en cuatro casas" in r.frase
+    assert "gat " not in r.frase
