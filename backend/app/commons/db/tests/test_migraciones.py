@@ -180,3 +180,20 @@ def test_al_añadir_obra_se_rellena_lo_que_ya_habia():
     migraciones.migrar(con)
     assert con.execute("SELECT obra FROM resumen").fetchone()[0] == "obra-1"
     assert con.execute("SELECT obra FROM ficha").fetchone()[0] == "obra-1"
+
+
+def test_la_migracion_anade_dedicatoria_a_una_base_anterior():
+    """`SPEC-32` `RF-01`: `Obra.dedicatoria`. Una base de antes, con obras ya
+    dadas de alta, gana la columna sin perder filas (la leccion de `F-51`: añadir
+    la columna al `CREATE TABLE` solo sirve a las bases que no existen)."""
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+        CREATE TABLE obra (id TEXT PRIMARY KEY, titulo TEXT NOT NULL,
+            premisa TEXT NOT NULL, genero TEXT, subgenero TEXT,
+            extension_objetivo INTEGER, guia_de_estilo TEXT);
+        INSERT INTO obra (id, titulo, premisa) VALUES ('obra-vieja', 'T', 'P');
+    """)
+    migraciones.migrar(con)
+    columnas = {f[1] for f in con.execute("PRAGMA table_info(obra)")}
+    assert "dedicatoria" in columnas
+    assert con.execute("SELECT titulo, dedicatoria FROM obra").fetchone() == ("T", None)

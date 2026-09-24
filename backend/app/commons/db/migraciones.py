@@ -261,6 +261,15 @@ TODAS = [
         # todavia no existen.
         lambda con: _migrar_memoria_a_obra(con),
     ),
+    Migracion(
+        9,
+        "la obra guarda su dedicatoria",
+        # `SPEC-32` `RF-01`..`RF-03`: es texto de la obra, no dato de la ficha. Se
+        # copia al montar y sobrevive al borrado de la ficha al entregar
+        # (`SPEC-25` `RF-21`), que es lo que hace falta para que la portada exista
+        # despues de entregar. Opcional: una ficha puede no traerla.
+        lambda con: anadir_columnas(con, "obra", {"dedicatoria": "TEXT"}),
+    ),
 ]
 
 

@@ -38,7 +38,9 @@ def montar(con, obra, ficha, aprobado, sistema=None):
         return False
     brief.alta_de_obra(con, obra, {"titulo": aprobado.titulo,
                                    "premisa": aprobado.premisa,
-                                   "genero": ficha.genero.value if ficha.genero else None},
+                                   "genero": ficha.genero.value if ficha.genero else None,
+                                   # `SPEC-32` `RF-02`: antes del borrado de la ficha.
+                                   "dedicatoria": ficha.dedicatoria},
                        [c.id for c in plan.capitulos])
     aplicar.sembrar(con, {p.id: (p.estado_vital.value, p.empieza_en)
                           for p in plan.mundo.personajes})

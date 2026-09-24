@@ -338,3 +338,17 @@ def test_un_capitulo_de_1200_palabras_falla_inv17_si_la_extension_es_larga(con, 
     novela.escribir(con, "obra-x", ficha(extension="larga"), _agentes(), hasta_capitulo=1,
                     carpeta_de_reglas=str(tmp_path))
     assert con.execute("SELECT 1 FROM hallazgo WHERE invariante='INV-17'").fetchone()
+
+
+# --- `SPEC-32` `RF-01`..`RF-03`: la dedicatoria es de la obra ---------------------
+
+def test_montar_copia_la_dedicatoria_a_la_obra(con):
+    novela.montar(con, "obra-x", ficha(dedicatoria="Para Irene, que siempre llega."),
+                  _aprobado())
+    assert con.execute("SELECT dedicatoria FROM obra WHERE id='obra-x'").fetchone()[0] \
+        == "Para Irene, que siempre llega."
+
+
+def test_una_ficha_sin_dedicatoria_deja_la_obra_sin_ella(con):
+    novela.montar(con, "obra-x", ficha(dedicatoria=None), _aprobado())
+    assert con.execute("SELECT dedicatoria FROM obra WHERE id='obra-x'").fetchone()[0] is None

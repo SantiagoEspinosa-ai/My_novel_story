@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS obra (
     genero             TEXT,
     subgenero          TEXT,
     extension_objetivo INTEGER,
-    guia_de_estilo     TEXT
+    guia_de_estilo     TEXT,
+    dedicatoria        TEXT
 );
 CREATE TABLE IF NOT EXISTS capitulo (
     id     TEXT PRIMARY KEY,
@@ -94,11 +95,11 @@ def alta_de_obra(con, id_obra, datos, capitulos):
     with con:
         con.execute(
             "INSERT OR REPLACE INTO obra (id, titulo, premisa, genero, "
-            "subgenero, extension_objetivo, guia_de_estilo) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "subgenero, extension_objetivo, guia_de_estilo, dedicatoria) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (id_obra, datos["titulo"], datos["premisa"], datos.get("genero"),
              datos.get("subgenero"), datos.get("extension_objetivo"),
-             json.dumps(guia)))
+             json.dumps(guia), datos.get("dedicatoria")))
         for posicion, id_capitulo in enumerate(capitulos, start=1):
             con.execute(
                 "INSERT OR REPLACE INTO capitulo (id, obra, orden, estado) "
