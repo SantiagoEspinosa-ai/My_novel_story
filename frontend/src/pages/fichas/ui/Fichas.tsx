@@ -43,12 +43,13 @@ function Nombre({ id, nombre }: { id: string; nombre: string | null }) {
 
 function VistaFichas({ obra, fichas }: { obra: string; fichas: Fichas }) {
   return (
-    <main className="fichas">
-      <nav><Link to={`/obras/${encodeURIComponent(obra)}/indice`}>Índice</Link></nav>
+    <main className="contenido fichas">
+      <nav className="migas"><Link to={`/obras/${encodeURIComponent(obra)}/indice`}>Índice</Link></nav>
       <h1>Fichas</h1>
       <h2>Personajes</h2>
+      <div className="fichas__rejilla">
       {fichas.personajes.map((p) => (
-        <article key={p.id} data-testid="ficha" data-ficha={p.id}>
+        <article key={p.id} data-testid="ficha" data-ficha={p.id} className="tarjeta ficha">
           <Nombre id={p.id} nombre={p.nombre_canonico} />
           <dl>
             <dt>Alias</dt>
@@ -62,9 +63,11 @@ function VistaFichas({ obra, fichas }: { obra: string; fichas: Fichas }) {
           </dl>
         </article>
       ))}
+      </div>
       <h2>Lugares</h2>
+      <div className="fichas__rejilla">
       {fichas.lugares.map((l) => (
-        <article key={l.id} data-testid="ficha" data-ficha={l.id}>
+        <article key={l.id} data-testid="ficha" data-ficha={l.id} className="tarjeta ficha">
           <Nombre id={l.id} nombre={l.nombre} />
           <dl>
             <dt>Atmósfera</dt>
@@ -74,6 +77,7 @@ function VistaFichas({ obra, fichas }: { obra: string; fichas: Fichas }) {
           </dl>
         </article>
       ))}
+      </div>
     </main>
   );
 }

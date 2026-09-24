@@ -10,8 +10,8 @@ export function PaginaEscena() {
   return (
     <Esperando lectura={lectura}>
       {(e: EscenaLeida) => (
-        <main className="vista-escena">
-          <nav>
+        <main className="contenido vista-escena">
+          <nav className="migas">
             <Link to={`/obras/${encodeURIComponent(obra)}/indice`}>Índice</Link>
             {e.capitulo !== null && <>{" · "}
               <Link to={`/obras/${encodeURIComponent(obra)}/capitulos/${encodeURIComponent(e.capitulo)}`}>
@@ -19,7 +19,7 @@ export function PaginaEscena() {
               </Link></>}
           </nav>
           <h1>{e.id}</h1>
-          <EscenaConEstado escena={e} />
+          <div className="tarjeta"><EscenaConEstado escena={e} /></div>
         </main>
       )}
     </Esperando>

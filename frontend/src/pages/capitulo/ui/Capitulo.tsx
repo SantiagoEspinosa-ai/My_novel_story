@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { EscenaConEstado } from "@/entities/escena";
 import { useLectura, type CapituloLeido } from "@/shared/api";
-import { Esperando } from "@/shared/ui";
+import { ESTADO_DE_CAPITULO, Esperando, EtiquetaDeEstado } from "@/shared/ui";
 
 // La lectura continua de un capitulo (SPEC-22 RF-41). Que escenas entran y en que orden lo
 // decide el backend; aqui se pinta **una escena por bloque**, cada una con su estado y sus
@@ -19,12 +19,13 @@ export function PaginaCapitulo() {
 function VistaCapitulo({ obra, capitulo }: { obra: string; capitulo: CapituloLeido }) {
   const o = encodeURIComponent(obra);
   return (
-    <main className="capitulo" data-capitulo={capitulo.id} data-estado={capitulo.estado}>
-      <nav><Link to={`/obras/${o}/indice`}>Índice</Link></nav>
+    <main className="contenido capitulo" data-capitulo={capitulo.id} data-estado={capitulo.estado}>
+      <nav className="migas"><Link to={`/obras/${o}/indice`}>Índice</Link></nav>
       <h1>{`Capítulo ${capitulo.orden}`}</h1>
-      <span className="estado-de-capitulo">{capitulo.estado}</span>
+      <EtiquetaDeEstado distintivo={ESTADO_DE_CAPITULO[capitulo.estado]} />
       {capitulo.escenas.map((e) => (
-        <section key={e.id} data-testid="bloque-de-escena" data-escena={e.id}>
+        <section key={e.id} data-testid="bloque-de-escena" data-escena={e.id}
+          className="tarjeta bloque-de-escena">
           <EscenaConEstado escena={e} />
         </section>
       ))}

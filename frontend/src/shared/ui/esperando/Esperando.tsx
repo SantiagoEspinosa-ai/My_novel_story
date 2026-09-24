@@ -10,10 +10,10 @@ export function Esperando<T>({ lectura, children }: {
   lectura: LecturaMinima<T>;
   children: (datos: T) => ReactNode;
 }) {
-  if (lectura.estado === "cargando") return <p aria-busy="true">cargando…</p>;
+  if (lectura.estado === "cargando") return <p className="cargando" aria-busy="true">cargando…</p>;
   if (lectura.estado === "error") {
     return (
-      <p role="alert">
+      <p role="alert" className="aviso">
         {lectura.codigo === 404 ? "No existe." : "La API no contestó bien."} ({lectura.mensaje})
       </p>
     );

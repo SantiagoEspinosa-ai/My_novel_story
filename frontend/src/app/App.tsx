@@ -5,12 +5,15 @@ import { PaginaFichas } from "@/pages/fichas";
 import { PaginaIndice } from "@/pages/indice";
 import { PaginaPortada } from "@/pages/portada";
 import { ClienteProvider, type Cliente } from "@/shared/api";
+import { Cabecera, Tema } from "@/shared/ui";
 
 // Las rutas de la lectura web. Cada pagina lee su respuesta y la pinta tal cual llega.
 export function App({ cliente }: { cliente: Cliente }) {
   return (
     <ClienteProvider cliente={cliente}>
+      <Tema />
       <BrowserRouter>
+        <Cabecera />
         <Routes>
           <Route path="/obras/:obra" element={<PaginaPortada />} />
           <Route path="/obras/:obra/indice" element={<PaginaIndice />} />
@@ -26,7 +29,7 @@ export function App({ cliente }: { cliente: Cliente }) {
 
 function Inicio() {
   return (
-    <main>
+    <main className="contenido">
       <h1>Lectura</h1>
       <p>Abre una obra por su identificador: <code>/obras/&lt;id&gt;</code>.</p>
       <p><Link to="/">Inicio</Link></p>
