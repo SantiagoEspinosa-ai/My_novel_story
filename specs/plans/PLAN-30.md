@@ -2,9 +2,9 @@
 id: PLAN-30
 spec: SPEC-30
 titulo: Implementación de la puerta de publicación, con Lean
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 2
 ---
@@ -99,13 +99,13 @@ El autor eligió la propuesta en las cuatro: `C-1` (a), `C-2` (b), `C-3` (a) y `
 
 ## Dos identificadores que la spec no nombra y el plan necesita
 
-- **`INV-nueva-A`** (`bloqueante`, obra, `regla`): la verificación formal de la cronología
+- **`INV-28`** (`bloqueante`, obra, `regla`): la verificación formal de la cronología
   devuelve `0` (`RF-01`.3, `RF-09`).
-- **`INV-nueva-B`** (`bloqueante`, obra, `regla`): ningún capítulo de una versión publicada está
+- **`INV-29`** (`bloqueante`, obra, `regla`): ningún capítulo de una versión publicada está
   en `aceptada_por_rendicion` (`RF-01`.1).
 
-Lean es determinista, así que va como `regla`. `INV-28` está libre en todo el árbol. **Aprobar
-este plan es aprobar esos dos identificadores.** `INV-27` sigue siendo `mayor`: que bloquee la
+Lean es determinista, así que va como `regla`. **El autor aprobó los dos identificadores el
+2026-09-24**, comprobados libres en todas las ramas. `INV-27` sigue siendo `mayor`: que bloquee la
 publicación es regla de esta puerta (`RF-07`), no un cambio de severidad.
 
 ## Dónde vive
@@ -270,10 +270,10 @@ instrucciones legibles y cuánto cuesta una ronda. Lo que no llegue se dice «si
 ## Qué filas `VER-xx` abre
 
 - `VER-nueva-A`: la puerta decide las condiciones de `RF-01`, cada una con su negativo.
-- `VER-nueva-B`: Lean se ejecuta solo y el `2` bloquea (`INV-nueva-A`, `RF-09`).
+- `VER-nueva-B`: Lean se ejecuta solo y el `2` bloquea (`INV-28`, `RF-09`).
 - `VER-nueva-C`: el fallo llega al Editor con violaciones y eventos (`RF-03`).
 - `VER-nueva-D`: tope 2, terminación y contador que sobrevive al relanzar (`RF-04`, `RF-06`).
-- `VER-nueva-E`: la rendición persiste y bloquea (`INV-nueva-B`).
+- `VER-nueva-E`: la rendición persiste y bloquea (`INV-29`).
 - `VER-nueva-F`: el adaptador nunca da «limpio» sin cobertura y no toca el `Generado.lean`
   versionado.
 - `VER-nueva-G`: `INV-06` no comprobada, abierta hasta implementarla (`C-4`).
