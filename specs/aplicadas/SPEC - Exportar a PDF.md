@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
 version: 2
 fecha_aplicacion: 2026-09-24
+commit_de_aplicacion: bd13e36
 ---
 
 > **Historial.** v1: redactada con la respuesta del autor sobre el PDF por versión
