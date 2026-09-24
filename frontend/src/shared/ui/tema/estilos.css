@@ -120,6 +120,8 @@ h1, h2, h3 { font-family: var(--fuente-titulos); font-weight: 600; letter-spacin
 .capitulo h1 { font-size: 2.2rem; margin: 0 0 var(--espacio-s); }
 /* F-82: la etiqueta del capitulo quedaba pegada a la primera tarjeta. */
 .capitulo > .etiqueta { margin-bottom: var(--espacio-l); }
+.capitulo__etiquetas { display: flex; flex-wrap: wrap; gap: var(--espacio-s); margin-bottom: var(--espacio-l); }
+.capitulo-del-indice__etiquetas { display: inline-flex; flex-wrap: wrap; gap: var(--espacio-s); justify-content: flex-end; }
 .bloque-de-escena { margin-bottom: var(--espacio-xl); }
 .escena-incompleta { padding: var(--espacio-m); border-radius: var(--radio-s); background: var(--color-acentoSuave); color: var(--color-texto); }
 
