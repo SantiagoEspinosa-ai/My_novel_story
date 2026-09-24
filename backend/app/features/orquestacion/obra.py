@@ -175,7 +175,9 @@ def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=
         "falta_escena_anterior": orden > 1 and anterior is None,
         "mundo": modulo_mundo.leer(con),
         "problemas": repo.hallazgos_abiertos(con, escena["id"]),
-        "hechos": repo.hechos_declarados(con, obra_id),
+        # Los de la version (`PLAN-23` A7): con el enunciado nuevo de su peticion y los
+        # nombres nuevos de sus renombrados. `menciona` se calcula contra estos.
+        "hechos": regeneracion.hechos_de_version(con, obra_id, version),
         "inmutable": inmutable,
     }
 

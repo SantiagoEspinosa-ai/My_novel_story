@@ -41,3 +41,43 @@ class CapituloDeVersionSalida(_DelDominio):
 class VersionDetalleSalida(VersionSalida):
     obra: str
     capitulos: list[CapituloDeVersionSalida]
+
+
+# --- La peticion de cambio (`PLAN-23` A7, `C-4`) -------------------------------------
+
+class PeticionEntrada(_DelDominio):
+    """Los campos de `PeticionDeCambio` que da el lector. Con `hecho`, `hecho` y
+    `enunciado_nuevo`; con `nombre`, `personaje` y `nombre_nuevo`. La obra va en la ruta
+    y la version de partida, si no se dice, es la vigente."""
+
+    clase: enums.ClaseDePeticion
+    texto: str
+    hecho: str | None = None
+    enunciado_nuevo: str | None = None
+    personaje: str | None = None
+    nombre_nuevo: str | None = None
+    version_de_partida: int | None = None
+
+
+class CambioEntrada(PeticionEntrada):
+    """La misma peticion y la lista que el lector acepta, que tiene que ser la
+    propuesta (`RF-48`, `RF-50`)."""
+
+    capitulos_propuestos: list[str]
+
+
+class CapitulosPorSalida(_DelDominio):
+    cascada: list[str]
+    selectiva: list[str]
+
+
+class PropuestaSalida(_DelDominio):
+    obra: str
+    version_de_partida: int
+    clase: enums.ClaseDePeticion
+    capitulos: CapitulosPorSalida
+    salida: enums.SalidaDeRegeneracion | None
+    capitulos_propuestos: list[str] | None
+    motivo: str | None
+    promesa: str
+    punto_ciego: str

@@ -295,6 +295,12 @@ TODAS = [
         # `esquema_version` tiene que decir cuando aparecio (`VER-21`).
         lambda con: [con.execute(s) for s in sentencias(REVERIFICACION_SQL)],
     ),
+    Migracion(
+        13,
+        "la peticion de cambio del lector: un hecho o un nombre",
+        # `SPEC-23`, `PLAN-23` A7, `C-4`. Tabla nueva, sin filas que migrar.
+        lambda con: [con.execute(s) for s in sentencias(PETICION_SQL)],
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la
@@ -349,6 +355,26 @@ CREATE TABLE IF NOT EXISTS reverificacion (
     hallazgos         TEXT    NOT NULL DEFAULT '[]',
     cuando            TEXT    NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (obra, version, escena, huella_del_estado)
+);
+"""
+
+
+# `PLAN-23` A7. Una sola copia, como las dos de arriba. `capitulos_propuestos` es la
+# lista que el lector acepto, en JSON: la que se comparo con la propuesta.
+PETICION_SQL = """
+CREATE TABLE IF NOT EXISTS peticion_de_cambio (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    obra                 TEXT    NOT NULL,
+    version_de_partida   INTEGER NOT NULL,
+    clase                TEXT    NOT NULL,
+    hecho                TEXT,
+    enunciado_nuevo      TEXT,
+    personaje            TEXT,
+    nombre_nuevo         TEXT,
+    texto                TEXT    NOT NULL,
+    salida               TEXT,
+    capitulos_propuestos TEXT    NOT NULL DEFAULT '[]',
+    creada_en            TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 """
 

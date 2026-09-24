@@ -99,6 +99,14 @@ def _conocimiento_inicial(plan, ficha):
     return entradas
 
 
+def nombres_para_inv22(con, obra, ficha, plan, version=None):
+    """Los nombres que `INV-22` compara: el del destinatario y los de los personajes
+    **de la version** (`PLAN-23` A7, `C-4`): la anterior conserva el nombre viejo."""
+    de_la_version = regeneracion.nombres_de_version(con, obra, version)
+    personajes = set(de_la_version.values()) or {p.nombre for p in plan.mundo.personajes}
+    return sorted({ficha.destinatario.nombre} | personajes)
+
+
 def imprescindibles_por_escena(con, obra, plan, version=None):
     """Los imprescindibles del plan, por escena **de la version** (`PLAN-23` hallazgo 6).
 
@@ -340,12 +348,14 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                              nombres=ficha.nombres_vetados)
     catalogo = politica.vetadas_para(con, obra, ficha.destinatario.edad,
                                      sistema.franjas_de_edad)
-    vetadas = [v.forma for v in catalogo]
+    # `PLAN-23` A7: en una version con renombrados, el nombre viejo es una vetada mas.
+    vetadas = regeneracion.vetadas_de_version(con, obra, brief.version_vigente(con, obra),
+                                              base=[v.forma for v in catalogo])
     if observacion is not None:
         # Una forma en varios niveles se envia como la mas publica: la global ya lo es.
         for v in sorted(catalogo, key=lambda v: v.nivel.value != "global", reverse=True):
             observacion.vetadas[v.forma] = v
-    nombres = sorted({ficha.destinatario.nombre} | {p.nombre for p in aprobado.plan.mundo.personajes})
+    nombres = nombres_para_inv22(con, obra, ficha, aprobado.plan)
     imprescindibles = imprescindibles_por_escena(con, obra, aprobado.plan)
     # `SPEC-28` `RF-03`: las tools de lectura de la story bible, al Escritor y al Editor
     # y a nadie mas. El servidor MCP abre la base por su ruta, asi que una base en

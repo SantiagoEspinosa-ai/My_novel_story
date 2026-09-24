@@ -26,7 +26,7 @@ eso, el cliente sabe que no puede cerrar y no sabe que arreglar.
 
 import sqlite3
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 
 from app.commons.dominio.enumeraciones import Severidad
 from app.commons.trabajos import cola
@@ -162,3 +162,46 @@ def version(id_obra: str, numero: int, con: sqlite3.Connection = Depends(conexio
     if vista is None:
         raise HTTPException(404, "la obra {0} no tiene version {1}".format(id_obra, numero))
     return vista
+
+
+# --- La peticion de cambio (`PLAN-23` A7) ----------------------------------------------
+
+def _existe_la_obra(con, id_obra):
+    if not brief.versiones_de(con, id_obra):
+        raise HTTPException(404, "la obra {0} no tiene versiones".format(id_obra))
+
+
+@router.post("/obras/{id_obra}/cambios/propuesta", response_model=schemas.PropuestaSalida)
+def propuesta(id_obra: str, entrada: schemas.PeticionEntrada,
+              con: sqlite3.Connection = Depends(conexion)):
+    """Los capitulos que se van a tocar, **antes** de tocarlos, con la promesa y su
+    punto ciego (`RF-51`, `RF-55`). Sincrona y sin modelo. `409` si `C-4` no la admite."""
+    _existe_la_obra(con, id_obra)
+    try:
+        return regeneracion.proponer(con, id_obra, entrada.model_dump())
+    except regeneracion.PeticionNoAdmitida as e:
+        raise HTTPException(409, str(e))
+
+
+def _atender(ruta, id_trabajo):
+    con = sqlite3.connect(ruta)
+    try:
+        regeneracion.atender(con, id_trabajo)
+    finally:
+        con.close()
+
+
+@router.post("/obras/{id_obra}/cambios", status_code=status.HTTP_202_ACCEPTED)
+def cambios(id_obra: str, entrada: schemas.CambioEntrada, request: Request,
+            tareas: BackgroundTasks, con: sqlite3.Connection = Depends(conexion)):
+    """`202` con el identificador de trabajo. `409` si no hay salida elegida -hoy,
+    siempre: falta la medida-, si la lista no es la propuesta o si `C-4` no la admite.
+    Con `409` **no se guarda ni se encola nada**."""
+    _existe_la_obra(con, id_obra)
+    try:
+        id_trabajo, _ = regeneracion.pedir(con, id_obra, entrada.model_dump())
+    except (regeneracion.PeticionNoAdmitida, regeneracion.SalidaSinElegir,
+            regeneracion.ListaCambiada) as e:
+        raise HTTPException(409, str(e))
+    tareas.add_task(_atender, getattr(request.app.state, "ruta_db", ":memory:"), id_trabajo)
+    return {"id_trabajo": id_trabajo}
