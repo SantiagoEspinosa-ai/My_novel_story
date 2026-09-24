@@ -272,3 +272,14 @@ def test_settings_no_enciende_la_telemetria():
     variables = ajustes.get("env") or {}
     assert "CLAUDE_CODE_ENABLE_TELEMETRY" not in variables
     assert not [k for k in variables if k.startswith("OTEL_")]
+
+
+def test_con_version_la_configuracion_mcp_la_pasa_al_servidor(monkeypatch):
+    """`PLAN-23` B-S1.1: la cascada escribe una version que todavia no es la vigente
+    (`F-121`); sin decirsela, el servidor serviria los nombres de la publicada."""
+    v = _orden_de(monkeypatch, herramientas={"db": "obra.db", "obra": "obra-a",
+                                             "delegacion": "d1", "version": 2})
+    assert v["config"]["mcpServers"]["story_bible"]["env"]["HARNESS_VERSION"] == "2"
+    sin = _orden_de(monkeypatch, herramientas={"db": "obra.db", "obra": "obra-a",
+                                               "delegacion": "d1"})
+    assert "HARNESS_VERSION" not in sin["config"]["mcpServers"]["story_bible"]["env"]

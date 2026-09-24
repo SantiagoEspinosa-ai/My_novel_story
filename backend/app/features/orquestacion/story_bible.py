@@ -26,10 +26,11 @@ class NoExisteEnLaObra(LookupError):
     """El identificador no es de esta obra. No se dice si es de otra."""
 
 
-def leer_hechos(con, obra, entrada: sb.EntradaHechos) -> sb.SalidaHechos:
-    # `PLAN-23` A6: las escenas de la version vigente, no las de la obra entera.
+def leer_hechos(con, obra, entrada: sb.EntradaHechos, version=None) -> sb.SalidaHechos:
+    # `PLAN-23` A6: las escenas de la version que se escribe -sin decirla, la vigente-, no
+    # las de la obra entera.
     from app.features.orquestacion import regeneracion
-    propias = {e["id"] for e in regeneracion.escenas_de_version(con, obra)}
+    propias = {e["id"] for e in regeneracion.escenas_de_version(con, obra, version)}
     hechos = [h for h in escaleta.hechos_declarados(con, obra)
               if entrada.hecho is None or h["id"] == entrada.hecho]
     return sb.SalidaHechos(hechos=[
@@ -39,13 +40,14 @@ def leer_hechos(con, obra, entrada: sb.EntradaHechos) -> sb.SalidaHechos:
         for h in hechos])
 
 
-def leer_ficha(con, obra, entrada: sb.EntradaFicha) -> sb.SalidaFicha:
+def leer_ficha(con, obra, entrada: sb.EntradaFicha, version=None) -> sb.SalidaFicha:
     plan = planes.aprobado(con, obra)
     if plan is None:
         raise NoExisteEnLaObra("la obra no tiene plan aprobado")
-    # `PLAN-23` A7: el nombre de la version que se escribe, la vigente (`C-4`).
+    # `PLAN-23` A7: el nombre de la version que se escribe (`C-4`). Sin decirla, la
+    # vigente, que desde `F-121` es la ultima publicada y no la que se esta escribiendo.
     from app.features.orquestacion import regeneracion
-    nombres = regeneracion.nombres_de_version(con, obra)
+    nombres = regeneracion.nombres_de_version(con, obra, version)
     for p in plan.mundo.personajes:
         if p.id == entrada.id:
             vigente = aplicar.estado(con).get(p.id)
@@ -58,7 +60,9 @@ def leer_ficha(con, obra, entrada: sb.EntradaFicha) -> sb.SalidaFicha:
     raise NoExisteEnLaObra("`{0}` no es un personaje ni un lugar de esta obra".format(entrada.id))
 
 
-def leer_cronologia(con, obra, entrada: sb.EntradaCronologia) -> sb.SalidaCronologia:
+def leer_cronologia(con, obra, entrada: sb.EntradaCronologia,
+                    version=None) -> sb.SalidaCronologia:
+    # `version` se acepta y no filtra: la cronologia es por obra, no por version.
     return sb.SalidaCronologia(eventos=[
         sb.EventoDeLaCronologia(
             id=e["id"], t_fabula=e["t_fabula"], duracion_min=e["duracion_min"],
@@ -80,7 +84,8 @@ HERRAMIENTAS = {
 }
 
 
-def atender(con_lectura, con_traza, obra, agente, delegacion, nombre, argumentos) -> dict:
+def atender(con_lectura, con_traza, obra, agente, delegacion, nombre, argumentos,
+            version=None) -> dict:
     """Valida la entrada, lee, valida la salida, mide y registra (`SPEC-28` `RF-02`, `RF-08`).
 
     Devuelve la forma de un resultado de tool MCP: `{content, isError}`. Un error de
@@ -108,7 +113,7 @@ def atender(con_lectura, con_traza, obra, agente, delegacion, nombre, argumentos
     except ValidationError as e:
         return error("entrada_invalida", "entrada fuera de esquema: {0}".format(e))
     try:
-        salida = leer(con_lectura, obra, entrada)
+        salida = leer(con_lectura, obra, entrada, version=version)
     except NoExisteEnLaObra as e:
         return error("no_existe", str(e))
     except ValidationError:

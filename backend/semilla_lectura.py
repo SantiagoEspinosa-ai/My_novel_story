@@ -37,6 +37,8 @@ from app.commons.configuracion.esquemas import PlanDeLaObra
 from app.commons.dominio.destinatario import FichaDeEntrevista
 from app.commons.dominio.enumeraciones import EstadoDeHallazgo as EH
 from app.commons.dominio.enumeraciones import OrigenDeUso, Severidad, TipoDeUsoDeHecho
+from app.features.auditoria import repository as publicacion_repo
+from app.features.auditoria.publicacion import Decision, NoEjecutada
 from app.features.brief import repository as brief
 from app.features.consolidacion import aplicar
 from app.features.cronologia import repository as cronologia
@@ -171,6 +173,12 @@ def _segunda_version(con):
         escaleta.marcar_consolidada(con, escena)
     _usar(con, [(e.replace("-e1", "-v2-e1"), c + "-v2", t) for e, c, t in _USOS])
     regeneracion.reverificar(con, OBRA, 1)
+    # `F-121`: la vigente es la ultima **publicada**. Sin esta fila la web leeria la 1 y la
+    # inspeccion de E18 no tendria «version anterior» que recorrer. El veredicto dice que
+    # la puerta no se ejecuto: es una semilla, y un verde sin Lean no se disfraza de otro.
+    publicacion_repo.guardar(con, OBRA, Decision(True, [], [NoEjecutada(
+        "INV-28", "semilla de datos inventados: la puerta de SPEC-30 no se ejecuto")]),
+        None, version=2)
 
 
 if __name__ == "__main__":

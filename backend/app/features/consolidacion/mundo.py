@@ -188,31 +188,47 @@ def acumular(semilla, deltas):
     return m, incompatibles
 
 
-def rebobinar(con, m):
+def rebobinar(con, m, obra=None):
     """Escribe el mundo `m` en `entidad`, `lugar` y `conocimiento`, **en una sola
     transaccion** (`PLAN-23` `C-2`): el mundo vivo es el de la version que se escribe.
 
-    Conserva la fecha de nacimiento, que no es estado sino dato del personaje. Lo que
-    no esta en `m` deja de existir en el mundo vivo. La fuente del conocimiento se
-    reconstruye como la escribe la consolidacion: la escena que lo revelo, o
-    `anterior_al_relato` si no tiene escena.
+    Conserva la fecha de nacimiento y el nombre, que no son estado sino datos del
+    personaje o del lugar. Lo que no esta en `m` deja de existir en el mundo vivo. La
+    fuente del conocimiento se reconstruye como la escribe la consolidacion: la escena
+    que lo revelo, o `anterior_al_relato` si no tiene escena.
+
+    Con `obra` (`F-123`), **solo lo de esa obra**: las filas cuyo identificador lleva su
+    prefijo, como acota `leer` desde `F-100`. Sin ella se borraba el mundo vivo de las
+    demas obras de la base y el nombre de cada lugar. Solo vale donde los
+    identificadores estan acotados -la novela regalo-, y por eso es opcional.
     """
     asegurar_tablas(con)
+    prefijo = (obra + "-%") if obra else "%"
+
+    def de_la_obra(ident):
+        return obra is None or str(ident).startswith(obra + "-")
+
     with con:
-        vivas = m.get("entidades_vivas") or {}
+        vivas = {k: v for k, v in (m.get("entidades_vivas") or {}).items() if de_la_obra(k)}
         ubic = m.get("ubicaciones") or {}
-        con.execute("DELETE FROM entidad WHERE id NOT IN ({0})".format(
-            ",".join("?" * len(vivas))), list(vivas))
+        con.execute("DELETE FROM entidad WHERE id LIKE ? AND id NOT IN ({0})".format(
+            ",".join("?" * len(vivas))), [prefijo] + list(vivas))
         for id_e, vital in vivas.items():
             con.execute("INSERT INTO entidad (id, vital, lugar) VALUES (?, ?, ?) "
                         "ON CONFLICT(id) DO UPDATE SET vital = excluded.vital, "
                         "lugar = excluded.lugar", (id_e, vital, ubic.get(id_e)))
-        con.execute("DELETE FROM lugar")
-        for id_l, vecinos in (m.get("accesos") or {}).items():
-            con.execute("INSERT INTO lugar (id, accesos) VALUES (?, ?)",
+        accesos = {k: v for k, v in (m.get("accesos") or {}).items() if de_la_obra(k)}
+        con.execute("DELETE FROM lugar WHERE id LIKE ? AND id NOT IN ({0})".format(
+            ",".join("?" * len(accesos))), [prefijo] + list(accesos))
+        for id_l, vecinos in accesos.items():
+            # Sin `OR REPLACE`, que borraria el nombre ya fijado (`PLAN-27` E2).
+            con.execute("INSERT INTO lugar (id, accesos) VALUES (?, ?) "
+                        "ON CONFLICT(id) DO UPDATE SET accesos = excluded.accesos",
                         (id_l, json.dumps(vecinos)))
-        con.execute("DELETE FROM conocimiento")
+        con.execute("DELETE FROM conocimiento WHERE sujeto LIKE ?", (prefijo,))
         for (sujeto, hecho), v in (m.get("conocimiento") or {}).items():
+            if not de_la_obra(sujeto):
+                continue
             con.execute("INSERT INTO conocimiento (sujeto, hecho, desde_escena, grado, "
                         "fuente) VALUES (?, ?, ?, ?, ?)",
                         (sujeto, hecho, v.get("desde"), v.get("grado", "sabe"),

@@ -134,9 +134,13 @@ def imprescindibles_por_escena(con, obra, plan, version=None):
             continue
         escenas = escaleta.escenas_de_capitulo(con, capitulos[k - 1], obra)
         escena = escenas[0]["id"] if escenas else "{0}-e1".format(capitulos[k - 1])
+        # `F-124`: con los nombres de la version. La palabra clave «Brisa» de un
+        # imprescindible, en la version en la que la perra se llama Nala, era una vetada:
+        # `INV-23` la pedia e `INV-21` la rechazaba, y el capitulo no pasaba nunca.
+        elemento, *claves = regeneracion.en_la_version(
+            con, obra, numero, [imp.elemento] + list(imp.palabras_clave))
         resultado.setdefault(escena, []).append(
-            {"id": _id_imprescindible(n), "elemento": imp.elemento,
-             "palabras_clave": imp.palabras_clave})
+            {"id": _id_imprescindible(n), "elemento": elemento, "palabras_clave": claves})
     return resultado
 
 
@@ -192,7 +196,8 @@ def _juicio_de_obra(con, obra, escenas, juez):
         " y ".join(problemas), bruto.get("justificacion") or ""))]
 
 
-def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=None):
+def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=None,
+           version=None):
     """Lo que solo se puede comprobar con la novela entera escrita.
 
     `INV-24` es `bloqueante`: con un imprescindible sin aparecer, la novela **no
@@ -201,8 +206,8 @@ def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=No
     """
     umbral_nombre = umbral_nombre or config.UMBRAL_REPETICION_NOMBRE
     longitud_frase = longitud_frase or config.LONGITUD_FRASE_REPETIDA
-    # `PLAN-23` A6: las de la version vigente, no las de la obra entera.
-    escenas = regeneracion.escenas_de_version(con, obra)
+    # `PLAN-23` A6: las de la version -la vigente si no se dice-, no las de la obra entera.
+    escenas = regeneracion.escenas_de_version(con, obra, version)
 
     faltan = []
     # `F-65`: `uso_de_hecho` no guarda la obra y todas las novelas llaman a sus
@@ -356,15 +361,10 @@ _FASE_DE = {"planificador": "planificando", "revisor": "revisando_plan",
             "escritor": "escribiendo", "editor": "editando", "resumidor": "resumiendo"}
 
 
-def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sistema,
-              listas, lean, observacion, seguir=None):
-    import tempfile
-    from app.commons.configuracion import carga
-    from app.features.orquestacion import obra as modulo_obra
-    from app.features.planificacion import service as planificacion
-    from app.features.politica import repository as politica
-
-    sistema = sistema or carga.cargar_sistema()
+def preparar_agentes(con, obra, agentes, sistema, donde):
+    """Los agentes como los usa la generacion: con reintentos de transporte (`F-72`) y
+    dejando la obra en su fase al llamarlos (`PLAN-22` E13c). Los usa tambien la cascada
+    (`PLAN-23` B-S1.1), que escribe con el mismo montaje."""
     # `F-72`: con el tope de `sistema.json`. El Escritor se reintenta desde el ciclo.
     from app.commons.modelo.cliente import ConReintentos
     agentes = {k: a if k == "escritor" else
@@ -372,10 +372,19 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                for k, a in agentes.items()}
     # `PLAN-22` E13c: cada agente deja la obra en su fase al llamarlo.
     from app.features.orquestacion.progreso import ConFase
+    return {k: ConFase(a, con, obra, _FASE_DE.get(k, "escribiendo"),
+                       lambda: (donde["capitulo"], donde["total"]))
+            for k, a in agentes.items()}
+
+
+def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sistema,
+              listas, lean, observacion, seguir=None):
+    from app.commons.configuracion import carga
+    from app.features.planificacion import service as planificacion
+
+    sistema = sistema or carga.cargar_sistema()
     donde = {"capitulo": None, "total": None}
-    agentes = {k: ConFase(a, con, obra, _FASE_DE.get(k, "escribiendo"),
-                          lambda: (donde["capitulo"], donde["total"]))
-               for k, a in agentes.items()}
+    agentes = preparar_agentes(con, obra, agentes, sistema, donde)
     # Reanudar no rehace el plan: si la obra ya tiene uno aprobado, se usa ese.
     with _grupo(observacion, "planificacion"):
         try:
@@ -389,6 +398,41 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
             _scores_del_plan(con, obra, observacion)
     montar(con, obra, ficha, aprobado, sistema)
 
+    # Los de la version vigente (`PLAN-23` A6); con una sola version, los del plan.
+    vigente = brief.version_vigente(con, obra)
+    capitulos = (brief.capitulos_de_version(con, obra, vigente) if vigente is not None
+                 else [c.id for c in aprobado.plan.capitulos])
+    if hasta_capitulo:
+        capitulos = capitulos[:hasta_capitulo]
+    r = escribir_version(con, obra, ficha, agentes, aprobado.plan, aprobado.premisa,
+                         capitulos, None, sistema, donde, listas=listas, lean=lean,
+                         observacion=observacion, seguir=seguir,
+                         carpeta_de_reglas=carpeta_de_reglas,
+                         con_puerta=not hasta_capitulo)
+    return dict(r, plan=aprobado)
+
+
+def escribir_version(con, obra, ficha, agentes, plan, premisa, capitulos, version, sistema,
+                     donde, listas=None, lean=None, observacion=None, seguir=None,
+                     carpeta_de_reglas=None, con_puerta=True, desde=1):
+    """Escribe `capitulos` de la version `version` en orden y, con `con_puerta` y sin
+    parada, pasa la version por la puerta de publicacion.
+
+    Es el montaje de la novela regalo en un solo sitio: las vetadas (con los nombres
+    viejos de la version), los nombres de `INV-22`, los imprescindibles por escena, las
+    tools, las reglas del hook, el Editor, `anterior_cruza_capitulo` y `acotar_mundo`
+    (`F-100`). Lo usan `_escribir` y la cascada (`PLAN-23` B-S1.1). `desde` es la posicion
+    del primer capitulo de la lista en la version.
+
+    Con `version` se le dice la version a todo lo que lee, la story bible incluida: desde
+    `F-121` «sin decirla» es la ultima **publicada**, no la que se esta escribiendo. Sin
+    ella (la primera escritura), la vigente, como siempre.
+    """
+    import tempfile
+    from app.commons.configuracion import carga
+    from app.features.orquestacion import obra as modulo_obra
+    from app.features.politica import repository as politica
+
     politica.asegurar_tablas(con)
     politica.cargar_listas(con, listas or carga.cargar_vetadas())
     politica.vetar_en_novela(con, obra, palabras=ficha.vetadas,
@@ -396,42 +440,40 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
     catalogo = politica.vetadas_para(con, obra, ficha.destinatario.edad,
                                      sistema.franjas_de_edad)
     # `PLAN-23` A7: en una version con renombrados, el nombre viejo es una vetada mas.
-    vetadas = regeneracion.vetadas_de_version(con, obra, brief.version_vigente(con, obra),
+    numero = version if version is not None else brief.version_vigente(con, obra)
+    vetadas = regeneracion.vetadas_de_version(con, obra, numero,
                                               base=[v.forma for v in catalogo])
     if observacion is not None:
         # Una forma en varios niveles se envia como la mas publica: la global ya lo es.
         for v in sorted(catalogo, key=lambda v: v.nivel.value != "global", reverse=True):
             observacion.vetadas[v.forma] = v
-    nombres = nombres_para_inv22(con, obra, ficha, aprobado.plan)
-    imprescindibles = imprescindibles_por_escena(con, obra, aprobado.plan)
+    nombres = nombres_para_inv22(con, obra, ficha, plan, version)
+    imprescindibles = imprescindibles_por_escena(con, obra, plan, version)
     # `SPEC-28` `RF-03`: las tools de lectura de la story bible, al Escritor y al Editor
     # y a nadie mas. El servidor MCP abre la base por su ruta, asi que una base en
     # memoria no se puede servir: entonces no hay tools, y no se finge que las haya.
     from app.features.auditoria.lean import ruta_de
     ruta = ruta_de(con)
     if ruta:
+        herramientas = {"db": ruta, "obra": obra}
+        if version is not None:
+            herramientas["version"] = version
         for nombre in ("escritor", "editor"):
-            agentes[nombre].herramientas = {"db": ruta, "obra": obra}
+            agentes[nombre].herramientas = dict(herramientas)
     agentes["escritor"].reglas = _reglas_del_hook(
         carpeta_de_reglas or tempfile.gettempdir(), obra, vetadas, nombres,
         rango_de_palabras(ficha.extension, sistema))
 
     total = modulo_obra.Generacion(vetadas_comprobadas=True,
                                    genero=ficha.genero.value if ficha.genero else None)
-    # Los de la version vigente (`PLAN-23` A6); con una sola version, los del plan.
-    vigente = brief.version_vigente(con, obra)
-    capitulos = (brief.capitulos_de_version(con, obra, vigente) if vigente is not None
-                 else [c.id for c in aprobado.plan.capitulos])
-    if hasta_capitulo:
-        capitulos = capitulos[:hasta_capitulo]
-    donde["total"] = len(aprobado.plan.capitulos)
-    for numero, cap in enumerate(capitulos, 1):
-        donde["capitulo"] = numero
+    donde["total"] = len(plan.capitulos)
+    for numero_cap, cap in enumerate(capitulos, desde):
+        donde["capitulo"] = numero_cap
         # A Langfuse va el numero del capitulo, nunca su id: lo decide el modelo.
-        with _grupo(observacion, "capitulo", numero):
+        with _grupo(observacion, "capitulo", numero_cap):
             g = modulo_obra.generar_obra(
                 con, obra, agentes["escritor"], agentes["editor"], agentes["resumidor"],
-                inmutable=inmutable(ficha, aprobado.premisa),
+                inmutable=inmutable(ficha, premisa),
                 techo=sistema.presupuesto.techo_de_contexto,
                 tope_intentos=1 + sistema.topes.reescrituras_del_editor,
                 tope_vetadas=sistema.topes.reescrituras_por_vetada,
@@ -442,7 +484,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 capitulo=cap, vetadas=vetadas, nombres=nombres,
                 imprescindibles=imprescindibles, editor=True, anterior_cruza_capitulo=True,
                 genero=ficha.genero.value if ficha.genero else None,
-                observacion=observacion)
+                observacion=observacion, version=version)
         for campo in ("escenas_hechas", "rendidas", "saltadas", "sin_resumen",
                       "medidas", "trazas_no_guardadas"):
             getattr(total, campo).extend(getattr(g, campo))
@@ -453,14 +495,14 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
         if g.parada:
             total.parada = g.parada
             break
-        if seguir is not None and not seguir(numero, dict(g.coste)):
+        if seguir is not None and not seguir(numero_cap, dict(g.coste)):
             total.parada = {"escena": (g.escenas_hechas or [None])[-1],
-                            "motivo": "techo_de_gasto", "tras_capitulo": numero,
+                            "motivo": "techo_de_gasto", "tras_capitulo": numero_cap,
                             "detalle": "el libro de gasto dijo que no se sigue: se para "
                                        "entre capitulos, no a media delegacion"}
             break
     cierre, publicada, coste_del_cierre = None, None, None
-    if not hasta_capitulo and total.parada is None:
+    if con_puerta and total.parada is None:
         # `SPEC-30` `RF-02`: la puerta de publicacion se evalua sola al acabar la
         # novela, con Lean dentro. Su primera ronda ya cierra la novela (`cerrar`),
         # asi que no se paga dos veces el juicio de obra.
@@ -484,10 +526,11 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
             return modulo_obra.reescribir_capitulo(
                 con_, obra, escena_id, agentes["escritor"], agentes["editor"],
                 agentes["resumidor"], instrucciones=instrucciones,
-                inmutable=inmutable(ficha, aprobado.premisa),
+                inmutable=inmutable(ficha, premisa),
                 techo=sistema.presupuesto.techo_de_contexto, vetadas=vetadas,
                 nombres=nombres, imprescindibles=imprescindibles,
-                anterior_cruza_capitulo=True, observacion=observacion, acotar_mundo=True)
+                anterior_cruza_capitulo=True, observacion=observacion, acotar_mundo=True,
+                version=version)
 
         from app.features.orquestacion import progreso
         progreso.fijar(con, obra, "en_la_puerta", total=donde["total"])
@@ -499,7 +542,8 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 juez_de_la_puerta, juez_de_la_puerta, reescribir,
                 tope=sistema.topes.reintentos_de_publicacion, vetadas=vetadas,
                 umbral_nombre=sistema.edicion.umbral_repeticion_nombre,
-                longitud_frase=sistema.edicion.longitud_frase_repetida)
+                longitud_frase=sistema.edicion.longitud_frase_repetida,
+                version=version)
             for ev in publicada.evaluaciones or []:
                 observar.del_cierre(observacion, ev.cierre, ev.ronda)
                 observar.de_la_puerta(observacion, ev)
@@ -509,5 +553,5 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                             for k, v in juez_de_la_puerta.resumen().items()}
         for k in total.coste:
             total.coste[k] += coste_del_cierre[k]
-    return {"plan": aprobado, "generacion": total, "cierre": cierre, "publicacion": publicada,
+    return {"generacion": total, "cierre": cierre, "publicacion": publicada,
             "coste_del_cierre": coste_del_cierre}

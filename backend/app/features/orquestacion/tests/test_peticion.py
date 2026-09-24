@@ -3,8 +3,9 @@ puerta cerrada.
 
 Dos clases de peticion (`C-4`): un **hecho** -el enunciado nuevo, con las palabras
 del lector- y un **nombre** -el `nombre_canonico` de un personaje pasa a otro, y su
-identidad no cambia-. `SALIDA` es `None` hasta la medida (Parte B), asi que
-`POST /obras/{id}/cambios` responde `409` y no encola nada. Datos inventados.
+identidad no cambia-. Con `SALIDA = None`, `POST /obras/{id}/cambios` responde `409`
+y no encola nada; desde B2 la salida esta fijada (`cascada`), y las pruebas de ese
+camino la ponen a `None` a mano. Datos inventados.
 """
 
 import sqlite3
@@ -112,7 +113,9 @@ def _v2(con, peticion, posiciones):
 
 # --- La propuesta -------------------------------------------------------------------
 
-def test_la_propuesta_lista_los_capitulos_antes_de_tocarlos_y_no_encola_nada(con):
+def test_la_propuesta_lista_los_capitulos_antes_de_tocarlos_y_no_encola_nada(con, monkeypatch):
+    # El camino sin salida sigue existiendo aunque B2 la fijara: se prueba con `None`.
+    monkeypatch.setattr(regeneracion, "SALIDA", None)
     antes = {t: _cuantos(con, t) for t in ("trabajo", "peticion_de_cambio", "borrador")}
     p = regeneracion.proponer(con, OBRA, _hecho())
     assert p["capitulos"]["selectiva"] == ["cap-03", "cap-06"]
@@ -125,8 +128,10 @@ def test_la_propuesta_lista_los_capitulos_antes_de_tocarlos_y_no_encola_nada(con
 
 
 def test_la_propuesta_lleva_la_promesa_y_su_punto_ciego_literales(con):
+    # La promesa de `D-3` empieza igual con cualquier salida; con `S-1` (B-S1.2) dice
+    # ademas hasta donde llega (`test_con_s1_la_promesa_dice_que_se_reescribe_hasta_el_final`).
     p = regeneracion.proponer(con, OBRA, _hecho())
-    assert p["promesa"] == PROMESA and p["punto_ciego"] == PUNTO_CIEGO
+    assert p["promesa"].startswith(PROMESA) and p["punto_ciego"] == PUNTO_CIEGO
 
 
 def test_con_una_salida_elegida_la_propuesta_da_su_lista(con, monkeypatch):
@@ -160,7 +165,10 @@ def test_el_enunciado_nuevo_vale_en_la_version_nueva_y_no_en_la_anterior(con):
         "h-cocina"] == "Brisa duerme en la cocina"
     # Y lo que recibe el Escritor de la version nueva (y el acta, para `menciona`).
     escaleta.guardar_escaleta(con, OBRA, [regeneracion.escena_para_regenerar(con, OBRA, 2, 3)])
-    material = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-03-v2-e1"), OBRA)
+    # La version que se escribe se dice: la vigente sigue siendo la 1 hasta publicar la 2
+    # (`F-121`, TLC `CE-14`).
+    material = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-03-v2-e1"), OBRA,
+                                           version=2)
     assert {h["id"]: h["enunciado"] for h in material["hechos"]}["h-cocina"] == \
         "Brisa duerme en el jardin"
 
@@ -189,9 +197,12 @@ def test_la_version_anterior_conserva_el_nombre_viejo_en_sus_fichas_y_en_inv22(c
     assert "Brisa" in novela.nombres_para_inv22(con, OBRA, ficha(), _plan(), 1)
     assert "Nala" in novela.nombres_para_inv22(con, OBRA, ficha(), _plan(), 2)
     assert "Brisa" not in novela.nombres_para_inv22(con, OBRA, ficha(), _plan(), 2)
-    # La story bible sirve la version que se escribe, la vigente.
-    f = story_bible.leer_ficha(con, OBRA, EntradaFicha(id="per-brisa")).personaje
+    # La story bible sirve la version que se escribe, que se le dice (`F-121`): sin
+    # decirla, la vigente, que es la 1 mientras la 2 no se publique.
+    f = story_bible.leer_ficha(con, OBRA, EntradaFicha(id="per-brisa"), version=2).personaje
     assert f.nombre_canonico == "Nala" and f.id == "per-brisa"
+    assert story_bible.leer_ficha(con, OBRA, EntradaFicha(id="per-brisa")
+                                  ).personaje.nombre_canonico == "Brisa"
 
 
 def test_en_la_version_nueva_el_nombre_viejo_es_una_vetada(con):
@@ -258,7 +269,8 @@ def cliente(tmp_path):
     return TestClient(app), ruta
 
 
-def test_pedir_el_cambio_sin_salida_elegida_es_409_y_no_gasta(cliente):
+def test_pedir_el_cambio_sin_salida_elegida_es_409_y_no_gasta(cliente, monkeypatch):
+    monkeypatch.setattr(regeneracion, "SALIDA", None)
     c, ruta = cliente
     p = c.post("/obras/{0}/cambios/propuesta".format(OBRA), json=_hecho()).json()
     r = c.post("/obras/{0}/cambios".format(OBRA),

@@ -12,6 +12,7 @@ import uuid
 
 from app.commons.db import procedencia
 from app.commons.db.migraciones import VERSIONES_SQL
+from app.commons.obra import vigente as obra_vigente
 
 MIGRACION_SQL = """
 CREATE TABLE IF NOT EXISTS obra (
@@ -189,9 +190,10 @@ def capitulos_de_version(con, obra, numero):
 
 
 def version_vigente(con, obra):
-    """La ultima creada, o `None` si la obra no tiene ninguna."""
-    filas = _leer(con, "SELECT MAX(numero) FROM version_de_obra WHERE obra = ?", (obra,))
-    return filas[0][0] if filas else None
+    """La ultima **publicada**; si no hay ninguna, la 1. `None` si la obra no tiene
+    versiones. No es la ultima creada: la cascada crea la version antes de escribirla, y
+    el lector la veria a medias (`F-121`, TLC `CE-14`). La regla, en `commons/obra/`."""
+    return obra_vigente.version_vigente(con, obra)
 
 
 def leer(con, id_obra: str):

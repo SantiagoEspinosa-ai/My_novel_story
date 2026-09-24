@@ -215,9 +215,12 @@ def vista_de_version(con, obra, numero):
 
 # --- A7 · la peticion, el hecho y el nombre de una version (`C-4`) -----------------
 
-# `SPEC-23` v2: la elige la medida (B1, B2), no una opinion. Mientras sea `None`,
-# pedir un cambio responde `409` y no encola nada.
-SALIDA = None
+# `SPEC-23` v2: la elige la medida (B1, B2), no una opinion. Con `None`, pedir un
+# cambio responde `409` y no encola nada. **Fijada por el numero guardado** en
+# `harness/evals/arrastre-SPEC-23.json` (v4: 2,33 capitulos <= 3, con sesgo a la baja,
+# hacia `S-1`); `test_la_salida_fijada_es_la_que_da_la_regla_con_el_numero_guardado`
+# falla si se cambia esto sin cambiar la medida.
+SALIDA = S.CASCADA.value
 
 # `SPEC-23` `D-3`, literales: la promesa y su punto ciego, dichos al lector.
 PROMESA = "reescribimos lo que dependía de esto"
@@ -307,6 +310,15 @@ def _con_nombres(texto, pares):
     for viejo, nuevo in pares:
         texto = sustituir_nombre(texto, viejo, nuevo)
     return texto
+
+
+def en_la_version(con, obra, numero, textos):
+    """Los `textos` con los nombres nuevos de los renombrados de la version (`C-4`, punto
+    4). Para lo que el plan fija con un nombre dentro -las palabras clave de un
+    imprescindible-: si no, la version nueva pediria el nombre que ella misma veta
+    (`F-124`)."""
+    pares = _renombrados(con, obra, numero)[0]
+    return [_con_nombres(t, pares) for t in textos]
 
 
 def hechos_de_version(con, obra, numero=None):
@@ -442,7 +454,17 @@ def proponer(con, obra, peticion):
             "capitulos": por_salida, "salida": salida,
             "capitulos_propuestos": por_salida[salida] if salida else None,
             "motivo": None if salida else SIN_SALIDA,
-            "promesa": PROMESA, "punto_ciego": PUNTO_CIEGO}
+            "promesa": promesa(salida, capitulos.index(afectados[0]) + 1),
+            "punto_ciego": PUNTO_CIEGO}
+
+
+def promesa(salida, k):
+    """La promesa de `D-3` dicha con su alcance (`PLAN-23` B-S1.2): con `S-1`, desde el
+    capitulo `k` -su posicion en la version- hasta el final. Sin salida elegida, la de
+    `D-3` sola: no se promete un alcance que nadie ha elegido."""
+    if salida == S.CASCADA.value:
+        return "{0}: el capítulo {1} y todos los siguientes".format(PROMESA, k)
+    return PROMESA
 
 
 def pedir(con, obra, peticion):
@@ -493,14 +515,24 @@ def escena_para_regenerar(con, obra, numero, posicion):
 
 # --- El worker del trabajo de regeneracion -------------------------------------------
 
-# Las ramas de la Parte B (`B-S1.1`, `B-S2.1`), por salida. **Vacio hasta la medida**:
-# el worker no escribe nada que la medida no haya elegido.
-RAMAS = {}
+def _cascada(con, peticion, **contexto):
+    from app.features.orquestacion import cascada
+    return cascada.regenerar(con, peticion, **contexto)
 
 
-def atender(con, id_trabajo):
+# Las ramas de la Parte B, por salida: **solo la que eligio la medida** (B2: `cascada`,
+# `B-S1.1`). `selectiva` no tiene rama: el worker no escribe nada que la medida no haya
+# elegido.
+RAMAS = {S.CASCADA.value: _cascada}
+
+
+def atender(con, id_trabajo, **contexto):
     """Toma un trabajo `regenerar_obra` y lo ejecuta con la rama de su salida. Sin
-    rama, lo da por fallido con el motivo: **no se escribe nada**."""
+    rama, lo da por fallido con el motivo: **no se escribe nada**.
+
+    `contexto` pasa a la rama lo que el trabajo no guarda: los agentes -que gastan dinero
+    y el worker de la API no tiene-, y opcionalmente la ficha, el sistema y Lean. Sin
+    agentes la cascada falla antes de escribir, con su motivo."""
     t = cola.leer(con, id_trabajo)
     if t is None or t.tipo != TIPO_DE_TRABAJO:
         return False
@@ -514,7 +546,7 @@ def atender(con, id_trabajo):
             "se ha escrito nada".format(salida or "(ninguna)")))
         return False
     try:
-        resultado = rama(con, peticion)
+        resultado = rama(con, peticion, **contexto)
     except Exception as e:  # el motivo tiene que llegar al cliente, sea cual sea
         cola.registrar_fallo(con, id_trabajo, "{0}: {1}".format(type(e).__name__, e))
         return False
