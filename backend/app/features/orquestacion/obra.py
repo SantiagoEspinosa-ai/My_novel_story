@@ -483,10 +483,21 @@ def _intentar(con, escena, tamanos, escritor, juez, resumidor, material, obra_id
                 for co in c.vetadas_encontradas]
             continue
         if c.fallo == "nombre_mal_escrito":
-            # `SPEC-26` `O-2`: el mismo contador y el mismo tope que `INV-21`.
+            # `SPEC-26` `O-2`: el mismo contador y el mismo tope que `INV-21`. `F-73`: y
+            # el mismo rastro en el audit log, con cuantos nombres y nunca cuales.
+            auditoria.registrar_decision(
+                con, TD.NOMBRE_MAL_ESCRITO, obra_id,
+                {"escena": escena["id"], "reescritura": reescrituras,
+                 "nombres": len(c.nombres_encontrados)})
             if reescrituras >= tope_vetadas:
+                auditoria.registrar_decision(
+                    con, TD.PARADA_POR_NOMBRE, obra_id,
+                    {"escena": escena["id"], "reescrituras": reescrituras})
                 break
             reescrituras += 1
+            auditoria.registrar_decision(
+                con, TD.REESCRITURA_PEDIDA, obra_id,
+                {"escena": escena["id"], "reescritura": reescrituras})
             problemas_de_vetadas = [
                 {"invariante": "INV-22",
                  "descripcion": "escribiste «{0}»: el nombre es «{1}»".format(

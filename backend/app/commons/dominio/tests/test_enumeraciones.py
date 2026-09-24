@@ -126,7 +126,8 @@ def test_los_vocabularios_de_la_politica_son_los_de_definitions():
     assert [d.value for d in enums.TipoDeDecisionDePolitica] == [
         "coincidencia_vetada", "reescritura_pedida", "parada_por_vetada",
         "instruccion_en_texto_libre", "contradiccion_detectada",
-        "contradiccion_resuelta", "borrado_al_entregar", "herramienta_denegada"]
+        "contradiccion_resuelta", "borrado_al_entregar", "herramienta_denegada",
+        "nombre_mal_escrito", "parada_por_nombre"]
 
 
 def test_los_criterios_del_editor_son_los_de_definitions():

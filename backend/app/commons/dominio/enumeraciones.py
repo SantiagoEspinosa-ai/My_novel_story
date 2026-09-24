@@ -327,6 +327,10 @@ class TipoDeDecisionDePolitica(_Vocabulario):
     BORRADO_AL_ENTREGAR = "borrado_al_entregar"
     HERRAMIENTA_DENEGADA = "herramienta_denegada"
     """`SPEC-26` `RF-18`: el hook de policy nego una herramienta a un agente."""
+    NOMBRE_MAL_ESCRITO = "nombre_mal_escrito"
+    """`F-73`: `INV-22` encontro nombres mal escritos. El detalle dice cuantos, nunca cuales."""
+    PARADA_POR_NOMBRE = "parada_por_nombre"
+    """`F-73`: se agoto el tope de reescrituras por `INV-22`."""
 
 
 class CriterioDeEdicion(_Vocabulario):

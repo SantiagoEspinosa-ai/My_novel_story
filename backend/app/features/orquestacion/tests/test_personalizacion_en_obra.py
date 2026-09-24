@@ -98,3 +98,22 @@ def test_el_prompt_lleva_los_nombres_y_las_claves(con):
     # «mapa» si puede llegar al segundo prompt dentro de la escena anterior
     # (desde `F-58` el contexto llega como texto); el bloque de claves no.
     assert "ESTE CAPITULO TIENE QUE CONTAR" not in escritor.llamadas[1],         "las claves son de su capitulo"
+
+
+def _audit(con):
+    return con.execute("SELECT tipo, detalle FROM decision_de_politica ORDER BY id").fetchall()
+
+
+def test_cada_reescritura_por_nombre_queda_en_el_audit_log_sin_los_nombres(con):
+    """`F-73`: la rama de `INV-22` sumaba al contador y no dejaba rastro. Y lo que queda
+    no lleva nombres: el audit log sobrevive a la entrega (`SPEC-25` `RF-21`)."""
+    _generar(con, ["nombre_mal", "nombre_mal", "bien"])
+    filas = _audit(con)
+    tipos = [f[0] for f in filas]
+    assert tipos.count("nombre_mal_escrito") == 2 and tipos.count("reescritura_pedida") == 2
+    assert "Iren" not in repr(filas) and "Vald" not in repr(filas)
+
+
+def test_la_parada_por_nombre_queda_en_el_audit_log(con):
+    _generar(con, ["nombre_mal"])
+    assert [f[0] for f in _audit(con)].count("parada_por_nombre") == 1
