@@ -55,7 +55,9 @@ normativa va citada; si este resumen y la fuente discrepan, gana la fuente.
 | **Opciones** | Modelar lo que hace el código. **Modelar lo que dice el documento del flujo** |
 | **Criterio** | Encontrar lo que una lectura no ve |
 | **Elección** | Se modeló el documento, y eso destapó `CE-3`: la frase *«en orden»* implementada literalmente es un contador que reescribe la novela entera ante un cambio del lector (`specs/tla/README.md`) |
-| **Pendiente** | La especificación corresponde al flujo de la rama `main`, no a `backend/`. **Decidido el 2026-09-23**: el entregable es `backend/`; la tabla de acción a código y el modelo se rehacen, y la escalera de modelos de `Reintentar` desaparece (`EX-07`) |
+| **Pendiente** | ~~La especificación corresponde al flujo de la rama `main`, no a `backend/`.~~ **Hecho el 2026-09-24** (`EX-07`): el modelo nuevo, `specs/tla/HarnessBackend.tla`, modela `backend/` y la tabla de acción a función está rehecha contra él. La escalera de modelos desapareció con `main`; en su lugar hay seis topes con su contador cada uno |
+| **Segunda elección, con `backend/`** | Esta vez se modeló **el código**, no un documento, pero con una regla que hace el mismo trabajo que modelar la frase: **un paso de TLA+ es una transacción de la base**, no una función. Donde el código escribe dos veces seguidas en dos `with con:`, el modelo tiene dos acciones y una caída puede caer entre ellas. Eso destapó `F-112`, que ninguna lectura de `ciclo.py` hace evidente porque las dos llamadas están en líneas contiguas. Y cada comportamiento dudoso es un interruptor (`BackendDeHoy.cfg` frente a `HarnessBackend.cfg`), así que el modelo corregido dice qué tiene que cumplir el arreglo sin tocar `backend/` desde la sesión de TLA+ |
+| **Coste de la elección** | El modelo corresponde al código **de hoy**, y el código cambia en varias ramas a la vez. La regeneración (`PLAN-23`) se modela sobre el diseño aprobado, con su código a medio escribir en otra rama; la tabla del README dice qué acción existe hoy y cuál espera a qué paso |
 
 ## T-07 · Qué invariantes de Lean se priorizan
 

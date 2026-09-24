@@ -1,3 +1,6 @@
+\* OBSOLETO desde el 2026-09-24: modela la rama `main` (src/, EJECUCION.md), no
+\* `backend/`. El modelo vigente es `HarnessBackend.tla`. Se conserva como historia
+\* de CE-1..CE-5 (README.md, seccion "Historia").
 ---------------------------- MODULE HarnessNovela ----------------------------
 (***************************************************************************)
 (* Especificacion del flujo de generacion de una novela en My_novel_story.  *)

@@ -1,0 +1,415 @@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 82 and seed 818182747776093149 with 4 workers on 4 cores with 3641MB heap and 64MB offheap memory [pid: 13904] (Windows 11 10.0 amd64, Eclipse Adoptium 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file C:\Users\student\Desktop\My_novel_story-tla\specs\tla\HarnessBackend.tla
+Parsing file C:\Users\student\AppData\Local\Temp\Naturals.tla
+Parsing file C:\Users\student\AppData\Local\Temp\FiniteSets.tla
+Parsing file C:\Users\student\AppData\Local\Temp\Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module HarnessBackend
+Starting... (2026-09-24 17:53:01)
+Computing initial states...
+Finished computing initial states: 2 distinct states generated at 2026-09-24 17:53:01.
+Error: Invariant NoReescribeCerrados is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ estado = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 0
+/\ rondasTotales = 0
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 0
+/\ rondas = 0
+/\ planAprobado = FALSE
+/\ caidas = 0
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 0
+/\ rondasObra = 0
+/\ vigente = 0
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = FALSE
+/\ publicadas = <<>>
+/\ versionPlan = 0
+/\ reescrituras = 0
+/\ filasEscritas = 0
+/\ filasPlan = {}
+/\ fase = "configuracion"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 0
+/\ delta = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 2: <Configurar line 217, col 5 to line 219, col 84 of module HarnessBackend>
+/\ estado = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 0
+/\ rondasTotales = 0
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 0
+/\ rondas = 0
+/\ planAprobado = FALSE
+/\ caidas = 0
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 0
+/\ rondasObra = 0
+/\ vigente = 0
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = FALSE
+/\ publicadas = <<>>
+/\ versionPlan = 0
+/\ reescrituras = 0
+/\ filasEscritas = 0
+/\ filasPlan = {}
+/\ fase = "planificacion"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 0
+/\ delta = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 3: <RechazarPlan line 248, col 5 to line 257, col 49 of module HarnessBackend>
+/\ estado = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 0
+/\ rondasTotales = 1
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 0
+/\ rondas = 1
+/\ planAprobado = FALSE
+/\ caidas = 0
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 0
+/\ rondasObra = 0
+/\ vigente = 0
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = FALSE
+/\ publicadas = <<>>
+/\ versionPlan = 1
+/\ reescrituras = 0
+/\ filasEscritas = 1
+/\ filasPlan = {1}
+/\ fase = "planificacion"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 0
+/\ delta = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 4: <AprobarPlan line 260, col 5 to line 268, col 38 of module HarnessBackend>
+/\ estado = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 0
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 0
+/\ rondas = 2
+/\ planAprobado = TRUE
+/\ caidas = 0
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 0
+/\ rondasObra = 0
+/\ vigente = 0
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = FALSE
+/\ publicadas = <<>>
+/\ versionPlan = 2
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "montaje"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 0
+/\ delta = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 5: <Montar line 283, col 5 to line 303, col 41 of module HarnessBackend>
+/\ estado = <<"pendiente", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 0
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 2
+/\ planAprobado = TRUE
+/\ caidas = 0
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 2
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "escritura"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 0
+/\ delta = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 6: <Escribir line 359, col 5 to line 366, col 72 of module HarnessBackend>
+/\ estado = <<"generada", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 1
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 2
+/\ planAprobado = TRUE
+/\ caidas = 0
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 2
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "validacion"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 1
+/\ delta = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 7: <Consolidar line 407, col 5 to line 417, col 29 of module HarnessBackend>
+/\ estado = <<"generada", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 1
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 2
+/\ planAprobado = TRUE
+/\ caidas = 0
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 2
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "marcando"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 1
+/\ delta = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 8: <Caer line 638, col 5 to line 645, col 43 of module HarnessBackend>
+/\ estado = <<"generada", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 1
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 2
+/\ planAprobado = TRUE
+/\ caidas = 1
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 2
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "caido"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 1
+/\ delta = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 9: <Reanudar line 651, col 5 to line 660, col 38 of module HarnessBackend>
+/\ estado = <<"generada", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 1
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 0
+/\ planAprobado = TRUE
+/\ caidas = 1
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 0
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "planificacion"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 1
+/\ delta = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 10: <ReutilizarPlan line 272, col 5 to line 275, col 84 of module HarnessBackend>
+/\ estado = <<"generada", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 1
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 0
+/\ planAprobado = TRUE
+/\ caidas = 1
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 0
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "montaje"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 1
+/\ delta = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 11: <Montar line 283, col 5 to line 303, col 41 of module HarnessBackend>
+/\ estado = <<"generada", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 1
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 0
+/\ planAprobado = TRUE
+/\ caidas = 1
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 0
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "escritura"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 1
+/\ delta = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+State 12: <Escribir line 359, col 5 to line 366, col 72 of module HarnessBackend>
+/\ estado = <<"generada", "pendiente", "pendiente", "pendiente", "pendiente">>
+/\ borradores = 2
+/\ rondasTotales = 2
+/\ fallosTotales = 0
+/\ regeneraciones = 0
+/\ juzgado = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ salida = "selectiva"
+/\ enCurso = 1
+/\ rondas = 0
+/\ planAprobado = TRUE
+/\ caidas = 1
+/\ verif = <<"propia", "propia", "propia", "propia", "propia">>
+/\ fallosFormato = 0
+/\ transporte = 0
+/\ motivo = "ninguno"
+/\ creadas = 1
+/\ rondasObra = 0
+/\ vigente = 1
+/\ actual = 1
+/\ rondasVersion = 0
+/\ montado = TRUE
+/\ publicadas = <<>>
+/\ versionPlan = 0
+/\ reescrituras = 0
+/\ filasEscritas = 2
+/\ filasPlan = {1, 2}
+/\ fase = "validacion"
+/\ memoria = <<FALSE, FALSE, FALSE, FALSE, FALSE>>
+/\ ciclos = 2
+/\ delta = <<TRUE, FALSE, FALSE, FALSE, FALSE>>
+/\ numero = 0
+
+3806 states generated, 3077 distinct states found, 1256 states left on queue.
+The depth of the complete state graph search is 12.
+The average outdegree of the complete state graph is 2 (minimum is 0, the maximum 6 and the 95th percentile is 5).
+Finished in 01s at (2026-09-24 17:53:01)
