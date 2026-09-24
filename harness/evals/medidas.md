@@ -187,3 +187,21 @@ tres defectos).
 
 El detector cazó la inyección reconocible con el modelo real y descartó ese texto libre. La
 entrevista no cerró por `F-140`, así que **no hay novela**. 1,6246488 USD en 14 delegaciones.
+
+## R3 · El brief temporal: el Revisor cazó las incoherencias en el plan (2026-09-24)
+
+El plan no se aprobó en tres rondas de revisión (cinco versiones: una rechazada por la
+cobertura, dos por el esquema —que no gastan ronda desde `F-68`— y dos por el Revisor). **Las
+objeciones del Revisor son las incoherencias temporales que el brief provoca**: *«Incoherencia
+temporal dentro de la línea de 2019, entre cap-02 y cap-04»*, una muerte situada en un año que
+choca con capítulos anteriores en la fábula, y la alternancia de líneas rota. **No se escribió
+novela**, así que Lean no tuvo eventos que mirar. Para `EX-15` es la justificación que pide el
+enunciado: la incoherencia la paró un validador anterior —el semántico del plan— y por eso Lean
+no la detectó. 4,9492 USD en 7 delegaciones. El informe se perdió por `F-143`, ya cerrado.
+
+## R5 · Vetadas por variantes: parada en el capítulo 2 por `INV-03` (2026-09-24)
+
+Capítulo 1 consolidado; capítulo 2 parado: *«Luisa actúa sobre `imp-01` y no consta que lo
+conozca»*. **Ninguna coincidencia vetada**: el Escritor esquivó las variantes («hospitales»,
+«Tórmenta», «Tomás»…) porque su prompt le da la lista, así que el guardrail no tuvo nada que
+detectar. 3,8173 USD en 7 delegaciones. Se reanuda con `--reanudar`.

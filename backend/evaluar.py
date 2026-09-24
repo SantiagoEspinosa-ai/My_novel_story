@@ -156,6 +156,11 @@ def rastro_contra_anteriores(con_libro, ejecucion, con, obra) -> list:
     from app.features.evaluacion import briefs, exfiltracion
     from app.features.evaluacion import repository as libro
     lineas = ["\n=== RASTRO DE OTRAS NOVELAS ==="]
+    # `F-143`: sin plan aprobado no se monto la obra y la base no tiene escenas; es un
+    # resultado, y el rastro lo dice en vez de reventar.
+    if not otras_novelas(con):
+        lineas.append("  (sin novela que rastrear: la obra no llego a montarse)")
+        return lineas
     textos = textos_de(con, obra)
     previas = [e for e in libro.ejecuciones(con_libro) if e["ejecucion"] != ejecucion]
     if not previas:

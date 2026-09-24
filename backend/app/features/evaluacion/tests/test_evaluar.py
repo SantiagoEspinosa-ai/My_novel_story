@@ -265,3 +265,22 @@ def test_reanudar_no_pisa_lo_anotado_y_suma_el_intento_parado(tmp_path, capsys):
     # El 3: una delegacion del intento parado y las tres del que lo termina. No se compara
     # con `traza_de_delegacion`: al reanudar, la traza del intento parado se pisa (`F-120`).
     assert (antes["3"][1], despues["3"][1]) == (1, 4), "el intento parado y el que termina"
+
+
+class _PlanQueNuncaSeAprueba(_Llamados):
+    def __call__(self, sistema, entorno, ficha):
+        agentes = super().__call__(sistema, entorno, ficha)
+        agentes["revisor"].r = {"aprobado": False, "objeciones": ["no tiene arco"]}
+        return agentes
+
+
+def test_sin_plan_aprobado_evaluar_informa_y_regenera_la_tabla_sin_reventar(tmp_path, capsys):
+    """`F-143`: en el brief temporal real el Revisor no aprobo el plan, no se monto la obra,
+    y el rastro contra otras novelas busco escenas en una base sin tabla `escena`: la
+    ejecucion murio con una traza y sin tabla. Un plan no aprobado es un resultado."""
+    codigo = evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto"),
+                          dobles=_dobles(_PlanQueNuncaSeAprueba()))
+    salida = capsys.readouterr().out
+    assert codigo == 1
+    assert "PlanNoAprobado" in salida and "sin novela" in salida
+    assert (tmp_path / "resultados.md").exists()
