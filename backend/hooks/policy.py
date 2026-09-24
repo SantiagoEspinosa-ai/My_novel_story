@@ -1,12 +1,11 @@
-"""Hook `PreToolUse` de Claude Code: ningun agente del pipeline usa herramientas
-(`SPEC-26` `RF-18`).
+"""Hook `PreToolUse` de Claude Code: una allowlist por agente (`SPEC-26` `RF-18`,
+`SPEC-28` `RF-07`).
 
-Sale con **codigo 2** para negar la herramienta, y la negacion queda en el audit
-log si `HARNESS_DB` dice donde. Sin `HARNESS_AGENTE` no hace nada (`RF-19`): una
-sesion interactiva en el mismo proyecto conserva sus herramientas.
-
-**Mientras los agentes tengan `tools: []` no se dispara nunca.** Es una guarda
-contra que alguien les de herramientas; su prueba lo lanza como proceso.
+El Escritor y el Editor pueden llamar a las tres tools de lectura de la story bible;
+nada mas, y ningun otro agente nada. Lo que no esta en la lista sale con **codigo 2**,
+que niega la herramienta, y la negacion queda en el audit log si `HARNESS_DB` dice
+donde. Sin `HARNESS_AGENTE` no hace nada (`RF-19`): una sesion interactiva en el mismo
+proyecto conserva sus herramientas.
 """
 
 import json
@@ -23,6 +22,7 @@ for _flujo in (sys.stdin, sys.stdout, sys.stderr):
 
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD  # noqa: E402
 from app.commons.politica import auditoria  # noqa: E402
+from app.commons.politica.herramientas import permitida  # noqa: E402
 
 
 def main():
@@ -31,6 +31,8 @@ def main():
         return 0
     entrada = json.loads(sys.stdin.read() or "{}")
     herramienta = entrada.get("tool_name") or "(desconocida)"
+    if permitida(agente, herramienta):
+        return 0
     db = os.environ.get("HARNESS_DB")
     if db:
         con = sqlite3.connect(db)
@@ -41,8 +43,8 @@ def main():
                                          {"agente": agente, "herramienta": herramienta})
         finally:
             con.close()
-    print("El agente «{0}» del pipeline no puede usar herramientas ({1}). Responde "
-          "solo con el texto que se te pide.".format(agente, herramienta), file=sys.stderr)
+    print("El agente «{0}» del pipeline no puede usar {1}. Responde solo con lo que se te "
+          "pide.".format(agente, herramienta), file=sys.stderr)
     return 2
 
 

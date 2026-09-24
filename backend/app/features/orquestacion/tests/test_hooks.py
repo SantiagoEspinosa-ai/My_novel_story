@@ -152,3 +152,40 @@ def test_cada_hook_deja_constancia_de_que_se_ejecuto(tmp_path):
     filas = [json.loads(l) for l in registro.read_text(encoding="utf-8").splitlines()]
     assert [(f["hook"], f["agente"], f["codigo"]) for f in filas] == [
         ("validar_capitulo", "escritor", 0), ("policy", "editor", 2)]
+
+
+# --- `PLAN-28` E5: el hook de policy como allowlist por agente (`SPEC-28` `RF-07`) --
+
+def _pide(herramienta, agente, tmp_path):
+    return _lanzar("policy.py", {"tool_name": herramienta, "tool_input": {}},
+                   HARNESS_AGENTE=agente, HARNESS_DB=str(tmp_path / "obra.db"),
+                   HARNESS_OBRA="obra-x")
+
+
+def test_policy_deja_al_escritor_usar_sus_tools_de_story_bible(tmp_path):
+    for t in ("hechos", "ficha", "cronologia"):
+        assert _pide("mcp__story_bible__" + t, "escritor", tmp_path)[0] == 0
+
+
+def test_policy_deja_al_editor_usar_sus_tools_de_story_bible(tmp_path):
+    assert _pide("mcp__story_bible__ficha", "editor", tmp_path)[0] == 0
+
+
+def test_policy_niega_al_planificador_las_tools_de_story_bible(tmp_path):
+    """`RF-03`: solo el Escritor y el Editor tienen tools."""
+    codigo, err = _pide("mcp__story_bible__hechos", "planificador", tmp_path)
+    assert codigo == 2 and "mcp__story_bible__hechos" in err
+
+
+def test_policy_niega_al_editor_una_tool_de_otro_servidor_mcp(tmp_path):
+    """El dia que exista el browser MCP de `EX-04`, no entra en ninguna delegacion."""
+    assert _pide("mcp__playwright__navigate", "editor", tmp_path)[0] == 2
+
+
+def test_el_catalogo_del_servidor_y_la_allowlist_nombran_las_mismas_tools():
+    """Si se añade una tool al servidor y no a la allowlist, el hook la negaria; si al
+    reves, la allowlist permitiria una tool que no existe. Las dos listas son una."""
+    from app.commons.politica.herramientas import PERMITIDAS, SERVIDOR
+    from app.features.orquestacion.story_bible import HERRAMIENTAS
+    esperadas = {"mcp__{0}__{1}".format(SERVIDOR, t) for t in HERRAMIENTAS}
+    assert set(PERMITIDAS["escritor"]) == set(PERMITIDAS["editor"]) == esperadas
