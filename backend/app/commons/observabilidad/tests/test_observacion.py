@@ -125,3 +125,41 @@ def test_el_exportador_nulo_no_envia_nada_y_dice_por_que(con):
     assert SesionObservada(Sesion(RESPUESTA), obs, rol="escritor").llamar(PROMPT) == RESPUESTA
     assert obs.exportador.motivo == "sin claves en backend/.env"
     assert perdidas.de(con) == []
+
+
+# --- `PLAN-29` E5: los agregados de un grupo --------------------------------------
+
+def _con_coste(coste):
+    return dict(RESPUESTA, medidas=dict(RESPUESTA["medidas"], coste_usd=coste))
+
+
+def _grupo(obs, nombre):
+    return [e for t, e in obs.exportador.enviados if t == "span" and e["nombre"] == nombre][0]
+
+
+def test_el_agregado_del_capitulo_con_una_llamada_sin_coste_es_suelo_y_lo_dice(con):
+    obs = _obs(con)
+    with obs.grupo("capitulo", capitulo=1):
+        SesionObservada(Sesion(_con_coste(0.02)), obs, rol="escritor").llamar(PROMPT)
+        SesionObservada(Sesion(_con_coste(None)), obs, rol="editor").llamar(PROMPT)
+    g = _grupo(obs, "capitulo")
+    assert g["coste_usd"] == 0.02 and g["coste_es_suelo"] is True
+
+
+def test_un_grupo_sin_ningun_coste_lo_envia_ausente_y_no_en_cero(con):
+    obs = _obs(con)
+    with obs.grupo("capitulo", capitulo=1):
+        SesionObservada(Sesion(_con_coste(None)), obs, rol="escritor").llamar(PROMPT)
+    g = _grupo(obs, "capitulo")
+    assert "coste_usd" not in g and "coste_es_suelo" not in g
+
+
+def test_el_agregado_de_la_novela_suma_sus_capitulos(con):
+    obs = _obs(con)
+    with obs.grupo("novela"):
+        for n in (1, 2):
+            with obs.grupo("capitulo", capitulo=n):
+                SesionObservada(Sesion(_con_coste(0.25)), obs, rol="escritor").llamar(PROMPT)
+    g = _grupo(obs, "novela")
+    assert g["coste_usd"] == 0.5 and g["coste_es_suelo"] is False
+    assert g["tokens_entrada"] == 200

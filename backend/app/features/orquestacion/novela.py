@@ -225,14 +225,51 @@ def _reglas_del_hook(carpeta, obra, vetadas, nombres, longitud):
     return ruta
 
 
+# `SPEC-29` `RF-02`: el nombre de cada rol en Langfuse, que es el de su definicion.
+ROLES = {"planificador": "planificador", "revisor": "revisor_plan", "escritor": "escritor",
+         "editor": "editor", "resumidor": "resumidor"}
+
+
+def _grupo(observacion, nombre, capitulo=None):
+    import contextlib
+    return observacion.grupo(nombre, capitulo) if observacion else contextlib.nullcontext()
+
+
+def _observados(agentes, observacion):
+    """Cada agente, envuelto: mide y emite su span sin guardar prompt ni respuesta. El
+    diccionario de quien llama no se toca."""
+    from app.commons.observabilidad.observacion import SesionObservada
+    from app.features.orquestacion import prompts
+    versiones = {rol: v.version for rol, v in prompts.registro().items()}
+    return {k: SesionObservada(a, observacion, ROLES.get(k, k), versiones.get(ROLES.get(k, k)))
+            for k, a in agentes.items()}
+
+
 def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=None,
-             sistema=None, listas=None, lean=None):
+             sistema=None, listas=None, lean=None, observacion=None):
     """Ficha → plan aprobado → obra montada → capitulos → cierre de la novela.
 
     Genera capitulo a capitulo, en el orden del plan, y se para en la primera
     parada. Con `hasta_capitulo` se queda en ese capitulo y no cierra la novela:
     es lo que usa la ejecucion minima de `PLAN-26` E13.
+
+    Con `observacion` (`SPEC-29`), la generacion es una traza de Langfuse: un span
+    por llamada a cada rol, colgado de `planificacion`, de su capitulo o de `cierre`,
+    y el agregado de la novela. **Sin observacion, nada cambia.**
     """
+    if observacion is None:
+        return _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas,
+                         sistema, listas, lean, None)
+    from app.features.orquestacion import prompts
+    prompts.enviar_nuevas(con, observacion)
+    with observacion.grupo("novela"):
+        return _escribir(con, obra, ficha, _observados(agentes, observacion),
+                         hasta_capitulo, carpeta_de_reglas, sistema, listas, lean,
+                         observacion)
+
+
+def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sistema,
+              listas, lean, observacion):
     import tempfile
     from app.commons.configuracion import carga
     from app.features.orquestacion import obra as modulo_obra
@@ -241,9 +278,10 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
 
     sistema = sistema or carga.cargar_sistema()
     # Reanudar no rehace el plan: si la obra ya tiene uno aprobado, se usa ese.
-    aprobado = planificacion.reanudar_o_planificar(
-        con, obra, ficha, agentes["planificador"], agentes["revisor"],
-        tope=sistema.topes.revisiones_de_plan, sistema=sistema)
+    with _grupo(observacion, "planificacion"):
+        aprobado = planificacion.reanudar_o_planificar(
+            con, obra, ficha, agentes["planificador"], agentes["revisor"],
+            tope=sistema.topes.revisiones_de_plan, sistema=sistema)
     montar(con, obra, ficha, aprobado, sistema)
 
     politica.asegurar_tablas(con)
@@ -275,16 +313,19 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
     capitulos = [c.id for c in aprobado.plan.capitulos]
     if hasta_capitulo:
         capitulos = capitulos[:hasta_capitulo]
-    for cap in capitulos:
-        g = modulo_obra.generar_obra(
-            con, obra, agentes["escritor"], agentes["editor"], agentes["resumidor"],
-            inmutable=inmutable(ficha, aprobado.premisa), techo=sistema.presupuesto.techo_de_contexto,
-            tope_intentos=1 + sistema.topes.reescrituras_del_editor,
-            tope_vetadas=sistema.topes.reescrituras_por_vetada,
-            tope_delegaciones=sistema.topes.delegaciones_por_obra,
-            capitulo=cap, vetadas=vetadas, nombres=nombres,
-            imprescindibles=imprescindibles, editor=True, anterior_cruza_capitulo=True,
-            genero=ficha.genero.value if ficha.genero else None)
+    for numero, cap in enumerate(capitulos, 1):
+        # A Langfuse va el numero del capitulo, nunca su id: lo decide el modelo.
+        with _grupo(observacion, "capitulo", numero):
+            g = modulo_obra.generar_obra(
+                con, obra, agentes["escritor"], agentes["editor"], agentes["resumidor"],
+                inmutable=inmutable(ficha, aprobado.premisa),
+                techo=sistema.presupuesto.techo_de_contexto,
+                tope_intentos=1 + sistema.topes.reescrituras_del_editor,
+                tope_vetadas=sistema.topes.reescrituras_por_vetada,
+                tope_delegaciones=sistema.topes.delegaciones_por_obra,
+                capitulo=cap, vetadas=vetadas, nombres=nombres,
+                imprescindibles=imprescindibles, editor=True, anterior_cruza_capitulo=True,
+                genero=ficha.genero.value if ficha.genero else None)
         for campo in ("escenas_hechas", "rendidas", "saltadas", "sin_resumen",
                       "medidas", "trazas_no_guardadas"):
             getattr(total, campo).extend(getattr(g, campo))
@@ -312,12 +353,14 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
                 nombres=nombres, imprescindibles=imprescindibles,
                 anterior_cruza_capitulo=True)
 
-        publicada = puerta.publicar(
-            con, obra, ficha, lean or VerificadorLean(tiempo=sistema.lean.tiempo_maximo_segundos),
-            agentes["editor"], agentes["editor"], reescribir,
-            tope=sistema.topes.reintentos_de_publicacion, vetadas=vetadas,
-            umbral_nombre=sistema.edicion.umbral_repeticion_nombre,
-            longitud_frase=sistema.edicion.longitud_frase_repetida)
+        with _grupo(observacion, "cierre"):
+            publicada = puerta.publicar(
+                con, obra, ficha,
+                lean or VerificadorLean(tiempo=sistema.lean.tiempo_maximo_segundos),
+                agentes["editor"], agentes["editor"], reescribir,
+                tope=sistema.topes.reintentos_de_publicacion, vetadas=vetadas,
+                umbral_nombre=sistema.edicion.umbral_repeticion_nombre,
+                longitud_frase=sistema.edicion.longitud_frase_repetida)
         if publicada.evaluaciones:
             cierre = publicada.evaluaciones[0].cierre
     return {"plan": aprobado, "generacion": total, "cierre": cierre, "publicacion": publicada}

@@ -460,3 +460,111 @@ def test_con_la_base_en_memoria_no_se_dan_tools(con, tmp_path):
     novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                     carpeta_de_reglas=str(tmp_path))
     assert getattr(agentes["escritor"], "herramientas", None) is None
+
+
+# --- `PLAN-29` E5: la generacion como traza ---------------------------------------
+
+def _observacion(con, obra="obra-x", **kw):
+    from app.commons.observabilidad.exportador import ExportadorEnMemoria
+    from app.commons.observabilidad.observacion import Observacion
+    return Observacion(ExportadorEnMemoria(**kw), con=con, obra=obra, nombre="generacion")
+
+
+def _enviados(obs, tipo):
+    return [e for t, e in obs.exportador.enviados if t == tipo]
+
+
+class _ConSobre(_Fijo):
+    """Un doble que devuelve las medidas del sobre, como la `SesionDelegada` real."""
+
+    def __init__(self, interno, coste):
+        self.interno, self.coste = interno, coste
+        self.nombre = interno.nombre
+
+    def __getattr__(self, nombre):
+        return getattr(self.__dict__["interno"], nombre)
+
+    def llamar(self, prompt):
+        r = self.interno.llamar(prompt)
+        return dict(r, medidas={"coste_usd": self.coste, "tokens_entrada": 10,
+                                "tokens_salida": 5, "modelos": ["m-1"], "duracion_ms": 7})
+
+
+def test_una_generacion_es_una_traza_con_un_span_por_rol(con, tmp_path):
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), observacion=obs)
+    assert len(_enviados(obs, "traza")) == 1
+    roles = {s["nombre"] for s in _enviados(obs, "span") if s["tipo"] == "rol"}
+    assert roles == {"planificador", "revisor_plan", "escritor", "editor", "resumidor"}
+
+
+def test_los_spans_de_rol_cuelgan_de_su_capitulo(con, tmp_path):
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), observacion=obs)
+    spans = _enviados(obs, "span")
+    capitulo = [s for s in spans if s["tipo"] == "grupo" and s["nombre"] == "capitulo"][0]
+    planificacion = [s for s in spans if s["nombre"] == "planificacion"][0]
+    escritor = [s for s in spans if s["nombre"] == "escritor"][0]
+    planificador = [s for s in spans if s["nombre"] == "planificador"][0]
+    assert capitulo["capitulo"] == 1, "el numero, nunca el id del plan"
+    assert escritor["padre"] == capitulo["id"] and escritor["capitulo"] == 1
+    assert planificador["padre"] == planificacion["id"]
+
+
+def test_el_coste_de_cada_llamada_es_el_del_sobre(con, tmp_path):
+    agentes = _agentes()
+    agentes["escritor"] = _ConSobre(agentes["escritor"], 0.125)
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), observacion=obs)
+    escritor = [s for s in _enviados(obs, "span") if s["nombre"] == "escritor"]
+    assert escritor and all(s["coste_usd"] == 0.125 for s in escritor)
+    capitulo = [s for s in _enviados(obs, "span") if s["nombre"] == "capitulo"][0]
+    assert capitulo["coste_es_suelo"] is True, "el Editor y el Resumidor no traen coste"
+
+
+def test_cada_span_dice_su_version_de_prompt(con, tmp_path):
+    from app.features.orquestacion import prompts
+    versiones = {rol: v.version for rol, v in prompts.registro().items()}
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), observacion=obs)
+    for s in _enviados(obs, "span"):
+        if s["tipo"] == "rol":
+            assert s["version_de_prompt"] == versiones[s["nombre"]], s["nombre"]
+    assert {p["rol"] for p in _enviados(obs, "prompt")} == set(versiones)
+
+
+def test_dos_generaciones_de_la_misma_obra_comparten_sesion(con, tmp_path):
+    """`SPEC-29` `RF-01`: toda generacion de una obra cae en la sesion de esa obra."""
+    a, b = _observacion(con), _observacion(con)
+    for obs in (a, b):
+        novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path), observacion=obs)
+    assert _enviados(a, "traza")[0]["sesion"] == _enviados(b, "traza")[0]["sesion"]
+    assert _enviados(a, "traza")[0]["id"] != _enviados(b, "traza")[0]["id"]
+
+
+def test_con_el_exportador_caido_la_novela_termina_igual_y_deja_perdidas(con, tmp_path):
+    """`SPEC-29` `RF-09`: la observabilidad no puede tumbar una novela."""
+    from app.commons.observabilidad import perdidas
+    sin = novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                          carpeta_de_reglas=str(tmp_path))
+    caida = novela.escribir(con, "obra-y", ficha(), _agentes(), hasta_capitulo=1,
+                            carpeta_de_reglas=str(tmp_path),
+                            observacion=_observacion(con, obra="obra-y", falla=True))
+    assert caida["generacion"].parada == sin["generacion"].parada
+    assert len(caida["generacion"].escenas_hechas) == len(sin["generacion"].escenas_hechas)
+    assert perdidas.de(con), "la perdida queda registrada"
+
+
+def test_el_juicio_de_la_obra_cuelga_del_cierre(con, tmp_path):
+    obs = _observacion(con)
+    novela.escribir(con, "obra-x", ficha(), _agentes_para_la_novela_entera(),
+                    carpeta_de_reglas=str(tmp_path), lean=_LeanFijo(), observacion=obs)
+    spans = _enviados(obs, "span")
+    cierre = [s for s in spans if s["nombre"] == "cierre"][0]
+    assert [s for s in spans if s["tipo"] == "rol" and s.get("padre") == cierre["id"]]
+    assert len([s for s in spans if s["nombre"] == "capitulo"]) == 10
