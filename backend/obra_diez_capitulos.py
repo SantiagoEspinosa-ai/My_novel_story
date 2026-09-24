@@ -238,12 +238,11 @@ def main():
     # Lo que decide si el cero de `INV-03` es limpio o es ausencia de material
     # (`F-30`, `F-52`). Sin esto, un cero de bloqueos no se puede interpretar.
     print("\n=== TUVIERON LAS PUERTAS ALGO QUE RECHAZAR? ===")
-    acciones = revelaciones = 0
-    for fila in con.execute("SELECT delta FROM delta_de_escena"):
-        d = json.loads(fila[0]) if fila[0] else {}
-        acciones += len(d.get("acciones") or [])
-        revelaciones += len(d.get("revelaciones") or [])
-    filas = con.execute("SELECT COUNT(*) FROM delta_de_escena").fetchone()[0]
+    # `PLAN-23` hallazgo 2: leia `SELECT delta`, una columna que no existe, y de la
+    # base entera. Ahora lee el delta guardado de las escenas de esta obra.
+    cuenta = deltas.contar_acciones(con, [e["id"] for e in repo.escenas_de(con, OBRA)])
+    acciones, revelaciones, filas = (cuenta["acciones"], cuenta["revelaciones"],
+                                     cuenta["deltas"])
     print("acciones declaradas: {0}, leidas de {1} delta(s) de la obra {2}"
           "  <- lo que INV-03 compara".format(acciones, filas, OBRA))
     print("revelaciones declaradas: {0}, de los mismos {1} delta(s)"

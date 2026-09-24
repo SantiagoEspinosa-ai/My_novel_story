@@ -86,3 +86,29 @@ def ultimo(con, escena):
     """
     guardados = leer(con, escena)
     return guardados[-1] if guardados else None
+
+
+def de_escenas(con, escenas):
+    """El delta vigente de cada escena, **en el orden de la lista**, como pares
+    `(escena, delta)`. Una escena sin delta no aparece: no consolido nada.
+
+    Es lo que acumula el estado de una version (`PLAN-23` A2): el orden lo da quien
+    sabe cual es la version, no esta tabla."""
+    pares = []
+    for e in escenas:
+        u = ultimo(con, e)
+        if u is not None:
+            pares.append((e, u["delta"]))
+    return pares
+
+
+def contar_acciones(con, escenas):
+    """Cuantas acciones y revelaciones declaran los deltas de estas escenas.
+
+    Es lo que decide si un cero de `INV-03` es limpio o es falta de material (`F-30`).
+    El guion de la obra larga lo contaba con `SELECT delta`, una columna que no existe
+    (`PLAN-23` hallazgo 2), y sobre la base entera y no sobre su obra."""
+    pares = de_escenas(con, escenas)
+    return {"acciones": sum(len(d.get("acciones") or []) for _, d in pares),
+            "revelaciones": sum(len(d.get("revelaciones") or []) for _, d in pares),
+            "deltas": len(pares)}
