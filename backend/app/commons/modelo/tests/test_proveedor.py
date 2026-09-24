@@ -187,6 +187,16 @@ def test_cada_delegacion_del_pipeline_apaga_las_herramientas_integradas(monkeypa
         assert orden[orden.index("--tools") + 1] == ""
 
 
+def test_toda_delegacion_con_agente_lleva_strict_mcp_config_aunque_no_tenga_herramientas(monkeypatch):
+    """`PLAN-22` DP-6: con un `.mcp.json` en la raiz, una delegacion sin tools que no
+    lleve `--strict-mcp-config` cargaria el browser MCP. El hook negaria la llamada, pero
+    el servidor arrancaria igual (hallazgo 11)."""
+    for agente in ("planificador", "revisor_plan", "resumidor", "juez", "escritor"):
+        orden = _orden_de(monkeypatch, agente=agente)["orden"]
+        assert "--strict-mcp-config" in orden, agente
+        assert "--mcp-config" not in orden, "sin tools no se le da ningun servidor"
+
+
 def test_la_delegacion_devuelve_su_identificador_en_las_medidas(entorno):
     visto = {}
 

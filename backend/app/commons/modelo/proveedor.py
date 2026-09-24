@@ -260,12 +260,17 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
     if agente:
         # `PLAN-28` `D-2`: toda delegacion del pipeline apaga las herramientas
         # integradas; las unicas que quedan son las MCP que se le den abajo.
-        orden += ["--agent", agente, "--tools", ""]
+        # `PLAN-22` DP-6: y **toda** lleva `--strict-mcp-config`, tenga o no tools. Sin
+        # el, una delegacion sin tools cargaria los servidores del `.mcp.json` de la
+        # raiz -el browser de la inspeccion- y el hook solo negaria la llamada.
+        orden += ["--agent", agente, "--tools", "", "--strict-mcp-config"]
     config_mcp = None
     if herramientas:
         config_mcp = _configuracion_mcp(agente, herramientas)
-        orden += ["--mcp-config", config_mcp, "--strict-mcp-config",
+        orden += ["--mcp-config", config_mcp,
                   "--allowedTools", ",".join(PERMITIDAS.get(agente, ()))]
+        if "--strict-mcp-config" not in orden:
+            orden.append("--strict-mcp-config")
     # `SPEC-26` `RF-19`: los hooks solo actuan si ven `HARNESS_AGENTE`, y solo
     # lo ponemos aqui. Una sesion interactiva en el mismo proyecto no lo tiene.
     env = _sin_observabilidad(dict(os.environ, **(entorno or {})))
