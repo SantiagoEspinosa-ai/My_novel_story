@@ -22,6 +22,7 @@ from pydantic import ValidationError
 
 from app.commons import config
 from app.commons.configuracion.esquemas import ReglasDeContradiccion
+from app.commons.configuracion.esquemas import rango_de_palabras
 from app.commons.dominio.destinatario import EXTENSION, FichaDeEntrevista
 from app.commons.dominio.enumeraciones import TipoDeContradiccion as TC
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
@@ -38,8 +39,8 @@ PRIMERA_PREGUNTA = (
     "Vamos a preparar una novela de {capitulos} capitulos, de {minimo} a {maximo} "
     "palabras cada uno. Para empezar: ¿como se llama la persona que la va a "
     "recibir, tal como quieres que aparezca escrito?").format(
-        capitulos=EXTENSION["capitulos"], minimo=EXTENSION["palabras_por_capitulo"][0],
-        maximo=EXTENSION["palabras_por_capitulo"][1])
+        capitulos=EXTENSION["capitulos"], minimo=rango_de_palabras()[0],
+        maximo=rango_de_palabras()[1])
 
 PROMPT = """Eres el entrevistador de una novela para regalar. Sigue tus
 instrucciones de agente. Esto es lo que ha calculado el sistema; no lo discutas.

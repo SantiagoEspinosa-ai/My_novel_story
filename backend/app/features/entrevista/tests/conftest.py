@@ -22,6 +22,7 @@ def ficha_completa(**cambios):
                  "nombre": "Brisa", "relacion": "su perra"},
             ]},
         "ocasion": "cumpleanos", "genero": "aventura", "tono": "divertido",
+        "extension": "media",
         "papel": "protagonista", "dedicatoria": "Para Irene, que siempre llega.",
         "titulo": "El mapa de Irene",
         "premisa": "Un mapa antiguo devuelve a Irene al tren de Lisboa.",

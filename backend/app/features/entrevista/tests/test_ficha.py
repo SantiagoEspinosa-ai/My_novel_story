@@ -9,13 +9,14 @@ from app.commons.dominio.destinatario import EXTENSION, FichaDeEntrevista
 from app.features.entrevista import ficha as modulo
 from app.features.entrevista.tests.conftest import ficha_completa
 
-OBLIGATORIOS_EN_ORDEN = ["nombre", "edad", "ocasion", "genero", "tono", "papel",
-                         "rasgo", "recuerdo", "premisa", "titulo"]
+OBLIGATORIOS_EN_ORDEN = ["nombre", "edad", "ocasion", "genero", "tono", "extension",
+                         "papel", "rasgo", "recuerdo", "premisa", "titulo"]
 
 
-def test_una_ficha_vacia_pide_los_diez_obligatorios_en_el_orden_del_anexo():
+def test_una_ficha_vacia_pide_los_once_obligatorios_en_el_orden_del_anexo():
     """`SPEC-25` v3: la premisa y el titulo van despues de los recuerdos, porque
-    salen de ellos (`RF-02b`)."""
+    salen de ellos (`RF-02b`). `SPEC-32`: la extension, despues del tono, que es el
+    orden del enunciado (*«genero, tono y extension»*)."""
     assert modulo.que_falta(FichaDeEntrevista()) == OBLIGATORIOS_EN_ORDEN
 
 
@@ -46,11 +47,24 @@ def test_un_valor_fuera_de_la_lista_es_error():
         ficha_completa(tono="melancolico")
 
 
-def test_la_extension_no_se_puede_fijar():
-    """`RF-03`: no se pregunta, y un campo desconocido no entra en silencio."""
+def test_una_ficha_sin_extension_no_esta_completa():
+    """`SPEC-32` `RF-06`: la extension se pregunta; sin ella la ficha no pasa a brief."""
+    assert modulo.que_falta(ficha_completa(extension=None)) == ["extension"]
+
+
+def test_la_extension_se_pide_despues_del_tono():
+    orden = modulo.que_falta(FichaDeEntrevista())
+    assert orden.index("extension") == orden.index("tono") + 1
+
+
+def test_una_extension_que_no_esta_en_el_vocabulario_no_valida():
+    """`RF-08`. Sustituye a la prueba de `SPEC-25` `RF-03`, que exigia que no se
+    pudiera fijar: ahora se fija, pero solo con una de las opciones."""
+    with pytest.raises(ValidationError):
+        ficha_completa(extension="extra_larga")
     with pytest.raises(ValidationError):
         ficha_completa(extension={"capitulos": 3})
-    assert EXTENSION == {"capitulos": 10, "palabras_por_capitulo": [1000, 1500]}
+    assert EXTENSION == {"capitulos": 10}, "los capitulos no se preguntan"
 
 
 def test_a_brief_de_una_ficha_incompleta_falla_en_vez_de_dar_medio_brief():

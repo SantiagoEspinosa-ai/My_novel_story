@@ -432,6 +432,18 @@ PALABRAS_POR_CAPITULO = (1000, 1500)
 su primera version y todo el pipeline esta calibrado para capitulos de ese tamaño."""
 
 
+def rango_de_palabras(extension=None, sistema=None) -> tuple:
+    """Palabras por capitulo de una extension (`SPEC-32` `RF-09`).
+
+    Sin extension, el rango obligatorio entero: es lo que se usaba antes de que se
+    preguntara, y lo que queda para una ficha antigua que no la tiene.
+    """
+    if extension is None:
+        return PALABRAS_POR_CAPITULO
+    opciones = sistema.extensiones if sistema is not None else _extensiones_por_defecto()
+    return tuple(opciones[enums.ExtensionDeCapitulo(extension)])
+
+
 def _extensiones_por_defecto():
     return {enums.ExtensionDeCapitulo.CORTA: (1000, 1150),
             enums.ExtensionDeCapitulo.MEDIA: (1150, 1350),

@@ -8,7 +8,7 @@ la pudo discutir en diez capitulos (`F-56`).
 """
 
 from app.commons import config
-from app.commons.dominio.destinatario import EXTENSION
+from app.commons.configuracion.esquemas import rango_de_palabras
 from app.commons.invariantes.registro import TODAS
 from app.commons.politica.personalizacion import frases_repetidas, repeticiones
 from app.commons.politica.vetadas import coincidencias
@@ -46,7 +46,7 @@ def montar(con, obra, ficha, aprobado):
         if p.fecha_de_nacimiento:
             aplicar.fijar_fecha_de_nacimiento(con, p.id, p.fecha_de_nacimiento)
     mundo.sembrar_lugares(con, {l.id: l.accesos for l in plan.mundo.lugares})
-    minimo, maximo = EXTENSION["palabras_por_capitulo"]
+    minimo, maximo = rango_de_palabras()
     for c in plan.capitulos:
         e = c.escenas[0]
         escaleta.guardar_escaleta(con, obra, [{
@@ -211,7 +211,7 @@ def _reglas_del_hook(carpeta, obra, vetadas, nombres):
     import json
     import os
     ruta = os.path.join(carpeta, "reglas-{0}.json".format(obra))
-    minimo, maximo = EXTENSION["palabras_por_capitulo"]
+    minimo, maximo = rango_de_palabras()
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump({"vetadas": vetadas, "nombres": nombres, "longitud": [minimo, maximo]},
                   f, ensure_ascii=False)

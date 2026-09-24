@@ -20,6 +20,7 @@ FICHA = {
             {"tipo": "rasgo", "descripcion": "canta mal", "imprescindible": False},
         ]},
     "ocasion": "cumpleanos", "genero": "aventura", "tono": "divertido",
+    "extension": "media",
     "papel": "protagonista", "vetadas": ["hospital"],
     "nombres_vetados": ["Tomas Ferrer"],
     "titulo": "El mapa de Irene",

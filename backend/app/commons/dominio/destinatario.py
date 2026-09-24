@@ -21,9 +21,10 @@ from pydantic import Field, model_validator
 from app.commons.dominio import enumeraciones as enums
 from app.commons.dominio.modelos import _DelDominio
 
-# `SPEC-25` `RF-03`: la extension no se pregunta ni se guarda en la ficha. Es
-# la misma para todas las novelas y el entrevistador solo informa de ella.
-EXTENSION = {"capitulos": 10, "palabras_por_capitulo": [1000, 1500]}
+# `SPEC-32`: la extension del capitulo se pregunta y la guarda la ficha
+# (`FichaDeEntrevista.extension`); los diez capitulos no se preguntan. El rango de
+# palabras de cada opcion vive en la configuracion del sistema.
+EXTENSION = {"capitulos": 10}
 
 # Los cuatro campos que el comprador elige de una lista con `otro`.
 CAMPOS_CON_OTRO = ("ocasion", "genero", "tono", "papel")
@@ -74,6 +75,7 @@ class FichaDeEntrevista(_DelDominio):
     ocasion: enums.Ocasion | None = None
     genero: enums.GeneroDeLaHistoria | None = None
     tono: enums.TonoDeLaHistoria | None = None
+    extension: enums.ExtensionDeCapitulo | None = None
     papel: enums.PapelDelDestinatario | None = None
     # `SPEC-25` v3: los propone el entrevistador a partir de los recuerdos y
     # rasgos; el planificador los recibe hechos.

@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from app.commons import config
 from app.commons.configuracion.esquemas import PlanDeLaObra
 from app.commons.dominio.destinatario import EXTENSION
+from app.commons.configuracion.esquemas import rango_de_palabras
 from app.features.planificacion.ids import acotar_a_la_obra
 from app.features.planificacion import cobertura
 from app.features.planificacion import repository as repo
@@ -116,8 +117,8 @@ def planificar(con, obra, ficha, planificador, revisor,
         bruto = planificador.llamar(PROMPT_PLANIFICADOR.format(
             ficha=ficha_json, premisa=ficha.premisa or "(sin premisa)",
             titulo=ficha.titulo or "(sin titulo)", capitulos=EXTENSION["capitulos"],
-            minimo=EXTENSION["palabras_por_capitulo"][0],
-            maximo=EXTENSION["palabras_por_capitulo"][1],
+            minimo=rango_de_palabras()[0],
+            maximo=rango_de_palabras()[1],
             objeciones=_objeciones(anteriores)))
         try:
             # `F-64`: acotados a la obra en el unico punto por el que entran.

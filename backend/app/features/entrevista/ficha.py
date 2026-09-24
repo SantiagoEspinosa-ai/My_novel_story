@@ -30,6 +30,8 @@ def que_falta(ficha: FichaDeEntrevista) -> list:
         ("ocasion", ficha.ocasion is not None),
         ("genero", ficha.genero is not None),
         ("tono", ficha.tono is not None),
+        # `SPEC-32`: despues del tono, el orden del enunciado.
+        ("extension", ficha.extension is not None),
         ("papel", ficha.papel is not None),
         ("rasgo", TE.RASGO in tipos),
         ("recuerdo", TE.RECUERDO in tipos),
