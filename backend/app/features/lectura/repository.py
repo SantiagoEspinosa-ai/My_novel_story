@@ -64,6 +64,15 @@ def hallazgos_abiertos(con, id_escena):
                 (id_escena,) + HALLAZGO_ABIERTO)]
 
 
+def hechos_que_usa(con, id_escena, id_obra):
+    """Los hechos de `uso_de_hecho` de la escena, **de su obra**, uno por hecho y con
+    todos los tipos de uso: el mismo `id` en dos obras son dos hechos (`SPEC-21`)."""
+    return [{"id": f[0], "enunciado": f[1]} for f in con.execute(
+        "SELECT DISTINCT h.id, h.enunciado FROM uso_de_hecho u "
+        "JOIN hecho_canonico h ON h.id = u.hecho AND h.obra = ? "
+        "WHERE u.escena = ? ORDER BY h.id", (id_obra, id_escena))]
+
+
 def _columnas(con, tabla):
     return {f[1] for f in con.execute("PRAGMA table_info({0})".format(tabla))}
 

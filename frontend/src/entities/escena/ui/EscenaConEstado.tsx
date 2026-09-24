@@ -6,7 +6,9 @@ import { ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, EtiquetaDeEstado, SEVERIDAD } fro
 // los dos, no se pinta el texto: se dice que falta. Nada se calcula aqui: la rendicion
 // llega resuelta (RF-40) y cada hallazgo trae su estado. Cada estado va con color y texto.
 
-type EscenaPintable = Omit<EscenaLeida, "borrador"> & { borrador?: EscenaLeida["borrador"] };
+type EscenaPintable = Omit<EscenaLeida, "borrador" | "personajes_presentes"> & {
+  borrador?: EscenaLeida["borrador"];
+};
 
 export function EscenaConEstado({ escena, conTexto = true }: {
   escena: EscenaPintable;

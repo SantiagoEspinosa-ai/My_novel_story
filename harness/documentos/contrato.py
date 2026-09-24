@@ -170,6 +170,10 @@ def comparar(congelado, actual):
 # --- Lo que el contrato significa (`RF-34`, `RF-35`, `RF-57`) -----------------------------
 
 RUTA_DEFINICIONES = RAIZ / "docs" / "definitions.md"
+RUTA_ARQUITECTURA = RAIZ / "docs" / "architecture.md"
+# El unico vocabulario que no es dominio: se declara donde vive su infraestructura, y
+# `docs/definitions.md` lo avisa (`PLAN-22` E14).
+SECCION_DE_TRABAJOS = "### Los estados de un trabajo"
 RUTA_SISTEMA = RAIZ / "backend" / "config" / "sistema.json"
 _NUMERICOS = {"integer", "number"}
 
@@ -191,7 +195,27 @@ def vocabularios_de_definitions(ruta=RUTA_DEFINICIONES):
         nombre = celdas[0].strip("`")
         valores = celdas[2].split("(")[0].replace("\\_", "_")
         vocabularios[nombre] = [v.strip() for v in valores.split(",") if v.strip()]
+    if ruta == RUTA_DEFINICIONES:
+        vocabularios["estado_de_trabajo"] = estados_de_trabajo()
     return vocabularios
+
+
+def estados_de_trabajo(ruta=RUTA_ARQUITECTURA):
+    """Los literales de `estado_de_trabajo`, de la **primera** tabla de
+    `docs/architecture.md` § "Los estados de un trabajo" (la de estados; la de
+    transiciones va despues): la primera celda de cada fila, en su orden."""
+    literales, dentro = [], False
+    for linea in ruta.read_text(encoding="utf-8").splitlines():
+        if linea.startswith("#"):
+            dentro = linea.strip() == SECCION_DE_TRABAJOS
+            continue
+        if not dentro:
+            continue
+        if linea.startswith("| `"):
+            literales.append(linea.split("|")[1].strip().strip("`"))
+        elif literales and not linea.startswith("|"):
+            break
+    return literales
 
 
 def _snake(nombre):

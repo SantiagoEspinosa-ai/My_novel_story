@@ -15,6 +15,7 @@ export const escenaConsolidada: EscenaLeida = {
   se_acepto_rindiendose: false,
   hallazgos_abiertos: [],
   borrador: { version: 1, texto: TEXTO },
+  personajes_presentes: ["per-uno", "per-dos"],
 };
 
 export const escenaRendida: EscenaLeida = {
@@ -27,6 +28,7 @@ export const escenaRendida: EscenaLeida = {
       descripcion: "fuera de rango (inventado)" },
   ],
   borrador: { version: 3, texto: "Texto rendido inventado." },
+  personajes_presentes: ["per-uno"],
 };
 
 export const escenaSinVeredicto: EscenaLeida = {
@@ -39,6 +41,7 @@ export const escenaSinVeredicto: EscenaLeida = {
       estado: "sin_veredicto", descripcion: "el juez no contesto (inventado)" },
   ],
   borrador: { version: 1, texto: "Texto generado inventado." },
+  personajes_presentes: null,
 };
 
 export const escenaPlanificada: EscenaLeida = {
@@ -48,9 +51,10 @@ export const escenaPlanificada: EscenaLeida = {
   se_acepto_rindiendose: false,
   hallazgos_abiertos: [],
   borrador: null,
+  personajes_presentes: [],
 };
 
-const delIndice = ({ borrador: _b, ...resto }: EscenaLeida) => resto;
+const delIndice = ({ borrador: _b, personajes_presentes: _p, ...resto }: EscenaLeida) => resto;
 
 export const indice: Indice = {
   id: "obra-inventada",

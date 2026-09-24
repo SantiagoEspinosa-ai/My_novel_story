@@ -457,6 +457,21 @@
             "title": "Id",
             "type": "string"
           },
+          "personajes_presentes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Escena.personajes_presentes: los que la pagina ofrece para renombrar. Nulo si la escena no los declara: no declarado, que no es nadie",
+            "title": "Personajes Presentes"
+          },
           "se_acepto_rindiendose": {
             "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
             "title": "Se Acepto Rindiendose",
@@ -469,7 +484,8 @@
           "estado",
           "se_acepto_rindiendose",
           "hallazgos_abiertos",
-          "borrador"
+          "borrador",
+          "personajes_presentes"
         ],
         "title": "EscenaLeida",
         "type": "object"
@@ -504,6 +520,19 @@
           "sin_veredicto"
         ],
         "title": "EstadoDeHallazgo",
+        "type": "string"
+      },
+      "EstadoDeTrabajo": {
+        "enum": [
+          "en_cola",
+          "esperando_presupuesto",
+          "en_curso",
+          "terminado",
+          "fallido",
+          "abandonado",
+          "detenido_por_presupuesto"
+        ],
+        "title": "EstadoDeTrabajo",
         "type": "string"
       },
       "EstadoDeVerificacion": {
@@ -742,6 +771,49 @@
           "descripcion"
         ],
         "title": "HallazgoAbierto",
+        "type": "object"
+      },
+      "HechoUsado": {
+        "description": "Un `HechoCanonico` que la escena usa, con su enunciado.",
+        "properties": {
+          "enunciado": {
+            "title": "Enunciado",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "enunciado"
+        ],
+        "title": "HechoUsado",
+        "type": "object"
+      },
+      "HechosDeEscena": {
+        "description": "Lo que la pagina ofrece al seleccionar un fragmento (`PLAN-22` E14): los hechos de\n`uso_de_hecho` de la escena, de **su** obra, uno por hecho. Vacia, no nula, si no usa\nninguno: se miro y no habia.",
+        "properties": {
+          "escena": {
+            "description": "El id de la Escena",
+            "title": "Escena",
+            "type": "string"
+          },
+          "hechos_que_usa": {
+            "description": "Por id de hecho",
+            "items": {
+              "$ref": "#/components/schemas/HechoUsado"
+            },
+            "title": "Hechos Que Usa",
+            "type": "array"
+          }
+        },
+        "required": [
+          "escena",
+          "hechos_que_usa"
+        ],
+        "title": "HechosDeEscena",
         "type": "object"
       },
       "Indice": {
@@ -1131,6 +1203,60 @@
         ],
         "title": "TiempoVerbal",
         "type": "string"
+      },
+      "TrabajoSalida": {
+        "additionalProperties": false,
+        "description": "Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su\nvocabulario lo declara `docs/architecture.md` § \"Los estados de un trabajo\".\n`abandonado` no es `fallido` (no se sabe si llego a pasar): viajan distintos.",
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeTrabajo"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "resultado": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          },
+          "volvio_tras_abandono": {
+            "title": "Volvio Tras Abandono",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "estado",
+          "resultado",
+          "motivo",
+          "volvio_tras_abandono"
+        ],
+        "title": "TrabajoSalida",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -1837,6 +1963,49 @@
         ]
       }
     },
+    "/escenas/{id_escena}/hechos": {
+      "get": {
+        "description": "Los hechos que usa una escena, con su enunciado: lo que la pagina ofrece al lector\ncuando selecciona un fragmento para pedir un cambio (`PLAN-22` E14).",
+        "operationId": "hechos_de_escena_escenas__id_escena__hechos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HechosDeEscena"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hechos De Escena",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
     "/escenas/{id_escena}/rechazar": {
       "post": {
         "operationId": "rechazar_escenas__id_escena__rechazar_post",
@@ -2357,7 +2526,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/TrabajoSalida"
+                }
               }
             },
             "description": "Successful Response"

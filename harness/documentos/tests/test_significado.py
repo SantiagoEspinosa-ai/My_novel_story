@@ -57,3 +57,37 @@ def test_los_literales_de_cada_enum_son_los_de_definitions():
 
 def test_el_congelado_de_hoy_significa_lo_que_dice():
     assert contrato.comprobar_significado(contrato.leer_congelado()) == []
+
+
+# --- `PLAN-22` E14: el trabajo tiene forma (`VER-110`) ------------------------------------
+
+def test_los_estados_de_un_trabajo_se_leen_de_architecture_y_no_de_definitions():
+    """`estado_de_trabajo` es infraestructura y se declara en `docs/architecture.md` §
+    "Los estados de un trabajo" (`docs/definitions.md` lo avisa). Se lee **del
+    documento**, como los del dominio: comparar con el `Enum` del backend seria
+    comparar el backend consigo mismo (Regla 3)."""
+    vocabularios = contrato.vocabularios_de_definitions()
+    assert vocabularios["estado_de_trabajo"] == [
+        "en_cola", "esperando_presupuesto", "en_curso", "terminado", "fallido",
+        "abandonado", "detenido_por_presupuesto"]
+
+    class EstadoDeTrabajo(str, Enum):
+        EN_COLA = "en_cola"
+        PERDIDO = "perdido"          # inventado: no esta en architecture
+
+    fallos = contrato.comprobar_significado(_esquema({"estado": EstadoDeTrabajo}))
+    assert any("EstadoDeTrabajo" in f and "perdido" in f for f in fallos), fallos
+
+
+def test_el_trabajo_tiene_forma_en_el_congelado():
+    """`GET /trabajos/{id}` gana `response_model` (`PLAN-22` hallazgo 9): sin el, el
+    congelado decia «cualquier cosa» y seguir una peticion (`RF-48`) no tenia contrato."""
+    congelado = contrato.leer_congelado()
+    respuesta = congelado["paths"]["/trabajos/{id_trabajo}"]["get"]["responses"]["200"]
+    ref = respuesta["content"]["application/json"]["schema"]["$ref"]
+    esquema = congelado["components"]["schemas"][ref.rsplit("/", 1)[1]]
+    assert set(esquema["properties"]) == {
+        "id", "tipo", "estado", "resultado", "motivo", "volvio_tras_abandono"}
+    assert esquema["properties"]["estado"]["$ref"].endswith("/EstadoDeTrabajo")
+    assert congelado["components"]["schemas"]["EstadoDeTrabajo"]["enum"] == \
+        contrato.vocabularios_de_definitions()["estado_de_trabajo"]

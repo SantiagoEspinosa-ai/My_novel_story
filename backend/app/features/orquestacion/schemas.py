@@ -9,6 +9,7 @@ cambio respecto a la anterior- y lo calcula el backend por identidad (`CE-5`).
 
 from app.commons.dominio import enumeraciones as enums
 from app.commons.dominio.modelos import _DelDominio
+from app.commons.trabajos.estados import EstadoDeTrabajo
 
 
 class VersionSalida(_DelDominio):
@@ -81,3 +82,18 @@ class PropuestaSalida(_DelDominio):
     motivo: str | None
     promesa: str
     punto_ciego: str
+
+
+# --- Seguir un trabajo (`RF-48`, `PLAN-22` E14) ---------------------------------------
+
+class TrabajoSalida(_DelDominio):
+    """Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su
+    vocabulario lo declara `docs/architecture.md` § "Los estados de un trabajo".
+    `abandonado` no es `fallido` (no se sabe si llego a pasar): viajan distintos."""
+
+    id: str
+    tipo: str
+    estado: EstadoDeTrabajo
+    resultado: dict | None
+    motivo: str | None
+    volvio_tras_abandono: bool

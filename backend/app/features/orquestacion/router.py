@@ -117,7 +117,7 @@ def cerrar_capitulo(id_capitulo: str, con: sqlite3.Connection = Depends(conexion
             "menores_que_se_dejan_pasar": cierre.menores_que_se_dejan_pasar}
 
 
-@router.get("/trabajos/{id_trabajo}")
+@router.get("/trabajos/{id_trabajo}", response_model=schemas.TrabajoSalida)
 def consultar_trabajo(id_trabajo: str, con: sqlite3.Connection = Depends(conexion)):
     """El estado de un trabajo encolado: su resultado, o el motivo si fallo.
 
