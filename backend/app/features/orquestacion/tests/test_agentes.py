@@ -16,13 +16,24 @@ def _cabecera(nombre):
     return texto, re.search(r"^---\n(.*?)\n---", texto, re.S).group(1)
 
 
-def test_cada_agente_del_pipeline_existe_y_no_tiene_herramientas():
-    """`SPEC-26` `RF-18`: el hook de policy es la segunda linea; la primera es
-    que ninguno declare herramientas."""
+def test_solo_el_escritor_y_el_editor_declaran_herramientas_y_son_las_permitidas():
+    """`SPEC-28` `RF-03`: el Escritor y el Editor declaran sus tres tools de lectura de
+    la story bible y nada mas; el resto sigue con `tools: []`. El frontmatter es la
+    ultima de cuatro barreras (`PLAN-28` `D-2`): no se confia solo en el."""
+    from app.commons.politica.herramientas import PERMITIDAS
     for nombre in DEL_PIPELINE:
         _, cabecera = _cabecera(nombre)
         assert "name: " + nombre in cabecera
-        assert "tools: []" in cabecera, nombre
+        if nombre in PERMITIDAS:
+            assert "tools: " + ", ".join(PERMITIDAS[nombre]) in cabecera, nombre
+        else:
+            assert "tools: []" in cabecera, nombre
+
+
+def test_el_escritor_sabe_que_el_delta_sigue_en_su_respuesta():
+    """`RF-04`: las tools son de solo lectura; el delta no se escribe con una tool."""
+    cuerpo, _ = _cabecera("escritor")
+    assert "solo lectura" in cuerpo and "delta" in cuerpo
 
 
 def test_solo_el_juez_de_terror_habla_de_terror():

@@ -434,3 +434,29 @@ def test_relanzar_escribir_no_vuelve_a_planificar(con, tmp_path):
                         carpeta_de_reglas=str(tmp_path))
     assert (len(agentes["planificador"].llamadas), len(agentes["revisor"].llamadas)) == llamadas
     assert r["plan"].reutilizado
+
+
+# --- `PLAN-28` E7: el Escritor y el Editor, con sus tools ------------------------
+
+def test_escribir_da_las_tools_al_escritor_y_al_editor_y_a_nadie_mas(tmp_path):
+    """`SPEC-28` `RF-03`. Con la base en un fichero, que es lo que el servidor MCP puede
+    abrir: una base en memoria no se puede servir, y entonces no se dan tools."""
+    import sqlite3 as _sqlite3
+    ruta = tmp_path / "obra.db"
+    con = _sqlite3.connect(str(ruta))
+    con.row_factory = _sqlite3.Row
+    migraciones.migrar(con)
+    agentes = _agentes()
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    for nombre in ("escritor", "editor"):
+        assert agentes[nombre].herramientas == {"db": str(ruta), "obra": "obra-x"}, nombre
+    for nombre in ("planificador", "revisor", "resumidor"):
+        assert getattr(agentes[nombre], "herramientas", None) is None, nombre
+
+
+def test_con_la_base_en_memoria_no_se_dan_tools(con, tmp_path):
+    agentes = _agentes()
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    assert getattr(agentes["escritor"], "herramientas", None) is None

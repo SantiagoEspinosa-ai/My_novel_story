@@ -258,6 +258,14 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
         imprescindibles.setdefault("{0}-e1".format(imp.capitulo), []).append(
             {"id": _id_imprescindible(n), "elemento": imp.elemento,
              "palabras_clave": imp.palabras_clave})
+    # `SPEC-28` `RF-03`: las tools de lectura de la story bible, al Escritor y al Editor
+    # y a nadie mas. El servidor MCP abre la base por su ruta, asi que una base en
+    # memoria no se puede servir: entonces no hay tools, y no se finge que las haya.
+    from app.features.auditoria.lean import ruta_de
+    ruta = ruta_de(con)
+    if ruta:
+        for nombre in ("escritor", "editor"):
+            agentes[nombre].herramientas = {"db": ruta, "obra": obra}
     agentes["escritor"].reglas = _reglas_del_hook(
         carpeta_de_reglas or tempfile.gettempdir(), obra, vetadas, nombres,
         rango_de_palabras(ficha.extension, sistema))
