@@ -17,7 +17,7 @@ from app.features.consolidacion import aplicar, deltas, memoria, mundo
 from app.features.cronologia import repository as usos
 from app.features.escaleta import repository as escaleta
 from app.features.observabilidad import repository as observabilidad
-from app.features.orquestacion import observar
+from app.features.orquestacion import observar, regeneracion
 from app.features.orquestacion.obra import _texto_elegido
 
 
@@ -99,6 +99,31 @@ def _conocimiento_inicial(plan, ficha):
     return entradas
 
 
+def imprescindibles_por_escena(con, obra, plan, version=None):
+    """Los imprescindibles del plan, por escena **de la version** (`PLAN-23` hallazgo 6).
+
+    Se indexaban por `"{capitulo}-e1"`, un identificador construido: una escena nueva
+    de otra version tiene otro, asi que `INV-23` **no se comprobaba** en los capitulos
+    regenerados y nada lo decia. Ahora un imprescindible previsto en el capitulo del
+    plan en la posicion `k` va a la primera escena del capitulo `k` de la version.
+    """
+    por_posicion = {c.id: n for n, c in enumerate(plan.capitulos, 1)}
+    numero = version if version is not None else brief.version_vigente(con, obra)
+    capitulos = (brief.capitulos_de_version(con, obra, numero) if numero is not None
+                 else [c.id for c in plan.capitulos])
+    resultado = {}
+    for n, imp in enumerate(plan.imprescindibles, 1):
+        k = por_posicion.get(imp.capitulo)
+        if k is None or k > len(capitulos):
+            continue
+        escenas = escaleta.escenas_de_capitulo(con, capitulos[k - 1], obra)
+        escena = escenas[0]["id"] if escenas else "{0}-e1".format(capitulos[k - 1])
+        resultado.setdefault(escena, []).append(
+            {"id": _id_imprescindible(n), "elemento": imp.elemento,
+             "palabras_clave": imp.palabras_clave})
+    return resultado
+
+
 # --- El nivel obra (`SPEC-26` `RF-12`, `RF-15`, `RF-16`) --------------------------
 
 PROMPT_JUICIO_DE_OBRA = """Juzga una novela para regalar entera, a partir de los
@@ -129,7 +154,8 @@ def _hallazgo(con, inv, escena, estado, descripcion):
 def _juicio_de_obra(con, obra, escenas, juez):
     """`INV-27`. **Nunca la obra entera** (`CLAUDE.md`): los resumenes y el
     ultimo capitulo, que es lo que hace falta para ver un final abrupto."""
-    resumenes = memoria.resumenes_hasta(con, 10 ** 9, obra=obra)
+    resumenes = memoria.resumenes_hasta(con, 10 ** 9, obra=obra,
+                                        escenas=[e["id"] for e in escenas])
     ultimo = escenas[-1]
     bruto = juez.llamar(PROMPT_JUICIO_DE_OBRA.format(
         resumenes="\n".join("- {0}: {1}".format(r["escena"], r["texto"])
@@ -159,7 +185,8 @@ def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=No
     """
     umbral_nombre = umbral_nombre or config.UMBRAL_REPETICION_NOMBRE
     longitud_frase = longitud_frase or config.LONGITUD_FRASE_REPETIDA
-    escenas = escaleta.escenas_de(con, obra)
+    # `PLAN-23` A6: las de la version vigente, no las de la obra entera.
+    escenas = regeneracion.escenas_de_version(con, obra)
 
     faltan = []
     # `F-65`: `uso_de_hecho` no guarda la obra y todas las novelas llaman a sus
@@ -319,11 +346,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
         for v in sorted(catalogo, key=lambda v: v.nivel.value != "global", reverse=True):
             observacion.vetadas[v.forma] = v
     nombres = sorted({ficha.destinatario.nombre} | {p.nombre for p in aprobado.plan.mundo.personajes})
-    imprescindibles = {}
-    for n, imp in enumerate(aprobado.plan.imprescindibles, 1):
-        imprescindibles.setdefault("{0}-e1".format(imp.capitulo), []).append(
-            {"id": _id_imprescindible(n), "elemento": imp.elemento,
-             "palabras_clave": imp.palabras_clave})
+    imprescindibles = imprescindibles_por_escena(con, obra, aprobado.plan)
     # `SPEC-28` `RF-03`: las tools de lectura de la story bible, al Escritor y al Editor
     # y a nadie mas. El servidor MCP abre la base por su ruta, asi que una base en
     # memoria no se puede servir: entonces no hay tools, y no se finge que las haya.
@@ -338,7 +361,10 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
 
     total = modulo_obra.Generacion(vetadas_comprobadas=True,
                                    genero=ficha.genero.value if ficha.genero else None)
-    capitulos = [c.id for c in aprobado.plan.capitulos]
+    # Los de la version vigente (`PLAN-23` A6); con una sola version, los del plan.
+    vigente = brief.version_vigente(con, obra)
+    capitulos = (brief.capitulos_de_version(con, obra, vigente) if vigente is not None
+                 else [c.id for c in aprobado.plan.capitulos])
     if hasta_capitulo:
         capitulos = capitulos[:hasta_capitulo]
     for numero, cap in enumerate(capitulos, 1):

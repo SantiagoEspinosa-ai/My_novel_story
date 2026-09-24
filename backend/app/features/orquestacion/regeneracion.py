@@ -73,7 +73,7 @@ def escenas_de_version(con, obra, numero=None):
         return escaleta.escenas_de(con, obra)
     escenas = []
     for capitulo in brief.capitulos_de_version(con, obra, numero):
-        escenas.extend(escaleta.escenas_de_capitulo(con, capitulo))
+        escenas.extend(escaleta.escenas_de_capitulo(con, capitulo, obra))
     return escenas
 
 
@@ -201,5 +201,5 @@ def vista_de_version(con, obra, numero):
             "estado": brief.estado_de_capitulo(con, capitulo),
             "escenas": [{"id": e["id"], "estado": e["estado"],
                          "estado_de_verificacion": estado_de(con, obra, numero, e["id"])}
-                        for e in escaleta.escenas_de_capitulo(con, capitulo)]})
+                        for e in escaleta.escenas_de_capitulo(con, capitulo, obra)]})
     return dict(version, obra=obra, capitulos=capitulos)

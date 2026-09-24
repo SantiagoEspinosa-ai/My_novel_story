@@ -27,7 +27,9 @@ class NoExisteEnLaObra(LookupError):
 
 
 def leer_hechos(con, obra, entrada: sb.EntradaHechos) -> sb.SalidaHechos:
-    propias = {e["id"] for e in escaleta.escenas_de(con, obra)}
+    # `PLAN-23` A6: las escenas de la version vigente, no las de la obra entera.
+    from app.features.orquestacion import regeneracion
+    propias = {e["id"] for e in regeneracion.escenas_de_version(con, obra)}
     hechos = [h for h in escaleta.hechos_declarados(con, obra)
               if entrada.hecho is None or h["id"] == entrada.hecho]
     return sb.SalidaHechos(hechos=[

@@ -66,6 +66,28 @@ def _texto_de(con, escena, aceptado):
     return fila[0] if fila else None
 
 
+def _de_la_version_vigente(con, obra):
+    """Las escenas de la version vigente, en su orden, o `None` si la obra no tiene
+    versiones (`PLAN-23` A6). Con dos versiones, la tabla `capitulo` tiene el capitulo
+    sustituido y el nuevo en la misma posicion, y el manuscrito tendria dos capitulos 2.
+
+    Lee las tablas de versiones por SQL, como ya leia `capitulo`: es el acoplamiento
+    que esta feature ya tenia (`F-28`), dicho aqui en vez de callado."""
+    try:
+        fila = con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
+                           (obra,)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if fila is None or fila[0] is None:
+        return None
+    return con.execute(
+        "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, v.orden AS orden_cap "
+        "FROM capitulo_de_version v JOIN escena e "
+        "  ON e.capitulo = v.capitulo AND e.obra = v.obra "
+        "WHERE v.obra = ? AND v.numero = ? ORDER BY v.orden, e.orden, e.id",
+        (obra, fila[0])).fetchall()
+
+
 def manuscrito(con, obra, con_titulos=True) -> Manuscrito:
     """La obra entera como una sola cadena, en orden de lectura."""
     # Dos ausencias distintas, y solo una es un error.
@@ -99,12 +121,14 @@ def manuscrito(con, obra, con_titulos=True) -> Manuscrito:
     # tampoco tienen tabla `capitulo`. Sin ella no hay orden de capitulo que
     # respetar, y se ordena por el de la escena — que es el unico que hay.
     try:
-        filas = con.execute(
-            "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, "
-            "       COALESCE(c.orden, 9999) AS orden_cap "
-            "FROM escena e LEFT JOIN capitulo c ON c.id = e.capitulo "
-            "WHERE e.obra = ? ORDER BY orden_cap, e.orden, e.id",
-            (obra,)).fetchall()
+        filas = _de_la_version_vigente(con, obra)
+        if filas is None:
+            filas = con.execute(
+                "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, "
+                "       COALESCE(c.orden, 9999) AS orden_cap "
+                "FROM escena e LEFT JOIN capitulo c ON c.id = e.capitulo "
+                "WHERE e.obra = ? ORDER BY orden_cap, e.orden, e.id",
+                (obra,)).fetchall()
     except sqlite3.OperationalError:
         filas = con.execute(
             "SELECT id, capitulo, orden, borrador_aceptado, 9999 "

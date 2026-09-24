@@ -84,11 +84,26 @@ def medir(con, obra, escenas=None):
     """El objeto de la medida, o la negativa con lo que falta. Nunca escribe.
 
     `escenas` son las de la obra que se mide; sin ellas, todas las de la obra."""
+    # La version vigente (`PLAN-23` A6): con dos, la tabla `capitulo` tiene tambien los
+    # sustituidos. Sin version -una obra de antes-, los de la obra.
+    vigente = _filas(con, "SELECT MAX(numero) FROM version_de_obra WHERE obra = ?", (obra,))
+    vigente = vigente[0][0] if vigente else None
+    if vigente is not None:
+        capitulos = [f[0] for f in _filas(
+            con, "SELECT capitulo FROM capitulo_de_version WHERE obra = ? AND numero = ? "
+                 "ORDER BY orden", (obra, vigente))]
+    else:
+        capitulos = [f[0] for f in _filas(
+            con, "SELECT id FROM capitulo WHERE obra = ? ORDER BY orden", (obra,))]
     if escenas is None:
         hay = _filas(con, "SELECT 1 FROM sqlite_master WHERE type='table' AND name='escena'")
-        escenas = escaleta.escenas_de(con, obra) if hay else []
-    capitulos = [f[0] for f in _filas(
-        con, "SELECT id FROM capitulo WHERE obra = ? ORDER BY orden", (obra,))]
+        if not hay:
+            escenas = []
+        elif vigente is not None:
+            escenas = [e for c in capitulos
+                       for e in escaleta.escenas_de_capitulo(con, c, obra)]
+        else:
+            escenas = escaleta.escenas_de(con, obra)
     con_escena = {e["capitulo"] for e in escenas}
     faltan = {"escenas_sin_hacer": sorted(e["id"] for e in escenas
                                          if e["estado"] not in HECHAS),

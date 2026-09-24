@@ -175,3 +175,115 @@ def test_inv06_sale_como_no_ejecutada(con):
     assert "INV-06" in no and "RF-12" in no["INV-06"]
     # `pov_usado` no se guarda con el borrador: `INV-04` no se puede volver a pasar.
     assert "INV-04" in no
+
+
+# --- A6 · cada lector ve solo su version --------------------------------------------
+
+from app.commons.db import procedencia
+from app.commons.dominio.enumeraciones import OrigenDeUso, TipoDeUsoDeHecho
+from app.features.consolidacion import memoria
+from app.features.cronologia import repository as usos
+from app.features.manuscrito import exportar
+from app.features.orquestacion import arrastre, novela, story_bible
+from app.features.orquestacion import obra as modulo_obra
+from app.features.planificacion.service import PlanAprobado
+from app.features.planificacion.tests.conftest import ficha
+from app.commons.dominio.story_bible import EntradaHechos
+
+OBRA = "obra-x"
+
+
+def _novela_con_dos_versiones(con):
+    """La novela del fixture de `planificacion`, escrita entera, y una version 2 que
+    sustituye el capitulo 2 (`cap-02`) por `cap-02-v2`, con su `t_discurso` (`C-6`)."""
+    novela.montar(con, OBRA, ficha(), PlanAprobado(plan(), 1, "El mapa", "Un mapa."))
+    planes.guardar(con, OBRA, 1, plan(), True, "revisor", [])
+    procedencia.registrar(con, version=o.COMMIT)
+    escaleta.asignar_t_discurso(con, OBRA, {"cap-{0:02d}".format(n): n for n in range(1, 11)})
+    for n in range(1, 11):
+        e = "cap-{0:02d}-e1".format(n)
+        o.escribir(con, e, "Texto viejo del capitulo {0}.".format(n))
+        memoria.guardar_resumen(con, e, n, "Resumen viejo {0}.".format(n), [], obra=OBRA)
+    # El galgo (imp-03, previsto en cap-02) solo se uso en el capitulo que se sustituye.
+    usos.registrar_usos(con, [{"hecho": h, "escena": "{0}-e1".format(c), "capitulo": c,
+                               "tipo": TipoDeUsoDeHecho.MENCIONA, "origen": OrigenDeUso.REGLA}
+                              for h, c in (("imp-01", "cap-01"), ("imp-02", "cap-04"),
+                                           ("imp-03", "cap-02"))])
+    capitulos = brief.capitulos_de_version(con, OBRA, 1)
+    capitulos[1] = "cap-02-v2"
+    brief.crear_version(con, OBRA, capitulos, anterior=1, commit="def5678")
+    escaleta.guardar_escaleta(con, OBRA, [{
+        "id": "cap-02-v2-e1", "orden": 1, "capitulo": "cap-02-v2",
+        "cambio_de_valor": {"eje": "vinculo", "signo": "positivo"}, "beats": [],
+        "pov": "per-irene", "lugar": "lug-casa", "t_discurso": 2,
+        "longitud_objetivo": [1, 5000]}])
+    o.escribir(con, "cap-02-v2-e1", "Texto nuevo del capitulo 2.")
+    memoria.guardar_resumen(con, "cap-02-v2-e1", 2, "Resumen nuevo 2.", [], obra=OBRA)
+
+
+def test_con_dos_versiones_cada_lector_ve_solo_las_escenas_de_la_suya(con):
+    _novela_con_dos_versiones(con)
+    v1 = [e["id"] for e in regeneracion.escenas_de_version(con, OBRA, 1)]
+    v2 = [e["id"] for e in regeneracion.escenas_de_version(con, OBRA, 2)]
+    assert "cap-02-e1" in v1 and "cap-02-v2-e1" not in v1
+    assert v2[1] == "cap-02-v2-e1" and "cap-02-e1" not in v2 and len(v2) == 10
+    assert [e["id"] for e in regeneracion.escenas_de_version(con, OBRA)] == v2
+    assert brief.leer(con, OBRA)["capitulos"][1] == "cap-02-v2"
+    # La story bible: el uso del galgo es del capitulo sustituido, no de la version 2.
+    hechos = {h.id: h for h in story_bible.leer_hechos(con, OBRA, EntradaHechos()).hechos}
+    assert hechos["imp-03"].usos == []
+    # `INV-24`: en la version vigente el galgo no aparece en ningun capitulo.
+    r = novela.cerrar(con, OBRA, ficha(), None)
+    assert r["estado"] == "novela_incompleta" and r["faltan"] == ["un galgo muy lento"]
+    # La medida del arrastre: la de la version vigente.
+    medida = arrastre.medir(con, OBRA)
+    assert medida["medido"] is True
+    assert [d["hecho"] for d in medida["detalle"]] == ["imp-01", "imp-02"]
+    # El cierre de la obra no mira los hallazgos del capitulo sustituido.
+    escaleta.guardar_hallazgo(con, "INV-07", "juez", "cap-02-e1", "mayor", "abierto", "x")
+    assert modulo_obra.evaluar_cierre(con, OBRA)["puede_cerrarse"] is True
+
+
+def test_la_memoria_de_una_escena_de_la_v2_no_trae_el_resumen_del_capitulo_sustituido(con):
+    _novela_con_dos_versiones(con)
+    material = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-03-e1"), OBRA,
+                                           anterior_cruza_capitulo=True)
+    assert [r["escena"] for r in material["resumenes"]] == ["cap-01-e1", "cap-02-v2-e1"]
+    assert material["escena_anterior"] == "Texto nuevo del capitulo 2."
+    en_la_1 = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-03-e1"), OBRA,
+                                          anterior_cruza_capitulo=True, version=1)
+    assert [r["escena"] for r in en_la_1["resumenes"]] == ["cap-01-e1", "cap-02-e1"]
+
+
+def test_el_manuscrito_con_dos_versiones_es_el_de_la_vigente_y_no_mezcla(con):
+    _novela_con_dos_versiones(con)
+    m = exportar.manuscrito(con, OBRA)
+    assert "Texto nuevo del capitulo 2." in m.texto
+    assert "Texto viejo del capitulo 2." not in m.texto
+    assert m.capitulos == 10 and m.escenas == 10
+    assert m.texto.index("capitulo 1.") < m.texto.index("nuevo del capitulo 2") \
+        < m.texto.index("capitulo 3.")
+
+
+def test_un_imprescindible_se_comprueba_en_el_capitulo_regenerado(con):
+    """Hallazgo 6: se indexaban por `"{capitulo}-e1"`, y la escena nueva tiene otro id."""
+    _novela_con_dos_versiones(con)
+    por_escena = novela.imprescindibles_por_escena(con, OBRA, plan())
+    assert [i["id"] for i in por_escena["cap-02-v2-e1"]] == ["imp-03"]
+    assert "cap-02-e1" not in por_escena
+    assert [i["id"] for i in por_escena["cap-01-e1"]] == ["imp-01"]
+    en_la_1 = novela.imprescindibles_por_escena(con, OBRA, plan(), version=1)
+    assert [i["id"] for i in en_la_1["cap-02-e1"]] == ["imp-03"]
+
+
+def test_con_una_sola_version_la_obra_se_genera_igual_que_antes(con):
+    novela.montar(con, OBRA, ficha(), PlanAprobado(plan(), 1, "El mapa", "Un mapa."))
+    escaleta.asignar_t_discurso(con, OBRA, {"cap-{0:02d}".format(n): n for n in range(1, 11)})
+    assert [e["id"] for e in regeneracion.escenas_de_version(con, OBRA)] == [
+        e["id"] for e in escaleta.escenas_de(con, OBRA)]
+    viejo = {"cap-{0:02d}-e1".format(n): [] for n in range(1, 11)}
+    for n, imp in enumerate(plan().imprescindibles, 1):
+        viejo["{0}-e1".format(imp.capitulo)].append(imp.elemento)
+    nuevo = novela.imprescindibles_por_escena(con, OBRA, plan())
+    assert {k: [i["elemento"] for i in v] for k, v in nuevo.items()} == \
+        {k: v for k, v in viejo.items() if v}

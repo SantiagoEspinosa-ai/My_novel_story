@@ -184,19 +184,25 @@ def escenas_de(con, obra):
         (obra,))]
 
 
-def escenas_de_capitulo(con, id_capitulo):
+def escenas_de_capitulo(con, id_capitulo, obra=None):
     """Las escenas de un capitulo, filtrando **por capitulo**.
 
     `orquestacion/router.py` lo resolvia llamando a `escenas_de`, que filtra
     por obra: con un solo capitulo por obra daba el resultado correcto por
     accidente, y con dos, cerrar el primero miraba las escenas del segundo.
     """
+    # `obra` (`PLAN-23` A6): `escena.capitulo` no es clave, y dos obras de la misma base
+    # pueden tener un capitulo con el mismo identificador. Quien sabe la obra la da.
+    if obra is not None:
+        return [_fila(f) for f in con.execute(
+            "SELECT {0} FROM escena WHERE capitulo = ? AND obra = ? ORDER BY orden".format(
+                _COLUMNAS), (id_capitulo, obra))]
     return [_fila(f) for f in con.execute(
         "SELECT {0} FROM escena WHERE capitulo = ? ORDER BY orden".format(_COLUMNAS),
         (id_capitulo,))]
 
 
-def asignar_t_discurso(con, obra, orden_de_capitulos=None):
+def asignar_t_discurso(con, obra, orden_de_capitulos=None, escenas=None):
     """Numera el orden de lectura de la obra entera (`F-45`).
 
     POR QUE `orden` NO SIRVE Y ESTE CAMPO SI
@@ -224,6 +230,11 @@ def asignar_t_discurso(con, obra, orden_de_capitulos=None):
     filas = [(f[0], f[1], f[2], f[3]) for f in con.execute(
         "SELECT id, orden, capitulo, t_discurso FROM escena WHERE obra = ?",
         (obra,))]
+    # `PLAN-23` A6: solo las de la version que se escribe. Numerar a la vez las dos
+    # versiones intercalaria sus capitulos en un solo orden de lectura.
+    if escenas is not None:
+        dentro = set(escenas)
+        filas = [f for f in filas if f[0] in dentro]
     capitulos = {c for _, _, c, _ in filas}
     orden_de_capitulos = dict(orden_de_capitulos or {})
 

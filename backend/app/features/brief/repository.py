@@ -165,28 +165,33 @@ def crear_version(con, obra, capitulos, anterior=None, peticion=None, commit=Non
     return numero
 
 
+def _leer(con, sql, args):
+    """Leer no crea tablas: las lecturas de versiones tienen que valer en una conexion
+    de solo lectura (la de la story bible, `SPEC-28` `RF-04`). Sin tabla, no hay filas."""
+    try:
+        return con.execute(sql, args).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+
 def versiones_de(con, obra):
-    asegurar_tablas(con)
     return [{"numero": f[0], "anterior": f[1], "peticion": f[2], "commit": f[3],
              "creada_en": f[4]}
-            for f in con.execute('SELECT numero, anterior, peticion, "commit", creada_en '
-                                 "FROM version_de_obra WHERE obra = ? ORDER BY numero",
-                                 (obra,))]
+            for f in _leer(con, 'SELECT numero, anterior, peticion, "commit", creada_en '
+                                "FROM version_de_obra WHERE obra = ? ORDER BY numero",
+                           (obra,))]
 
 
 def capitulos_de_version(con, obra, numero):
-    asegurar_tablas(con)
-    return [f[0] for f in con.execute(
-        "SELECT capitulo FROM capitulo_de_version WHERE obra = ? AND numero = ? "
-        "ORDER BY orden", (obra, numero))]
+    return [f[0] for f in _leer(
+        con, "SELECT capitulo FROM capitulo_de_version WHERE obra = ? AND numero = ? "
+             "ORDER BY orden", (obra, numero))]
 
 
 def version_vigente(con, obra):
     """La ultima creada, o `None` si la obra no tiene ninguna."""
-    asegurar_tablas(con)
-    fila = con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
-                       (obra,)).fetchone()
-    return fila[0]
+    filas = _leer(con, "SELECT MAX(numero) FROM version_de_obra WHERE obra = ?", (obra,))
+    return filas[0][0] if filas else None
 
 
 def leer(con, id_obra: str):
@@ -196,9 +201,12 @@ def leer(con, id_obra: str):
     ).fetchone()
     if fila is None:
         return None
-    capitulos = [r[0] for r in con.execute(
-        "SELECT id FROM capitulo WHERE obra = ? ORDER BY orden", (id_obra,)
-    )]
+    # `PLAN-23` A6: los de la version vigente. Sin version -una obra de antes-, los de
+    # la obra por su orden, como siempre.
+    vigente = version_vigente(con, id_obra)
+    capitulos = (capitulos_de_version(con, id_obra, vigente) if vigente is not None
+                 else [r[0] for r in con.execute(
+                     "SELECT id FROM capitulo WHERE obra = ? ORDER BY orden", (id_obra,))])
     return {"id": fila[0], "titulo": fila[1], "premisa": fila[2],
             "genero": fila[3], "capitulos": capitulos}
 
