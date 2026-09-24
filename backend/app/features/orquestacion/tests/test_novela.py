@@ -32,7 +32,7 @@ def test_diez_capitulos_de_una_escena_de_mil_a_mil_quinientas(con):
     escenas = escaleta.escenas_de(con, "obra-x")
     assert len(escenas) == 10
     assert {e["capitulo"] for e in escenas} == {"cap-{0:02d}".format(n) for n in range(1, 11)}
-    assert all(list(e["longitud_objetivo"]) == [1000, 1500] for e in escenas)
+    assert all(list(e["longitud_objetivo"]) == [1150, 1350] for e in escenas), "la de `media`, la de la ficha"
 
 
 def test_cada_imprescindible_es_un_hecho_canonico(con):
@@ -220,7 +220,7 @@ def test_escribir_deja_las_reglas_del_hook_al_escritor(con, tmp_path):
     novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                     carpeta_de_reglas=str(tmp_path))
     reglas = _json.loads(open(agentes["escritor"].reglas, encoding="utf-8").read())
-    assert reglas["longitud"] == [1000, 1500]
+    assert reglas["longitud"] == [1150, 1350], "la extension de la ficha (`SPEC-32`)"
     assert "Irene Valdés" in reglas["nombres"] and "hospital" in reglas["vetadas"]
     assert "Tomas" in reglas["vetadas"], "el nombre vetado, tambien por su nombre de pila"
 
@@ -314,3 +314,27 @@ def test_dos_novelas_con_el_mismo_plan_en_la_misma_base_no_se_pisan(con, tmp_pat
     assert {tuple(f) for f in capitulos} == {("obra-a", 10), ("obra-b", 10)}
     personajes = con.execute("SELECT COUNT(*) FROM entidad WHERE id LIKE '%per-irene'").fetchone()[0]
     assert personajes == 2, "cada novela tiene su propia Irene"
+
+
+# --- `SPEC-32` `RF-09`: el codigo respeta la extension elegida --------------------
+
+def test_montar_usa_la_longitud_de_la_extension_elegida(con):
+    novela.montar(con, "obra-x", ficha(extension="larga"), _aprobado())
+    assert all(list(e["longitud_objetivo"]) == [1350, 1500]
+               for e in escaleta.escenas_de(con, "obra-x"))
+
+
+def test_las_reglas_del_hook_llevan_la_longitud_elegida(con, tmp_path):
+    agentes = _agentes()
+    novela.escribir(con, "obra-x", ficha(extension="corta"), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    reglas = _json.loads(open(agentes["escritor"].reglas, encoding="utf-8").read())
+    assert reglas["longitud"] == [1000, 1150]
+
+
+def test_un_capitulo_de_1200_palabras_falla_inv17_si_la_extension_es_larga(con, tmp_path):
+    """El caso negativo: el doble escribe 1200 palabras, que caben en `media` y no en
+    `larga`. Si el codigo siguiera con 1000-1500, esto pasaria en silencio."""
+    novela.escribir(con, "obra-x", ficha(extension="larga"), _agentes(), hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path))
+    assert con.execute("SELECT 1 FROM hallazgo WHERE invariante='INV-17'").fetchone()

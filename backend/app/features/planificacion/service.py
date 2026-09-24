@@ -109,7 +109,7 @@ def _leer_veredicto(bruto):
 
 
 def planificar(con, obra, ficha, planificador, revisor,
-               tope=config.TOPE_REVISIONES_DE_PLAN) -> PlanAprobado:
+               tope=config.TOPE_REVISIONES_DE_PLAN, sistema=None) -> PlanAprobado:
     repo.asegurar_tablas(con)
     ficha_json = ficha.model_dump_json(indent=2)
     anteriores = []
@@ -117,8 +117,8 @@ def planificar(con, obra, ficha, planificador, revisor,
         bruto = planificador.llamar(PROMPT_PLANIFICADOR.format(
             ficha=ficha_json, premisa=ficha.premisa or "(sin premisa)",
             titulo=ficha.titulo or "(sin titulo)", capitulos=EXTENSION["capitulos"],
-            minimo=rango_de_palabras()[0],
-            maximo=rango_de_palabras()[1],
+            minimo=rango_de_palabras(ficha.extension, sistema)[0],
+            maximo=rango_de_palabras(ficha.extension, sistema)[1],
             objeciones=_objeciones(anteriores)))
         try:
             # `F-64`: acotados a la obra en el unico punto por el que entran.

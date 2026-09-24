@@ -122,3 +122,12 @@ def test_el_prompt_dice_que_no_hay_campos_extra_y_que_los_accesos_son_ids(con):
     prompt = planificador.llamadas[0]
     assert "campo" in prompt and "rechaza" in prompt
     assert "accesos" in prompt and "identificadores" in prompt
+
+
+def test_el_prompt_del_planificador_lleva_la_longitud_elegida(con):
+    """`SPEC-32` `RF-09`: el Planificador escribe para la extension de la ficha."""
+    planificador = Agente([_plan()])
+    service.planificar(con, "obra-x", ficha(extension="larga"), planificador,
+                       Agente([{"aprobado": True, "objeciones": []}]))
+    assert "1350" in planificador.llamadas[0] and "1500" in planificador.llamadas[0]
+    assert "1000" not in planificador.llamadas[0]

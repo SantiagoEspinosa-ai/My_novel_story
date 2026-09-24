@@ -24,7 +24,7 @@ def _id_imprescindible(n):
     return "imp-{0:02d}".format(n)
 
 
-def montar(con, obra, ficha, aprobado):
+def montar(con, obra, ficha, aprobado, sistema=None):
     """Deja la obra lista para escribir a partir del plan aprobado.
 
     **No reinicia una obra ya montada**: si la escaleta existe, no se toca. Es
@@ -46,7 +46,8 @@ def montar(con, obra, ficha, aprobado):
         if p.fecha_de_nacimiento:
             aplicar.fijar_fecha_de_nacimiento(con, p.id, p.fecha_de_nacimiento)
     mundo.sembrar_lugares(con, {l.id: l.accesos for l in plan.mundo.lugares})
-    minimo, maximo = rango_de_palabras()
+    # `SPEC-32` `RF-09`: la extension que eligio el comprador, no una constante.
+    minimo, maximo = rango_de_palabras(ficha.extension, sistema)
     for c in plan.capitulos:
         e = c.escenas[0]
         escaleta.guardar_escaleta(con, obra, [{
@@ -207,11 +208,11 @@ def inmutable(ficha, premisa=None):
                 valor("papel").replace("_", " "), premisa or "(sin decidir)")
 
 
-def _reglas_del_hook(carpeta, obra, vetadas, nombres):
+def _reglas_del_hook(carpeta, obra, vetadas, nombres, longitud):
     import json
     import os
     ruta = os.path.join(carpeta, "reglas-{0}.json".format(obra))
-    minimo, maximo = rango_de_palabras()
+    minimo, maximo = longitud
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump({"vetadas": vetadas, "nombres": nombres, "longitud": [minimo, maximo]},
                   f, ensure_ascii=False)
@@ -235,8 +236,9 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
     sistema = sistema or carga.cargar_sistema()
     aprobado = planificacion.planificar(con, obra, ficha, agentes["planificador"],
                                         agentes["revisor"],
-                                        tope=sistema.topes.revisiones_de_plan)
-    montar(con, obra, ficha, aprobado)
+                                        tope=sistema.topes.revisiones_de_plan,
+                                        sistema=sistema)
+    montar(con, obra, ficha, aprobado, sistema)
 
     politica.asegurar_tablas(con)
     politica.cargar_listas(con, listas or carga.cargar_vetadas())
@@ -251,7 +253,8 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
             {"id": _id_imprescindible(n), "elemento": imp.elemento,
              "palabras_clave": imp.palabras_clave})
     agentes["escritor"].reglas = _reglas_del_hook(
-        carpeta_de_reglas or tempfile.gettempdir(), obra, vetadas, nombres)
+        carpeta_de_reglas or tempfile.gettempdir(), obra, vetadas, nombres,
+        rango_de_palabras(ficha.extension, sistema))
 
     total = modulo_obra.Generacion(vetadas_comprobadas=True,
                                    genero=ficha.genero.value if ficha.genero else None)
