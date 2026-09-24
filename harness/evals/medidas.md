@@ -87,7 +87,8 @@ proyecto aplica en `F-30`, `F-52` y la Regla 8.
 ## R0 · Primera ejecución real aceptada de la novela regalo (2026-09-24)
 
 `novela_regalo.py ejemplos/brief-ejemplo.json --capitulos 1 --base ejemplo.db --obra
-obra-ejemplo`, con el código de la rama `examen-cierre` en el commit `97c2b95`. Datos inventados.
+obra-ejemplo`, con el código del commit `186c55f` de la rama `examen-cierre`, leído de la
+procedencia de la base (`procedencia.version_del_harness`). Datos inventados.
 
 | Cifra | Valor | ¿Qué mide? |
 | --- | --- | --- |
