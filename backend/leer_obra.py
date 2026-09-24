@@ -4,6 +4,8 @@
     python -X utf8 leer_obra.py --base obra10.db      # otra base
     python -X utf8 leer_obra.py --obra cap-01         # una obra concreta
     python -X utf8 leer_obra.py --listar              # que obras hay
+    python -X utf8 leer_obra.py --base ejemplo.db --obra obra-ejemplo --pdf ../ejemplos/novela-ejemplo.pdf
+                                                      # el PDF, solo si la puerta la publico
 
 POR QUE ESTO EXISTE
 --------------------
@@ -25,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.commons.configuracion import carga
 from app.commons.db import procedencia
-from app.features.manuscrito import exportar
+from app.features.manuscrito import exportar, service
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
@@ -39,7 +41,7 @@ def obras_de(con):
     return [{"obra": f[0], "escenas": f[1], "con_texto": f[2] or 0} for f in filas]
 
 
-def main():
+def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--base", default=None, help="fichero .db (por defecto, el del sistema)")
     p.add_argument("--obra", default=None, help="identificador (por defecto, el del brief)")
@@ -47,7 +49,9 @@ def main():
     p.add_argument("--listar", action="store_true", help="solo di que obras hay")
     p.add_argument("--sin-titulos", action="store_true",
                    help="solo el texto, para comparar con `VER-60`")
-    args = p.parse_args()
+    p.add_argument("--pdf", default=None,
+                   help="exporta a PDF (`SPEC-27`); solo una version publicada")
+    args = p.parse_args(argv)
 
     sistema = carga.cargar_sistema()
     ruta = args.base or sistema.ruta_de_la_base
@@ -66,6 +70,14 @@ def main():
         return 0
 
     obra = args.obra or carga.cargar_brief().obra_id
+    if args.pdf:
+        try:
+            escrito = service.exportar_pdf(con, obra, args.pdf)
+        except service.VersionNoPublicada as e:
+            print("no se exporta:", e)
+            return 1
+        print("PDF escrito en:", escrito)
+        return 0
     salida = args.salida or os.path.join(AQUI, "{0}.md".format(obra))
     try:
         m = exportar.a_fichero(con, obra, salida,

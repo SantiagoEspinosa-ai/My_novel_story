@@ -54,3 +54,38 @@ def test_una_version_publicada_se_exporta_y_el_pdf_existe(con, tmp_path):
     _veredicto(con, True)
     ruta = service.exportar_pdf(con, "o1", tmp_path / "n.pdf")
     assert ruta.exists() and ruta.read_bytes().startswith(b"%PDF")
+
+
+# --- `PLAN-27` E8: exportar desde la terminal ----------------------------------------
+
+def _guion():
+    import importlib.util
+    import pathlib
+    ruta = pathlib.Path(__file__).resolve().parents[4] / "leer_obra.py"
+    spec = importlib.util.spec_from_file_location("leer_obra", ruta)
+    guion = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(guion)
+    return guion
+
+
+def _a_fichero(con, tmp_path):
+    import sqlite3
+    ruta = tmp_path / "obra.db"
+    destino = sqlite3.connect(str(ruta))
+    con.backup(destino)
+    destino.close()
+    return str(ruta)
+
+
+def test_leer_obra_con_pdf_se_niega_si_no_esta_publicada_y_sale_con_1(con, tmp_path, capsys):
+    base = _a_fichero(con, tmp_path)
+    codigo = _guion().main(["--base", base, "--obra", "o1", "--pdf", str(tmp_path / "n.pdf")])
+    assert codigo == 1 and not (tmp_path / "n.pdf").exists()
+    assert "no se exporta" in capsys.readouterr().out
+
+
+def test_leer_obra_con_pdf_escribe_el_fichero_de_una_obra_publicada(con, tmp_path, capsys):
+    _veredicto(con, True)
+    base = _a_fichero(con, tmp_path)
+    codigo = _guion().main(["--base", base, "--obra", "o1", "--pdf", str(tmp_path / "n.pdf")])
+    assert codigo == 0 and (tmp_path / "n.pdf").read_bytes().startswith(b"%PDF")
