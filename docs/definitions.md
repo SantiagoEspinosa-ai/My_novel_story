@@ -371,7 +371,7 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | ID | Invariante | Nivel | Severidad | Tipo | Qué lee |
 | --- | --- | --- | --- | --- | --- |
 | INV-01 | Toda escena tiene `cambio_de_valor` no nulo | escena | bloqueante | regla | `Escena.cambio_de_valor` |
-| INV-02 | Todo personaje presente tiene `estado_vital = vivo` y es accesible en `EstadoDelMundo(t)` | escena | bloqueante | regla | `Escena.personajes_presentes`, `EstadoDelMundo.entidades_vivas`, `EstadoDelMundo.ubicaciones`, `Lugar.accesos_y_salidas` |
+| INV-02 | Todo personaje presente tiene `estado_vital = vivo` y es accesible en `EstadoDelMundo(t)`. El estado vital que cuenta es el que deja la propia escena: un desaparecido que el delta de la escena devuelve a `vivo` puede estar presente (decisión del autor, 2026-09-24; familia de `SPEC-16`). Punto ciego: las puertas leen el delta, no la prosa | escena | bloqueante | regla | `Escena.personajes_presentes`, `EstadoDelMundo.entidades_vivas`, `EstadoDelMundo.ubicaciones`, `Lugar.accesos_y_salidas` |
 | INV-03 | Ningún personaje actúa sobre un hecho que no conoce en `t` | escena | bloqueante | regla | `RegistroDeConocimiento` **más las `revelaciones` del delta que juzga** (`SPEC-17` C-4: `t` dentro de una escena es un intervalo), `HechoCanonico.escena_de_establecimiento`, `MomentoNarrativo.t_fabula`, **`acciones` del delta** (no `revelaciones`: `SPEC-16` C-1) |
 | INV-04 | El POV no cambia dentro de una escena | escena | bloqueante | regla | `Escena.pov`, `Borrador.pov_usado` |
 | INV-05 | Toda escena aceptada tiene su delta aplicado antes de la siguiente | escena | bloqueante | regla | `DeltaDeEscena`, `EstadoDelMundo` |

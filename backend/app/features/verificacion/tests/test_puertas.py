@@ -246,3 +246,32 @@ def test_inv18_beats_en_prosa_no_rompen_la_comprobacion():
     esc = dict(_escena_que_promete([]), beats=["Marta baja al sotano"])
     assert not any(x.invariante == "INV-18"
                    for x in puertas.verificar(esc, {}, _mundo()))
+
+
+# --- `INV-02` y el acto que cambia lo que vigila (decision del autor, 2026-09-24) ---
+
+def _mundo_con_gato():
+    m = _mundo()
+    m["entidades_vivas"]["gato"] = "desaparecido"
+    m["ubicaciones"]["gato"] = "salon"
+    return m
+
+
+def test_inv02_un_desaparecido_que_la_escena_devuelve_a_vivo_puede_estar_presente():
+    """La novela de ejemplo se paro en un reencuentro: el gato se perdio en el capitulo 8
+    y reaparecia en el 9. `INV-02` miraba el mundo **antes** del delta de la propia escena,
+    y asi ningun reencuentro era escribible. Es la familia de `SPEC-16`: una invariante no
+    puede bloquear el acto que cambia lo que ella vigila."""
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "vinculo", "signo": "positivo"},
+           "personajes_presentes": ["gato"], "lugar": "salon"}
+    delta = {"cambios_de_estado_vital": [{"personaje": "gato", "de": "desaparecido",
+                                          "a": "vivo"}]}
+    assert not [x for x in puertas.verificar(esc, delta, _mundo_con_gato())
+                if x.invariante == "INV-02"]
+
+
+def test_inv02_un_desaparecido_que_la_escena_no_devuelve_sigue_bloqueando():
+    esc = {"id": "e1", "cambio_de_valor": {"eje": "vinculo", "signo": "positivo"},
+           "personajes_presentes": ["gato"], "lugar": "salon"}
+    assert any(x.invariante == "INV-02"
+               for x in puertas.verificar(esc, {}, _mundo_con_gato()))

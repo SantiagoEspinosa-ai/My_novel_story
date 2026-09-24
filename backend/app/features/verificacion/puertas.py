@@ -83,11 +83,20 @@ def verificar(escena, delta, mundo):
         # donde viene nadie.
         h.append(dato_ausente("INV-02", escena["id"], "Escena.lugar",
                               "comprobar la accesibilidad de los presentes"))
+    # Decision del autor (2026-09-24), familia de `SPEC-16`: una invariante no puede
+    # bloquear el acto que cambia lo que ella vigila. El estado vital que cuenta es el que
+    # deja la propia escena: un desaparecido que reaparece en ella, y el delta lo dice, puede
+    # estar presente. Punto ciego, el de siempre: las puertas leen el delta, no la prosa, y
+    # una vuelta que el delta declara y el texto no cuenta pasa.
+    vital = dict(mundo["entidades_vivas"]) if presentes else {}
+    for c in (delta or {}).get("cambios_de_estado_vital", []) or []:
+        if c.get("personaje") and c.get("a"):
+            vital[c["personaje"]] = c["a"]
     for p in presentes:
-        if mundo["entidades_vivas"].get(p) != "vivo":
+        if vital.get(p) != "vivo":
             h.append(_hallazgo("INV-02", escena["id"],
                                "{0} esta presente y su estado_vital es {1}".format(
-                                   p, mundo["entidades_vivas"].get(p))))
+                                   p, vital.get(p))))
         else:
             desde = mundo["ubicaciones"].get(p)
             hasta = escena.get("lugar")
