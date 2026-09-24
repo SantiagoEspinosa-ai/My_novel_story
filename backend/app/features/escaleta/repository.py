@@ -438,3 +438,14 @@ def valoraciones_del_editor(con, escena):
         "FROM valoracion_del_editor WHERE escena = ? ORDER BY version, criterio", (escena,))
     return [{"escena": f[0], "version": f[1], "criterio": f[2], "nota": f[3],
              "justificacion": f[4], "instruccion": f[5]} for f in filas]
+
+
+def hallazgos_de(con, escena):
+    """Todos los hallazgos de la escena, **en cualquier estado** (`PLAN-31` E6): la
+    evaluacion cuenta tambien los que disparon y se resolvieron, que es lo que convierte
+    un pase en un pase que dice algo."""
+    filas = con.execute(
+        "SELECT invariante, verificador, severidad, estado, descripcion, id "
+        "FROM hallazgo WHERE escena = ? ORDER BY id", (escena,))
+    return [{"invariante": f[0], "verificador": f[1], "severidad": Severidad(f[2]),
+             "estado": EH(f[3]), "descripcion": f[4], "id": f[5]} for f in filas]
