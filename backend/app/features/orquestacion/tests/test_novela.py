@@ -352,3 +352,19 @@ def test_montar_copia_la_dedicatoria_a_la_obra(con):
 def test_una_ficha_sin_dedicatoria_deja_la_obra_sin_ella(con):
     novela.montar(con, "obra-x", ficha(dedicatoria=None), _aprobado())
     assert con.execute("SELECT dedicatoria FROM obra WHERE id='obra-x'").fetchone()[0] is None
+
+
+# --- `F-65`: INV-24 no cuenta los usos de otra novela ----------------------------
+
+def test_un_imprescindible_usado_solo_en_otra_novela_sigue_faltando(con):
+    """`uso_de_hecho` no guarda la obra, y todas las novelas llaman a sus
+    imprescindibles `imp-01`, `imp-02`... Preguntar por `imp-03` a secas contaba el
+    uso de cualquier otra novela de la base: un verde falso en una `bloqueante`."""
+    _escrita(con, usados=("imp-01", "imp-02"))
+    usos.registrar_usos(con, [{"hecho": "imp-03", "escena": "otra-obra-cap-01-e1",
+                               "capitulo": "otra-obra-cap-01",
+                               "tipo": TipoDeUsoDeHecho.MENCIONA,
+                               "origen": OrigenDeUso.REGLA}])
+    r = novela.cerrar(con, "obra-x", ficha(), JuezDeObra(BIEN))
+    assert r["estado"] == "novela_incompleta"
+    assert r["faltan"] == ["un galgo muy lento"]

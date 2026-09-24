@@ -161,8 +161,12 @@ def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=No
     escenas = escaleta.escenas_de(con, obra)
 
     faltan = []
+    # `F-65`: `uso_de_hecho` no guarda la obra y todas las novelas llaman a sus
+    # imprescindibles `imp-01`, `imp-02`...: solo cuentan los usos de **sus** escenas.
+    propias = {e["id"] for e in escenas}
     for h in escaleta.hechos_declarados(con, obra):
-        if h["id"].startswith("imp-") and not usos.usos_de_hecho(con, h["id"]):
+        if h["id"].startswith("imp-") and not any(
+                u["escena"] in propias for u in usos.usos_de_hecho(con, h["id"])):
             faltan.append(h["enunciado"])
             _hallazgo(con, "INV-24", escenas[-1]["id"], "abierto",
                       "«{0}» no aparece en ningun capitulo".format(h["enunciado"]))
