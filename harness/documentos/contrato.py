@@ -167,6 +167,162 @@ def comparar(congelado, actual):
     return [Diferencia(_operacion(p, usos), p, d, a, b) for p, d, a, b in crudas]
 
 
+# --- Lo que el contrato significa (`RF-34`, `RF-35`, `RF-57`) -----------------------------
+
+RUTA_DEFINICIONES = RAIZ / "docs" / "definitions.md"
+RUTA_SISTEMA = RAIZ / "backend" / "config" / "sistema.json"
+_NUMERICOS = {"integer", "number"}
+
+
+def vocabularios_de_definitions(ruta=RUTA_DEFINICIONES):
+    """`{nombre_de_la_enumeracion: [literales]}`, leidos de la tabla de `definitions.md`.
+
+    Se leen del documento y no de `commons/dominio/enumeraciones.py`: comparar el
+    congelado con los `Enum` del backend seria comparar el backend consigo mismo
+    (Regla 3). Las filas tachadas son obsoletas y no cuentan.
+    """
+    vocabularios = {}
+    for linea in ruta.read_text(encoding="utf-8").splitlines():
+        if not linea.startswith("| `"):
+            continue
+        celdas = [c.strip() for c in linea.strip().strip("|").split("|")]
+        if len(celdas) != 3:
+            continue
+        nombre = celdas[0].strip("`")
+        valores = celdas[2].split("(")[0].replace("\\_", "_")
+        vocabularios[nombre] = [v.strip() for v in valores.split(",") if v.strip()]
+    return vocabularios
+
+
+def _snake(nombre):
+    salida = []
+    for i, c in enumerate(nombre):
+        if c.isupper() and i:
+            salida.append("_")
+        salida.append(c.lower())
+    return "".join(salida)
+
+
+def nombres_de_configuracion(ruta=RUTA_SISTEMA):
+    """Los nombres de `config/sistema.json` que no pueden cruzar el contrato (`RF-57`).
+
+    Las secciones y las claves de sus topes, presupuesto y umbrales. **No** los nombres de
+    agente de `modelos` ni las opciones de `extensiones`, que son palabras del dominio
+    (`corta` es un literal de `extension_de_capitulo`); tampoco las claves de cada franja
+    (`nombre`, `desde`, `hasta`), demasiado genericas para decir nada.
+    """
+    sistema = json.loads(ruta.read_text(encoding="utf-8"))
+    nombres = set(sistema)
+    for seccion in ("topes", "presupuesto", "edicion", "contradicciones"):
+        if isinstance(sistema.get(seccion), dict):
+            nombres.update(sistema[seccion])
+    return nombres
+
+
+def _propiedades(esquema):
+    """`(donde, nombre, subesquema)` de cada propiedad de cada esquema, con anidados."""
+    def bajar(nodo, donde):
+        if isinstance(nodo, dict):
+            for nombre, sub in (nodo.get("properties") or {}).items():
+                yield donde, nombre, sub
+                yield from bajar(sub, "{0}.{1}".format(donde, nombre))
+            for clave in ("items", "additionalProperties"):
+                if isinstance(nodo.get(clave), dict):
+                    yield from bajar(nodo[clave], donde)
+            for clave in ("anyOf", "oneOf", "allOf"):
+                for sub in nodo.get(clave) or []:
+                    yield from bajar(sub, donde)
+    for n, sc in ((esquema.get("components") or {}).get("schemas") or {}).items():
+        yield from bajar(sc, n)
+    for ruta, metodos in (esquema.get("paths") or {}).items():
+        for metodo, op in metodos.items():
+            if metodo not in _METODOS:
+                continue
+            for codigo, r in (op.get("responses") or {}).items():
+                for tipo in (r.get("content") or {}).values():
+                    yield from bajar(tipo.get("schema") or {},
+                                     "{0} {1} {2}".format(metodo.upper(), ruta, codigo))
+
+
+def _alternativas(sub):
+    for clave in ("anyOf", "oneOf"):
+        if sub.get(clave):
+            return list(sub[clave])
+    return [sub]
+
+
+def _tipos(sub, componentes):
+    tipos = set()
+    for alt in _alternativas(sub):
+        ref = alt.get("$ref", "")
+        if ref:
+            alt = componentes.get(ref.rsplit("/", 1)[1], {})
+        t = alt.get("type")
+        tipos.update(t if isinstance(t, list) else [t] if t else [])
+    return tipos
+
+
+def _es_enumeracion(sub, componentes):
+    alts = [a for a in _alternativas(sub) if a.get("type") != "null"]
+    if not alts:
+        return False
+    for a in alts:
+        ref = a.get("$ref", "")
+        destino = componentes.get(ref.rsplit("/", 1)[1], {}) if ref else a
+        if "enum" not in destino and "const" not in destino:
+            return False
+    return True
+
+
+def _debe_ser_enumeracion(nombre):
+    return nombre == "severidad" or nombre.startswith("estado")
+
+
+def comprobar_significado(esquema, vocabularios=None, configuracion=None):
+    """Lo que el congelado tiene que **decir**, ademas de coincidir. Devuelve los fallos.
+
+    1. Todo `estado*` y toda `severidad` viajan como enumeracion, no como cadena libre, y
+       cada enumeracion lleva **exactamente** los literales de su tabla en
+       `docs/definitions.md` (`RF-34`).
+    2. Ningun campo admite a la vez un numero y una cadena: si los admite, la interfaz
+       acierta pintando lo que le llega y el dato miente (`RF-35`).
+    3. Ninguna propiedad se llama como la configuracion del sistema (`RF-57`).
+
+    **Punto ciego:** mira nombres y tipos, no sentido. Un campo `modelo_usado` con el
+    nombre del modelo dentro pasa, porque no se llama como ninguna clave de
+    `sistema.json`.
+    """
+    vocabularios = vocabularios_de_definitions() if vocabularios is None else vocabularios
+    configuracion = nombres_de_configuracion() if configuracion is None else configuracion
+    componentes = (esquema.get("components") or {}).get("schemas") or {}
+    fallos = []
+    for donde, nombre, sub in _propiedades(esquema):
+        if _debe_ser_enumeracion(nombre) and not _es_enumeracion(sub, componentes):
+            fallos.append("{0}.{1}: un estado viaja como enumeracion con los literales de "
+                          "definitions, no como cadena libre (RF-34)".format(donde, nombre))
+        tipos = _tipos(sub, componentes)
+        if tipos & _NUMERICOS and "string" in tipos:
+            fallos.append("{0}.{1}: admite numero y cadena a la vez, dos lecturas para el "
+                          "mismo campo (RF-35)".format(donde, nombre))
+        if nombre in configuracion:
+            fallos.append("{0}.{1}: se llama como la configuracion de config/sistema.json, "
+                          "que no cruza el contrato (RF-57)".format(donde, nombre))
+    for n, sc in componentes.items():
+        if "enum" not in sc:
+            continue
+        literales = vocabularios.get(_snake(n))
+        if literales is None:
+            fallos.append("{0}: enumeracion sin vocabulario en docs/definitions.md "
+                          "(RF-34)".format(n))
+            continue
+        sobran = [v for v in sc["enum"] if v not in literales]
+        faltan = [v for v in literales if v not in sc["enum"]]
+        if sobran or faltan:
+            fallos.append("{0}: los literales no son los de `{1}` en definitions; sobran {2}, "
+                          "faltan {3} (RF-34)".format(n, _snake(n), sobran, faltan))
+    return sorted(set(fallos))
+
+
 def codigo_de_salida(diferencias):
     return 1 if diferencias else 0
 
@@ -189,7 +345,10 @@ def main(argv=None):
                   len(diferencias)))
     else:
         print("el congelado coincide con el backend")
-    return codigo_de_salida(diferencias)
+    fallos = comprobar_significado(leer_congelado())
+    for f in fallos:
+        print("[significado] " + f)
+    return 1 if diferencias or fallos else 0
 
 
 if __name__ == "__main__":

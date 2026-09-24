@@ -223,6 +223,16 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 
 **La relación que más rinde es `conoce`.** Con `sujeto`, `hecho`, `grado` y `desde_escena` se pueden detectar automáticamente tres clases de fallo: personajes que actúan con información que no tienen, revelaciones repetidas al lector y tensión que se desinfla porque el lector se adelantó sin que el texto lo aprovechara.
 
+### Vistas derivadas de la lectura (`SPEC-22`, no se persisten)
+
+Lo que la lectura web necesita y ninguna clase guarda. **Se calculan en el backend, al responder, y no tienen tabla**: la interfaz las recibe resueltas porque, si tuviera que deducirlas, estaría calculando dominio (`SPEC-22` `NF-06`). Son nombres literales del contrato, con las mismas reglas que un atributo.
+
+| Vista | De qué clase | Qué es | De dónde sale |
+| --- | --- | --- | --- |
+| se\_acepto\_rindiendose | Escena | Verdadero si y solo si **estado** = `aceptada_por_rendicion`. Una rendida se distingue siempre de una aceptada limpia, también después de consolidar, porque una escena rendida no pasa a `consolidada` (`SPEC-30` `RF-11`) | `SPEC-22` `RF-40` |
+| hallazgos\_abiertos\[\] → Hallazgo | Escena | Los hallazgos de la escena cuyo **estado** es `abierto` o `sin_veredicto`, cada uno **con su estado**: un `sin_veredicto` viaja como tal y no como `abierto`. Una lista vacía es *«se miró y no había»*, no *«no se sabe»* | `SPEC-22` `RF-39` |
+| capitulos\_donde\_aparece\[\] → Capitulo | Personaje, Lugar | Los capítulos donde la entidad **aparece**, por **Capitulo.orden**: para un `Personaje`, los de las escenas en que `participa_en` (`Escena.personajes_presentes`); para un `Lugar`, los de las escenas que `ocurre_en` él (`Escena.lugar`). Una mención en el texto **no** cuenta, ni haber entrado en el contexto de la escena. Con `personajes_presentes` sin declarar, la lista del personaje es **desconocida**, no vacía | `SPEC-22` `RF-44` |
+
 ## Vocabularios controlados
 
 **No todos los del proyecto están aquí, y conviene saberlo antes de buscar.** Este
