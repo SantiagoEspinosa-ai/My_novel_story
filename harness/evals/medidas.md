@@ -107,3 +107,18 @@ procedencia de la base (`procedencia.version_del_harness`). Datos inventados.
 Resumidor falló (`F-77`), así que este capítulo **no lo juzgó el Editor** y quedó sin resumen.
 Los dos están arreglados después de esta ejecución. Su coste **no se multiplica por diez** para
 presentarlo como coste de una novela (`PLAN-31` R0).
+
+### El gasto de diagnóstico después de R0
+
+Tres delegaciones sueltas, sobre el texto del capítulo 1 de `R0`, para comprobar los arreglos
+antes de gastar una novela entera. Todas con coste medido:
+
+| Delegación | Para qué | USD |
+| --- | --- | --- |
+| Resumidor, prompt viejo | Ver qué devolvía (`F-77`) | 0,05233 |
+| Resumidor, prompt nuevo | Comprobar el arreglo de `F-77` | 0,05208 |
+| Editor | Comprobar el arreglo de `F-76` | 0,1384975 |
+
+**Gastado hasta aquí contra el techo de 150 USD de `SPEC-31`**: 2,1650 de `R0` más 0,2429 de
+diagnóstico, **2,4079 USD**. Es la suma de lo leído; no incluye ninguna ejecución de otras
+sesiones.
