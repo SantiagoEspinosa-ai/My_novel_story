@@ -254,6 +254,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/generaciones/gasto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Confirmacion
+         * @description `RF-12`: lo que la web ensena antes de gastar, con la procedencia de cada cifra.
+         */
+        get: operations["confirmacion_generaciones_gasto_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/obras": {
         parameters: {
             query?: never;
@@ -261,7 +281,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Estanteria
+         * @description `RF-01`..`RF-03`: todas las obras, con su portada, su destinatario y su estado.
+         */
+        get: operations["estanteria_obras_get"];
         put?: never;
         /** Alta De Obra */
         post: operations["alta_de_obra_obras_post"];
@@ -387,6 +411,28 @@ export interface paths {
         get: operations["generacion_obras__id_obra__generacion_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/generaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lanzar
+         * @description `RF-11`: escribe la novela de la obra a partir de su ficha cerrada. `409` con el
+         *     motivo si la entrevista no esta cerrada, si ya hay una en curso o si lo gastado alcanza
+         *     el techo (`RF-13`).
+         */
+        post: operations["lanzar_obras__id_obra__generaciones_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -659,6 +705,20 @@ export interface components {
          * @enum {string}
          */
         ClaseDePeticion: "hecho" | "nombre";
+        /**
+         * ConfirmacionDeGasto
+         * @description `RF-12`: las tres cifras que la web ensena antes de gastar. `alcanzado` es
+         *     `usd >= techo_usd`, resuelto aqui; el backend tambien lo impone al lanzar (`RF-13`).
+         */
+        ConfirmacionDeGasto: {
+            /** Alcanzado */
+            alcanzado: boolean;
+            gastado: components["schemas"]["Gastado"];
+            referencia: components["schemas"]["Referencia"];
+            /** Techo Usd */
+            techo_usd: number;
+            ultima: components["schemas"]["CosteDeLaGeneracion"] | null;
+        };
         /** ContradiccionSalida */
         ContradiccionSalida: {
             /** Descripcion */
@@ -775,6 +835,11 @@ export interface components {
          * @enum {string}
          */
         EstadoVital: "vivo" | "muerto" | "desaparecido";
+        /** Estanteria */
+        Estanteria: {
+            /** Obras */
+            obras: components["schemas"]["ObraEnLaEstanteria"][];
+        };
         /**
          * FaseDeGeneracion
          * @description En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es
@@ -837,6 +902,23 @@ export interface components {
             lugares: components["schemas"]["FichaDeLugar"][];
             /** Personajes */
             personajes: components["schemas"]["FichaDePersonaje"][];
+        };
+        /**
+         * Gastado
+         * @description Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 17
+         *     no tiene coste guardado, y `por_que_es_suelo` lo dice (decision del autor, `SPEC-33`).
+         */
+        Gastado: {
+            /** Delegaciones */
+            delegaciones: number;
+            /** Es Suelo */
+            es_suelo: boolean;
+            /** Por Que Es Suelo */
+            por_que_es_suelo: string;
+            /** Sin Coste */
+            sin_coste: number;
+            /** Usd */
+            usd: number | null;
         };
         /** GeneracionEnVivo */
         GeneracionEnVivo: {
@@ -945,6 +1027,26 @@ export interface components {
             nota: number;
         };
         /**
+         * ObraEnLaEstanteria
+         * @description `RF-01`..`RF-03`. `titulo` es nulo mientras la obra solo tiene entrevista; `fase`, si
+         *     no ha empezado ninguna generacion; `destinatario` y `entrevista`, si la ficha se borro.
+         */
+        ObraEnLaEstanteria: {
+            /** Dedicatoria */
+            dedicatoria: string | null;
+            /** Destinatario */
+            destinatario: string | null;
+            /** Entrevista */
+            entrevista: string | null;
+            /** Entrevista Cerrada */
+            entrevista_cerrada: boolean | null;
+            fase: components["schemas"]["FaseDeGeneracion"] | null;
+            /** Id */
+            id: string;
+            /** Titulo */
+            titulo: string | null;
+        };
+        /**
          * ObraSalida
          * @description Una obra nunca se devuelve sin su estructura.
          *
@@ -1048,6 +1150,18 @@ export interface components {
             salida: components["schemas"]["SalidaDeRegeneracion"] | null;
             /** Version De Partida */
             version_de_partida: number;
+        };
+        /**
+         * Referencia
+         * @description Una medida de **otra** base, con su fuente: se ensena como referencia.
+         */
+        Referencia: {
+            /** Delegaciones */
+            delegaciones: number;
+            /** Fuente */
+            fuente: string;
+            /** Usd */
+            usd: number;
         };
         /** RespuestaEntrada */
         RespuestaEntrada: {
@@ -1606,6 +1720,46 @@ export interface operations {
             };
         };
     };
+    confirmacion_generaciones_gasto_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmacionDeGasto"];
+                };
+            };
+        };
+    };
+    estanteria_obras_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Estanteria"];
+                };
+            };
+        };
+    };
     alta_de_obra_obras_post: {
         parameters: {
             query?: never;
@@ -1820,6 +1974,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeneracionEnVivo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lanzar_obras__id_obra__generaciones_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

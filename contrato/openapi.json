@@ -408,6 +408,45 @@
         "title": "ClaseDePeticion",
         "type": "string"
       },
+      "ConfirmacionDeGasto": {
+        "additionalProperties": false,
+        "description": "`RF-12`: las tres cifras que la web ensena antes de gastar. `alcanzado` es\n`usd >= techo_usd`, resuelto aqui; el backend tambien lo impone al lanzar (`RF-13`).",
+        "properties": {
+          "alcanzado": {
+            "title": "Alcanzado",
+            "type": "boolean"
+          },
+          "gastado": {
+            "$ref": "#/components/schemas/Gastado"
+          },
+          "referencia": {
+            "$ref": "#/components/schemas/Referencia"
+          },
+          "techo_usd": {
+            "title": "Techo Usd",
+            "type": "number"
+          },
+          "ultima": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeLaGeneracion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "gastado",
+          "techo_usd",
+          "alcanzado",
+          "ultima",
+          "referencia"
+        ],
+        "title": "ConfirmacionDeGasto",
+        "type": "object"
+      },
       "ContradiccionSalida": {
         "properties": {
           "descripcion": {
@@ -665,6 +704,23 @@
         "title": "EstadoVital",
         "type": "string"
       },
+      "Estanteria": {
+        "additionalProperties": false,
+        "properties": {
+          "obras": {
+            "items": {
+              "$ref": "#/components/schemas/ObraEnLaEstanteria"
+            },
+            "title": "Obras",
+            "type": "array"
+          }
+        },
+        "required": [
+          "obras"
+        ],
+        "title": "Estanteria",
+        "type": "object"
+      },
       "FaseDeGeneracion": {
         "description": "En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es\nque el pipeline termino sin publicar y ahora le toca a una persona.",
         "enum": [
@@ -834,6 +890,48 @@
           "lugares"
         ],
         "title": "Fichas",
+        "type": "object"
+      },
+      "Gastado": {
+        "additionalProperties": false,
+        "description": "Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 17\nno tiene coste guardado, y `por_que_es_suelo` lo dice (decision del autor, `SPEC-33`).",
+        "properties": {
+          "delegaciones": {
+            "title": "Delegaciones",
+            "type": "integer"
+          },
+          "es_suelo": {
+            "title": "Es Suelo",
+            "type": "boolean"
+          },
+          "por_que_es_suelo": {
+            "title": "Por Que Es Suelo",
+            "type": "string"
+          },
+          "sin_coste": {
+            "title": "Sin Coste",
+            "type": "integer"
+          },
+          "usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usd"
+          }
+        },
+        "required": [
+          "usd",
+          "delegaciones",
+          "sin_coste",
+          "es_suelo",
+          "por_que_es_suelo"
+        ],
+        "title": "Gastado",
         "type": "object"
       },
       "GeneracionEnVivo": {
@@ -1073,6 +1171,92 @@
           "bajo_el_umbral"
         ],
         "title": "NotaDelEditor",
+        "type": "object"
+      },
+      "ObraEnLaEstanteria": {
+        "additionalProperties": false,
+        "description": "`RF-01`..`RF-03`. `titulo` es nulo mientras la obra solo tiene entrevista; `fase`, si\nno ha empezado ninguna generacion; `destinatario` y `entrevista`, si la ficha se borro.",
+        "properties": {
+          "dedicatoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dedicatoria"
+          },
+          "destinatario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destinatario"
+          },
+          "entrevista": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrevista"
+          },
+          "entrevista_cerrada": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrevista Cerrada"
+          },
+          "fase": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FaseDeGeneracion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "dedicatoria",
+          "destinatario",
+          "fase",
+          "entrevista",
+          "entrevista_cerrada"
+        ],
+        "title": "ObraEnLaEstanteria",
         "type": "object"
       },
       "ObraSalida": {
@@ -1350,6 +1534,31 @@
           "punto_ciego"
         ],
         "title": "PropuestaSalida",
+        "type": "object"
+      },
+      "Referencia": {
+        "additionalProperties": false,
+        "description": "Una medida de **otra** base, con su fuente: se ensena como referencia.",
+        "properties": {
+          "delegaciones": {
+            "title": "Delegaciones",
+            "type": "integer"
+          },
+          "fuente": {
+            "title": "Fuente",
+            "type": "string"
+          },
+          "usd": {
+            "title": "Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "usd",
+          "delegaciones",
+          "fuente"
+        ],
+        "title": "Referencia",
         "type": "object"
       },
       "RespuestaEntrada": {
@@ -2309,7 +2518,49 @@
         ]
       }
     },
+    "/generaciones/gasto": {
+      "get": {
+        "description": "`RF-12`: lo que la web ensena antes de gastar, con la procedencia de cada cifra.",
+        "operationId": "confirmacion_generaciones_gasto_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmacionDeGasto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Confirmacion",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
     "/obras": {
+      "get": {
+        "description": "`RF-01`..`RF-03`: todas las obras, con su portada, su destinatario y su estado.",
+        "operationId": "estanteria_obras_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Estanteria"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Estanteria",
+        "tags": [
+          "regalo"
+        ]
+      },
       "post": {
         "operationId": "alta_de_obra_obras_post",
         "requestBody": {
@@ -2618,6 +2869,47 @@
           }
         },
         "summary": "Generacion",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
+    "/obras/{id_obra}/generaciones": {
+      "post": {
+        "description": "`RF-11`: escribe la novela de la obra a partir de su ficha cerrada. `409` con el\nmotivo si la entrevista no esta cerrada, si ya hay una en curso o si lo gastado alcanza\nel techo (`RF-13`).",
+        "operationId": "lanzar_obras__id_obra__generaciones_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lanzar",
         "tags": [
           "regalo"
         ]

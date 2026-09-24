@@ -7,7 +7,32 @@ importarlas**: una feature no importa de otra (`docs/architecture.md`), y leer n
 escribir. Cada consulta filtra por obra.
 """
 
+import json
+
 from app.commons.db import migraciones
+
+
+def obras_de_la_estanteria(con):
+    """Cada obra montada y cada obra que solo tiene entrevista, con lo que la tarjeta ensena.
+
+    Una entrevista nace con su obra antes de que se monte (`entrevista.crear`), asi que la
+    estanteria une las dos tablas: sin eso, una entrevista a medias no tendria por donde
+    volver. El nombre del destinatario sale de la ficha; si la ficha se borro (`SPEC-25`
+    `RF-21`), no esta, y la dedicatoria sigue porque es de la obra (`SPEC-32`)."""
+    obras = {f[0]: {"id": f[0], "titulo": f[1], "dedicatoria": f[2]} for f in con.execute(
+        "SELECT id, titulo, dedicatoria FROM obra ORDER BY rowid")}
+    entrevistas = {}
+    if migraciones.tiene_tabla(con, "entrevista"):
+        for id_e, obra, ficha, cerrada in con.execute(
+                "SELECT id, obra, ficha, cerrada FROM entrevista ORDER BY rowid"):
+            entrevistas[obra] = (id_e, json.loads(ficha), bool(cerrada))
+            obras.setdefault(obra, {"id": obra, "titulo": None, "dedicatoria": None})
+    for obra, o in obras.items():
+        e = entrevistas.get(obra)
+        o["entrevista"] = e[0] if e else None
+        o["entrevista_cerrada"] = e[2] if e else None
+        o["destinatario"] = ((e[1].get("destinatario") or {}).get("nombre") or None) if e else None
+    return list(obras.values())
 
 
 def existe_la_obra(con, obra):

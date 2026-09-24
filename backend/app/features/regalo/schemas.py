@@ -41,6 +41,53 @@ class CosteDeLaGeneracion(_DelDominio):
     es_suelo: bool
 
 
+class Gastado(_DelDominio):
+    """Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 17
+    no tiene coste guardado, y `por_que_es_suelo` lo dice (decision del autor, `SPEC-33`)."""
+
+    usd: float | None
+    delegaciones: int
+    sin_coste: int
+    es_suelo: bool
+    por_que_es_suelo: str
+
+
+class Referencia(_DelDominio):
+    """Una medida de **otra** base, con su fuente: se ensena como referencia."""
+
+    usd: float
+    delegaciones: int
+    fuente: str
+
+
+class ConfirmacionDeGasto(_DelDominio):
+    """`RF-12`: las tres cifras que la web ensena antes de gastar. `alcanzado` es
+    `usd >= techo_usd`, resuelto aqui; el backend tambien lo impone al lanzar (`RF-13`)."""
+
+    gastado: Gastado
+    techo_usd: float
+    alcanzado: bool
+    ultima: CosteDeLaGeneracion | None
+    referencia: Referencia
+
+
+class ObraEnLaEstanteria(_DelDominio):
+    """`RF-01`..`RF-03`. `titulo` es nulo mientras la obra solo tiene entrevista; `fase`, si
+    no ha empezado ninguna generacion; `destinatario` y `entrevista`, si la ficha se borro."""
+
+    id: str
+    titulo: str | None
+    dedicatoria: str | None
+    destinatario: str | None
+    fase: enums.FaseDeGeneracion | None
+    entrevista: str | None
+    entrevista_cerrada: bool | None
+
+
+class Estanteria(_DelDominio):
+    obras: list[ObraEnLaEstanteria]
+
+
 class GeneracionEnVivo(_DelDominio):
     obra: str
     total_de_capitulos: int

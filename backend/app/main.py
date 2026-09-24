@@ -21,6 +21,7 @@ from app.features.entrevista.router import router as router_entrevista
 from app.features.escaleta import repository as repositorio_escaleta
 from app.features.lectura.router import router as router_lectura
 from app.features.regalo.router import router as router_regalo
+from app.features.orquestacion.router_regalo import router as router_lanzar
 from app.features.orquestacion.router import router as router_ciclo
 
 def fabrica_de_observacion(exportador):
@@ -74,6 +75,7 @@ app.include_router(router_ciclo)
 app.include_router(router_entrevista)
 app.include_router(router_lectura)
 app.include_router(router_regalo)
+app.include_router(router_lanzar)
 
 
 def preparar_base(ruta=":memory:"):
