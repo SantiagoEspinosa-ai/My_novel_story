@@ -32,7 +32,9 @@ from app.commons.dominio.enumeraciones import Severidad
 from app.commons.trabajos import cola
 from app.features.auditoria import capitulo as puerta_capitulo
 from app.features.escaleta import repository as repo
-from app.features.orquestacion import entrega
+from app.features.brief import repository as brief
+from app.features.orquestacion import entrega, regeneracion
+from app.features.orquestacion import schemas
 
 router = APIRouter(tags=["ciclo"])
 
@@ -138,3 +140,25 @@ def entregar(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
         return entrega.entregar(con, id_obra)
     except entrega.NoSePuedeEntregar as e:
         raise HTTPException(409, str(e))
+
+
+# --- Las versiones de una obra (`SPEC-23` `D-2`, `PLAN-23` A5) -----------------------
+
+@router.get("/obras/{id_obra}/versiones", response_model=schemas.VersionesSalida)
+def versiones(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
+    """Las versiones con su numero, su anterior, su commit, cuando se crearon y su
+    peticion (`RF-53`)."""
+    lista = brief.versiones_de(con, id_obra)
+    if not lista:
+        raise HTTPException(404, "la obra {0} no tiene versiones".format(id_obra))
+    return {"obra": id_obra, "versiones": lista}
+
+
+@router.get("/obras/{id_obra}/versiones/{numero}", response_model=schemas.VersionDetalleSalida)
+def version(id_obra: str, numero: int, con: sqlite3.Connection = Depends(conexion)):
+    """Los capitulos en orden: si es compartido con la anterior, su estado, y por
+    escena su `estado_de_escena` y su `estado_de_verificacion` (`RF-52`..`RF-54`)."""
+    vista = regeneracion.vista_de_version(con, id_obra, numero)
+    if vista is None:
+        raise HTTPException(404, "la obra {0} no tiene version {1}".format(id_obra, numero))
+    return vista

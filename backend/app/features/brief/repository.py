@@ -201,3 +201,9 @@ def leer(con, id_obra: str):
     )]
     return {"id": fila[0], "titulo": fila[1], "premisa": fila[2],
             "genero": fila[3], "capitulos": capitulos}
+
+
+def estado_de_capitulo(con, capitulo):
+    """El `estado_de_capitulo` de un capitulo, o `None` si no existe."""
+    fila = con.execute("SELECT estado FROM capitulo WHERE id = ?", (capitulo,)).fetchone()
+    return fila[0] if fila else None

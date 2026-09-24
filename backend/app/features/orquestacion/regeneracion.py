@@ -167,3 +167,39 @@ def estado_de(con, obra, numero, escena):
                                      modulo_mundo.huella(semilla, prefijo))
         return fila["estado"] if fila else EV.SIN_REVERIFICAR
     return EV.SIN_REVERIFICAR
+
+
+# --- A5 · que cambio (`RF-52`, `CE-5`) ----------------------------------------------
+
+def comparar(con, obra, a, b):
+    """Por **posicion** de la version `b`: si el capitulo es el mismo que el de esa
+    posicion en `a` (compartido) o no. **Por identidad, no por texto**: un capitulo
+    nuevo con el mismo texto sigue contando como cambiado, porque es otra fila."""
+    de_a = brief.capitulos_de_version(con, obra, a)
+    return [{"orden": orden, "capitulo": capitulo,
+             "compartido": orden <= len(de_a) and de_a[orden - 1] == capitulo}
+            for orden, capitulo in enumerate(brief.capitulos_de_version(con, obra, b), 1)]
+
+
+def vista_de_version(con, obra, numero):
+    """Lo que devuelve `GET /obras/{id}/versiones/{numero}`, o `None` si no existe.
+
+    Por capitulo, si es compartido con la anterior (`None` en una version sin
+    anterior), su `estado_de_capitulo`; por escena, su `estado_de_escena` **y** su
+    `estado_de_verificacion` en esta version (`RF-54`)."""
+    version = next((v for v in brief.versiones_de(con, obra) if v["numero"] == numero), None)
+    if version is None:
+        return None
+    anterior = version["anterior"]
+    compartidos = ({c["orden"]: c["compartido"] for c in comparar(con, obra, anterior, numero)}
+                   if anterior is not None else {})
+    capitulos = []
+    for orden, capitulo in enumerate(brief.capitulos_de_version(con, obra, numero), 1):
+        capitulos.append({
+            "orden": orden, "capitulo": capitulo,
+            "compartido": compartidos.get(orden) if anterior is not None else None,
+            "estado": brief.estado_de_capitulo(con, capitulo),
+            "escenas": [{"id": e["id"], "estado": e["estado"],
+                         "estado_de_verificacion": estado_de(con, obra, numero, e["id"])}
+                        for e in escaleta.escenas_de_capitulo(con, capitulo)]})
+    return dict(version, obra=obra, capitulos=capitulos)
