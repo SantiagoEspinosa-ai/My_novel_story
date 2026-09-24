@@ -318,3 +318,27 @@ El techo se comprueba **contra lo gastado**, nunca contra una previsión.
 - No resuelve `F-61`, ni decide el nuevo umbral del Editor: lo mide.
 - No valida con el browser MCP (`EX-04`), no ejecuta TLC y no envía nada a Langfuse por su
   cuenta.
+
+## Estado de los pasos con dobles (2026-09-24)
+
+E1–E14 hechos en la rama `plan31-evaluacion`, un commit por paso (`759f4ed`…`67758c0`, y
+E14 el de `docs/`). **Ninguna ejecución real**: R0–R7, H1 y T1 siguen pendientes y gastan.
+Lo que cambió respecto a lo escrito arriba, dicho aquí para que el plan no describa mal lo
+que se hizo:
+
+- **E7 falló contra el código, y sigue fallando** (`F-100`): la segunda novela de una
+  base recibe el mundo de la primera por `mundo.leer(con)`, que no filtra por obra. El
+  hallazgo 9 daba el problema por arreglado con `F-64`, y `F-64` arregló que se pisaran,
+  no que se vieran. La prueba queda como `xfail` estricto. Por eso **E10 separa el libro
+  de la novela**: `--libro` se comparte (acumula el techo) y cada ejecución escribe en su
+  propia `--base`; una base que ya tiene otra novela se rechaza. El libro gana `obra` y
+  `base`.
+- **E5 suma también las reescrituras de la puerta** y las demás llamadas del Editor en el
+  cierre, no solo el juicio de obra: `generacion.coste` y `coste_del_cierre`. Al hacerlo
+  salió `F-101`.
+- **E12 y E13 no tenían nada que romper**: `SPEC-32` y `SPEC-30` ya estaban aplicadas y
+  E1, E2 y E6 se escribieron sobre ellas. La prueba de E12 es otra (un brief sin extensión
+  no carga, y fallaba); la de E13 pasó a la primera y se comprobó con una mutación.
+- **E11** sube la fila de la tabla como scores de la traza de la ejecución, uno por
+  columna, con `referencia=evaluacion-<pasada>`.
+- `comparar.py` (H1) y su prueba con dobles no se han escrito: `VER-124` sin implementar.
