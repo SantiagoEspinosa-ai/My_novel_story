@@ -138,7 +138,7 @@ Estas rutas están reservadas y aparecerán aquí en cuanto se creen. Si encuent
 - `frontend/` — aplicación React.
 - `harness/documentos/` y `harness/adversarial/` — dos de las tres carpetas que declara `docs/architecture.md` § "El harness". La tercera, `harness/evals/`, ya existe y tiene su fila arriba. Se escribieron cinco validadores a modo de prueba y se retiraron; lo que enseñaron está en `docs/verification.md` § "Lo que se aprendió al implementar".
 - `docs/decisions/` — decisiones de arquitectura fechadas.
-- Lo que `EXAMEN.md` exige que el repositorio incluya, y no existe todavía (§ "Los repositorios deben incluir también"): `README.md` en la raíz con un brief de ejemplo reproducible, `.env.example`, `ejemplos/novela-ejemplo.pdf`, `presentacion/` con el vídeo de demo, `.claude/commands/` y la memoria dentro de `.claude/`, y el fichero de configuración MCP con un servidor de inspección de browser.
+- Lo que `EXAMEN.md` exige que el repositorio incluya, y no existe todavía (§ "Los repositorios deben incluir también"): `ejemplos/novela-ejemplo.pdf`, `presentacion/` con el vídeo de demo, y el fichero de configuración MCP con un servidor de inspección de browser. Ya existen: `README.md` en la raíz, `backend/.env.example`, `ejemplos/brief-ejemplo.json`, `.claude/commands/` y la memoria en `.claude/memory/`.
 
 ## Mantenimiento de este archivo
 

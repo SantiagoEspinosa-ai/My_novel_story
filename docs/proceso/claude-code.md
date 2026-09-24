@@ -13,10 +13,11 @@ con `EXAMEN.md` por encima de todo en lo que se entrega.
 ## Skills
 
 El contenido real está versionado en `.agents/skills/`, con su tabla de uso y procedencia en
-`.agents/skills/README.md`. Ocho:
+`.agents/skills/README.md`. Nueve: ocho de desarrollo y una del pipeline.
 
 | Skill | Para qué | Procedencia |
 | --- | --- | --- |
+| **`novela-regalo`** | **La del pipeline**, la que pide el enunciado como skill reutilizable: lanzar una generación e inspeccionar lo que hizo de verdad —base, hooks, tools y Langfuse—, sin fiarse del código de salida. **Resultado:** salió de la primera ejecución real aceptada, en la que un código 0 escondía un Editor sin veredicto y un Resumidor que no resumía (`F-76`, `F-77`) | Propia |
 | `spec-and-plan` | Ejecutar las tres puertas: spec, plan y código | Propia |
 | `coherencia-docs` | Revisar la coherencia entre documentos: citas rotas, contradicciones, literales que derivan | Propia |
 | `backend-feature` | Decidir dónde va un fichero del backend y de qué puede depender | Propia |
@@ -60,14 +61,20 @@ cargan. En la segunda ejecución real `validar_capitulo.py` dejó 4 filas en el 
 
 ## Comandos propios
 
-**No hay ninguno.** `.claude/commands/` está reservada en `AGENTS.md` § "Todavía no existe"
-(`EX-10`).
+**`/inspeccionar-novela <base.db> <obra>`** (`.claude/commands/inspeccionar-novela.md`). **Propósito:**
+aplicar la skill `novela-regalo` a una generación y devolver, en una tabla, lo que la base, los
+hooks y Langfuse dicen que pasó, separando lo que terminó de lo que funcionó. **Resultado:** es el
+recorrido con el que se encontraron `F-76`, `F-77` y `F-78` en la ejecución `R0`
+(`harness/evals/medidas.md`).
 
 ## Memoria
 
-La memoria de las sesiones vive hoy **fuera del repositorio**, en el perfil del usuario. El
-enunciado pide que `.claude/` la incluya commiteada; qué memoria entra se decide al crearla
-(`EX-10`).
+La memoria de las sesiones vive en el perfil del usuario y **se copia al repositorio** en
+`.claude/memory/`, como pide el enunciado (decisión del autor, 2026-09-24): son las lecciones que el
+autor fue corrigiendo sesión a sesión —no rellenar un número sin medir, una carpeta por sesión,
+spec → plan → código— y que cambian cómo se trabaja aquí. Antes de copiarla se comprobó que no lleva
+datos de las ejecuciones reales: ninguna de las 17 palabras de nombre de la ficha real aparece en
+ella. **Es una copia, no la fuente**: se actualiza copiando otra vez.
 
 ## Browser MCP
 
