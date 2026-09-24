@@ -19,6 +19,15 @@ export type Versiones = Esquemas["VersionesSalida"];
 export type IndiceDeVersion = Esquemas["IndiceDeVersion"];
 export type CapituloLeidoDeVersion = Esquemas["CapituloLeidoDeVersion"];
 export type TrabajoEncolado = { id_trabajo: string };
+// SPEC-33: la novela regalo en la web.
+export type TurnoDeEntrevista = Esquemas["TurnoDeEntrevistaSalida"];
+export type Historial = Esquemas["HistorialSalida"];
+export type GeneracionEnVivo = Esquemas["GeneracionEnVivo"];
+export type CapituloEnGeneracion = Esquemas["CapituloEnGeneracion"];
+export type CosteDeLaGeneracion = Esquemas["CosteDeLaGeneracion"];
+export type ConfirmacionDeGasto = Esquemas["ConfirmacionDeGasto"];
+export type Estanteria = Esquemas["Estanteria"];
+export type ObraEnLaEstanteria = Esquemas["ObraEnLaEstanteria"];
 
 export const PREFIJO = "/api";
 
@@ -61,8 +70,8 @@ export function crearCliente(fetchInyectado: Fetch) {
     }
     return (await r.json()) as T;
   }
-  const enviar = <T>(ruta: string, cuerpo: unknown) => leer<T>(ruta, {
-    method: "POST", body: JSON.stringify(cuerpo),
+  const enviar = <T>(ruta: string, cuerpo?: unknown) => leer<T>(ruta, {
+    method: "POST", body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
     headers: { "Content-Type": "application/json" },
   });
   const e = encodeURIComponent;
@@ -85,6 +94,25 @@ export function crearCliente(fetchInyectado: Fetch) {
       enviar<Propuesta>(`/obras/${e(obra)}/cambios/propuesta`, peticion),
     pedirCambio: (obra: string, cambio: CambioEntrada) =>
       enviar<TrabajoEncolado>(`/obras/${e(obra)}/cambios`, cambio),
+    // SPEC-33: la entrevista en la web. Las respuestas de PLAN-25 no estan tipadas en el
+    // congelado (RF-57 no deja pasar su campo `contradicciones`): la pagina lee el historial.
+    crearEntrevista: () => enviar<{ id: string; obra: string }>("/entrevistas"),
+    historial: (entrevista: string) =>
+      leer<Historial>(`/entrevistas/${e(entrevista)}/turnos`),
+    responder: (entrevista: string, respuesta: string) =>
+      enviar<{ id_trabajo: string }>(`/entrevistas/${e(entrevista)}/turnos`, { respuesta }),
+    confirmarHecho: (entrevista: string, hecho: string) =>
+      enviar<unknown>(`/entrevistas/${e(entrevista)}/hechos/${e(hecho)}/confirmar`),
+    descartarHecho: (entrevista: string, hecho: string) =>
+      enviar<unknown>(`/entrevistas/${e(entrevista)}/hechos/${e(hecho)}/descartar`),
+    cerrarEntrevista: (entrevista: string) =>
+      enviar<unknown>(`/entrevistas/${e(entrevista)}/cerrar`),
+    generacion: (obra: string) => leer<GeneracionEnVivo>(`/obras/${e(obra)}/generacion`),
+    estanteria: () => leer<Estanteria>("/obras"),
+    gasto: () => leer<ConfirmacionDeGasto>("/generaciones/gasto"),
+    // SPEC-33 RF-11: gasta dinero. Solo lo llama la confirmacion, despues de ensenar las cifras.
+    lanzar: (obra: string) =>
+      enviar<{ id_trabajo: string; generacion: string }>(`/obras/${e(obra)}/generaciones`),
   };
 }
 

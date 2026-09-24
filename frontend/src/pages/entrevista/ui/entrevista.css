@@ -1,0 +1,19 @@
+/* SPEC-33 RF-05: la entrevista como conversacion. Solo variables del tema (SPEC-22 RF-59). */
+.entrevista { max-width: 46em; }
+.entrevista__conversacion { padding: 0; margin: var(--espacio-l) 0; }
+.entrevista__responder {
+  position: sticky; bottom: 0; display: grid; gap: var(--espacio-s);
+  background: var(--color-fondo); padding: var(--espacio-m) 0;
+  border-top: 1px solid var(--color-linea);
+}
+.entrevista__responder label { font-family: var(--fuente-interfaz); font-size: 0.85rem; color: var(--color-textoSuave); }
+.entrevista__responder textarea {
+  font: inherit; padding: var(--espacio-m); border-radius: var(--radio-m);
+  border: 1px solid var(--color-linea); background: var(--color-superficie); color: var(--color-texto);
+}
+.entrevista__acciones { display: flex; gap: var(--espacio-s); flex-wrap: wrap; }
+.entrevista__pensando { color: var(--color-textoSuave); font-style: italic; }
+.entrevista__hechos ul, .entrevista__rechazo ul { list-style: none; padding: 0; display: grid; gap: var(--espacio-s); }
+.entrevista__estado { font-family: var(--fuente-interfaz); font-size: 0.8rem; color: var(--color-textoSuave); }
+.entrevista__cerrada { margin-top: var(--espacio-l); }
+.boton:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }

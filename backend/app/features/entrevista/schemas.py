@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.commons.dominio.destinatario import HechoPropuesto
+
 
 class RespuestaEntrada(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -15,6 +17,38 @@ class TextoLibreEntrada(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     texto: str = Field(min_length=1)
+
+
+class ContradiccionSalida(BaseModel):
+    tipo: str
+    descripcion: str
+
+
+class TurnoDeEntrevistaSalida(BaseModel):
+    """`TurnoDeEntrevista` (`SPEC-33` `RF-10`). `pregunta` es la que el Entrevistador
+    hizo **despues** de esta respuesta. `falta`, `avisos` y `contradicciones_abiertas` son lo
+    que el codigo dijo en este turno; `None` si la fila es anterior a guardarlos."""
+
+    orden: int
+    respuesta: str
+    pregunta: str
+    tema: str | None
+    falta: list[str] | None
+    avisos: list[str] | None
+    contradicciones_abiertas: list[ContradiccionSalida] | None
+    cuando: str | None
+
+
+class HistorialSalida(BaseModel):
+    """La conversacion y lo que la pagina necesita para actuar (`SPEC-33` `RF-08`..`RF-10`).
+    `puede_cerrar` lo resuelve el backend con la misma regla que `cerrar`."""
+
+    obra: str
+    cerrada: bool
+    puede_cerrar: bool
+    hechos_propuestos: list[HechoPropuesto]
+    primera_pregunta: str
+    turnos: list[TurnoDeEntrevistaSalida]
 
 
 def turno_a_dict(t) -> dict:

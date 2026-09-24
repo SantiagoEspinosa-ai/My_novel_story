@@ -9,3 +9,9 @@ export const INTERVALO_DE_PROGRESO_MS = 5000;
 
 /** Cada cuanto se vuelve a pedir el estado de un trabajo encolado (SPEC-22 RF-48). */
 export const INTERVALO_DE_TRABAJO_MS = 3000;
+
+/**
+ * SPEC-33 cuestion 5: cada cuanto se vuelve a pedir un trabajo de la entrevista y el estado
+ * de una generacion en las paginas de la novela regalo. La barra de PLAN-22 sigue con el suyo.
+ */
+export const INTERVALO_DE_REGALO_MS = 2000;

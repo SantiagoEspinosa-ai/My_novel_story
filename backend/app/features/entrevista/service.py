@@ -236,6 +236,15 @@ def _auditar(con, e, estado):
                                           "huella": huella(c.descripcion)})
 
 
+def _con_gasto(agente, con, obra):
+    """`SPEC-33` `RF-18`: una `SesionDelegada` deja el coste de cada llamada en la base, en
+    la obra de la entrevista. Un doble sin `anotador` no se toca: no es una delegacion."""
+    if hasattr(agente, "anotador"):
+        from app.commons.modelo import gasto
+        agente.anotador = gasto.anotador(con, obra)
+    return agente
+
+
 def _observado(agente, observar, obra, nombre, con):
     """`SPEC-29`: cada turno es una traza en la sesion de su obra, y cada llamada al
     Entrevistador un span. `observar(obra, nombre, con)` la crea —la conexion es donde
@@ -253,8 +262,8 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
-    entrevistador, obs = _observado(entrevistador, observar, e.obra, "turno_de_entrevista",
-                                     con)
+    entrevistador, obs = _observado(_con_gasto(entrevistador, con, e.obra), observar, e.obra,
+                                     "turno_de_entrevista", con)
     antes = _estado(e, reglas, anio_actual)
     error = None
     for _ in range(tope):
@@ -278,7 +287,10 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
     e.avisos_confirmados = sorted(set(e.avisos_confirmados) | set(confirmados))
     despues = _estado(e, reglas, anio_actual)
     _auditar(con, e, despues)
-    repo.guardar(con, e, respuesta=respuesta, pregunta=pregunta)
+    repo.guardar(con, e, respuesta=respuesta, pregunta=pregunta, estado={
+        "tema": despues["tema"], "falta": despues["falta"], "avisos": despues["avisos"],
+        "contradicciones_abiertas": [{"tipo": c.tipo.value, "descripcion": c.descripcion}
+                                     for c in despues["contradicciones"]]})
     return Turno(e, pregunta, despues)
 
 
@@ -287,7 +299,8 @@ def pegar_texto(con, id_e, texto, extractor, observar=None) -> list:
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
-    extractor, _ = _observado(extractor, observar, e.obra, "texto_libre", con)
+    extractor, _ = _observado(_con_gasto(extractor, con, e.obra), observar, e.obra,
+                              "texto_libre", con)
     r = texto_libre.extraer(con, e.obra, texto, extractor)
     e.ficha = texto_libre.anadir_propuestos(e.ficha, r.hechos)
     repo.guardar(con, e)
@@ -309,6 +322,23 @@ def estado(con, id_e, reglas, anio_actual) -> Turno:
     turnos = repo.turnos(con, id_e)
     pregunta = turnos[-1]["pregunta"] if turnos else PRIMERA_PREGUNTA
     return Turno(e, pregunta, _estado(e, reglas, anio_actual))
+
+
+def historial(con, id_e, reglas=None, anio_actual=None) -> dict:
+    """`SPEC-33` `RF-10`: la conversacion entera, para reconstruirla al recargar.
+    La primera pregunta no es de ningun turno: la hace el sistema al crear.
+
+    Trae tambien lo que la pagina necesita para actuar (`RF-08`, `RF-09`): si se puede
+    cerrar, si ya esta cerrada y los hechos propuestos. Lo resuelve el backend, con la
+    misma regla que `cerrar`: la web no lo calcula."""
+    e = _leer(con, id_e)
+    s = _estado(e, reglas or ReglasDeContradiccion(), anio_actual or date.today().year)
+    return {"obra": e.obra, "cerrada": e.cerrada,
+            "puede_cerrar": not (e.cerrada or s["falta"] or s["contradicciones"]
+                                 or s["avisos"]),
+            "hechos_propuestos": [h.model_dump(mode="json")
+                                  for h in e.ficha.hechos_propuestos],
+            "primera_pregunta": PRIMERA_PREGUNTA, "turnos": repo.turnos(con, id_e)}
 
 
 def cerrar(con, id_e, reglas=None, anio_actual=None):

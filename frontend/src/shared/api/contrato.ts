@@ -159,7 +159,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Historial
+         * @description `SPEC-33` `RF-10`: la conversacion entera, en orden.
+         */
+        get: operations["historial_entrevistas__id_e__turnos_get"];
         put?: never;
         /** Turno */
         post: operations["turno_entrevistas__id_e__turnos_post"];
@@ -271,6 +275,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/generaciones/gasto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Confirmacion
+         * @description `RF-12`: lo que la web ensena antes de gastar, con la procedencia de cada cifra.
+         */
+        get: operations["confirmacion_generaciones_gasto_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/obras": {
         parameters: {
             query?: never;
@@ -278,7 +302,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Estanteria
+         * @description `RF-01`..`RF-03`: todas las obras, con su portada, su destinatario y su estado.
+         */
+        get: operations["estanteria_obras_get"];
         put?: never;
         /** Alta De Obra */
         post: operations["alta_de_obra_obras_post"];
@@ -383,6 +411,49 @@ export interface paths {
         get: operations["fichas_obras__id_obra__fichas_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/generacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Generacion
+         * @description `RF-14`..`RF-17`, `RF-20`: los capitulos con su fase, las notas del Editor al
+         *     cerrarse cada uno y el coste de la ultima generacion.
+         */
+        get: operations["generacion_obras__id_obra__generacion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/generaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lanzar
+         * @description `RF-11`: escribe la novela de la obra a partir de su ficha cerrada. `409` con el
+         *     motivo si la entrevista no esta cerrada, si ya hay una en curso o si lo gastado alcanza
+         *     el techo (`RF-13`).
+         */
+        post: operations["lanzar_obras__id_obra__generaciones_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -654,6 +725,30 @@ export interface components {
             orden: number;
         };
         /**
+         * CapituloEnGeneracion
+         * @description `RF-14`: `fase` es la de la ultima fila de progreso con este capitulo, o nula si la
+         *     generacion no ha llegado a el. Nula no es un valor de `fase_de_generacion`.
+         *
+         *     `F-200`: la fase de un capitulo que ya paso es la ultima que tuvo -casi siempre
+         *     `resumiendo`-, porque el pipeline no cierra capitulos. Por eso viajan tambien
+         *     `es_el_actual` y sus escenas con su `estado_de_escena`: es lo que dice que termino.
+         */
+        CapituloEnGeneracion: {
+            /** Desde */
+            desde: string | null;
+            /** Es El Actual */
+            es_el_actual: boolean;
+            /** Escenas */
+            escenas: components["schemas"]["EscenaEnGeneracion"][];
+            fase: components["schemas"]["FaseDeGeneracion"] | null;
+            /** Motivo */
+            motivo: string | null;
+            /** Notas */
+            notas: components["schemas"]["NotaDelEditor"][];
+            /** Numero */
+            numero: number;
+        };
+        /**
          * CapituloEnlazado
          * @description Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo.
          */
@@ -721,6 +816,51 @@ export interface components {
          * @enum {string}
          */
         ClaseDePeticion: "hecho" | "nombre";
+        /**
+         * ConfirmacionDeGasto
+         * @description `RF-12`: las tres cifras que la web ensena antes de gastar. `alcanzado` es
+         *     `usd >= techo_usd`, resuelto aqui; el backend tambien lo impone al lanzar (`RF-13`).
+         */
+        ConfirmacionDeGasto: {
+            /** Alcanzado */
+            alcanzado: boolean;
+            gastado: components["schemas"]["Gastado"];
+            referencia: components["schemas"]["Referencia"];
+            /** Techo Usd */
+            techo_usd: number;
+            ultima: components["schemas"]["CosteDeLaGeneracion"] | null;
+        };
+        /** ContradiccionSalida */
+        ContradiccionSalida: {
+            /** Descripcion */
+            descripcion: string;
+            /** Tipo */
+            tipo: string;
+        };
+        /**
+         * CosteDeLaGeneracion
+         * @description `RF-19`, `RF-20`. `usd` es nulo si ninguna delegacion trajo coste; con alguna sin
+         *     coste, es un suelo y `es_suelo` lo dice.
+         */
+        CosteDeLaGeneracion: {
+            /** Delegaciones */
+            delegaciones: number;
+            /** Es Suelo */
+            es_suelo: boolean;
+            /** Generacion */
+            generacion: string;
+            /** Sin Coste */
+            sin_coste: number;
+            /** Usd */
+            usd: number | null;
+        };
+        /**
+         * CriterioDeEdicion
+         * @description Los criterios del Editor (`SPEC-26` `RF-09`). Ninguno es de terror: la
+         *     rubrica del Juez de terror sigue existiendo para las obras de terror.
+         * @enum {string}
+         */
+        CriterioDeEdicion: "continuidad" | "tono" | "arco" | "coherencia_de_personajes" | "ritmo" | "personalizacion";
         /** EscenaDeVersionSalida */
         EscenaDeVersionSalida: {
             estado: components["schemas"]["EstadoDeEscena"];
@@ -768,6 +908,12 @@ export interface components {
              * @description Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)
              */
             se_acepto_rindiendose: boolean;
+        };
+        /** EscenaEnGeneracion */
+        EscenaEnGeneracion: {
+            estado: components["schemas"]["EstadoDeEscena"];
+            /** Id */
+            id: string;
         };
         /**
          * EscenaLeida
@@ -839,6 +985,11 @@ export interface components {
          */
         EstadoDeHallazgo: "abierto" | "resuelto" | "descartado" | "sin_veredicto";
         /**
+         * EstadoDeHechoPropuesto
+         * @enum {string}
+         */
+        EstadoDeHechoPropuesto: "propuesto" | "confirmado" | "descartado";
+        /**
          * EstadoDeTrabajo
          * @enum {string}
          */
@@ -857,6 +1008,11 @@ export interface components {
          * @enum {string}
          */
         EstadoVital: "vivo" | "muerto" | "desaparecido";
+        /** Estanteria */
+        Estanteria: {
+            /** Obras */
+            obras: components["schemas"]["ObraEnLaEstanteria"][];
+        };
         /**
          * FaseDeGeneracion
          * @description En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es
@@ -920,6 +1076,33 @@ export interface components {
             /** Personajes */
             personajes: components["schemas"]["FichaDePersonaje"][];
         };
+        /**
+         * Gastado
+         * @description Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 18
+         *     no tiene coste guardado, y `por_que_es_suelo` lo dice (decision del autor, `SPEC-33`).
+         */
+        Gastado: {
+            /** Delegaciones */
+            delegaciones: number;
+            /** Es Suelo */
+            es_suelo: boolean;
+            /** Por Que Es Suelo */
+            por_que_es_suelo: string;
+            /** Sin Coste */
+            sin_coste: number;
+            /** Usd */
+            usd: number | null;
+        };
+        /** GeneracionEnVivo */
+        GeneracionEnVivo: {
+            /** Capitulos */
+            capitulos: components["schemas"]["CapituloEnGeneracion"][];
+            coste: components["schemas"]["CosteDeLaGeneracion"] | null;
+            /** Obra */
+            obra: string;
+            /** Total De Capitulos */
+            total_de_capitulos: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -945,6 +1128,15 @@ export interface components {
              * @description Quien lo detecto
              */
             verificador: string;
+        };
+        /** HechoPropuesto */
+        HechoPropuesto: {
+            /** @default propuesto */
+            estado: components["schemas"]["EstadoDeHechoPropuesto"];
+            /** Id */
+            id: string;
+            /** Texto */
+            texto: string;
         };
         /**
          * HechoUsado
@@ -973,6 +1165,25 @@ export interface components {
              * @description Por id de hecho
              */
             hechos_que_usa: components["schemas"]["HechoUsado"][];
+        };
+        /**
+         * HistorialSalida
+         * @description La conversacion y lo que la pagina necesita para actuar (`SPEC-33` `RF-08`..`RF-10`).
+         *     `puede_cerrar` lo resuelve el backend con la misma regla que `cerrar`.
+         */
+        HistorialSalida: {
+            /** Cerrada */
+            cerrada: boolean;
+            /** Hechos Propuestos */
+            hechos_propuestos: components["schemas"]["HechoPropuesto"][];
+            /** Obra */
+            obra: string;
+            /** Primera Pregunta */
+            primera_pregunta: string;
+            /** Puede Cerrar */
+            puede_cerrar: boolean;
+            /** Turnos */
+            turnos: components["schemas"]["TurnoDeEntrevistaSalida"][];
         };
         /**
          * Indice
@@ -1026,6 +1237,42 @@ export interface components {
             numero: number;
             /** Titulo */
             titulo: string;
+        };
+        /**
+         * NotaDelEditor
+         * @description Una `ValoracionDelEditor` del borrador aceptado. `bajo_el_umbral` es `INV-26`
+         *     (`nota < umbral`), resuelto en el backend.
+         */
+        NotaDelEditor: {
+            /** Bajo El Umbral */
+            bajo_el_umbral: boolean;
+            criterio: components["schemas"]["CriterioDeEdicion"];
+            /** Instruccion */
+            instruccion: string | null;
+            /** Justificacion */
+            justificacion: string;
+            /** Nota */
+            nota: number;
+        };
+        /**
+         * ObraEnLaEstanteria
+         * @description `RF-01`..`RF-03`. `titulo` es nulo mientras la obra solo tiene entrevista; `fase`, si
+         *     no ha empezado ninguna generacion; `destinatario` y `entrevista`, si la ficha se borro.
+         */
+        ObraEnLaEstanteria: {
+            /** Dedicatoria */
+            dedicatoria: string | null;
+            /** Destinatario */
+            destinatario: string | null;
+            /** Entrevista */
+            entrevista: string | null;
+            /** Entrevista Cerrada */
+            entrevista_cerrada: boolean | null;
+            fase: components["schemas"]["FaseDeGeneracion"] | null;
+            /** Id */
+            id: string;
+            /** Titulo */
+            titulo: string | null;
         };
         /**
          * ObraSalida
@@ -1132,6 +1379,18 @@ export interface components {
             /** Version De Partida */
             version_de_partida: number;
         };
+        /**
+         * Referencia
+         * @description Una medida de **otra** base, con su fuente: se ensena como referencia.
+         */
+        Referencia: {
+            /** Delegaciones */
+            delegaciones: number;
+            /** Fuente */
+            fuente: string;
+            /** Usd */
+            usd: number;
+        };
         /** RespuestaEntrada */
         RespuestaEntrada: {
             /** Respuesta */
@@ -1188,6 +1447,30 @@ export interface components {
             tipo: string;
             /** Volvio Tras Abandono */
             volvio_tras_abandono: boolean;
+        };
+        /**
+         * TurnoDeEntrevistaSalida
+         * @description `TurnoDeEntrevista` (`SPEC-33` `RF-10`). `pregunta` es la que el Entrevistador
+         *     hizo **despues** de esta respuesta. `falta`, `avisos` y `contradicciones_abiertas` son lo
+         *     que el codigo dijo en este turno; `None` si la fila es anterior a guardarlos.
+         */
+        TurnoDeEntrevistaSalida: {
+            /** Avisos */
+            avisos: string[] | null;
+            /** Contradicciones Abiertas */
+            contradicciones_abiertas: components["schemas"]["ContradiccionSalida"][] | null;
+            /** Cuando */
+            cuando: string | null;
+            /** Falta */
+            falta: string[] | null;
+            /** Orden */
+            orden: number;
+            /** Pregunta */
+            pregunta: string;
+            /** Respuesta */
+            respuesta: string;
+            /** Tema */
+            tema: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1491,6 +1774,37 @@ export interface operations {
             };
         };
     };
+    historial_entrevistas__id_e__turnos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_e: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistorialSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     turno_entrevistas__id_e__turnos_post: {
         parameters: {
             query?: never;
@@ -1686,6 +2000,46 @@ export interface operations {
             };
         };
     };
+    confirmacion_generaciones_gasto_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmacionDeGasto"];
+                };
+            };
+        };
+    };
+    estanteria_obras_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Estanteria"];
+                };
+            };
+        };
+    };
     alta_de_obra_obras_post: {
         parameters: {
             query?: never;
@@ -1869,6 +2223,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Fichas"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generacion_obras__id_obra__generacion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneracionEnVivo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lanzar_obras__id_obra__generaciones_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

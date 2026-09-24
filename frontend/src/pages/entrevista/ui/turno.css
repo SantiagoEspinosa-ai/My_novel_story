@@ -1,0 +1,22 @@
+/* SPEC-33 RF-05: la entrevista como conversacion. Solo variables del tema (SPEC-22 RF-59). */
+.turno { list-style: none; display: grid; gap: var(--espacio-s); margin-bottom: var(--espacio-l); }
+.turno__burbuja {
+  max-width: 34em; padding: var(--espacio-m) var(--espacio-l); border-radius: var(--radio-l);
+  box-shadow: var(--sombra-suave); margin: 0;
+}
+.turno__burbuja p { margin: 0; }
+.turno__burbuja--comprador {
+  justify-self: end; background: var(--color-acento); color: var(--color-sobreAcento);
+  border-bottom-right-radius: var(--radio-s);
+}
+.turno__burbuja--entrevistador {
+  justify-self: start; background: var(--color-superficie); border: 1px solid var(--color-linea);
+  border-bottom-left-radius: var(--radio-s); font-family: var(--fuente-lectura);
+}
+.turno__observaciones {
+  list-style: none; padding: var(--espacio-s) 0 0; margin: var(--espacio-s) 0 0;
+  border-top: 1px dashed var(--color-linea); display: grid; gap: var(--espacio-xs);
+  font-family: var(--fuente-interfaz); font-size: 0.85rem;
+}
+.turno__observaciones li { display: flex; gap: var(--espacio-s); align-items: baseline; }
+.turno__no-guardado { font-size: 0.8rem; margin-top: var(--espacio-s); }

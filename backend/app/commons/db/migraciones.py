@@ -340,6 +340,35 @@ TODAS = [
         # escribirse ni pasar por la puerta.
         lambda con: _migrar_veredictos_a_version(con),
     ),
+    Migracion(
+        17,
+        "cada turno de la entrevista guarda lo que el codigo dijo en el",
+        # `SPEC-33` `RF-10`, `PLAN-33` E1: `TurnoDeEntrevista`. La web reconstruye la
+        # conversacion con esto al recargar. Las filas de antes se quedan a `NULL`:
+        # no se guardaron sus avisos, que no es lo mismo que no tenerlos.
+        lambda con: anadir_columnas(con, "turno_de_entrevista", {
+            "tema": "TEXT", "falta": "TEXT", "avisos": "TEXT",
+            "contradicciones_abiertas": "TEXT", "cuando": "TEXT"}),
+    ),
+    Migracion(
+        18,
+        "cada delegacion deja su coste en la base",
+        # `SPEC-33` `RF-18`, `PLAN-33` E4: `GastoDeDelegacion`. Hasta aqui el coste solo
+        # llegaba a Langfuse y a `Contador`, en memoria (`F-144`). Tabla nueva, sin filas
+        # que migrar: lo gastado antes no se puede reconstruir, y por eso lo gastado de
+        # una base es un **suelo**.
+        """
+        CREATE TABLE IF NOT EXISTS gasto_de_delegacion (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            obra        TEXT NOT NULL,
+            agente      TEXT NOT NULL,
+            generacion  TEXT,
+            coste_usd   REAL,
+            cuando      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_gasto_por_obra ON gasto_de_delegacion (obra, generacion);
+        """,
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la

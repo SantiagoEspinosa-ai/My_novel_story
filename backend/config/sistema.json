@@ -44,6 +44,10 @@
     "techo_de_gasto_usd": 150
   },
 
+  "generacion_web": {
+    "techo_de_gasto_usd": 50
+  },
+
   "extensiones": {
     "corta": [1000, 1150],
     "media": [1150, 1350],

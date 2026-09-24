@@ -1,0 +1,10 @@
+/* SPEC-33 RF-12: la confirmacion antes de gastar. Solo variables del tema (SPEC-22 RF-59). */
+.confirmar { display: grid; gap: var(--espacio-m); max-width: 40em; }
+.confirmar h2 { margin: 0; font-family: var(--fuente-titulos); }
+.confirmar__aviso { margin: 0; }
+.confirmar__cifras { display: grid; gap: var(--espacio-m); margin: 0; }
+.confirmar__cifras div { border-left: 3px solid var(--color-linea); padding-left: var(--espacio-m); }
+.confirmar__cifras dt { font-family: var(--fuente-interfaz); font-size: 0.8rem; color: var(--color-textoSuave); }
+.confirmar__cifras dd { margin: var(--espacio-xs) 0 0; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.confirmar__fuente { display: block; font-family: var(--fuente-interfaz); font-size: 0.75rem; color: var(--color-textoSuave); }
+.confirmar__suelo { color: var(--color-acento); font-size: 0.9rem; }
