@@ -108,3 +108,37 @@ def test_se_listan_todas_las_condiciones_que_fallan_no_solo_la_primera():
                                                 _h("INV-27", S.MAYOR)],
                 lean=ResultadoLean(codigo=2))
     assert sorted(_invariantes(d)) == ["INV-24", "INV-27", "INV-28", "INV-29"]
+
+
+# --- E7: que capitulos implica cada fallo -----------------------------------------
+
+from app.features.auditoria.publicacion import capitulos_implicados  # noqa: E402
+
+CAPITULOS = {"ev-1": "cap-02", "ev-2": "cap-03", "ev-3a": "cap-04", "ev-3b": "cap-05"}
+
+
+def test_una_inversion_entre_cap02_y_cap03_implica_solo_cap03():
+    """`L-1` se imputa al evento **posterior** en el discurso, con la misma regla que
+    la puerta de capitulo: es donde el lector encuentra la inversion."""
+    r = capitulos_implicados([{"invariante": "L-1", "eventos": ["ev-1", "ev-2"],
+                               "detalle": "va antes"}], CAPITULOS, [])
+    assert list(r.por_capitulo) == ["cap-03"]
+
+
+def test_dos_lugares_a_la_vez_implica_los_dos_capitulos():
+    r = capitulos_implicados([{"invariante": "L-3", "eventos": ["ev-3a", "ev-3b"],
+                               "detalle": "en dos sitios"}], CAPITULOS, [])
+    assert sorted(r.por_capitulo) == ["cap-04", "cap-05"]
+
+
+def test_un_hallazgo_de_obra_implica_el_capitulo_donde_se_guardo():
+    r = capitulos_implicados([], CAPITULOS, [
+        {"invariante": "INV-27", "capitulo": "cap-10", "descripcion": "final abrupto"}])
+    assert r.por_capitulo == {"cap-10": ["INV-27: final abrupto"]}
+
+
+def test_un_evento_sin_capitulo_se_informa_y_no_se_pierde():
+    r = capitulos_implicados([{"invariante": "L-1", "eventos": ["ev-1", "ev-9"],
+                               "detalle": "va antes"}], CAPITULOS, [])
+    assert r.por_capitulo == {}
+    assert r.sin_capitulo == ["L-1: va antes"]

@@ -102,3 +102,41 @@ def decidir(rendidos, hallazgos, lean, no_ejecutadas=NO_EJECUTADAS) -> Decision:
                     for h in abiertos if h["invariante"] == "INV-27"]
     return Decision(publica=not condiciones, condiciones=condiciones,
                     no_ejecutadas=[NoEjecutada(i, m) for i, m in no_ejecutadas])
+
+
+@dataclass(frozen=True)
+class Implicados:
+    por_capitulo: dict
+    sin_capitulo: list
+
+
+# A que eventos de una violacion se imputa: `L-1` y `L-4` al posterior (donde el
+# lector encuentra la inversion, o donde reaparece quien no podia), `L-2` a su unico
+# evento, `L-3` a los dos lugares a la vez.
+_IMPUTAR = {"L-1": lambda evs: evs[1:2], "L-2": lambda evs: evs[:1],
+            "L-3": lambda evs: evs[:2], "L-4": lambda evs: evs[1:2]}
+
+
+def capitulos_implicados(violaciones, capitulo_de_evento, hallazgos_de_obra) -> Implicados:
+    """`PLAN-30` E7: que capitulos implica cada fallo, para el Editor y el informe.
+
+    Un evento sin capitulo **se dice**, no se pierde: un fallo que no se puede situar
+    sigue siendo un fallo, y el informe de parada tiene que nombrarlo.
+    """
+    por_capitulo, sin_capitulo = {}, []
+    for v in violaciones:
+        motivo = "{0}: {1}".format(v["invariante"], v.get("detalle", ""))
+        elegir = _IMPUTAR.get(v["invariante"], lambda evs: evs)
+        capitulos = [capitulo_de_evento.get(e) for e in elegir(v.get("eventos", []))]
+        if not capitulos or None in capitulos:
+            sin_capitulo.append(motivo)
+            continue
+        for c in dict.fromkeys(capitulos):
+            por_capitulo.setdefault(c, []).append(motivo)
+    for h in hallazgos_de_obra:
+        motivo = "{0}: {1}".format(h["invariante"], h.get("descripcion", ""))
+        if h.get("capitulo"):
+            por_capitulo.setdefault(h["capitulo"], []).append(motivo)
+        else:
+            sin_capitulo.append(motivo)
+    return Implicados(por_capitulo, sin_capitulo)
