@@ -34,6 +34,8 @@ como una novela completa, y `VER-60` avisa del mismo problema por el otro lado
 import sqlite3
 from dataclasses import dataclass, field
 
+from app.commons.obra import texto as texto_elegido
+
 MARCA_DE_HUECO = "[[ FALTA EL TEXTO DE {0} ]]"
 
 
@@ -53,17 +55,10 @@ class Manuscrito:
 
 
 def _texto_de(con, escena, aceptado):
-    """El borrador elegido, o el ultimo si nadie eligio."""
-    if aceptado is not None:
-        fila = con.execute(
-            "SELECT texto FROM borrador WHERE escena = ? AND version = ?",
-            (escena, aceptado)).fetchone()
-        if fila:
-            return fila[0]
-    fila = con.execute(
-        "SELECT texto FROM borrador WHERE escena = ? "
-        "ORDER BY version DESC LIMIT 1", (escena,)).fetchone()
-    return fila[0] if fila else None
+    """El borrador elegido, o el ultimo si nadie eligio. La regla vive en
+    `commons/obra/texto.py` (`PLAN-22` DP-5): la lectura web usa la misma."""
+    e = texto_elegido.elegido(con, escena, aceptado)
+    return e.texto if e else None
 
 
 def manuscrito(con, obra, con_titulos=True) -> Manuscrito:

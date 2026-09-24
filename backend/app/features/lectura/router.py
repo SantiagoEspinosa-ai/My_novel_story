@@ -9,7 +9,7 @@ import sqlite3
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.features.lectura import service
-from app.features.lectura.schemas import Indice
+from app.features.lectura.schemas import CapituloLeido, EscenaLeida, Indice
 
 router = APIRouter(tags=["lectura"])
 
@@ -28,4 +28,22 @@ def indice(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
     resultado = service.indice(con, id_obra)
     if resultado is None:
         raise HTTPException(404, "no existe la obra {0}".format(id_obra))
+    return resultado
+
+
+@router.get("/capitulos/{id_capitulo}", response_model=CapituloLeido)
+def capitulo(id_capitulo: str, con: sqlite3.Connection = Depends(conexion)):
+    """Un capitulo de corrido: sus escenas en orden, cada una con estado y hallazgos."""
+    resultado = service.capitulo(con, id_capitulo)
+    if resultado is None:
+        raise HTTPException(404, "no existe el capitulo {0}".format(id_capitulo))
+    return resultado
+
+
+@router.get("/escenas/{id_escena}", response_model=EscenaLeida)
+def escena(id_escena: str, con: sqlite3.Connection = Depends(conexion)):
+    """Una escena con su estado, sus hallazgos abiertos y su texto elegido (`RF-39`)."""
+    resultado = service.escena(con, id_escena)
+    if resultado is None:
+        raise HTTPException(404, "no existe la escena {0}".format(id_escena))
     return resultado

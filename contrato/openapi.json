@@ -1,6 +1,27 @@
 {
   "components": {
     "schemas": {
+      "BorradorElegido": {
+        "description": "El `Borrador` elegido de la escena: el aceptado o, si no consta, el ultimo.",
+        "properties": {
+          "texto": {
+            "description": "Byte a byte el del borrador, sin tocar (VER-60)",
+            "title": "Texto",
+            "type": "string"
+          },
+          "version": {
+            "description": "Borrador.version: el ancla de una seleccion (RF-47)",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "texto"
+        ],
+        "title": "BorradorElegido",
+        "type": "object"
+      },
       "BriefEntrada": {
         "additionalProperties": false,
         "description": "Lo que hace falta para dar de alta una `Obra`.\n\nSolo `titulo` y `premisa` son obligatorios, que es lo que dice la ficha de\n`Obra`. `persona` y `tiempo_verbal` son de `GuiaDeEstilo` y entran aqui\nporque sin ellos el Escaletador no puede empezar; el resto de la guia llega\ncon su propia feature.",
@@ -110,13 +131,53 @@
         "title": "CapituloDelIndice",
         "type": "object"
       },
+      "CapituloLeido": {
+        "description": "Un capitulo de corrido: sus escenas en orden, **una por bloque** (`RF-41`).\n\nLo ensambla el backend -que escenas entran y en que orden-, pero no junta los\ntextos: cada escena lleva el suyo con su estado y sus hallazgos (`RF-39`).",
+        "properties": {
+          "escenas": {
+            "description": "En orden de lectura",
+            "items": {
+              "$ref": "#/components/schemas/EscenaLeida"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeCapitulo"
+          },
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden",
+          "estado",
+          "escenas"
+        ],
+        "title": "CapituloLeido",
+        "type": "object"
+      },
       "EscenaDelIndice": {
         "description": "Una escena en el indice: su estado y sus hallazgos, **nunca** sin ellos (`RF-39`).",
         "properties": {
           "capitulo": {
-            "description": "El id del Capitulo que la contiene; nunca el de la obra",
-            "title": "Capitulo",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban",
+            "title": "Capitulo"
           },
           "estado": {
             "$ref": "#/components/schemas/EstadoDeEscena"
@@ -146,6 +207,63 @@
           "hallazgos_abiertos"
         ],
         "title": "EscenaDelIndice",
+        "type": "object"
+      },
+      "EscenaLeida": {
+        "description": "Una escena para leer: la del indice mas su texto. **Nunca** el texto sin estado.",
+        "properties": {
+          "borrador": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BorradorElegido"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si la escena no tiene ningun borrador (p. ej. planificada)"
+          },
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban",
+            "title": "Capitulo"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "hallazgos_abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbierto"
+            },
+            "title": "Hallazgos Abiertos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "se_acepto_rindiendose": {
+            "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
+            "title": "Se Acepto Rindiendose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "capitulo",
+          "estado",
+          "se_acepto_rindiendose",
+          "hallazgos_abiertos",
+          "borrador"
+        ],
+        "title": "EscenaLeida",
         "type": "object"
       },
       "EstadoDeCapitulo": {
@@ -419,6 +537,49 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/capitulos/{id_capitulo}": {
+      "get": {
+        "description": "Un capitulo de corrido: sus escenas en orden, cada una con estado y hallazgos.",
+        "operationId": "capitulo_capitulos__id_capitulo__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_capitulo",
+            "required": true,
+            "schema": {
+              "title": "Id Capitulo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapituloLeido"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Capitulo",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
     "/capitulos/{id_capitulo}/cerrar": {
       "post": {
         "description": "La segunda puerta con firma humana.\n\nDevuelve los `menor` que se dejan pasar: si no se enseñaran, `mayor` y\n`menor` volverian a producir el mismo comportamiento.",
@@ -755,6 +916,49 @@
         "summary": "Turno",
         "tags": [
           "entrevista"
+        ]
+      }
+    },
+    "/escenas/{id_escena}": {
+      "get": {
+        "description": "Una escena con su estado, sus hallazgos abiertos y su texto elegido (`RF-39`).",
+        "operationId": "escena_escenas__id_escena__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscenaLeida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Escena",
+        "tags": [
+          "lectura"
         ]
       }
     },

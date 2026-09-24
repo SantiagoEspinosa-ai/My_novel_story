@@ -5,6 +5,7 @@ capitulo, si una escena se rindio y que hallazgos cuentan como abiertos. La inte
 pinta tal cual llega.
 """
 
+from app.commons.obra import texto
 from app.features.lectura import repository as repo
 from app.features.lectura import vista
 
@@ -26,3 +27,27 @@ def indice(con, id_obra):
                      for e in repo.escenas_de_capitulo(con, id_obra, c["id"])]}
         for c in repo.capitulos(con, id_obra)]
     return obra
+
+
+def _escena_leida(con, fila):
+    e = _escena_del_indice(con, fila)
+    elegido = texto.elegido(con, fila["id"], fila["borrador_aceptado"])
+    e["borrador"] = None if elegido is None else {"version": elegido.version,
+                                                   "texto": elegido.texto}
+    return e
+
+
+def capitulo(con, id_capitulo):
+    """`None` si no existe: un id de obra no es un capitulo (`RF-37`)."""
+    c = repo.capitulo(con, id_capitulo)
+    if c is None:
+        return None
+    return {"id": c["id"], "orden": c["orden"], "estado": c["estado"],
+            "escenas": [_escena_leida(con, e)
+                        for e in repo.escenas_de_capitulo(con, c["obra"], c["id"])]}
+
+
+def escena(con, id_escena):
+    """La misma forma que dentro de su capitulo: una sola regla para las dos."""
+    fila = repo.escena(con, id_escena)
+    return None if fila is None else _escena_leida(con, fila)

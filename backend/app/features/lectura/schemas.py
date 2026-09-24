@@ -27,7 +27,9 @@ class EscenaDelIndice(BaseModel):
     """Una escena en el indice: su estado y sus hallazgos, **nunca** sin ellos (`RF-39`)."""
 
     id: str
-    capitulo: str = Field(description="El id del Capitulo que la contiene; nunca el de la obra")
+    capitulo: str | None = Field(
+        description="El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en "
+                    "escaletas anteriores a SPEC-21, que no lo guardaban")
     estado: EstadoDeEscena
     se_acepto_rindiendose: bool = Field(
         description="Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)")
@@ -52,3 +54,30 @@ class Indice(BaseModel):
     titulo: str
     dedicatoria: str | None = Field(description="Nula si la obra no tiene; nunca un relleno")
     capitulos: list[CapituloDelIndice] = Field(description="Por Capitulo.orden")
+
+
+class BorradorElegido(BaseModel):
+    """El `Borrador` elegido de la escena: el aceptado o, si no consta, el ultimo."""
+
+    version: int = Field(description="Borrador.version: el ancla de una seleccion (RF-47)")
+    texto: str = Field(description="Byte a byte el del borrador, sin tocar (VER-60)")
+
+
+class EscenaLeida(EscenaDelIndice):
+    """Una escena para leer: la del indice mas su texto. **Nunca** el texto sin estado."""
+
+    borrador: BorradorElegido | None = Field(
+        description="Nulo si la escena no tiene ningun borrador (p. ej. planificada)")
+
+
+class CapituloLeido(BaseModel):
+    """Un capitulo de corrido: sus escenas en orden, **una por bloque** (`RF-41`).
+
+    Lo ensambla el backend -que escenas entran y en que orden-, pero no junta los
+    textos: cada escena lleva el suyo con su estado y sus hallazgos (`RF-39`).
+    """
+
+    id: str = Field(description="El id del Capitulo; nunca el de la obra (RF-37)")
+    orden: int
+    estado: EstadoDeCapitulo
+    escenas: list[EscenaLeida] = Field(description="En orden de lectura")
