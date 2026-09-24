@@ -19,6 +19,7 @@ from app.features.brief.router import router as router_brief
 from app.features.entrevista import repository as repositorio_entrevista
 from app.features.entrevista.router import router as router_entrevista
 from app.features.escaleta import repository as repositorio_escaleta
+from app.features.lectura.router import router as router_lectura
 from app.features.orquestacion.router import router as router_ciclo
 
 def fabrica_de_observacion(exportador):
@@ -70,6 +71,7 @@ app = FastAPI(title="Harness de novelas", version="0.1.0", lifespan=_ciclo_de_vi
 app.include_router(router_brief)
 app.include_router(router_ciclo)
 app.include_router(router_entrevista)
+app.include_router(router_lectura)
 
 
 def preparar_base(ruta=":memory:"):

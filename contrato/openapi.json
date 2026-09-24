@@ -77,6 +77,109 @@
         "title": "BriefEntrada",
         "type": "object"
       },
+      "CapituloDelIndice": {
+        "properties": {
+          "escenas": {
+            "description": "En orden de lectura",
+            "items": {
+              "$ref": "#/components/schemas/EscenaDelIndice"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeCapitulo"
+          },
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "orden": {
+            "description": "Orden de lectura; la lista ya viene en este orden",
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden",
+          "estado",
+          "escenas"
+        ],
+        "title": "CapituloDelIndice",
+        "type": "object"
+      },
+      "EscenaDelIndice": {
+        "description": "Una escena en el indice: su estado y sus hallazgos, **nunca** sin ellos (`RF-39`).",
+        "properties": {
+          "capitulo": {
+            "description": "El id del Capitulo que la contiene; nunca el de la obra",
+            "title": "Capitulo",
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "hallazgos_abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbierto"
+            },
+            "title": "Hallazgos Abiertos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "se_acepto_rindiendose": {
+            "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
+            "title": "Se Acepto Rindiendose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "capitulo",
+          "estado",
+          "se_acepto_rindiendose",
+          "hallazgos_abiertos"
+        ],
+        "title": "EscenaDelIndice",
+        "type": "object"
+      },
+      "EstadoDeCapitulo": {
+        "enum": [
+          "abierto",
+          "cerrado"
+        ],
+        "title": "EstadoDeCapitulo",
+        "type": "string"
+      },
+      "EstadoDeEscena": {
+        "enum": [
+          "planificada",
+          "generada",
+          "en_verificacion",
+          "rechazada",
+          "en_revision",
+          "aceptada",
+          "aceptada_por_rendicion",
+          "consolidada"
+        ],
+        "title": "EstadoDeEscena",
+        "type": "string"
+      },
+      "EstadoDeHallazgo": {
+        "enum": [
+          "abierto",
+          "resuelto",
+          "descartado",
+          "sin_veredicto"
+        ],
+        "title": "EstadoDeHallazgo",
+        "type": "string"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -88,6 +191,83 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HallazgoAbierto": {
+        "description": "Un `Hallazgo` con estado `abierto` o `sin_veredicto`, con **su** estado.",
+        "properties": {
+          "descripcion": {
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeHallazgo",
+            "description": "sin_veredicto es que falto el juicio, no que se violara"
+          },
+          "invariante": {
+            "description": "La INV-xx que se violo o no se pudo comprobar",
+            "title": "Invariante",
+            "type": "string"
+          },
+          "severidad": {
+            "$ref": "#/components/schemas/Severidad"
+          },
+          "verificador": {
+            "description": "Quien lo detecto",
+            "title": "Verificador",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invariante",
+          "verificador",
+          "severidad",
+          "estado",
+          "descripcion"
+        ],
+        "title": "HallazgoAbierto",
+        "type": "object"
+      },
+      "Indice": {
+        "description": "La portada y el indice de una obra, resueltos (`RF-38`, `RF-46`).\n\nNo lleva partes: la base no tiene tabla `parte` y el plan de la novela regalo no las\ndeclara (`PLAN-22` cuestion 3). No se pinta lo que no hay.",
+        "properties": {
+          "capitulos": {
+            "description": "Por Capitulo.orden",
+            "items": {
+              "$ref": "#/components/schemas/CapituloDelIndice"
+            },
+            "title": "Capitulos",
+            "type": "array"
+          },
+          "dedicatoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nula si la obra no tiene; nunca un relleno",
+            "title": "Dedicatoria"
+          },
+          "id": {
+            "description": "El id de la Obra",
+            "title": "Id",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "dedicatoria",
+          "capitulos"
+        ],
+        "title": "Indice",
         "type": "object"
       },
       "ObraSalida": {
@@ -157,6 +337,15 @@
         ],
         "title": "RespuestaEntrada",
         "type": "object"
+      },
+      "Severidad": {
+        "enum": [
+          "bloqueante",
+          "mayor",
+          "menor"
+        ],
+        "title": "Severidad",
+        "type": "string"
       },
       "TextoLibreEntrada": {
         "additionalProperties": false,
@@ -840,6 +1029,49 @@
         "summary": "Entregar",
         "tags": [
           "ciclo"
+        ]
+      }
+    },
+    "/obras/{id_obra}/indice": {
+      "get": {
+        "description": "La portada y el indice: capitulos por su orden, escenas con estado y hallazgos.",
+        "operationId": "indice_obras__id_obra__indice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Indice"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Indice",
+        "tags": [
+          "lectura"
         ]
       }
     },
