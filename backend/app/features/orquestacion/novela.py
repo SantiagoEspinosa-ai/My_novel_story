@@ -226,7 +226,7 @@ def _reglas_del_hook(carpeta, obra, vetadas, nombres, longitud):
 
 
 def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=None,
-             sistema=None, listas=None):
+             sistema=None, listas=None, lean=None):
     """Ficha → plan aprobado → obra montada → capitulos → cierre de la novela.
 
     Genera capitulo a capitulo, en el orden del plan, y se para en la primera
@@ -287,9 +287,29 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
         if g.parada:
             total.parada = g.parada
             break
-    cierre = None
+    cierre, publicada = None, None
     if not hasta_capitulo and total.parada is None:
-        cierre = cerrar(con, obra, ficha, agentes["editor"],
-                        sistema.edicion.umbral_repeticion_nombre,
-                        sistema.edicion.longitud_frase_repetida)
-    return {"plan": aprobado, "generacion": total, "cierre": cierre}
+        # `SPEC-30` `RF-02`: la puerta de publicacion se evalua sola al acabar la
+        # novela, con Lean dentro. Su primera ronda ya cierra la novela (`cerrar`),
+        # asi que no se paga dos veces el juicio de obra.
+        from app.features.auditoria.lean import VerificadorLean
+        from app.features.orquestacion import publicacion as puerta
+
+        def reescribir(con_, escena_id, instrucciones):
+            return modulo_obra.reescribir_capitulo(
+                con_, obra, escena_id, agentes["escritor"], agentes["editor"],
+                agentes["resumidor"], instrucciones=instrucciones,
+                inmutable=inmutable(ficha, aprobado.premisa),
+                techo=sistema.presupuesto.techo_de_contexto, vetadas=vetadas,
+                nombres=nombres, imprescindibles=imprescindibles,
+                anterior_cruza_capitulo=True)
+
+        publicada = puerta.publicar(
+            con, obra, ficha, lean or VerificadorLean(tiempo=sistema.lean.tiempo_maximo_segundos),
+            agentes["editor"], agentes["editor"], reescribir,
+            tope=sistema.topes.reintentos_de_publicacion, vetadas=vetadas,
+            umbral_nombre=sistema.edicion.umbral_repeticion_nombre,
+            longitud_frase=sistema.edicion.longitud_frase_repetida)
+        if publicada.evaluaciones:
+            cierre = publicada.evaluaciones[0].cierre
+    return {"plan": aprobado, "generacion": total, "cierre": cierre, "publicacion": publicada}

@@ -368,3 +368,58 @@ def test_un_imprescindible_usado_solo_en_otra_novela_sigue_faltando(con):
     r = novela.cerrar(con, "obra-x", ficha(), JuezDeObra(BIEN))
     assert r["estado"] == "novela_incompleta"
     assert r["faltan"] == ["un galgo muy lento"]
+
+
+# --- `PLAN-30` E11: la novela entera pasa por la puerta de publicacion ------------
+
+class _LeanFijo:
+    def __init__(self):
+        self.llamadas = 0
+
+    def verificar(self, con, obra):
+        from app.features.auditoria.publicacion import ResultadoLean
+        self.llamadas += 1
+        return ResultadoLean(0)
+
+
+def _agentes_para_la_novela_entera():
+    """El Escritor cuenta todas las palabras clave, para que ningun capitulo se
+    rinda por `INV-23` y la novela llegue entera a la puerta."""
+    agentes = _agentes()
+    agentes["escritor"] = _EscritorQueCopiaElPov({
+        "texto": " ".join(["palabra"] * 1196 + ["Irene", "mapa", "tren", "Lisboa", "Brisa"]),
+        "pov_usado": "per-irene", "delta": DELTA_OK})
+    return agentes
+
+
+def test_escribir_la_novela_entera_pasa_por_la_puerta(con, tmp_path):
+    """`SPEC-30` `RF-02`: Lean se ejecuta solo al llegar a la puerta, y el resultado
+    dice si la version se publico."""
+    lean = _LeanFijo()
+    r = novela.escribir(con, "obra-x", ficha(), _agentes_para_la_novela_entera(),
+                        carpeta_de_reglas=str(tmp_path), lean=lean)
+    assert r["generacion"].parada is None, r["generacion"].parada
+    assert lean.llamadas >= 1
+    assert r["publicacion"] is not None and r["cierre"] is not None
+
+
+def test_con_hasta_capitulo_no_se_evalua_la_puerta(con, tmp_path):
+    lean = _LeanFijo()
+    r = novela.escribir(con, "obra-x", ficha(), _agentes(), hasta_capitulo=1,
+                        carpeta_de_reglas=str(tmp_path), lean=lean)
+    assert lean.llamadas == 0 and r["publicacion"] is None
+
+
+def test_el_codigo_de_salida_es_1_si_la_puerta_no_abre():
+    """`novela_regalo.py` devolvia siempre 0: una novela que no se publica no puede
+    salir como si hubiera ido bien."""
+    import importlib.util
+    import pathlib
+    from app.features.orquestacion.publicacion import Publicacion
+    ruta = pathlib.Path(__file__).resolve().parents[4] / "novela_regalo.py"
+    spec = importlib.util.spec_from_file_location("novela_regalo", ruta)
+    guion = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(guion)
+    assert guion.codigo_de_salida({"publicacion": Publicacion(True, 1)}) == 0
+    assert guion.codigo_de_salida({"publicacion": Publicacion(False, 3, {"motivo": "tope"})}) == 1
+    assert guion.codigo_de_salida({"publicacion": None}) == 0, "sin puerta (--capitulos), no es un fallo"

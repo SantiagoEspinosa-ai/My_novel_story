@@ -83,6 +83,13 @@ def agentes(sistema, entorno):
     return sesiones
 
 
+def codigo_de_salida(r) -> int:
+    """`SPEC-30` `RF-04`: una novela que no pasa la puerta no sale como si hubiera ido
+    bien. Sin puerta (`--capitulos`) no es un fallo: no se evaluo."""
+    p = r.get("publicacion")
+    return 0 if p is None or p.publicada else 1
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("ficha")
@@ -147,7 +154,21 @@ def main(argv=None):
     if r["cierre"]:
         print("\n=== CIERRE ===")
         print(r["cierre"]["estado"], r["cierre"]["faltan"] or "")
-    return 0
+    pub = r.get("publicacion")
+    if pub is not None:
+        print("\n=== PUBLICACION ===")
+        print("publicada" if pub.publicada
+              else "NO se publica ({0})".format(pub.parada.get("motivo")))
+        print("rondas: {0}".format(pub.rondas))
+        for c in (pub.parada or {}).get("condiciones", []):
+            print("  [{0}] {1}: {2}".format(c["invariante"], c["capitulo"] or "(obra)",
+                                            c["detalle"]))
+        if (pub.parada or {}).get("diagnostico"):
+            print("  diagnostico del editor: " + pub.parada["diagnostico"])
+        if pub.evaluaciones:
+            for n in pub.evaluaciones[-1].decision.no_ejecutadas:
+                print("  no ejecutada: {0} ({1})".format(n.invariante, n.motivo))
+    return codigo_de_salida(r)
 
 
 if __name__ == "__main__":

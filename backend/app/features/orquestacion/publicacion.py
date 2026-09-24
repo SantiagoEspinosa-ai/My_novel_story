@@ -47,6 +47,7 @@ class Evaluacion:
     ronda: int
     implicados: puerta.Implicados
     lean: puerta.ResultadoLean
+    cierre: dict | None = None
 
 
 def _abiertos_de_obra(con, escenas):
@@ -72,13 +73,14 @@ def _conciliar(con, antes, despues, comprobadas, ronda):
                                      "la ronda {0} de la puerta ya no lo encuentra".format(ronda))
 
 
-def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=()) -> Evaluacion:
+def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=(), umbral_nombre=None,
+            longitud_frase=None) -> Evaluacion:
     veredictos.asegurar_tablas(con)
     ronda = veredictos.rondas(con, obra) + 1
     escenas = escaleta.escenas_de(con, obra)
     antes = [h for h in _abiertos_de_obra(con, escenas) if h["invariante"] in NIVEL_OBRA]
 
-    cierre = novela.cerrar(con, obra, ficha, juez_de_obra)
+    cierre = novela.cerrar(con, obra, ficha, juez_de_obra, umbral_nombre, longitud_frase)
     comprobadas = {"INV-24", "INV-25", "INV-28"}
     if cierre["estado"] != "novela_incompleta":
         comprobadas.add("INV-27")
@@ -110,7 +112,7 @@ def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=()) -> Evaluacion:
                                 for ev in cronologia.eventos_de(con, obra)},
         [h for h in hallazgos if h["invariante"] == "INV-27"])
     veredictos.guardar(con, obra, decision, resultado.codigo)
-    return Evaluacion(decision, ronda, implicados, resultado)
+    return Evaluacion(decision, ronda, implicados, resultado, cierre)
 
 
 PROMPT_FEEDBACK_LEAN = """Eres el editor de una novela para regalar. La verificacion formal de
@@ -158,7 +160,7 @@ def _lista(filas):
 
 
 def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
-             tope=None, vetadas=()) -> Publicacion:
+             tope=None, vetadas=(), umbral_nombre=None, longitud_frase=None) -> Publicacion:
     """El bucle de la puerta (`SPEC-30` v4 `RF-04`, `RF-06`, `RF-07`).
 
     - Si se abre, la version se publica.
@@ -182,7 +184,8 @@ def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
         if previas > tope:
             return Publicacion(False, previas, {"motivo": "tope", "rondas": previas},
                                ignoradas, evaluaciones)
-        e = evaluar(con, obra, ficha, lean, juez_de_obra, vetadas)
+        e = evaluar(con, obra, ficha, lean, juez_de_obra, vetadas, umbral_nombre,
+                    longitud_frase)
         evaluaciones.append(e)
         if e.decision.publica:
             return Publicacion(True, e.ronda, None, ignoradas, evaluaciones)
