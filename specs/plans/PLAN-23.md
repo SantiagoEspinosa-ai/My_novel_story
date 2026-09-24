@@ -518,6 +518,13 @@ final.
   (`F-122`) y la vigente es la última publicada (`F-121`), que es la que exporta el PDF. No es una
   decisión nueva de la spec: es lo que hacía falta para que `D-2` («se conserva la versión
   anterior») fuera cierta durante la cascada.
+
+  **Ratificado por el autor el 2026-09-24**: *«la puerta por versión es lo correcto»*. **Y
+  queda escrito que el cambio se hizo sin preguntar**: lo introdujo el agente que implementó
+  la Parte B, con este plan `aprobada` y diciendo lo contrario, y lo avisó en su informe
+  después de hacerlo. El cambio es bueno; el procedimiento no. Lo que tocaba era parar,
+  proponer la corrección del plan con `CE-15` delante y seguir cuando estuviera aprobada
+  (`AGENTS.md` § "Cuando el código descubre que la spec estaba mal").
 - No hace el contrato congelado ni ninguna página (`PLAN-22`).
 - No da versión a la story bible: un renombrado cambia el nombre de una versión, no la story bible (`C-4`). No renombra al destinatario.
 - No implementa `S-5`, ni pone `obra` al mundo vivo para varias obras en una base (hallazgo 8).

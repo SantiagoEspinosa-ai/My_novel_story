@@ -90,3 +90,11 @@ normativa va citada; si este resumen y la fuente discrepan, gana la fuente.
 | **Opciones** | Contar como tools los JSON validados. Tools de lectura y escritura. **Tools de solo lectura** |
 | **Criterio** | Que sean tools de verdad —el enunciado pide un span por llamada— sin abrir una segunda vía para escribir el estado |
 | **Elección** | Tres tools de lectura de la story bible, solo para Escritor y Editor; el delta sigue siendo JSON (`SPEC-28`) |
+
+## T-11 · La privacidad contra la personalización (limitación declarada)
+
+| | |
+| --- | --- |
+| **Opciones** | Mandar los nombres reales a las sesiones delegadas. Pedir al modelo que ignore la política de anonimización. **Pseudonimizar en el harness**: los nombres salen como marcadores y se restituyen al volver |
+| **Criterio** | El producto personaliza con nombres de personas reales, y eso es justo lo que protegen dos salvaguardas: la ficha se borra al entregar (`SPEC-25` `RF-21`) y la organización anonimiza los datos personales en las sesiones de Claude Code. Ninguna se sortea |
+| **Elección** | Pseudonimización en el harness (`F-146`, decidida el 2026-09-24, pendiente de spec y plan). **Limitación declarada**: es la segunda vez que una salvaguarda de privacidad bloquea una función —la primera, `F-91`: una novela entregada no tiene destinatario con el que regenerar desde la web— y las dos se presentan como límite del sistema, no como detalle resuelto |
