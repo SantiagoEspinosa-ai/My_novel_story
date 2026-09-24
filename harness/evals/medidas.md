@@ -219,4 +219,4 @@ falsa, «martes» por «Marta» (`F-145`).
 El Entrevistador real **detectó las tres contradicciones** del brief —edad 10 frente a romance,
 frente a boda y frente a un recuerdo a los 25— y la entrevista cerró tras corregir la edad, con la
 premisa y el título aceptados. El plan no se aprobó: el nombre del destinatario había llegado
-anonimizado a la ficha (`F-144`). 3,1154 USD en 16 delegaciones.
+anonimizado a la ficha (`F-146`). 3,1154 USD en 16 delegaciones.
