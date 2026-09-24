@@ -6,8 +6,15 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
-version: 1
+version: 2
 ---
+
+> **Historial.** v2 (2026-09-24): `PLAN-28` y `PLAN-30` se aplicaron antes que este, así que
+> las tools y Lean ya existen en el backend. Se añade **E14** para conectarlos, que es lo que
+> `SPEC-29` `RF-02` (un span por tool) y `RF-04` (Lean como score, con «sin veredicto») ya
+> pedían; el hallazgo 11 y la exclusión de «Lo que este plan no hace» quedan superados. No
+> decide nada nuevo: cumple la spec aprobada. Los `VER` nuevos son `VER-94`..`VER-101`,
+> reservados con la otra sesión.
 
 # PLAN-29 — La observabilidad en Langfuse
 
@@ -49,8 +56,8 @@ funciona sin claves: no envía nada y lo dice.
    pasar `backend/.env.example`.
 10. **La API de ingestión de Langfuse está en desuso y se retira el 2026-11-16**, según su
     documentación pública. El plan usa el SDK de Python v4, encerrado en un solo módulo.
-11. **Ni tools ni Lean existen en el backend todavía**: el plan deja preparados el span de tool
-    y el score «sin veredicto», y conectarlos es de `PLAN-28` y `PLAN-30`.
+11. **Ni tools ni Lean existían en el backend al escribir v1**: el plan dejaba preparados el
+    span de tool y el score «sin veredicto». **Superado en v2**: ya existen, y los conecta E14.
 12. **Las regeneraciones todavía no se ejecutan** (`SPEC-23` en revisión). `RF-01` se cumple
     por construcción: toda generación de una obra cae en la sesión de esa obra.
 
@@ -231,6 +238,22 @@ hooks. `entrevista_cli.py` enseña el id de la obra al cerrar.
 Además `test_el_estado_de_langfuse_se_informa_sin_claves` y
 `test_los_hooks_del_registro_dan_un_score_cada_uno`.
 
+### E14 · Los spans de las tools y el score de Lean (v2)
+
+Va después de E11 y antes de E12; conserva su número para no renumerar. Cada span de rol con
+tools cuelga los de sus llamadas desde `observabilidad.spans_de_herramientas(con, delegacion)`,
+que ya devuelve **solo** nombre, latencia, validación y tokens estimados (`SPEC-28` `RF-09`).
+Del cierre, la `Decision` de la puerta de publicación da `INV-28` (Lean: `pasa`, `falla` o
+`sin_veredicto` con el `2`, o con un Lean que no llegó a correr), `INV-29` e `INV-27` por
+ronda; y cada invariante de `NO_EJECUTADAS` (`INV-06`) sube como `no_aplica` con su motivo
+fijo, no como `pasa`.
+
+**Prueba que falla primero:** `test_cada_llamada_a_una_tool_es_un_span_bajo_su_rol`. Además
+`test_el_span_de_una_tool_no_lleva_argumentos_ni_resultado`,
+`test_lean_con_codigo_2_es_sin_veredicto_y_no_aprobado`,
+`test_lean_que_no_corre_es_sin_veredicto` y
+`test_una_invariante_no_ejecutada_no_sube_como_pasa`.
+
 ### E12 · `docs/` y spec al día
 
 `docs/architecture.md` (sección «Lo que sube a Langfuse», y corregir que `VER-41` está retirado
@@ -249,6 +272,8 @@ muestra coste inferido**; y con un host que no responde, que termina y deja `env
 de entrevista con la misma obra. Lo que no llegue se dice «sin medir».
 
 ## Qué filas `VER-xx` abre
+
+Con números reservados en v2: A = `VER-94`, B = `VER-95`, …, H = `VER-101`.
 
 - **`VER-nueva-A`**: nada del destinatario sube a Langfuse (`RF-07`). Punto ciego: datos
   transformados y lo que añada el SDK.
@@ -279,7 +304,7 @@ Langfuse infiere el coste por modelo, y si su OpenTelemetry exporta spans ajenos
 ## Lo que este plan no hace
 
 - No crea la instancia: es el paso manual de E13.
-- No conecta el score de Lean ni los spans de tools (`PLAN-30`, `PLAN-28`), ni implementa las
-  regeneraciones (`SPEC-23`).
+- No implementa las regeneraciones (`SPEC-23`). El score de Lean y los spans de tools, que v1
+  dejaba fuera, los conecta E14.
 - No renombra `tokens_estimados` ni revive `VER-41`: lo deja anotado.
 - No cambia qué guarda el audit log.
