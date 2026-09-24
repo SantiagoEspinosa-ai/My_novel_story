@@ -427,6 +427,17 @@ class Presupuesto(_DelDominio):
     techo_de_contexto: int = Field(default=100_000, gt=0)
 
 
+PALABRAS_POR_CAPITULO = (1000, 1500)
+"""`SPEC-32`: el rango obligatorio. **Decision nuestra**, no del enunciado: estaba en
+su primera version y todo el pipeline esta calibrado para capitulos de ese tamaño."""
+
+
+def _extensiones_por_defecto():
+    return {enums.ExtensionDeCapitulo.CORTA: (1000, 1150),
+            enums.ExtensionDeCapitulo.MEDIA: (1150, 1350),
+            enums.ExtensionDeCapitulo.LARGA: (1350, 1500)}
+
+
 class ConfiguracionDelSistema(_DelDominio):
     """Lo que cambia con la maquina, no con la novela."""
 
@@ -438,6 +449,24 @@ class ConfiguracionDelSistema(_DelDominio):
     contradicciones: ReglasDeContradiccion = Field(
         default_factory=ReglasDeContradiccion)
     edicion: Edicion = Field(default_factory=Edicion)
+    extensiones: dict[enums.ExtensionDeCapitulo, tuple[int, int]] = Field(
+        default_factory=_extensiones_por_defecto,
+        description="`SPEC-32` `RF-07`: palabras por capitulo de cada opcion")
+
+    @model_validator(mode="after")
+    def _las_extensiones_caben_en_el_rango(self):
+        minimo, maximo = PALABRAS_POR_CAPITULO
+        faltan = [e.value for e in enums.ExtensionDeCapitulo if e not in self.extensiones]
+        if faltan:
+            raise ValueError("falta el rango de palabras de: {0}".format(", ".join(faltan)))
+        for e, (desde, hasta) in self.extensiones.items():
+            if desde >= hasta:
+                raise ValueError("la extension {0}: el minimo ({1}) no es menor que el "
+                                 "maximo ({2})".format(e.value, desde, hasta))
+            if desde < minimo or hasta > maximo:
+                raise ValueError("la extension {0} ({1}-{2}) sale de {3}-{4} palabras "
+                                 "por capitulo".format(e.value, desde, hasta, minimo, maximo))
+        return self
 
     @property
     def huella(self) -> str:

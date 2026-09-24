@@ -263,3 +263,37 @@ def test_el_brief_del_repositorio_trae_su_plan_completo():
     b = carga.cargar_brief()
     assert b.plan is not None, "el brief del proyecto trae la obra entera"
     assert len(b.plan.capitulos) == b.forma.capitulos
+
+
+# --- `SPEC-32` `RF-07`: las opciones de extension, dentro de 1.000-1.500 ---------
+
+def _con_extensiones(tmp_path, extensiones):
+    return _escribir(tmp_path, "sistema.json", dict(SISTEMA_MINIMO, extensiones=extensiones))
+
+
+def test_los_rangos_por_defecto_cargan(tmp_path):
+    s = carga.cargar_sistema(_escribir(tmp_path, "sistema.json", SISTEMA_MINIMO))
+    assert {e.value: tuple(r) for e, r in s.extensiones.items()} == {
+        "corta": (1000, 1150), "media": (1150, 1350), "larga": (1350, 1500)}
+
+
+def test_una_opcion_de_extension_fuera_de_1000_1500_es_error(tmp_path):
+    """El rango es decision nuestra (`SPEC-32`), pero es obligatorio: una opcion
+    fuera es un error de configuracion, no un aviso."""
+    with pytest.raises(carga.ConfiguracionInvalida, match="1000"):
+        carga.cargar_sistema(_con_extensiones(tmp_path, {
+            "corta": [900, 1150], "media": [1150, 1350], "larga": [1350, 1500]}))
+
+
+def test_un_rango_con_el_minimo_mayor_que_el_maximo_es_error(tmp_path):
+    """Con `match`: sin el, pasaba antes de existir el campo, porque un campo
+    desconocido tambien es `ConfiguracionInvalida` (Regla 11)."""
+    with pytest.raises(carga.ConfiguracionInvalida, match="minimo"):
+        carga.cargar_sistema(_con_extensiones(tmp_path, {
+            "corta": [1150, 1000], "media": [1150, 1350], "larga": [1350, 1500]}))
+
+
+def test_falta_el_rango_de_una_opcion_es_error(tmp_path):
+    with pytest.raises(carga.ConfiguracionInvalida, match="larga"):
+        carga.cargar_sistema(_con_extensiones(tmp_path, {
+            "corta": [1000, 1150], "media": [1150, 1350]}))
