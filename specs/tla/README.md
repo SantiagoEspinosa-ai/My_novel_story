@@ -335,7 +335,7 @@ capítulo 2: FalloDeTransporteDelEscritor → Escribir → PedirReescrituraPorVe
 `AgotarTope` no se habilita en ningún estado del código de hoy, porque compara el contador de
 un `Generacion` recién creado.
 
-**Cambio en el código:** ninguno todavía; `F-114`, abierto.
+**Cambio en el código:** `F-114`, cerrado. `generar_obra` recibe las delegaciones que la novela ya gastó y compara el total de la obra; es exactamente la corrección que se modeló (`TopePorCapitulo = FALSE`). La prueba que lo reproduce fue roja antes: 35 delegaciones contra un tope de 5, sin parada.
 
 ### CE-13 · Una caída después de consolidar deja un capítulo sin memoria (`F-116`)
 

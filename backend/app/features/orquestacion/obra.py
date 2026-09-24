@@ -187,7 +187,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  tope_delegaciones=None, instrucciones=None, capitulo=None,
                  vetadas=None, tope_vetadas=None, genero=None, nombres=None,
                  imprescindibles=None, editor=False, anterior_cruza_capitulo=False,
-                 observacion=None, tope_transporte=None):
+                 observacion=None, tope_transporte=None, delegaciones_previas=0):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
 
     Con `observacion` (`SPEC-29` `RF-04`), cada intento deja sus scores.
@@ -247,9 +247,12 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
             g.saltadas.append(escena["id"])
             continue
 
-        if not rendicion.queda_presupuesto(g.delegaciones, tope_delegaciones):
+        # `F-114`, TLC `CE-12`: el tope es de la **obra**. Quien llama capitulo a capitulo
+        # pasa lo que la obra ya gasto; sin eso cada capitulo empezaba en cero.
+        gastadas = delegaciones_previas + g.delegaciones
+        if not rendicion.queda_presupuesto(gastadas, tope_delegaciones):
             g.parada = {"escena": escena["id"], "motivo": "tope_delegaciones",
-                        "delegaciones": g.delegaciones,
+                        "delegaciones": gastadas,
                         "detalle": "acota el gasto, no el error: lo decide una "
                                    "persona y no un bucle"}
             return g

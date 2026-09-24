@@ -945,3 +945,18 @@ def test_novela_regalo_con_dobles_informa_el_juicio_de_obra_en_el_coste(tmp_path
     assert "delegaciones: 33 | sin coste medido: 0" in salida, salida
     assert "0.3300 USD" in salida
     assert "cierre (juicio de obra y puerta de publicacion): 1 delegaciones, 0.0100 USD" in salida
+
+
+def test_el_tope_de_delegaciones_acota_la_novela_entera_y_no_cada_capitulo(con, tmp_path):
+    """`F-114`, TLC `CE-12` (`DelegacionesAcotadas`): cada capitulo creaba su propia
+    `Generacion` y comparaba sus delegaciones -cero al empezar- con el tope, asi que en la
+    novela regalo el freno de la obra entera no podia tirar nunca."""
+    from app.commons.configuracion import carga
+    base = carga.cargar_sistema()
+    sistema = base.model_copy(update={"topes": base.topes.model_copy(
+        update={"delegaciones_por_obra": 5})})
+    r = novela.escribir(con, "obra-x", ficha(), _agentes_para_la_novela_entera(),
+                        carpeta_de_reglas=str(tmp_path), sistema=sistema, lean=_LeanFijo())
+    g = r["generacion"]
+    assert g.parada is not None and g.parada["motivo"] == "tope_delegaciones"
+    assert g.delegaciones <= 5 + 3, "puede pasarse en lo que cueste el capitulo en curso, no mas"

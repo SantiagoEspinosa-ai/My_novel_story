@@ -437,6 +437,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 tope_vetadas=sistema.topes.reescrituras_por_vetada,
                 tope_delegaciones=sistema.topes.delegaciones_por_obra,
                 tope_transporte=sistema.topes.reintentos_de_transporte,
+                delegaciones_previas=total.delegaciones,
                 capitulo=cap, vetadas=vetadas, nombres=nombres,
                 imprescindibles=imprescindibles, editor=True, anterior_cruza_capitulo=True,
                 genero=ficha.genero.value if ficha.genero else None,
