@@ -159,7 +159,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Historial
+         * @description `SPEC-33` `RF-10`: la conversacion entera, en orden.
+         */
+        get: operations["historial_entrevistas__id_e__turnos_get"];
         put?: never;
         /** Turno */
         post: operations["turno_entrevistas__id_e__turnos_post"];
@@ -284,6 +288,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/cambios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cambios
+         * @description `202` con el identificador de trabajo. `409` si no hay salida elegida -hoy,
+         *     siempre: falta la medida-, si la lista no es la propuesta o si `C-4` no la admite.
+         *     Con `409` **no se guarda ni se encola nada**.
+         */
+        post: operations["cambios_obras__id_obra__cambios_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/cambios/propuesta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propuesta
+         * @description Los capitulos que se van a tocar, **antes** de tocarlos, con la promesa y su
+         *     punto ciego (`RF-51`, `RF-55`). Sincrona y sin modelo. `409` si `C-4` no la admite.
+         */
+        post: operations["propuesta_obras__id_obra__cambios_propuesta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/obras/{id_obra}/entregar": {
         parameters: {
             query?: never;
@@ -366,6 +413,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/versiones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versiones
+         * @description Las versiones con su numero, su anterior, su commit, cuando se crearon y su
+         *     peticion (`RF-53`).
+         */
+        get: operations["versiones_obras__id_obra__versiones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/versiones/{numero}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Version
+         * @description Los capitulos en orden: si es compartido con la anterior, su estado, y por
+         *     escena su `estado_de_escena` y su `estado_de_verificacion` (`RF-52`..`RF-54`).
+         */
+        get: operations["version_obras__id_obra__versiones__numero__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/trabajos/{id_trabajo}": {
         parameters: {
             query?: never;
@@ -432,6 +521,40 @@ export interface components {
             /** Titulo */
             titulo: string;
         };
+        /**
+         * CambioEntrada
+         * @description La misma peticion y la lista que el lector acepta, que tiene que ser la
+         *     propuesta (`RF-48`, `RF-50`).
+         */
+        CambioEntrada: {
+            /** Capitulos Propuestos */
+            capitulos_propuestos: string[];
+            clase: components["schemas"]["ClaseDePeticion"];
+            /** Enunciado Nuevo */
+            enunciado_nuevo?: string | null;
+            /** Hecho */
+            hecho?: string | null;
+            /** Nombre Nuevo */
+            nombre_nuevo?: string | null;
+            /** Personaje */
+            personaje?: string | null;
+            /** Texto */
+            texto: string;
+            /** Version De Partida */
+            version_de_partida?: number | null;
+        };
+        /** CapituloDeVersionSalida */
+        CapituloDeVersionSalida: {
+            /** Capitulo */
+            capitulo: string;
+            /** Compartido */
+            compartido: boolean | null;
+            /** Escenas */
+            escenas: components["schemas"]["EscenaDeVersionSalida"][];
+            estado: components["schemas"]["EstadoDeCapitulo"] | null;
+            /** Orden */
+            orden: number;
+        };
         /** CapituloDelIndice */
         CapituloDelIndice: {
             /**
@@ -485,6 +608,33 @@ export interface components {
             id: string;
             /** Orden */
             orden: number;
+        };
+        /** CapitulosPorSalida */
+        CapitulosPorSalida: {
+            /** Cascada */
+            cascada: string[];
+            /** Selectiva */
+            selectiva: string[];
+        };
+        /**
+         * ClaseDePeticion
+         * @description `C-4`: lo que el lector puede pedir. Un hecho o un nombre.
+         * @enum {string}
+         */
+        ClaseDePeticion: "hecho" | "nombre";
+        /** ContradiccionSalida */
+        ContradiccionSalida: {
+            /** Descripcion */
+            descripcion: string;
+            /** Tipo */
+            tipo: string;
+        };
+        /** EscenaDeVersionSalida */
+        EscenaDeVersionSalida: {
+            estado: components["schemas"]["EstadoDeEscena"];
+            estado_de_verificacion: components["schemas"]["EstadoDeVerificacion"];
+            /** Id */
+            id: string;
         };
         /**
          * EscenaDelIndice
@@ -545,6 +695,15 @@ export interface components {
          * @enum {string}
          */
         EstadoDeHallazgo: "abierto" | "resuelto" | "descartado" | "sin_veredicto";
+        /**
+         * EstadoDeVerificacion
+         * @description El estado de una escena **en una version**, que no es `estado_de_escena`.
+         *
+         *     `sin_reverificar` es el verde heredado de otra version: **no cuenta como verde**
+         *     (`D-1`). No añade ninguna transicion a la maquina de `estado_de_escena`.
+         * @enum {string}
+         */
+        EstadoDeVerificacion: "verificada" | "sin_reverificar" | "fallida";
         /**
          * EstadoVital
          * @enum {string}
@@ -639,6 +798,13 @@ export interface components {
              */
             verificador: string;
         };
+        /** HistorialSalida */
+        HistorialSalida: {
+            /** Primera Pregunta */
+            primera_pregunta: string;
+            /** Turnos */
+            turnos: components["schemas"]["TurnoDeEntrevistaSalida"][];
+        };
         /**
          * Indice
          * @description La portada y el indice de una obra, resueltos (`RF-38`, `RF-46`).
@@ -692,6 +858,27 @@ export interface components {
          */
         PersonaNarrativa: "primera" | "segunda" | "tercera_limitada" | "tercera_omnisciente";
         /**
+         * PeticionEntrada
+         * @description Los campos de `PeticionDeCambio` que da el lector. Con `hecho`, `hecho` y
+         *     `enunciado_nuevo`; con `nombre`, `personaje` y `nombre_nuevo`. La obra va en la ruta
+         *     y la version de partida, si no se dice, es la vigente.
+         */
+        PeticionEntrada: {
+            clase: components["schemas"]["ClaseDePeticion"];
+            /** Enunciado Nuevo */
+            enunciado_nuevo?: string | null;
+            /** Hecho */
+            hecho?: string | null;
+            /** Nombre Nuevo */
+            nombre_nuevo?: string | null;
+            /** Personaje */
+            personaje?: string | null;
+            /** Texto */
+            texto: string;
+            /** Version De Partida */
+            version_de_partida?: number | null;
+        };
+        /**
          * ProgresoDeGeneracion
          * @description En que punto va la generacion de una obra (`SPEC-22` `RF-60`). Lo resuelve el
          *     servidor: la interfaz lo pinta y no resta fechas.
@@ -731,6 +918,24 @@ export interface components {
              */
             ultima_actividad: string;
         };
+        /** PropuestaSalida */
+        PropuestaSalida: {
+            capitulos: components["schemas"]["CapitulosPorSalida"];
+            /** Capitulos Propuestos */
+            capitulos_propuestos: string[] | null;
+            clase: components["schemas"]["ClaseDePeticion"];
+            /** Motivo */
+            motivo: string | null;
+            /** Obra */
+            obra: string;
+            /** Promesa */
+            promesa: string;
+            /** Punto Ciego */
+            punto_ciego: string;
+            salida: components["schemas"]["SalidaDeRegeneracion"] | null;
+            /** Version De Partida */
+            version_de_partida: number;
+        };
         /** RespuestaEntrada */
         RespuestaEntrada: {
             /** Respuesta */
@@ -741,6 +946,12 @@ export interface components {
          * @enum {string}
          */
         RolDramatico: "protagonista" | "antagonista" | "aliado" | "guardian_del_umbral" | "victima" | "testigo";
+        /**
+         * SalidaDeRegeneracion
+         * @description `S-1` y `S-2`. La elige la medida del arrastre (`SPEC-23` v2), no una opinion.
+         * @enum {string}
+         */
+        SalidaDeRegeneracion: "cascada" | "selectiva";
         /**
          * Severidad
          * @enum {string}
@@ -761,6 +972,30 @@ export interface components {
          * @enum {string}
          */
         TiempoVerbal: "presente" | "pasado";
+        /**
+         * TurnoDeEntrevistaSalida
+         * @description `TurnoDeEntrevista` (`SPEC-33` `RF-10`). `pregunta` es la que el Entrevistador
+         *     hizo **despues** de esta respuesta. `falta`, `avisos` y `contradicciones_abiertas` son lo
+         *     que el codigo dijo en este turno; `None` si la fila es anterior a guardarlos.
+         */
+        TurnoDeEntrevistaSalida: {
+            /** Avisos */
+            avisos: string[] | null;
+            /** Contradicciones Abiertas */
+            contradicciones_abiertas: components["schemas"]["ContradiccionSalida"][] | null;
+            /** Cuando */
+            cuando: string | null;
+            /** Falta */
+            falta: string[] | null;
+            /** Orden */
+            orden: number;
+            /** Pregunta */
+            pregunta: string;
+            /** Respuesta */
+            respuesta: string;
+            /** Tema */
+            tema: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -773,6 +1008,43 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionDetalleSalida */
+        VersionDetalleSalida: {
+            /** Anterior */
+            anterior: number | null;
+            /** Capitulos */
+            capitulos: components["schemas"]["CapituloDeVersionSalida"][];
+            /** Commit */
+            commit: string;
+            /** Creada En */
+            creada_en: string;
+            /** Numero */
+            numero: number;
+            /** Obra */
+            obra: string;
+            /** Peticion */
+            peticion: number | null;
+        };
+        /** VersionSalida */
+        VersionSalida: {
+            /** Anterior */
+            anterior: number | null;
+            /** Commit */
+            commit: string;
+            /** Creada En */
+            creada_en: string;
+            /** Numero */
+            numero: number;
+            /** Peticion */
+            peticion: number | null;
+        };
+        /** VersionesSalida */
+        VersionesSalida: {
+            /** Obra */
+            obra: string;
+            /** Versiones */
+            versiones: components["schemas"]["VersionSalida"][];
         };
     };
     responses: never;
@@ -1026,6 +1298,37 @@ export interface operations {
             };
         };
     };
+    historial_entrevistas__id_e__turnos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_e: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistorialSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     turno_entrevistas__id_e__turnos_post: {
         parameters: {
             query?: never;
@@ -1254,6 +1557,76 @@ export interface operations {
             };
         };
     };
+    cambios_obras__id_obra__cambios_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambioEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    propuesta_obras__id_obra__cambios_propuesta_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PeticionEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PropuestaSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     entregar_obras__id_obra__entregar_post: {
         parameters: {
             query?: never;
@@ -1365,6 +1738,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProgresoDeGeneracion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versiones_obras__id_obra__versiones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionesSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    version_obras__id_obra__versiones__numero__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+                numero: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetalleSalida"];
                 };
             };
             /** @description Validation Error */

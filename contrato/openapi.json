@@ -350,6 +350,24 @@
         "title": "ClaseDePeticion",
         "type": "string"
       },
+      "ContradiccionSalida": {
+        "properties": {
+          "descripcion": {
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "descripcion"
+        ],
+        "title": "ContradiccionSalida",
+        "type": "object"
+      },
       "EscenaDeVersionSalida": {
         "additionalProperties": false,
         "properties": {
@@ -744,6 +762,27 @@
         "title": "HallazgoAbierto",
         "type": "object"
       },
+      "HistorialSalida": {
+        "properties": {
+          "primera_pregunta": {
+            "title": "Primera Pregunta",
+            "type": "string"
+          },
+          "turnos": {
+            "items": {
+              "$ref": "#/components/schemas/TurnoDeEntrevistaSalida"
+            },
+            "title": "Turnos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "primera_pregunta",
+          "turnos"
+        ],
+        "title": "HistorialSalida",
+        "type": "object"
+      },
       "Indice": {
         "description": "La portada y el indice de una obra, resueltos (`RF-38`, `RF-46`).\n\nNo lleva partes: la base no tiene tabla `parte` y el plan de la novela regalo no las\ndeclara (`PLAN-22` cuestion 3). No se pinta lo que no hay.",
         "properties": {
@@ -1131,6 +1170,99 @@
         ],
         "title": "TiempoVerbal",
         "type": "string"
+      },
+      "TurnoDeEntrevistaSalida": {
+        "description": "`TurnoDeEntrevista` (`SPEC-33` `RF-10`). `pregunta` es la que el Entrevistador\nhizo **despues** de esta respuesta. `falta`, `avisos` y `contradicciones_abiertas` son lo\nque el codigo dijo en este turno; `None` si la fila es anterior a guardarlos.",
+        "properties": {
+          "avisos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avisos"
+          },
+          "contradicciones_abiertas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ContradiccionSalida"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contradicciones Abiertas"
+          },
+          "cuando": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuando"
+          },
+          "falta": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Falta"
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          },
+          "pregunta": {
+            "title": "Pregunta",
+            "type": "string"
+          },
+          "respuesta": {
+            "title": "Respuesta",
+            "type": "string"
+          },
+          "tema": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tema"
+          }
+        },
+        "required": [
+          "orden",
+          "respuesta",
+          "pregunta",
+          "tema",
+          "falta",
+          "avisos",
+          "contradicciones_abiertas",
+          "cuando"
+        ],
+        "title": "TurnoDeEntrevistaSalida",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -1644,6 +1776,47 @@
       }
     },
     "/entrevistas/{id_e}/turnos": {
+      "get": {
+        "description": "`SPEC-33` `RF-10`: la conversacion entera, en orden.",
+        "operationId": "historial_entrevistas__id_e__turnos_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistorialSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Historial",
+        "tags": [
+          "entrevista"
+        ]
+      },
       "post": {
         "operationId": "turno_entrevistas__id_e__turnos_post",
         "parameters": [

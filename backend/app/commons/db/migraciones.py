@@ -329,6 +329,16 @@ TODAS = [
         CREATE INDEX IF NOT EXISTS idx_progreso_por_obra ON progreso_de_generacion (obra, id);
         """,
     ),
+    Migracion(
+        16,
+        "cada turno de la entrevista guarda lo que el codigo dijo en el",
+        # `SPEC-33` `RF-10`, `PLAN-33` E1: `TurnoDeEntrevista`. La web reconstruye la
+        # conversacion con esto al recargar. Las filas de antes se quedan a `NULL`:
+        # no se guardaron sus avisos, que no es lo mismo que no tenerlos.
+        lambda con: anadir_columnas(con, "turno_de_entrevista", {
+            "tema": "TEXT", "falta": "TEXT", "avisos": "TEXT",
+            "contradicciones_abiertas": "TEXT", "cuando": "TEXT"}),
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la

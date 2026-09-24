@@ -31,7 +31,8 @@ from app.commons.modelo import proveedor
 from app.commons.trabajos import cola
 from app.features.entrevista import repository as repo
 from app.features.entrevista import service
-from app.features.entrevista.schemas import RespuestaEntrada, TextoLibreEntrada, turno_a_dict
+from app.features.entrevista.schemas import (HistorialSalida, RespuestaEntrada,
+                                             TextoLibreEntrada, turno_a_dict)
 from app.features.entrevista.texto_libre import TextoDemasiadoLargo, validar_longitud
 
 router = APIRouter(tags=["entrevista"])
@@ -107,6 +108,13 @@ def crear(con: sqlite3.Connection = Depends(conexion)):
 def consultar(id_e: str, con: sqlite3.Connection = Depends(conexion)):
     _existe(con, id_e)
     return turno_a_dict(service.estado(con, id_e, _reglas(), date.today().year))
+
+
+@router.get("/entrevistas/{id_e}/turnos", response_model=HistorialSalida)
+def historial(id_e: str, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-33` `RF-10`: la conversacion entera, en orden."""
+    _existe(con, id_e)
+    return service.historial(con, id_e)
 
 
 @router.post("/entrevistas/{id_e}/turnos", status_code=status.HTTP_202_ACCEPTED)

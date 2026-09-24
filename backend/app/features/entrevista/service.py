@@ -278,7 +278,10 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
     e.avisos_confirmados = sorted(set(e.avisos_confirmados) | set(confirmados))
     despues = _estado(e, reglas, anio_actual)
     _auditar(con, e, despues)
-    repo.guardar(con, e, respuesta=respuesta, pregunta=pregunta)
+    repo.guardar(con, e, respuesta=respuesta, pregunta=pregunta, estado={
+        "tema": despues["tema"], "falta": despues["falta"], "avisos": despues["avisos"],
+        "contradicciones_abiertas": [{"tipo": c.tipo.value, "descripcion": c.descripcion}
+                                     for c in despues["contradicciones"]]})
     return Turno(e, pregunta, despues)
 
 
@@ -309,6 +312,13 @@ def estado(con, id_e, reglas, anio_actual) -> Turno:
     turnos = repo.turnos(con, id_e)
     pregunta = turnos[-1]["pregunta"] if turnos else PRIMERA_PREGUNTA
     return Turno(e, pregunta, _estado(e, reglas, anio_actual))
+
+
+def historial(con, id_e) -> dict:
+    """`SPEC-33` `RF-10`: la conversacion entera, para reconstruirla al recargar.
+    La primera pregunta no es de ningun turno: la hace el sistema al crear."""
+    _leer(con, id_e)
+    return {"primera_pregunta": PRIMERA_PREGUNTA, "turnos": repo.turnos(con, id_e)}
 
 
 def cerrar(con, id_e, reglas=None, anio_actual=None):
