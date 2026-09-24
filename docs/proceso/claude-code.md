@@ -97,8 +97,10 @@ ficha del personaje no enlaza ningún capítulo y dice «no declarado»—, que 
 porque la novela regalo todavía no declara los presentes. Su propia valoración dice que juzgó
 «en la inspección del árbol de accesibilidad».
 
-**Qué detectó la revisión de sus artefactos, y el agente no.** Mirando las capturas de las
-mismas páginas y los registros de consola que deja el MCP en `.playwright-mcp/`:
+**Qué detectó la revisión de sus artefactos, y el agente no.** Mirando capturas de las mismas
+páginas —hechas aparte, con Edge sin cabeza— y los registros de consola que deja el MCP en
+`.playwright-mcp/`. El agente sí hizo capturas (cinco), pero el MCP las dejó en la raíz del
+repositorio porque no tenía `--output-dir`; desde E13b lo tiene:
 
 | Hallazgo | Qué se veía | A quién se devolvió | Cambio |
 | --- | --- | --- | --- |
@@ -109,3 +111,24 @@ mismas páginas y los registros de consola que deja el MCP en `.playwright-mcp/`
 
 **Ningún error de texto**: el texto es inventado y no lo cubre ninguna `INV-xx`, así que no hubo
 nada que devolver al Escritor. El cambio va en el commit `PLAN-22 E13`.
+
+### El validador visual `INV-30`, en real (`PLAN-22` E13b.2, 2026-09-24)
+
+Sobre la misma web y la misma semilla, después de los arreglos de E13:
+`python -X utf8 inspeccion_visual.py lectura-semilla.db obra-semilla-inventada http://localhost:5199/obras/obra-semilla-inventada --modelo sonnet`. Una delegación en el agente
+`inspector_visual`, con `.mcp.json`, `--strict-mcp-config` y solo sus ocho tools del browser.
+
+- **Resultado: `INV-30` `pasa`**, las cinco piezas `pasa`, cada una con su motivo; ningún
+  hallazgo `INV-30` en la base. Esta vez el agente hizo **siete capturas** (en `.playwright-mcp/`)
+  y pidió la consola en cada carga, y dijo que no había errores: con el icono de `F-83` puesto,
+  ya no los hay.
+- **Coste leído de la delegación: 0,4872 USD** (`coste_usd` de sus medidas).
+- **Los scores no llegaron a Langfuse.** El worktree no tiene `backend/.env` —lo ignorado no
+  viaja— y el guion lo dijo (*«no se envia a Langfuse: sin claves»*): los seis scores
+  (`INV-30` e `INV-30.<pieza>`) se emitieron a un exportador en memoria. Que suban a una
+  instancia real está **sin ejercer**.
+- **Un `pasa` sobre una web que ya se había arreglado a mano no dice cuánto caza.** El único
+  caso en que el agente tuvo defectos delante (E13) no vio ninguno (`F-84`). Sesga hacia lo
+  cómodo: este verde es compatible con un validador que no mira.
+- ❌ **No vuelve al Escritor.** Si hubiera fallado, el hallazgo habría quedado abierto para
+  una persona; que el fallo vuelva solo al rol que toca está fuera de `RF-58` y sin hacer.
