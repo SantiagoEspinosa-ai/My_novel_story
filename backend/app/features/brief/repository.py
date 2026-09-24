@@ -5,9 +5,13 @@ que habla con la base. El servicio no sabe que hay SQLite debajo, y por eso se
 puede probar sin base.
 """
 
+import functools
 import json
 import sqlite3
 import uuid
+
+from app.commons.db import procedencia
+from app.commons.db.migraciones import VERSIONES_SQL
 
 MIGRACION_SQL = """
 CREATE TABLE IF NOT EXISTS obra (
@@ -24,15 +28,18 @@ CREATE TABLE IF NOT EXISTS capitulo (
     id     TEXT PRIMARY KEY,
     obra   TEXT NOT NULL REFERENCES obra(id),
     orden  INTEGER NOT NULL,
-    estado TEXT NOT NULL DEFAULT 'abierto',
-    UNIQUE (obra, orden)
+    estado TEXT NOT NULL DEFAULT 'abierto'
 );
 """
+# Sin `UNIQUE (obra, orden)` (`PLAN-23` hallazgo 4): el orden de un capitulo en una
+# version lo dice `capitulo_de_version`, y un capitulo nuevo en la posicion 3 de la
+# version 2 no puede borrar al capitulo 3 de la version 1 (Regla 7).
 
 
 def asegurar_tablas(con: sqlite3.Connection):
     with con:
         con.executescript(MIGRACION_SQL)
+        con.executescript(VERSIONES_SQL)
 
 
 def crear(con, datos: dict) -> str:
@@ -104,7 +111,82 @@ def alta_de_obra(con, id_obra, datos, capitulos):
             con.execute(
                 "INSERT OR REPLACE INTO capitulo (id, obra, orden, estado) "
                 "VALUES (?, ?, ?, 'abierto')", (id_capitulo, id_obra, posicion))
+        # `PLAN-23` A3: la obra nace con su version 1. Relanzar el alta no crea otra.
+        if not _hay_version(con, id_obra):
+            _insertar_version(con, id_obra, 1, capitulos, None, None, _commit_del_proceso())
     return id_obra
+
+
+# --- Versiones de la obra (`SPEC-23` `D-2`, `PLAN-23` A3) ------------------------
+
+@functools.lru_cache(maxsize=1)
+def _commit_del_proceso():
+    """El commit con el que corre este proceso. Una vez: el codigo que se cargo al
+    arrancar no cambia aunque el arbol si, y es el que escribe (`MF-27`)."""
+    return procedencia.version_del_arbol()
+
+
+def _hay_version(con, obra):
+    return con.execute("SELECT 1 FROM version_de_obra WHERE obra = ?",
+                       (obra,)).fetchone() is not None
+
+
+def _insertar_version(con, obra, numero, capitulos, anterior, peticion, commit):
+    con.execute('INSERT INTO version_de_obra (obra, numero, anterior, peticion, "commit") '
+                "VALUES (?, ?, ?, ?, ?)", (obra, numero, anterior, peticion, commit))
+    for orden, capitulo in enumerate(capitulos, start=1):
+        con.execute("INSERT INTO capitulo_de_version (obra, numero, orden, capitulo) "
+                    "VALUES (?, ?, ?, ?)", (obra, numero, orden, capitulo))
+
+
+def crear_version(con, obra, capitulos, anterior=None, peticion=None, commit=None):
+    """Una version nueva con `capitulos` en orden. Devuelve su numero.
+
+    Un capitulo que ya existe **se comparte por referencia**: es la misma fila. Uno
+    que no existe se crea, con su posicion como `orden` y `abierto`. Nada de la
+    version anterior se toca, y la base lo hace cumplir con sus disparadores.
+    """
+    asegurar_tablas(con)
+    ajenos = [(c, f[0]) for c in capitulos for f in con.execute(
+        "SELECT obra FROM capitulo WHERE id = ? AND obra <> ?", (c, obra))]
+    if ajenos:
+        raise CapituloDeOtraObra(
+            "estos capitulos ya son de otra obra y no se comparten: {0}".format(
+                ", ".join("{0} (de {1})".format(c, o) for c, o in ajenos)))
+    with con:
+        fila = con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
+                           (obra,)).fetchone()
+        numero = (fila[0] or 0) + 1
+        for posicion, capitulo in enumerate(capitulos, start=1):
+            con.execute("INSERT OR IGNORE INTO capitulo (id, obra, orden, estado) "
+                        "VALUES (?, ?, ?, 'abierto')", (capitulo, obra, posicion))
+        _insertar_version(con, obra, numero, capitulos, anterior, peticion,
+                          commit or _commit_del_proceso())
+    return numero
+
+
+def versiones_de(con, obra):
+    asegurar_tablas(con)
+    return [{"numero": f[0], "anterior": f[1], "peticion": f[2], "commit": f[3],
+             "creada_en": f[4]}
+            for f in con.execute('SELECT numero, anterior, peticion, "commit", creada_en '
+                                 "FROM version_de_obra WHERE obra = ? ORDER BY numero",
+                                 (obra,))]
+
+
+def capitulos_de_version(con, obra, numero):
+    asegurar_tablas(con)
+    return [f[0] for f in con.execute(
+        "SELECT capitulo FROM capitulo_de_version WHERE obra = ? AND numero = ? "
+        "ORDER BY orden", (obra, numero))]
+
+
+def version_vigente(con, obra):
+    """La ultima creada, o `None` si la obra no tiene ninguna."""
+    asegurar_tablas(con)
+    fila = con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
+                       (obra,)).fetchone()
+    return fila[0]
 
 
 def leer(con, id_obra: str):
