@@ -7,8 +7,10 @@ from app.commons.observabilidad.exportador import ExportadorEnMemoria
 from app.commons.observabilidad.observacion import Observacion
 from app.features.orquestacion import prompts
 
+# `inspector_visual` entra con `PLAN-22` E13b (`INV-30`): es un agente con prompt propio y
+# su version sube como la de los demas.
 ROLES_DEL_PIPELINE = {"entrevistador", "planificador", "revisor_plan", "escritor", "editor",
-                      "juez", "resumidor"}
+                      "juez", "resumidor", "inspector_visual"}
 
 
 def test_cada_agente_del_pipeline_tiene_su_version_de_prompt():

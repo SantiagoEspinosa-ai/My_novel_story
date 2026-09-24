@@ -184,6 +184,8 @@ class SesionDelegada:
         # `SPEC-28`: si se fija (`{"db", "obra"}`), la delegacion ofrece las tools de
         # la story bible por un servidor MCP. Solo el Escritor y el Editor lo tienen.
         self.herramientas = None
+        # `PLAN-22` E13b: la ruta de un `.mcp.json` que se carga tal cual (el browser).
+        self.mcp_fijo = None
 
     def __repr__(self):
         return "SesionDelegada(modelo={0!r}, agente={1!r})".format(self.nombre, self.agente)
@@ -201,6 +203,8 @@ class SesionDelegada:
                 # Una por llamada: enlaza cada llamada a una tool con su traza.
                 delegacion = uuid.uuid4().hex
                 extra["herramientas"] = dict(self.herramientas, delegacion=delegacion)
+            elif self.mcp_fijo:
+                extra["mcp_fijo"] = self.mcp_fijo
             salida = self._ejecutar(_resolver_ejecutable(), self.nombre,
                                     self.agente, prompt, self.cwd, **extra)
         except FalloDeTransporte:
@@ -248,7 +252,7 @@ def _configuracion_mcp(agente, herramientas):
 
 
 def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
-                      entorno=None, herramientas=None):
+                      entorno=None, herramientas=None, mcp_fijo=None):
     """El prompt por **stdin**. Nunca como argumento: `cmd.exe` lo trunca.
 
     Se pide `--output-format json` porque devuelve **medidas de verdad**:
@@ -268,6 +272,13 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
     if herramientas:
         config_mcp = _configuracion_mcp(agente, herramientas)
         orden += ["--mcp-config", config_mcp,
+                  "--allowedTools", ",".join(PERMITIDAS.get(agente, ()))]
+        if "--strict-mcp-config" not in orden:
+            orden.append("--strict-mcp-config")
+    elif mcp_fijo:
+        # `PLAN-22` E13b: el inspector visual carga un fichero de configuracion que ya
+        # existe (`.mcp.json`, el browser), con MCP estricto y solo sus tools.
+        orden += ["--mcp-config", mcp_fijo,
                   "--allowedTools", ",".join(PERMITIDAS.get(agente, ()))]
         if "--strict-mcp-config" not in orden:
             orden.append("--strict-mcp-config")

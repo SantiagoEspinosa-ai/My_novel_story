@@ -29,7 +29,7 @@ def test_estan_las_dieciocho_y_sin_huecos():
     # la ubicuidad sin decidirlos todavia. Por eso `SPEC-25` tomo `INV-21` y no
     # reutilizo un numero apartado. Cualquier otro hueco sigue fallando aqui.
     reservadas = {19, 20}
-    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 30)
+    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 31)
                    if i not in reservadas]
 
 
@@ -53,7 +53,9 @@ def test_las_invariantes_de_juez_son_las_decididas():
     con codigo no se delega en un modelo."""
     de_juez = [i for i in registro.TODAS.values()
                if i.tipo is enums.TipoDeVerificador.JUEZ_LLM]
-    assert sorted(i.id for i in de_juez) == ["INV-10", "INV-26", "INV-27"]
+    # `INV-30`, el validador visual, la decidio `SPEC-22` `RF-58`: lo que juzga es como
+    # se ve una web, y eso no lo resuelve una regla.
+    assert sorted(i.id for i in de_juez) == ["INV-10", "INV-26", "INV-27", "INV-30"]
 
 
 def test_caso_negativo_una_severidad_que_no_coincide_con_la_tabla():
@@ -127,3 +129,15 @@ def test_las_de_la_puerta_de_publicacion_son_de_obra_y_bloqueantes():
         assert inv.nivel is enums.NivelDeEvaluacion.OBRA
         assert inv.severidad is enums.Severidad.BLOQUEANTE
         assert inv.tipo is enums.TipoDeVerificador.REGLA
+
+
+def test_inv30_esta_en_el_registro_con_la_fila_de_definitions():
+    """`SPEC-22` `RF-58`, `PLAN-22` E13b: la fila se lee del documento, no del registro."""
+    import pathlib
+    doc = (pathlib.Path(__file__).resolve().parents[5] / "docs" / "definitions.md").read_text(
+        encoding="utf-8")
+    fila = [x for x in doc.splitlines() if x.startswith("| INV-30 |")][0]
+    celdas = [c.strip().replace("\\_", "_") for c in fila.strip().strip("|").split("|")]
+    nivel, severidad, tipo = celdas[2], celdas[3], celdas[4]
+    inv = registro.TODAS["INV-30"]
+    assert (inv.nivel.value, inv.severidad.value, inv.tipo.value) == (nivel, severidad, tipo)

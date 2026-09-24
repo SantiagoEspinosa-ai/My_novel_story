@@ -149,7 +149,7 @@ declarado.
 | `INV-25` prosa repetitiva | Programático, `menor` | Nivel obra | Hallazgo | **Sin ejercer** |
 | `INV-27` juicio de obra del Editor | Semántico, `mayor` | Nivel obra, en la puerta | Bloquea la publicación (`SPEC-30` `RF-07`) | **Sin ejercer** |
 | Lean `L-1`…`L-4` | Formal | Puerta de publicación | No se publica; vuelve al Editor, tope 2 | **Sin ejercer en una generación**: la puerta no se ha alcanzado nunca. Lean de verdad sí ha corrido desde el backend, sobre dos bases sembradas y sobre `regalo-prueba.db`, que dio `2` por cero eventos (`specs/lean/medidas.md`) |
-| Validación visual con browser MCP | Programático | Sobre la lectura web | Vuelve al rol correspondiente | **No existe**: espera al frontend (`EX-04`) |
+| `INV-30` validación visual con browser MCP (`SPEC-22` `RF-58`) | Semántico, `mayor`: lo juzga el agente `inspector_visual` con Playwright MCP | Puerta de publicación, **después** de publicar, como `INV-27`; hoy se lanza a mano con `backend/inspeccion_visual.py` sobre una base y la URL servida | Deja un hallazgo `INV-30` (`abierto`, o `sin_veredicto` si el veredicto no se lee) y sube `INV-30.<pieza>` como score en la sesión de la obra. ❌ **No vuelve al Escritor ni al rol correspondiente**: el hallazgo queda abierto y lo resuelve una persona. Es lo que `RF-58` deja fuera, y está sin hacer | Ver `docs/proceso/claude-code.md` § Browser MCP (E13b.2) |
 | Revisión humana | Semántico | Una novela completa, fuera del pipeline | Compara con el Editor | **No existe** (`SPEC-31`) |
 
 El envío de los scores a Langfuse está construido (`SPEC-29`, `PLAN-29` E6) y **ningún score

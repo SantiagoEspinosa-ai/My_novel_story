@@ -126,3 +126,14 @@ def del_cierre(obs, cierre, ronda):
     obs.score(nombre="INV-27", referencia=ref,
               categoria="falla" if "abierto" in estados
               else "sin_veredicto" if estados else "pasa")
+
+
+def del_inspector_visual(obs, juicio):
+    """`INV-30` (`PLAN-22` E13b): un score por pieza, `INV-30.<pieza>`, y el de la
+    invariante. Un ilegible sube `sin_veredicto` y ninguna pieza: no se miro nada que
+    valga. El motivo del agente **no sube**, porque puede citar el texto de la obra."""
+    if obs is None or juicio is None:
+        return
+    for c in juicio.comprobaciones:
+        obs.score(nombre="INV-30.{0}".format(c.pieza), categoria=c.veredicto)
+    obs.score(nombre="INV-30", categoria=juicio.estado)
