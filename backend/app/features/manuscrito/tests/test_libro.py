@@ -14,8 +14,9 @@ import pytest
 from app.features.manuscrito import libro
 
 
-@pytest.fixture
-def con():
+def base_de_prueba():
+    """La obra inventada de estas pruebas. Funcion y no solo fixture: la usan tambien
+    las pruebas de `service.py`."""
     c = sqlite3.connect(":memory:")
     c.executescript("""
         CREATE TABLE obra (id TEXT PRIMARY KEY, titulo TEXT, dedicatoria TEXT);
@@ -48,6 +49,11 @@ def con():
         c.execute("INSERT INTO borrador VALUES (?, 1, ?)", (id_, texto))
     c.commit()
     return c
+
+
+@pytest.fixture
+def con():
+    return base_de_prueba()
 
 
 def _ficha(fichas, id_):

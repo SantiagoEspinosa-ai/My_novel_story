@@ -7,7 +7,12 @@ import json
 import pytest
 
 from app.features.manuscrito import service
-from app.features.manuscrito.tests.test_libro import con  # noqa: F401  (fixture)
+from app.features.manuscrito.tests.test_libro import base_de_prueba
+
+
+@pytest.fixture
+def con():
+    return base_de_prueba()
 
 
 def _veredicto(con, publica, condiciones=(), codigo_lean=0):
