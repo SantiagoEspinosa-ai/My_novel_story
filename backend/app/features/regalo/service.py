@@ -42,14 +42,17 @@ def generacion(con, obra, umbral):
         return None
     total = repo.numero_de_capitulos(con, obra)
     fases = repo.ultima_fase_por_capitulo(con, obra)
+    actual = repo.capitulo_actual(con, obra)
     capitulos = []
     for numero in range(1, total + 1):
         f = fases.get(numero, {})
         id_capitulo = repo.capitulo_vigente(con, obra, numero)
         notas = repo.notas_aceptadas(con, obra, id_capitulo) if id_capitulo else []
         capitulos.append({
-            "numero": numero, "fase": f.get("fase"), "motivo": f.get("motivo"),
-            "desde": f.get("desde"),
+            "numero": numero, "es_el_actual": numero == actual, "fase": f.get("fase"),
+            "motivo": f.get("motivo"), "desde": f.get("desde"),
+            "escenas": (repo.escenas_del_capitulo(con, obra, id_capitulo)
+                        if id_capitulo else []),
             "notas": [dict(n, instruccion=n["instruccion"] or None,
                            bajo_el_umbral=n["nota"] < umbral) for n in notas]})
     ultima = repo.ultima_generacion(con, obra)

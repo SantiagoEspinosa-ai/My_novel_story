@@ -56,6 +56,23 @@ def ultima_fase_por_capitulo(con, obra):
     return {f[0]: {"fase": f[1], "motivo": f[2], "desde": f[3]} for f in filas}
 
 
+def capitulo_actual(con, obra):
+    """El numero del capitulo en el que esta la generacion, o `None` si no esta en ninguno:
+    no ha empezado, esta en la planificacion o en la puerta, o ya se publico (`F-200`)."""
+    if not migraciones.tiene_tabla(con, "progreso_de_generacion"):
+        return None
+    f = con.execute("SELECT capitulo FROM progreso_de_generacion WHERE obra = ? "
+                    "ORDER BY id DESC LIMIT 1", (obra,)).fetchone()
+    return f[0] if f else None
+
+
+def escenas_del_capitulo(con, obra, capitulo):
+    """Cada escena del capitulo con su `estado_de_escena`, en su orden."""
+    return [{"id": f[0], "estado": f[1]} for f in con.execute(
+        "SELECT id, estado FROM escena WHERE obra = ? AND capitulo = ? ORDER BY orden",
+        (obra, capitulo))]
+
+
 def ultima_fase(con, obra):
     """La ultima fila de progreso de la obra, o `None`: el estado de la estanteria."""
     if not migraciones.tiene_tabla(con, "progreso_de_generacion"):

@@ -100,3 +100,25 @@ def test_sin_generacion_el_coste_viene_ausente(cliente):
 
 def test_obra_que_no_existe_es_404(cliente):
     assert cliente.get("/obras/obra-que-no-existe/generacion").status_code == 404
+
+
+def test_un_capitulo_terminado_trae_el_estado_de_su_escena_y_no_es_el_actual(cliente, con):
+    """`F-200`: el pipeline no cierra capitulos (`capitulo.estado` sigue `abierto`) y no hay
+    fase de «terminado», asi que un capitulo acabado seguia diciendo «resumiendo». Lo que dice
+    que termino es el estado de su escena; y la fase solo es de ahora en el capitulo actual."""
+    fijar_fase(con, OBRA, "escribiendo", 1)
+    fijar_fase(con, OBRA, "resumiendo", 1)
+    aceptar(con, id_escena(OBRA, 1), 1, estado="consolidada")
+    fijar_fase(con, OBRA, "escribiendo", 2)
+    uno, dos, tres = _leer(cliente)["capitulos"][:3]
+    assert uno["es_el_actual"] is False
+    assert uno["escenas"] == [{"id": id_escena(OBRA, 1), "estado": "consolidada"}]
+    assert (dos["es_el_actual"], dos["escenas"][0]["estado"]) == (True, "planificada")
+    assert tres["es_el_actual"] is False
+
+
+def test_publicada_ningun_capitulo_es_el_actual(cliente, con):
+    fijar_fase(con, OBRA, "escribiendo", 10)
+    fijar_fase(con, OBRA, "en_la_puerta")
+    fijar_fase(con, OBRA, "publicada")
+    assert not any(c["es_el_actual"] for c in _leer(cliente)["capitulos"])

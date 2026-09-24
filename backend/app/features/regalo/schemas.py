@@ -19,14 +19,25 @@ class NotaDelEditor(_DelDominio):
     bajo_el_umbral: bool
 
 
+class EscenaEnGeneracion(_DelDominio):
+    id: str
+    estado: enums.EstadoDeEscena
+
+
 class CapituloEnGeneracion(_DelDominio):
     """`RF-14`: `fase` es la de la ultima fila de progreso con este capitulo, o nula si la
-    generacion no ha llegado a el. Nula no es un valor de `fase_de_generacion`."""
+    generacion no ha llegado a el. Nula no es un valor de `fase_de_generacion`.
+
+    `F-200`: la fase de un capitulo que ya paso es la ultima que tuvo -casi siempre
+    `resumiendo`-, porque el pipeline no cierra capitulos. Por eso viajan tambien
+    `es_el_actual` y sus escenas con su `estado_de_escena`: es lo que dice que termino."""
 
     numero: int
+    es_el_actual: bool
     fase: enums.FaseDeGeneracion | None
     motivo: str | None
     desde: str | None
+    escenas: list[EscenaEnGeneracion]
     notas: list[NotaDelEditor]
 
 

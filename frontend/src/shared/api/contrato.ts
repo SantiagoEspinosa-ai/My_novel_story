@@ -728,10 +728,18 @@ export interface components {
          * CapituloEnGeneracion
          * @description `RF-14`: `fase` es la de la ultima fila de progreso con este capitulo, o nula si la
          *     generacion no ha llegado a el. Nula no es un valor de `fase_de_generacion`.
+         *
+         *     `F-200`: la fase de un capitulo que ya paso es la ultima que tuvo -casi siempre
+         *     `resumiendo`-, porque el pipeline no cierra capitulos. Por eso viajan tambien
+         *     `es_el_actual` y sus escenas con su `estado_de_escena`: es lo que dice que termino.
          */
         CapituloEnGeneracion: {
             /** Desde */
             desde: string | null;
+            /** Es El Actual */
+            es_el_actual: boolean;
+            /** Escenas */
+            escenas: components["schemas"]["EscenaEnGeneracion"][];
             fase: components["schemas"]["FaseDeGeneracion"] | null;
             /** Motivo */
             motivo: string | null;
@@ -900,6 +908,12 @@ export interface components {
              * @description Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)
              */
             se_acepto_rindiendose: boolean;
+        };
+        /** EscenaEnGeneracion */
+        EscenaEnGeneracion: {
+            estado: components["schemas"]["EstadoDeEscena"];
+            /** Id */
+            id: string;
         };
         /**
          * EscenaLeida

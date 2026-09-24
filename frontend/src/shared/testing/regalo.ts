@@ -54,22 +54,38 @@ const CRITERIOS = ["continuidad", "tono", "arco", "coherencia_de_personajes", "r
   "personalizacion"] as const;
 
 function capitulo(numero: number, cambios: Partial<CapituloEnGeneracion> = {}): CapituloEnGeneracion {
-  return { numero, fase: null, motivo: null, desde: null, notas: [], ...cambios };
+  return { numero, es_el_actual: false, fase: null, motivo: null, desde: null,
+    escenas: [{ id: `esc-${numero}`, estado: "planificada" }], notas: [], ...cambios };
 }
 
-/** Diez capitulos en fases distintas: uno cerrado con sus notas, uno editando, uno parado. */
+/**
+ * Diez capitulos: el 1 terminado con sus notas -su ultima fase fue `resumiendo`, como deja el
+ * pipeline (`F-200`)-, el 2 en curso y editando, y el resto sin empezar.
+ */
 export const generacionEnCurso: GeneracionEnVivo = {
   obra: "obra-regalo-inventada",
   total_de_capitulos: 10,
   capitulos: [
-    capitulo(1, { fase: "resumiendo", desde: "2026-09-24 10:00:00", notas: CRITERIOS.map(
+    capitulo(1, { fase: "resumiendo", desde: "2026-09-24 10:00:00",
+      escenas: [{ id: "esc-1", estado: "consolidada" }], notas: CRITERIOS.map(
       (criterio, i) => ({ criterio, nota: i === 4 ? 2 : 4, justificacion: `sobre ${criterio}`,
         instruccion: i === 4 ? "acelera el final" : null, bajo_el_umbral: i === 4 })) }),
-    capitulo(2, { fase: "editando", desde: "2026-09-24 10:04:00" }),
-    capitulo(3, { fase: "parada", motivo: "FalloDeTransporte", desde: "2026-09-24 10:05:00" }),
-    ...Array.from({ length: 7 }, (_, i) => capitulo(i + 4)),
+    capitulo(2, { es_el_actual: true, fase: "editando", desde: "2026-09-24 10:04:00",
+      escenas: [{ id: "esc-2", estado: "generada" }] }),
+    ...Array.from({ length: 8 }, (_, i) => capitulo(i + 3)),
   ],
   coste: { generacion: "gen-inventada", usd: 1.25, delegaciones: 7, sin_coste: 0, es_suelo: false },
+};
+
+/** Parada en el capitulo 3, que es el actual. */
+export const generacionParada: GeneracionEnVivo = {
+  ...generacionEnCurso,
+  capitulos: generacionEnCurso.capitulos.map((c) => c.numero === 2
+    ? { ...c, es_el_actual: false, fase: "resumiendo" as const, escenas: [{ id: "esc-2", estado: "consolidada" as const }] }
+    : c.numero === 3
+      ? { ...c, es_el_actual: true, fase: "parada" as const, motivo: "FalloDeTransporte",
+          desde: "2026-09-24 10:05:00", escenas: [{ id: "esc-3", estado: "generada" as const }] }
+      : c),
 };
 
 export const generacionConSuelo: GeneracionEnVivo = {
@@ -127,6 +143,7 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   historialListo: { esquema: "HistorialSalida", datos: historialListo },
   historialCerrado: { esquema: "HistorialSalida", datos: historialCerrado },
   generacionEnCurso: { esquema: "GeneracionEnVivo", datos: generacionEnCurso },
+  generacionParada: { esquema: "GeneracionEnVivo", datos: generacionParada },
   generacionConSuelo: { esquema: "GeneracionEnVivo", datos: generacionConSuelo },
   generacionSinMedir: { esquema: "GeneracionEnVivo", datos: generacionSinMedir },
   confirmacionConUltima: { esquema: "ConfirmacionDeGasto", datos: confirmacionConUltima },

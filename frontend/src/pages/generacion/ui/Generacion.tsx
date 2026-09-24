@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Progreso } from "@/entities/progreso";
 import { useCliente, type CapituloEnGeneracion, type GeneracionEnVivo } from "@/shared/api";
 import { INTERVALO_DE_REGALO_MS } from "@/shared/config";
-import { EtiquetaDeEstado, FASE_DE_GENERACION, SEVERIDAD } from "@/shared/ui";
+import { ESTADO_DE_ESCENA, EtiquetaDeEstado, FASE_DE_GENERACION, SEVERIDAD } from "@/shared/ui";
 import { CosteEnVivo } from "./CosteEnVivo";
 import "./generacion.css";
 
@@ -45,15 +45,21 @@ export function PaginaGeneracion({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
   );
 }
 
+// La fase solo dice algo del capitulo en curso. Uno que ya paso conserva su ultima fase
+// -casi siempre «resumiendo», porque el pipeline no cierra capitulos- y lo que dice que
+// termino es el estado de su escena (F-200; CLAUDE.md: una escena, siempre con su estado).
 function Capitulo({ capitulo: c }: { capitulo: CapituloEnGeneracion }) {
+  const estado = c.es_el_actual ? c.fase : c.fase ? "pasado" : "no_empezado";
   return (
     <li className="tarjeta generacion__capitulo" data-testid={`capitulo-${c.numero}`}
-      data-fase={c.fase ?? "no_empezado"}>
+      data-fase={estado}>
       <div className="generacion__numero">Capítulo {c.numero}</div>
-      {c.fase
-        ? <EtiquetaDeEstado distintivo={FASE_DE_GENERACION[c.fase]} />
-        : <span className="sin-dato">no empezado</span>}
-      {c.motivo && <p className="generacion__motivo">motivo: {c.motivo}</p>}
+      {c.es_el_actual && c.fase && <EtiquetaDeEstado distintivo={FASE_DE_GENERACION[c.fase]} />}
+      {!c.es_el_actual && c.fase && c.escenas.map((e) => (
+        <EtiquetaDeEstado key={e.id} distintivo={ESTADO_DE_ESCENA[e.estado]} />
+      ))}
+      {!c.fase && <span className="sin-dato">no empezado</span>}
+      {c.es_el_actual && c.motivo && <p className="generacion__motivo">motivo: {c.motivo}</p>}
       {c.notas.length > 0 && (
         <ul className="generacion__notas" data-testid={`notas-${c.numero}`}>
           {c.notas.map((n) => (

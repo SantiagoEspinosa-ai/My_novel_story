@@ -3,7 +3,7 @@
 import { act, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
-import { fetchConMetodo, generacionEnCurso } from "@/shared/testing";
+import { fetchConMetodo, generacionEnCurso, generacionParada } from "@/shared/testing";
 import { PaginaGeneracion } from "./Generacion";
 
 const G = "/api/obras/obra-regalo-inventada/generacion";
@@ -28,8 +28,14 @@ describe("Generacion", () => {
     montar([generacionEnCurso]);
     const fila = await screen.findByTestId("capitulos");
     expect(fila.children).toHaveLength(10);
-    expect(screen.getByTestId("capitulo-1")).toHaveTextContent("resumiendo");
     expect(screen.getByTestId("capitulo-2")).toHaveTextContent("editando");
+  });
+
+  it("un capítulo terminado dice el estado de su escena, no su última fase (F-200)", async () => {
+    montar([generacionEnCurso]);
+    const uno = await screen.findByTestId("capitulo-1");
+    expect(uno).toHaveTextContent("consolidada");
+    expect(uno).not.toHaveTextContent("resumiendo");
   });
 
   it("un capítulo no empezado dice no empezado", async () => {
@@ -38,7 +44,7 @@ describe("Generacion", () => {
   });
 
   it("parada enseña su motivo", async () => {
-    montar([generacionEnCurso]);
+    montar([generacionParada]);
     const c = await screen.findByTestId("capitulo-3");
     expect(c).toHaveTextContent("parada");
     expect(c).toHaveTextContent("FalloDeTransporte");

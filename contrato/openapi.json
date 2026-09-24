@@ -310,7 +310,7 @@
       },
       "CapituloEnGeneracion": {
         "additionalProperties": false,
-        "description": "`RF-14`: `fase` es la de la ultima fila de progreso con este capitulo, o nula si la\ngeneracion no ha llegado a el. Nula no es un valor de `fase_de_generacion`.",
+        "description": "`RF-14`: `fase` es la de la ultima fila de progreso con este capitulo, o nula si la\ngeneracion no ha llegado a el. Nula no es un valor de `fase_de_generacion`.\n\n`F-200`: la fase de un capitulo que ya paso es la ultima que tuvo -casi siempre\n`resumiendo`-, porque el pipeline no cierra capitulos. Por eso viajan tambien\n`es_el_actual` y sus escenas con su `estado_de_escena`: es lo que dice que termino.",
         "properties": {
           "desde": {
             "anyOf": [
@@ -322,6 +322,17 @@
               }
             ],
             "title": "Desde"
+          },
+          "es_el_actual": {
+            "title": "Es El Actual",
+            "type": "boolean"
+          },
+          "escenas": {
+            "items": {
+              "$ref": "#/components/schemas/EscenaEnGeneracion"
+            },
+            "title": "Escenas",
+            "type": "array"
           },
           "fase": {
             "anyOf": [
@@ -358,9 +369,11 @@
         },
         "required": [
           "numero",
+          "es_el_actual",
           "fase",
           "motivo",
           "desde",
+          "escenas",
           "notas"
         ],
         "title": "CapituloEnGeneracion",
@@ -728,6 +741,24 @@
           "estado_de_verificacion"
         ],
         "title": "EscenaDelIndiceDeVersion",
+        "type": "object"
+      },
+      "EscenaEnGeneracion": {
+        "additionalProperties": false,
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "estado"
+        ],
+        "title": "EscenaEnGeneracion",
         "type": "object"
       },
       "EscenaLeida": {

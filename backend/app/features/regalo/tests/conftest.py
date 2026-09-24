@@ -55,10 +55,10 @@ def valorar(con, escena, version, notas):
                         (escena, version, c, n, "porque " + c))
 
 
-def aceptar(con, escena, version):
+def aceptar(con, escena, version, estado="aceptada"):
     with con:
-        con.execute("UPDATE escena SET estado = 'aceptada', borrador_aceptado = ? WHERE id = ?",
-                    (version, escena))
+        con.execute("UPDATE escena SET estado = ?, borrador_aceptado = ? WHERE id = ?",
+                    (estado, version, escena))
 
 
 @pytest.fixture
