@@ -32,18 +32,26 @@ CREATE TABLE IF NOT EXISTS gasto_de_evaluacion (
     sin_coste    INTEGER NOT NULL,
     version_del_escritor TEXT,
     cuando       TEXT NOT NULL DEFAULT (datetime('now')),
+    -- `PLAN-31` E10: la obra que escribio la ejecucion (en un guion la pone la
+    -- entrevista) y la base donde vive, que no es la del libro: `F-100`.
+    obra         TEXT,
+    base         TEXT,
     PRIMARY KEY (ejecucion, capitulo)
 );
 """
 
 
 def asegurar_tablas(con: sqlite3.Connection):
+    from app.commons.db.migraciones import anadir_columnas
     with con:
+        # Un libro creado con el esquema de E5 gana las dos columnas de E10. La tabla no
+        # esta en la cadena de migraciones: la crea esta feature.
+        anadir_columnas(con, "gasto_de_evaluacion", {"obra": "TEXT", "base": "TEXT"})
         con.executescript(SQL)
 
 
 def anotar(con, ejecucion, brief, pasada, capitulo, usd, delegaciones, sin_coste,
-           version_del_escritor=None):
+           version_del_escritor=None, obra=None, base=None):
     """`capitulo` es el numero del capitulo, o `entrevista`, `plan` o `cierre`. Anotar
     otra vez el mismo tramo lo sustituye: relanzar no suma dos veces lo mismo."""
     if pasada not in PASADAS:
@@ -57,21 +65,22 @@ def anotar(con, ejecucion, brief, pasada, capitulo, usd, delegaciones, sin_coste
     with con:
         con.execute(
             "INSERT OR REPLACE INTO gasto_de_evaluacion (ejecucion, brief, pasada, capitulo, "
-            "usd, delegaciones, sin_coste, version_del_escritor) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "usd, delegaciones, sin_coste, version_del_escritor, obra, base) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (ejecucion, brief, pasada, capitulo, medido, delegaciones, sin_coste,
-             version_del_escritor))
+             version_del_escritor, obra, base))
 
 
 def filas(con, ejecucion=None) -> list:
     asegurar_tablas(con)
     sql = ("SELECT ejecucion, brief, pasada, capitulo, usd, delegaciones, sin_coste, "
-           "version_del_escritor, cuando FROM gasto_de_evaluacion")
+           "version_del_escritor, cuando, obra, base FROM gasto_de_evaluacion")
     args = ()
     if ejecucion is not None:
         sql += " WHERE ejecucion = ?"
         args = (ejecucion,)
     claves = ("ejecucion", "brief", "pasada", "capitulo", "usd", "delegaciones",
-              "sin_coste", "version_del_escritor", "cuando")
+              "sin_coste", "version_del_escritor", "cuando", "obra", "base")
     return [dict(zip(claves, f)) for f in con.execute(sql + " ORDER BY rowid", args)]
 
 
@@ -123,3 +132,19 @@ def mayor_coste_de_novela_completa(con):
     totales = [gastado(con, e) for e in completas]
     medidos = [t.usd for t in totales if t.medido]
     return max(medidos) if medidos else None
+
+
+def ejecuciones(con) -> list:
+    """Una por ejecucion, en el orden en que se anotaron, con su obra y su base."""
+    vistas = {}
+    for f in filas(con):
+        e = vistas.setdefault(f["ejecucion"], {k: f[k] for k in (
+            "ejecucion", "brief", "pasada", "obra", "base", "version_del_escritor")})
+        for k in ("obra", "base", "version_del_escritor"):
+            e[k] = e[k] or f[k]
+    return list(vistas.values())
+
+
+def siguiente_ejecucion(con, brief, pasada) -> str:
+    previas = [e for e in ejecuciones(con) if e["brief"] == brief and e["pasada"] == pasada]
+    return "{0}-{1}-{2}".format(brief, pasada, len(previas) + 1)

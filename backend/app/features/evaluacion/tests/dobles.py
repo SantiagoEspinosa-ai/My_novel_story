@@ -35,3 +35,99 @@ class ExtractorDelGuion:
         h = self.hechos[min(self.i, len(self.hechos) - 1)] if self.hechos else []
         self.i += 1
         return {"hechos": h}
+
+
+# --- Los agentes de una novela entera, a partir de su ficha ---------------------------
+
+CRITERIOS = ("continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
+             "personalizacion")
+
+
+class Captura:
+    """Un agente doble que guarda cada prompt y, con `coste`, devuelve las medidas del
+    sobre como la `SesionDelegada` real."""
+
+    def __init__(self, respuesta, prompts=None, coste=None):
+        self.r, self.prompts, self.coste = respuesta, prompts if prompts is not None else [], coste
+        self.nombre, self.reglas, self.entorno, self.herramientas = "doble", None, {}, None
+
+    def llamar(self, prompt):
+        self.prompts.append(prompt)
+        r = self.r(prompt) if callable(self.r) else self.r
+        if self.coste is not None:
+            r = dict(r, medidas={"coste_usd": self.coste, "tokens_entrada": 10,
+                                 "tokens_salida": 5, "modelos": ["m-1"], "duracion_ms": 7})
+        return r
+
+
+def plan_de(ficha):
+    """Un plan de diez capitulos que cubre los imprescindibles de la ficha, con los
+    nombres de la ficha: un plan ajeno no pasaria la cobertura (`SPEC-26` `RF-06`)."""
+    import re
+    d = ficha.destinatario
+    pila = re.sub(r"\W", "", d.nombre.split()[0].lower())
+    personajes = [{"id": "per-" + pila, "nombre": d.nombre, "empieza_en": "lug-casa",
+                   "fecha_de_nacimiento": "1980-01-01"}]
+    for e in d.elementos:
+        if e.nombre:
+            personajes.append({"id": "per-" + re.sub(r"\W", "", e.nombre.split()[0].lower()),
+                               "nombre": e.nombre, "empieza_en": "lug-casa"})
+    return {
+        "mundo": {"lugares": [{"id": "lug-casa", "nombre": "Casa", "accesos": []}],
+                  "personajes": personajes},
+        "capitulos": [{"id": "cap-{0:02d}".format(n), "titulo": "Capitulo {0}".format(n),
+                       "escenas": [{"eje": "vinculo", "signo": "positivo", "lugar": "lug-casa",
+                                    "pov": "per-" + pila,
+                                    "sinopsis": "{0} sigue su dia.".format(d.nombre.split()[0]),
+                                    "t_fabula": "2026-06-{0:02d}".format(n)}]}
+                      for n in range(1, 11)],
+        "imprescindibles": [{"elemento": e.descripcion, "capitulo": "cap-01",
+                             "palabras_clave": [e.nombre or e.descripcion.split()[-1]]}
+                            for e in d.elementos if e.imprescindible],
+    }
+
+
+def agentes_para(ficha, prompts=None, coste=None):
+    """Planificador, Revisor, Escritor, Editor y Resumidor de una novela que pasa todas
+    sus puertas: el Escritor copia el POV del prompt y escribe las palabras clave, y el
+    Editor contesta a la rubrica y al juicio de obra por separado."""
+    import re
+    from app.commons.modelo.doble import DELTA_OK
+    from app.commons.configuracion.esquemas import rango_de_palabras
+    prompts = prompts if prompts is not None else []
+    plan = plan_de(ficha)
+    pila = ficha.destinatario.nombre.split()[0]
+    pov = plan["capitulos"][0]["escenas"][0]["pov"]
+    claves = [i["palabras_clave"][0] for i in plan["imprescindibles"]]
+    minimo, maximo = rango_de_palabras(ficha.extension)
+    largo = (minimo + maximo) // 2
+    texto = " ".join(["palabra"] * (largo - len(claves) - 1) + [pila] + claves)
+
+    def escritor(prompt):
+        m = re.search(r"[\w-]*" + re.escape(pov), prompt)
+        return {"texto": texto, "pov_usado": m.group(0) if m else pov, "delta": DELTA_OK}
+
+    def editor(prompt):
+        if "Juzga una novela para regalar entera" in prompt:
+            return {"arco_cerrado": True, "final_abrupto": False, "justificacion": "bien"}
+        return {"valoraciones": [{"criterio": c, "nota": 4, "justificacion": "bien"}
+                                 for c in CRITERIOS]}
+    return {
+        "planificador": Captura({"titulo": ficha.titulo, "premisa": ficha.premisa,
+                                 "plan": plan}, prompts, coste),
+        "revisor": Captura({"aprobado": True, "objeciones": []}, prompts, coste),
+        "escritor": Captura(escritor, prompts, coste),
+        "editor": Captura(editor, prompts, coste),
+        "resumidor": Captura({"texto": "{0} avanza.".format(pila), "hechos_clave": []},
+                             prompts, coste),
+    }
+
+
+class LeanFijo:
+    def __init__(self, codigo=0):
+        self.codigo, self.llamadas = codigo, 0
+
+    def verificar(self, con, obra):
+        from app.features.auditoria.publicacion import ResultadoLean
+        self.llamadas += 1
+        return ResultadoLean(self.codigo)

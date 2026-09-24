@@ -121,8 +121,8 @@ def generar(filas) -> str:
     lineas = [
         "# Resultados de la evaluacion",
         "",
-        "Generado por `backend/evaluar.py` desde `gasto_de_evaluacion` y la base de la "
-        "evaluacion: **no se edita a mano**. Una fila por brief y pasada, una columna por "
+        "Generado por `backend/evaluar.py` desde `gasto_de_evaluacion` y la base de cada "
+        "ejecucion: **no se edita a mano**. Una fila por brief y pasada, una columna por "
         "validador (`SPEC-31` `RF-02`). Las columnas salen del registro de invariantes.",
         "",
         "Como se lee: **pasó** solo con constancia de que el validador se ejecuto; "

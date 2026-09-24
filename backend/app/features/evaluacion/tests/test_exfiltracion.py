@@ -7,18 +7,15 @@ ningun prompt de la B puede aparecer nada de la A. El rastro normaliza como las 
 """
 
 import pathlib
-import re
 import sqlite3
 
 import pytest
 
 from app.commons.db import migraciones
-from app.commons.modelo.doble import DELTA_OK
 from app.features.evaluacion import briefs, exfiltracion
+from app.features.evaluacion.tests import dobles
 
 ADVERSARIAL = pathlib.Path(__file__).resolve().parents[5] / "harness" / "adversarial"
-CRITERIOS = ("continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
-             "personalizacion")
 
 
 def _brief(letra):
@@ -47,63 +44,6 @@ def test_las_dos_fichas_del_red_team_son_disjuntas():
 
 # --- Dos novelas en la misma base -------------------------------------------------
 
-class _Captura:
-    def __init__(self, respuesta, prompts):
-        self.r, self.prompts, self.nombre = respuesta, prompts, "doble"
-        self.reglas, self.entorno = None, {}
-
-    def llamar(self, prompt):
-        self.prompts.append(prompt)
-        return self.r(prompt) if callable(self.r) else self.r
-
-
-def _plan_de(ficha):
-    d = ficha.destinatario
-    pila = d.nombre.split()[0].lower()
-    mascota = next(e for e in d.elementos if e.tipo.value == "mascota")
-    imprescindibles = [e for e in d.elementos if e.imprescindible]
-    return {
-        "mundo": {"lugares": [{"id": "lug-casa", "nombre": "Casa", "accesos": []}],
-                  "personajes": [
-                      {"id": "per-" + pila, "nombre": d.nombre, "empieza_en": "lug-casa",
-                       "fecha_de_nacimiento": "1980-01-01"},
-                      {"id": "per-" + mascota.nombre.lower(), "nombre": mascota.nombre,
-                       "empieza_en": "lug-casa"}]},
-        "capitulos": [{"id": "cap-{0:02d}".format(n), "titulo": "Capitulo {0}".format(n),
-                       "escenas": [{"eje": "vinculo", "signo": "positivo", "lugar": "lug-casa",
-                                    "pov": "per-" + pila,
-                                    "sinopsis": "{0} sigue su dia.".format(d.nombre.split()[0]),
-                                    "t_fabula": "2026-06-{0:02d}".format(n)}]}
-                      for n in range(1, 11)],
-        "imprescindibles": [{"elemento": e.descripcion, "capitulo": "cap-01",
-                             "palabras_clave": [e.nombre or e.descripcion.split()[-1]]}
-                            for e in imprescindibles],
-    }
-
-
-def _agentes(b, prompts):
-    f = b.ficha
-    pila = f.destinatario.nombre.split()[0]
-    plan = _plan_de(f)
-    claves = [i["palabras_clave"][0] for i in plan["imprescindibles"]]
-    texto = " ".join(["palabra"] * (1200 - len(claves) - 1) + [pila] + claves)
-
-    def escritor(prompt):
-        m = re.search(r"[\w-]*per-" + pila.lower(), prompt)
-        return {"texto": texto, "pov_usado": m.group(0) if m else "per-" + pila.lower(),
-                "delta": DELTA_OK}
-    return {
-        "planificador": _Captura({"titulo": f.titulo, "premisa": f.premisa, "plan": plan},
-                                 prompts),
-        "revisor": _Captura({"aprobado": True, "objeciones": []}, prompts),
-        "escritor": _Captura(escritor, prompts),
-        "editor": _Captura({"valoraciones": [
-            {"criterio": c, "nota": 4, "justificacion": "bien"} for c in CRITERIOS]}, prompts),
-        "resumidor": _Captura({"texto": "{0} avanza.".format(pila), "hechos_clave": []},
-                              prompts),
-    }
-
-
 def _dos_novelas(tmp_path):
     from app.features.orquestacion import novela
     c = sqlite3.connect(str(tmp_path / "evaluacion.db"))
@@ -111,9 +51,9 @@ def _dos_novelas(tmp_path):
     migraciones.migrar(c)
     a, b = _brief("a"), _brief("b")
     prompts_a, prompts_b = [], []
-    novela.escribir(c, "obra-a", a.ficha, _agentes(a, prompts_a), hasta_capitulo=3,
+    novela.escribir(c, "obra-a", a.ficha, dobles.agentes_para(a.ficha, prompts_a), hasta_capitulo=3,
                     carpeta_de_reglas=str(tmp_path))
-    novela.escribir(c, "obra-b", b.ficha, _agentes(b, prompts_b), hasta_capitulo=3,
+    novela.escribir(c, "obra-b", b.ficha, dobles.agentes_para(b.ficha, prompts_b), hasta_capitulo=3,
                     carpeta_de_reglas=str(tmp_path))
     return a, b, prompts_a, prompts_b
 

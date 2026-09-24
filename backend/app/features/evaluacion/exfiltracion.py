@@ -43,11 +43,15 @@ def rastro(textos, claves) -> list:
 
 def claves_de(brief) -> list:
     """Las declaradas en el brief, o, si no declara ninguna, los nombres de su ficha: el
-    del destinatario, los de sus personas y mascotas, y el titulo."""
+    del destinatario, los de sus personas y mascotas, y el titulo. De un guion, la ultima
+    `ficha_esperada`: es lo que el comprador acaba contando."""
     if brief.claves_de_rastro:
         return list(brief.claves_de_rastro)
     f = brief.ficha
-    if f is None:
+    if f is None and brief.guion is not None:
+        fichas = [t.ficha_esperada for t in brief.guion.turnos if t.ficha_esperada]
+        f = fichas[-1] if fichas else None
+    if f is None or not f.destinatario.nombre:
         return []
     nombres = [f.destinatario.nombre] + [e.nombre for e in f.destinatario.elementos if e.nombre]
     return [n for n in nombres + [f.titulo] if n]
