@@ -194,3 +194,24 @@ def rebobinar(con, m):
                         "fuente) VALUES (?, ?, ?, ?, ?)",
                         (sujeto, hecho, v.get("desde"), v.get("grado", "sabe"),
                          v.get("desde") or ANTERIOR_AL_RELATO))
+
+
+def huella(semilla, deltas):
+    """Lo que identifica un estado del mundo (`PLAN-23` `C-3`): la semilla y la lista
+    ordenada de deltas `(escena, delta)` aplicados para llegar a el, resumidas en un
+    hash. Dos estados con la misma huella son el mismo; un verde cuya huella no es la
+    del estado vigente de su version **no cuenta** (`D-1`)."""
+    import hashlib
+    canon = {
+        "semilla": {
+            "entidades_vivas": sorted((semilla.get("entidades_vivas") or {}).items()),
+            "ubicaciones": sorted((semilla.get("ubicaciones") or {}).items()),
+            "accesos": sorted((k, sorted(v)) for k, v in (semilla.get("accesos") or {}).items()),
+            "conocimiento": sorted(
+                (list(k), v.get("desde"), v.get("grado"))
+                for k, v in (semilla.get("conocimiento") or {}).items()),
+        },
+        "deltas": [[escena, delta] for escena, delta in deltas],
+    }
+    texto = json.dumps(canon, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()

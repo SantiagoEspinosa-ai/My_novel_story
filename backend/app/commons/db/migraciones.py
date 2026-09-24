@@ -288,6 +288,13 @@ TODAS = [
         # 1 desaparecia al escribir el capitulo 3 de la version 2 (hallazgo 4, Regla 7).
         lambda con: _migrar_a_versiones(con),
     ),
+    Migracion(
+        12,
+        "la reverificacion de una escena en una version, con la huella de su estado",
+        # `SPEC-23` `D-1`, `PLAN-23` A4. Tabla nueva: no hay filas que migrar, pero
+        # `esquema_version` tiene que decir cuando aparecio (`VER-21`).
+        lambda con: [con.execute(s) for s in sentencias(REVERIFICACION_SQL)],
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la
@@ -325,6 +332,24 @@ CREATE TRIGGER IF NOT EXISTS capitulo_de_version_no_se_modifica
 CREATE TRIGGER IF NOT EXISTS capitulo_de_version_no_se_borra
     BEFORE DELETE ON capitulo_de_version
     BEGIN SELECT RAISE(ABORT, 'una version creada no cambia'); END;
+"""
+
+
+# `PLAN-23` A4. Aqui por lo mismo que `VERSIONES_SQL`: una sola copia para la migracion
+# y para `features/verificacion/`. **No son filas de `hallazgo`**, que no sabe de
+# versiones: un fallo de reverificacion de un capitulo compartido apareceria tambien en
+# la version anterior, y esa dejaria de poder cerrarse (hallazgo 7).
+REVERIFICACION_SQL = """
+CREATE TABLE IF NOT EXISTS reverificacion (
+    obra              TEXT    NOT NULL,
+    version           INTEGER NOT NULL,
+    escena            TEXT    NOT NULL,
+    huella_del_estado TEXT    NOT NULL,
+    estado            TEXT    NOT NULL,
+    hallazgos         TEXT    NOT NULL DEFAULT '[]',
+    cuando            TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (obra, version, escena, huella_del_estado)
+);
 """
 
 
