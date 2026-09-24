@@ -29,13 +29,17 @@ namespace Cronologia
 structure Violacion where
   invariante : String
   detalle    : String
+  /-- Los eventos implicados, para que el fallo vuelva al Editor con ellos
+      (`SPEC-30` `RF-03`) sin que nadie tenga que leer la prosa del detalle. -/
+  eventos    : List String := []
   deriving Repr
 
 /-- Constructor corto. Existe por una razon practica: Lean es sensible a la
     indentacion dentro de `{ ... }`, y un literal de estructura partido en
     varias lineas dentro de una lista anidada se vuelve fragil. Con esto cada
     violacion se construye en una linea y el codigo dice lo que hace. -/
-def viol (inv det : String) : Violacion := { invariante := inv, detalle := det }
+def viol (inv det : String) (evs : List String := []) : Violacion :=
+  { invariante := inv, detalle := det, eventos := evs }
 
 structure Informe where
   violaciones : List Violacion := []
@@ -59,7 +63,7 @@ def orden (o : Obra) : Informe :=
     let (antes, despues) := if a.tDiscurso ≤ b.tDiscurso then (a, b) else (b, a)
     if antes.tDiscurso == despues.tDiscurso then acc
     else if despues.tFabula.menorQue antes.tFabula && !despues.analepsis then
-      viol "L-1" s!"{despues.id} se lee despues de {antes.id} (discurso {antes.tDiscurso} -> {despues.tDiscurso}) pero ocurre antes en la fabula ({despues.tFabula.comoTexto} < {antes.tFabula.comoTexto}) y no declara analepsis" :: acc
+      viol "L-1" s!"{despues.id} se lee despues de {antes.id} (discurso {antes.tDiscurso} -> {despues.tDiscurso}) pero ocurre antes en la fabula ({despues.tFabula.comoTexto} < {antes.tFabula.comoTexto}) y no declara analepsis" [antes.id, despues.id] :: acc
     else acc) []
   { violaciones := malos }
 
@@ -93,7 +97,7 @@ def edad (o : Obra) : Informe :=
         | none => Informe.unir acc2 { sinDatos := [s!"{p} no tiene fecha de nacimiento: su edad no se comprueba"] }
         | some nac =>
           if e.tFabula.menorQue nac then
-            Informe.unir acc2 { violaciones := [viol "L-2" s!"{p} esta presente en {e.id} el {e.tFabula.comoTexto}, y nacio el {nac.comoTexto}: tendria {edadEn nac e.tFabula} anios"] }
+            Informe.unir acc2 { violaciones := [viol "L-2" s!"{p} esta presente en {e.id} el {e.tFabula.comoTexto}, y nacio el {nac.comoTexto}: tendria {edadEn nac e.tFabula} anios" [e.id]] }
           else acc2) acc) {}
 
 /-- **L-3 · Nadie esta en dos lugares en el mismo momento.**
@@ -108,7 +112,7 @@ def ubicuidad (o : Obra) : Informe :=
     else
       let comunes := a.presentes.filter (fun p => b.presentes.contains p)
       comunes.foldr (fun p acc2 =>
-        viol "L-3" s!"{p} esta presente en {a.id} ({a.lugar}) y en {b.id} ({b.lugar}) a la vez" :: acc2) acc) []
+        viol "L-3" s!"{p} esta presente en {a.id} ({a.lugar}) y en {b.id} ({b.lugar}) a la vez" [a.id, b.id] :: acc2) acc) []
   { violaciones := malos }
 
 /-- **L-4 · Nadie aparece despues de un evento que lo excluye.**
@@ -128,7 +132,7 @@ def exclusion (o : Obra) : Informe :=
     let (antes, despues) := if b.tFabula.menorQue a.tFabula then (b, a) else (a, b)
     let expulsados := antes.excluye.filter (fun p => despues.presentes.contains p)
     expulsados.foldr (fun p acc2 =>
-      viol "L-4" s!"{p} queda excluido en {antes.id} ({antes.tFabula.comoTexto}) y aparece en {despues.id} ({despues.tFabula.comoTexto})" :: acc2) acc) []
+      viol "L-4" s!"{p} queda excluido en {antes.id} ({antes.tFabula.comoTexto}) y aparece en {despues.id} ({despues.tFabula.comoTexto})" [antes.id, despues.id] :: acc2) acc) []
   { violaciones := malos }
 
 /-- Las cuatro, en el orden en que conviene leerlas. -/

@@ -13,7 +13,7 @@
     2  SIN VEREDICTO: no habia bastante dato para mirar. Tampoco se publica.
 
   El 2 es la Regla 8 aplicada a este validador, y es la correccion de un hueco
-  real (`F-53`). Antes, una obra que llegaba con cero eventos —porque sus
+  real (`F-54`). Antes, una obra que llegaba con cero eventos —porque sus
   escenas no declaran `t_fabula`, o porque la tabla estaba vacia— producia
   cero violaciones y este programa decia «puede publicarse». El veredicto era
   correcto y la conclusion falsa.
@@ -40,6 +40,10 @@ def main : IO UInt32 := do
   IO.println s!"#COBERTURA eventos={coberturaReal.eventos} no_ordenables={coberturaReal.capitulosNoOrdenables}"
   for (antes, despues) in paresL1 obraReal do
     IO.println s!"#PAR L-1 {antes} {despues}"
+  -- Una linea por violacion, con los eventos implicados (`SPEC-30` `RF-03`): la
+  -- puerta de publicacion se los pasa al Editor sin leer la prosa.
+  for v in informe.violaciones do
+    IO.println s!"#VIOLACION {v.invariante} {",".intercalate v.eventos} {v.detalle}"
   IO.println ""
 
   match veredictoDe coberturaReal informe with
