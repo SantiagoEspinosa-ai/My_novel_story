@@ -215,9 +215,12 @@ def vista_de_version(con, obra, numero):
 
 # --- A7 · la peticion, el hecho y el nombre de una version (`C-4`) -----------------
 
-# `SPEC-23` v2: la elige la medida (B1, B2), no una opinion. Mientras sea `None`,
-# pedir un cambio responde `409` y no encola nada.
-SALIDA = None
+# `SPEC-23` v2: la elige la medida (B1, B2), no una opinion. Con `None`, pedir un
+# cambio responde `409` y no encola nada. **Fijada por el numero guardado** en
+# `harness/evals/arrastre-SPEC-23.json` (v4: 2,33 capitulos <= 3, con sesgo a la baja,
+# hacia `S-1`); `test_la_salida_fijada_es_la_que_da_la_regla_con_el_numero_guardado`
+# falla si se cambia esto sin cambiar la medida.
+SALIDA = S.CASCADA.value
 
 # `SPEC-23` `D-3`, literales: la promesa y su punto ciego, dichos al lector.
 PROMESA = "reescribimos lo que dependía de esto"

@@ -3,8 +3,9 @@ puerta cerrada.
 
 Dos clases de peticion (`C-4`): un **hecho** -el enunciado nuevo, con las palabras
 del lector- y un **nombre** -el `nombre_canonico` de un personaje pasa a otro, y su
-identidad no cambia-. `SALIDA` es `None` hasta la medida (Parte B), asi que
-`POST /obras/{id}/cambios` responde `409` y no encola nada. Datos inventados.
+identidad no cambia-. Con `SALIDA = None`, `POST /obras/{id}/cambios` responde `409`
+y no encola nada; desde B2 la salida esta fijada (`cascada`), y las pruebas de ese
+camino la ponen a `None` a mano. Datos inventados.
 """
 
 import sqlite3
@@ -112,7 +113,9 @@ def _v2(con, peticion, posiciones):
 
 # --- La propuesta -------------------------------------------------------------------
 
-def test_la_propuesta_lista_los_capitulos_antes_de_tocarlos_y_no_encola_nada(con):
+def test_la_propuesta_lista_los_capitulos_antes_de_tocarlos_y_no_encola_nada(con, monkeypatch):
+    # El camino sin salida sigue existiendo aunque B2 la fijara: se prueba con `None`.
+    monkeypatch.setattr(regeneracion, "SALIDA", None)
     antes = {t: _cuantos(con, t) for t in ("trabajo", "peticion_de_cambio", "borrador")}
     p = regeneracion.proponer(con, OBRA, _hecho())
     assert p["capitulos"]["selectiva"] == ["cap-03", "cap-06"]
@@ -258,7 +261,8 @@ def cliente(tmp_path):
     return TestClient(app), ruta
 
 
-def test_pedir_el_cambio_sin_salida_elegida_es_409_y_no_gasta(cliente):
+def test_pedir_el_cambio_sin_salida_elegida_es_409_y_no_gasta(cliente, monkeypatch):
+    monkeypatch.setattr(regeneracion, "SALIDA", None)
     c, ruta = cliente
     p = c.post("/obras/{0}/cambios/propuesta".format(OBRA), json=_hecho()).json()
     r = c.post("/obras/{0}/cambios".format(OBRA),
