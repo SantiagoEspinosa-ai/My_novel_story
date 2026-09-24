@@ -52,6 +52,49 @@ class Manuscrito:
     sin_cabecera: bool = False
 
 
+@dataclass
+class EscenaDelLibro:
+    id: str
+    texto: str | None  # `None` si no hay borrador: se dice, no se salta
+
+
+@dataclass
+class CapituloDelLibro:
+    id: str | None  # `None`: escenas sin capitulo, de las escaletas anteriores a `SPEC-21`
+    orden: int | None
+    escenas: list = field(default_factory=list)
+
+
+def _filas(con, obra):
+    # Orden de lectura: por capitulo y, dentro, por orden de escena. Las
+    # escenas sin capitulo van al final y agrupadas, porque son las de las
+    # escaletas anteriores a `SPEC-21` y no hay donde situarlas sin inventar.
+    # Las bases anteriores a `SPEC-21` tampoco tienen tabla `capitulo`: sin ella
+    # no hay orden de capitulo que respetar, y se ordena por el de la escena.
+    try:
+        return con.execute(
+            "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, c.orden "
+            "FROM escena e LEFT JOIN capitulo c ON c.id = e.capitulo "
+            "WHERE e.obra = ? ORDER BY COALESCE(c.orden, 9999), e.orden, e.id",
+            (obra,)).fetchall()
+    except sqlite3.OperationalError:
+        return con.execute(
+            "SELECT id, capitulo, orden, borrador_aceptado, NULL "
+            "FROM escena WHERE obra = ? ORDER BY orden, id", (obra,)).fetchall()
+
+
+def capitulos_de(con, obra) -> list:
+    """`PLAN-27` E1: los capitulos en orden de lectura, con el texto elegido de cada
+    escena **sin tocarlo**. Es lo que leen el manuscrito y el PDF (`VER-60`)."""
+    # Por identificador y en el orden en que aparece cada uno: sin tabla `capitulo` las
+    # escenas llegan por su orden y los capitulos se intercalan.
+    capitulos = {}
+    for id_escena, capitulo, _orden, aceptado, orden_cap in _filas(con, obra):
+        cap = capitulos.setdefault(capitulo, CapituloDelLibro(capitulo, orden_cap))
+        cap.escenas.append(EscenaDelLibro(id_escena, _texto_de(con, id_escena, aceptado)))
+    return list(capitulos.values())
+
+
 def _texto_de(con, escena, aceptado):
     """El borrador elegido, o el ultimo si nadie eligio."""
     if aceptado is not None:
@@ -92,46 +135,32 @@ def manuscrito(con, obra, con_titulos=True) -> Manuscrito:
         cabecera = None
     sin_cabecera = cabecera is None
 
-    # Orden de lectura: por capitulo y, dentro, por orden de escena. Las
-    # escenas sin capitulo van al final y agrupadas, porque son las de las
-    # escaletas anteriores a `SPEC-21` y no hay donde situarlas sin inventar.
-    # Tercera ausencia de la misma familia: las bases anteriores a `SPEC-21`
-    # tampoco tienen tabla `capitulo`. Sin ella no hay orden de capitulo que
-    # respetar, y se ordena por el de la escena — que es el unico que hay.
-    try:
-        filas = con.execute(
-            "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, "
-            "       COALESCE(c.orden, 9999) AS orden_cap "
-            "FROM escena e LEFT JOIN capitulo c ON c.id = e.capitulo "
-            "WHERE e.obra = ? ORDER BY orden_cap, e.orden, e.id",
-            (obra,)).fetchall()
-    except sqlite3.OperationalError:
-        filas = con.execute(
-            "SELECT id, capitulo, orden, borrador_aceptado, 9999 "
-            "FROM escena WHERE obra = ? ORDER BY orden, id", (obra,)).fetchall()
-
-    partes, sin_texto, capitulos_vistos = [], [], []
+    capitulos = capitulos_de(con, obra)
+    partes, sin_texto, numero = [], [], 0
     if con_titulos:
         partes.append("# " + ((cabecera[0] if cabecera else None) or obra))
-
-    for id_escena, capitulo, _orden, aceptado, _oc in filas:
-        if capitulo and capitulo not in capitulos_vistos:
-            capitulos_vistos.append(capitulo)
+    for cap in capitulos:
+        if cap.id is not None:
+            numero += 1
             if con_titulos:
-                partes.append("\n\n## Capitulo {0}\n".format(
-                    len(capitulos_vistos)))
-        texto = _texto_de(con, id_escena, aceptado)
-        if texto is None:
-            sin_texto.append(id_escena)
-            partes.append("\n\n" + MARCA_DE_HUECO.format(id_escena))
-            continue
-        partes.append("\n\n" + texto)
+                partes.append("## Capitulo {0}".format(numero))
+        for e in cap.escenas:
+            if e.texto is None:
+                sin_texto.append(e.id)
+                partes.append(MARCA_DE_HUECO.format(e.id))
+            else:
+                partes.append(e.texto)
 
-    entero = "".join(partes).strip() + "\n"
+    # `F-63`: se junta sin recortar. El separador lo pone este modulo y el texto de
+    # cada escena va tal cual, con sus bordes (`VER-60`).
+    entero = "\n\n".join(partes)
+    if not entero.endswith("\n"):
+        entero += "\n"
+    total = sum(len(c.escenas) for c in capitulos)
     return Manuscrito(
         texto=entero, titulo=(cabecera[0] if cabecera else None) or obra,
-        capitulos=len(capitulos_vistos),
-        escenas=len([f for f in filas if f[0] not in sin_texto]),
+        capitulos=numero,
+        escenas=total - len(sin_texto),
         palabras=len(entero.split()),
         escenas_sin_texto=sin_texto, sin_cabecera=sin_cabecera)
 

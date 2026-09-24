@@ -169,3 +169,25 @@ def test_una_base_sin_tabla_capitulo_tambien_se_exporta(con):
     # Los capitulos se siguen contando: el identificador esta en la **escena**,
     # y lo que falta es la tabla que le da su orden.
     assert m.capitulos == 2
+
+
+# --- `PLAN-27` E1: el texto de cada capitulo, sin recortar (`F-63`) ---------------
+
+def test_el_borde_de_la_primera_y_la_ultima_escena_no_se_recorta(con):
+    """`F-63`: `"".join(partes).strip()` se comia el blanco inicial de la primera escena
+    y el final de la ultima, y la prueba de `VER-60` no lo veia porque comparaba con `in`
+    y sus borradores no tenian blanco en los bordes."""
+    con.execute("UPDATE borrador SET texto = '  Marta conto los peldanos.' WHERE escena = 'e1'")
+    con.execute("UPDATE borrador SET texto = 'Ana llego con una maleta.\n\n' WHERE escena = 'e3'")
+    m = exportar.manuscrito(con, "o1", con_titulos=False)
+    assert m.texto.startswith("  Marta conto los peldanos.")
+    assert "Ana llego con una maleta.\n\n" in m.texto
+
+
+def test_capitulos_de_devuelve_el_texto_byte_a_byte_con_comillas_y_rayas(con):
+    raya = "—«No», dijo. —Ya verás…\n"
+    con.execute("UPDATE borrador SET texto = ? WHERE escena = 'e2'", (raya,))
+    caps = exportar.capitulos_de(con, "o1")
+    assert [c.id for c in caps] == ["cap-01", "cap-02"]
+    assert [e.texto for e in caps[0].escenas] == ["Marta conto los peldanos.", raya]
+    assert [e.id for e in caps[1].escenas] == ["e3"]
