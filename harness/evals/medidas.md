@@ -205,3 +205,18 @@ Capítulo 1 consolidado; capítulo 2 parado: *«Luisa actúa sobre `imp-01` y no
 conozca»*. **Ninguna coincidencia vetada**: el Escritor esquivó las variantes («hospitales»,
 «Tórmenta», «Tomás»…) porque su prompt le da la lista, así que el guardrail no tuvo nada que
 detectar. 3,8173 USD en 7 delegaciones. Se reanuda con `--reanudar`.
+
+## R5 (reanudado) · Vetadas por variantes: publicada (2026-09-24)
+
+Reanudada desde el capítulo 2: diez capítulos consolidados, **publicada** en la ronda 1 de la puerta
+con Lean `0`. **Ninguna vetada disparó** en toda la novela: el Escritor esquivó cada variante porque
+su prompt le da la lista. Coste de la novela entera: **20,5556 USD en 39 delegaciones**, con coste
+medido en todas (las dos ejecuciones, sumadas en el libro desde `F-119`). El rastro dio una huella
+falsa, «martes» por «Marta» (`F-145`).
+
+## R4 · Contradicciones: las tres detectadas; el plan, rechazado por `[NOMBRE_ANONIMIZADO]` (2026-09-24)
+
+El Entrevistador real **detectó las tres contradicciones** del brief —edad 10 frente a romance,
+frente a boda y frente a un recuerdo a los 25— y la entrevista cerró tras corregir la edad, con la
+premisa y el título aceptados. El plan no se aprobó: el nombre del destinatario había llegado
+anonimizado a la ficha (`F-144`). 3,1154 USD en 16 delegaciones.
