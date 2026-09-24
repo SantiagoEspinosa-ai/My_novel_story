@@ -1,0 +1,47 @@
+{
+  "destinatario": {
+    "nombre": "Olivia Carranza",
+    "edad": 41,
+    "elementos": [
+      {
+        "tipo": "rasgo",
+        "descripcion": "restaura bicicletas antiguas",
+        "imprescindible": true
+      },
+      {
+        "tipo": "recuerdo",
+        "descripcion": "la acampada bajo la lluvia en los Picos de Europa",
+        "momento": {
+          "edad": 16
+        },
+        "imprescindible": true
+      },
+      {
+        "tipo": "mascota",
+        "descripcion": "un gato gris que duerme en el tejado",
+        "nombre": "Pimienta",
+        "relacion": "su gato",
+        "imprescindible": true
+      },
+      {
+        "tipo": "rasgo",
+        "descripcion": "silba cuando esta nerviosa",
+        "imprescindible": false
+      }
+    ]
+  },
+  "ocasion": "cumpleanos",
+  "genero": "aventura",
+  "tono": "divertido",
+  "extension": "corta",
+  "papel": "protagonista",
+  "vetadas": [
+    "hospital"
+  ],
+  "nombres_vetados": [
+    "Ramiro Velez"
+  ],
+  "dedicatoria": "Para Olivia, que arregla todo lo que tiene ruedas.",
+  "titulo": "La ruta de Pimienta",
+  "premisa": "Una bicicleta vieja encontrada en un desvan lleva a Olivia a repetir la ruta de su primera acampada."
+}
