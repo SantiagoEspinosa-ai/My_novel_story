@@ -90,7 +90,15 @@ class FalloDeTransporte(Exception):
 
 class RespuestaIlegible(Exception):
     """Ni siquiera el parseo desconfiado pudo sacar un objeto. Es fallo de
-    **contrato**: por `O-3` no se reintenta sin cambiar nada."""
+    **contrato**: por `O-3` no se reintenta sin cambiar nada.
+
+    `medidas` lleva las del sobre si el sobre se leyo y lo ilegible era el texto del
+    modelo: esa llamada se pago, y su coste no se pierde (`PLAN-29` E1). Si ni el sobre
+    se leyo, `None`: no hay nada medido que conservar."""
+
+    def __init__(self, mensaje="", medidas=None):
+        super().__init__(mensaje)
+        self.medidas = medidas
 
 
 def _resolver_ejecutable():
@@ -210,10 +218,14 @@ class SesionDelegada:
         # `result` y las medidas al lado. Si no viene envuelta -un doble, o un
         # formato viejo- se interpreta como la respuesta misma.
         if "result" in sobre and "type" in sobre:
-            respuesta = _normalizar(interpretar(sobre["result"]))
-            respuesta["medidas"] = medidas_de(sobre)
+            medidas = medidas_de(sobre)
             if delegacion:
-                respuesta["medidas"]["delegacion"] = delegacion
+                medidas["delegacion"] = delegacion
+            try:
+                respuesta = _normalizar(interpretar(sobre["result"]))
+            except RespuestaIlegible as e:
+                raise RespuestaIlegible(str(e), medidas=medidas) from None
+            respuesta["medidas"] = medidas
             return respuesta
         return _normalizar(sobre)
 
@@ -257,7 +269,7 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
                   "--allowedTools", ",".join(PERMITIDAS.get(agente, ()))]
     # `SPEC-26` `RF-19`: los hooks solo actuan si ven `HARNESS_AGENTE`, y solo
     # lo ponemos aqui. Una sesion interactiva en el mismo proyecto no lo tiene.
-    env = dict(os.environ, **(entorno or {}))
+    env = _sin_observabilidad(dict(os.environ, **(entorno or {})))
     if agente:
         env["HARNESS_AGENTE"] = agente
     if reglas:
@@ -277,6 +289,14 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
         raise FalloDeTransporte(
             "la delegacion termino con codigo {0}".format(r.returncode))
     return r.stdout
+
+
+def _sin_observabilidad(env):
+    """`SPEC-29` `RF-08`, `RF-11`: las claves de Langfuse no llegan a la sesion delegada, y
+    la telemetria propia de Claude Code se queda apagada: los spans los envia el backend.
+    Las `HARNESS_*` pasan intactas, porque los hooks las leen."""
+    return {k: v for k, v in env.items()
+            if not k.startswith("LANGFUSE_") and k != "CLAUDE_CODE_ENABLE_TELEMETRY"}
 
 
 def medidas_de(sobre: dict) -> dict:

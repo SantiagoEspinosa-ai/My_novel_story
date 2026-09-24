@@ -200,3 +200,65 @@ def test_la_delegacion_devuelve_su_identificador_en_las_medidas(entorno):
     assert r["medidas"]["delegacion"] == visto["herramientas"]["delegacion"]
     assert s.llamar("y")["medidas"]["delegacion"] != r["medidas"]["delegacion"], \
         "una delegacion nueva en cada llamada"
+
+
+# --- `PLAN-29` E1: el coste de lo ilegible y un entorno limpio ---------------------
+
+def _entorno_de(monkeypatch, **kw):
+    visto = {}
+
+    def run(orden, **opciones):
+        visto["env"] = opciones["env"]
+        return _subprocess.CompletedProcess(orden, 0, stdout=SOBRE, stderr="")
+
+    monkeypatch.setattr(proveedor.subprocess, "run", run)
+    proveedor._ejecutar_proceso("claude", "modelo", "escritor", "p", **kw)
+    return visto["env"]
+
+
+def test_una_respuesta_ilegible_conserva_las_medidas_del_sobre(entorno):
+    """El sobre se pago aunque el modelo devolviera algo que no parsea: su coste no se pierde."""
+    sobre = _json.dumps({"type": "result", "result": "no es json", "total_cost_usd": 0.07,
+                         "usage": {"input_tokens": 11, "output_tokens": 13}})
+    c = proveedor.SesionDelegada(ejecutar=lambda *a, **k: sobre)
+    with pytest.raises(proveedor.RespuestaIlegible) as e:
+        c.llamar("x")
+    assert e.value.medidas["coste_usd"] == 0.07
+    assert e.value.medidas["tokens_entrada"] == 11
+
+
+def test_un_sobre_ilegible_no_inventa_medidas(entorno):
+    c = proveedor.SesionDelegada(ejecutar=lambda *a, **k: "basura sin llaves")
+    with pytest.raises(proveedor.RespuestaIlegible) as e:
+        c.llamar("x")
+    assert e.value.medidas is None
+
+
+def test_la_delegacion_no_hereda_las_claves_de_langfuse(monkeypatch):
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-lf-dummy-de-prueba")
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-lf-dummy-de-prueba")
+    env = _entorno_de(monkeypatch, entorno={"LANGFUSE_BASE_URL": "https://ejemplo.invalid"})
+    assert not [k for k in env if k.startswith("LANGFUSE_")]
+
+
+def test_la_telemetria_de_claude_code_queda_apagada_en_la_delegacion(monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_ENABLE_TELEMETRY", "1")
+    env = _entorno_de(monkeypatch)
+    assert "CLAUDE_CODE_ENABLE_TELEMETRY" not in env
+
+
+def test_limpiar_el_entorno_deja_pasar_lo_que_leen_los_hooks(monkeypatch):
+    """Los hooks dependen de las `HARNESS_*` (`F-61`, `1ad5691`)."""
+    monkeypatch.setenv("HARNESS_REGISTRO_HOOKS", "registro.jsonl")
+    env = _entorno_de(monkeypatch, reglas="reglas.json", entorno={"HARNESS_DB": "obra.db"})
+    assert env["HARNESS_AGENTE"] == "escritor" and env["HARNESS_REGLAS"] == "reglas.json"
+    assert env["HARNESS_DB"] == "obra.db" and env["HARNESS_REGISTRO_HOOKS"] == "registro.jsonl"
+
+
+def test_settings_no_enciende_la_telemetria():
+    """`SPEC-29` `RF-11`: la exportacion OTEL propia de Claude Code queda apagada."""
+    ajustes = _json.loads((proveedor.RAIZ_DEL_REPOSITORIO / ".claude" / "settings.json")
+                          .read_text(encoding="utf-8"))
+    variables = ajustes.get("env") or {}
+    assert "CLAUDE_CODE_ENABLE_TELEMETRY" not in variables
+    assert not [k for k in variables if k.startswith("OTEL_")]

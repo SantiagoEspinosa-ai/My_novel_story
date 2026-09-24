@@ -170,11 +170,16 @@ def _delegar(modelo, prompt, agente, escena, trabajo, trazas):
                            modelo=modelo.nombre)
     try:
         r = modelo.llamar(prompt)
-    except proveedor.RespuestaIlegible:
+    except proveedor.RespuestaIlegible as e:
         # No es un fallo de transporte: el verificador **no llego a emitir
         # juicio**. Se registra como tal y pesa lo maximo de su escala, porque
         # quien no se dejo auditar no gana por defecto.
         modulo_traza.registrar_fallo(t, clase="contrato", salida="ilegible")
+        # `PLAN-29` E1: la llamada se pago igual; su coste se queda en la traza.
+        medidas = getattr(e, "medidas", None)
+        if medidas:
+            t.medidas = medidas
+            t.modelos = medidas.get("modelos") or []
         trazas.append(t)
         return None, t
     if r is None:

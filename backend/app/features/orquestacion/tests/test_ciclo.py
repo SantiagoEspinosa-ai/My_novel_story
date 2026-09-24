@@ -133,3 +133,22 @@ def test_un_sin_veredicto_no_detiene_la_escena_pero_queda_abierto(con):
     assert h.estado is EstadoDeHallazgo.SIN_VEREDICTO
     assert not severidad.detiene_la_escena_por(h), "no detiene: no consta violacion"
     assert severidad.impide_cerrar_el_capitulo_por(h), "pero no gana por defecto"
+
+
+def test_una_delegacion_ilegible_deja_su_coste_en_la_traza(con):
+    """`PLAN-29` E1: el Juez devolvio algo que no parsea, pero el sobre se pago."""
+    from app.commons.modelo.proveedor import RespuestaIlegible
+
+    class JuezIlegibleConCoste(DobleQueDevuelve):
+        def llamar(self, prompt):
+            raise RespuestaIlegible("no parsea", medidas={"coste_usd": 0.05,
+                                                           "tokens_entrada": 7,
+                                                           "tokens_salida": 3,
+                                                           "modelos": ["m-1"]})
+
+    c = ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(), JuezIlegibleConCoste(None),
+                       DobleQueDevuelve({"texto": "x", "hechos_clave": []}),
+                       _mundo(), techo=10_000)
+    juez = [t for t in c.trazas if t.agente == "juez"][0]
+    assert juez.resultado == "fallo"
+    assert juez.medidas["coste_usd"] == 0.05 and juez.modelos == ["m-1"]
