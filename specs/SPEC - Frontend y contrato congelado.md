@@ -6,8 +6,12 @@ aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-23
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
-version: 3
+version: 4
 ---
+
+> **v4 (2026-09-24), decisión del autor en sesión:** entran `RF-59` (la interfaz lleva la
+> identidad visual de Qaracter: es una propuesta a cliente) y `RF-60` (la interfaz muestra en qué
+> punto va una generación, porque una pantalla quieta no dice si funciona o se ha colgado).
 
 > **v3 (2026-09-24), decisión del autor en sesión:** entra `RF-58`, el validador visual con
 > nombre, punto en el harness y score en Langfuse (`EXAMEN.md` §5a). Que su fallo vuelva solo
@@ -86,7 +90,7 @@ El orden no es casual y es una decisión (`D-4`): el contrato primero, las pági
 | --- | --- |
 | Las vistas de operación —Puertas, Continuidad, Trabajos— | `docs/architecture.md` ya las enumera. Esta spec cubre la lectura de la obra y la petición de cambio |
 | Autenticación y control de acceso | El proyecto no los tiene. `D-1` decide que no aparece un actor nuevo, que es otra cosa |
-| Publicar la obra a un formato de libro | Portada y dedicatoria son de la interfaz de lectura, no de una exportación |
+| Publicar la obra a un formato de libro | La interfaz de lectura no exporta. La exportación a PDF, con su portada, su índice y sus fichas, la cubre `SPEC-27` (corrección documental, `EX-09`) |
 | La implementación del backend que falta | La lista de §5 es una dependencia, no el plan de trabajo de esta spec |
 | Elegir tecnología dentro del frontend | React y FSD v2.1 ya están decididos (`CLAUDE.md`, `A-09`); lo demás es del plan |
 | Crear o diseñar CI | `D-3` decide que el validador corre allí y deja dicho que allí no hay nada todavía |
@@ -329,6 +333,8 @@ De `CLAUDE.md` y `docs/architecture.md`, no negociables desde aquí:
 | --- | --- | --- | --- |
 | **RF-56** | Lo que cambia con **la novela** y lo que cambia con **la máquina** son dos cosas distintas y viven en dos ficheros distintos. Lo de la novela llega al frontend **por la API**, como atributos de `Obra`; **el frontend no lee ficheros de configuración** | nuevo | fila nueva |
 | **RF-58** | **La lectura web se valida con el browser MCP como validador, no solo como inspección.** Un agente con Playwright MCP abre la web real de una versión, recorre portada, índice, capítulos y fichas, y devuelve un veredicto por comprobación con su motivo, validado con esquema. El resultado es `INV-30`, se guarda como hallazgo si falla y sube a Langfuse como score en la sesión de la obra. **Fuera:** que el fallo vuelva solo al Escritor o al rol que toca | nuevo, v3 | fila nueva |
+| **RF-59** | **La interfaz lleva la identidad visual de Qaracter**: su paleta y su tipografía, en tokens de diseño en un solo sitio de `shared/`, de forma que cambiar la paleta sea cambiar un fichero. Tiene que ser atractiva: la presentación es una propuesta a cliente | nuevo, v4 | fila nueva |
+| **RF-60** | **La interfaz muestra en qué punto va una generación**: la fase —planificando, revisando el plan, escribiendo el capítulo N, editando, resumiendo, en la puerta, publicada, parada o esperando revisión—, el capítulo sobre el total, desde cuándo está en esa fase y **cuánto hace de la última actividad**. Lo calcula el backend (`CLAUDE.md`: la interfaz muestra estado, no lo calcula) y se refresca solo | nuevo, v4 | fila nueva |
 | **RF-57** | **Nada de la configuración del sistema cruza el contrato.** Ningún campo del congelado expone nombres de modelo por agente, topes de delegación, techo de contexto ni la ruta de la base | nuevo | fila nueva |
 
 > **Por qué `RF-57` es un requisito y no una precaución.** Un campo que se cuela una vez en

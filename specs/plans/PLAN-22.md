@@ -11,6 +11,9 @@ version: 1
 
 # PLAN-22 — La lectura web y el contrato congelado
 
+> **v2 (2026-09-24), decisión del autor:** entran E6b (la identidad visual de Qaracter, `RF-59`) y
+> E13c (el progreso de una generación, `RF-60`). El resto del plan no cambia.
+>
 > **Aprobado (2026-09-24)** con las propuestas de las cuestiones 1 a 4, **y con el validador
 > visual con score** (cuestión 5): entra como `SPEC-22` `RF-58` e `INV-30`, en el paso E13b. Lo
 > que queda fuera del día, y se documenta como **no hecho**, es que su fallo vuelva solo al
@@ -223,6 +226,18 @@ fetch`, `› una prueba que llama a fetch sin inyectarlo falla` y `npx steiger s
 
 **Abre** `VER-106`.
 
+### E6b · La identidad visual (`RF-59`)
+
+Tokens de diseño en `src/shared/ui/tema/` (colores, tipografía, espaciado, radios y sombras), y
+**ningún color escrito fuera de ahí**. La paleta de Qaracter la pasa el autor; hasta entonces los
+tokens llevan una paleta provisional **marcada como tal** en el propio fichero. Componentes base
+en `shared/ui` (botón, tarjeta, etiqueta de estado, cabecera) con los tokens. Tiene que ser
+atractiva: portada con presencia, índice legible, estados con color y texto (nunca solo color).
+
+**Prueba que falla primero:** `tema.test.ts › ningún fichero de src fuera de shared/ui/tema escribe
+un color literal`. Además `› cada estado de escena tiene su color y su etiqueta de texto` y
+`› los tokens tienen contraste suficiente entre texto y fondo`.
+
 ### E7 · La escena con su estado, siempre (`RF-39`, `RF-40`)
 
 `EscenaConEstado` no pinta el texto sin su `estado` y sin su lista de hallazgos.
@@ -322,6 +337,26 @@ Además `test_un_veredicto_ilegible_es_sin_veredicto_y_no_pasa`,
 es E13b.2 y va en el mismo registro que E13.
 
 **Abre** `VER-119`.
+
+### E13c · En qué punto va una generación (`RF-60`)
+
+Primero `docs/definitions.md`: el vocabulario `fase_de_generacion` —`planificando`,
+`revisando_plan`, `escribiendo`, `editando`, `resumiendo`, `en_la_puerta`, `publicada`, `parada`,
+`esperando_revision`— y la clase `ProgresoDeGeneracion` (obra, fase, capítulo, total de capítulos,
+desde, última actividad). `orquestacion/novela.py` escribe la fase al entrar en cada una, en una
+tabla con su migración, y la última actividad sale de la última traza de delegación o llamada a
+tool de la obra. `GET /obras/{id}/progreso` la devuelve con los **segundos desde la última
+actividad calculados en el servidor**. La web la enseña en una barra que se refresca sola, con el
+capítulo sobre el total, y marca **«sin actividad desde hace N min»** cuando pasa de un umbral de
+configuración.
+
+**Prueba que falla primero:** `test_escribir_deja_la_fase_de_cada_paso_en_orden`. Además
+`test_una_generacion_parada_dice_parada_y_su_motivo`,
+`test_el_progreso_trae_los_segundos_desde_la_ultima_actividad_calculados_en_el_servidor`,
+`test_sin_generacion_el_progreso_es_404_y_no_una_fase_inventada`, y en el frontend
+`Progreso › enseña la fase y el capítulo sobre el total` y `› marca sin actividad pasado el umbral`.
+
+**Abre** `VER-128` (a reservar).
 
 ### E14 · Lo que la página necesita para pedir un cambio
 
