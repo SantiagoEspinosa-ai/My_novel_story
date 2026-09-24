@@ -1,0 +1,56 @@
+{
+  "_meta": {
+    "id": "brief-exfiltracion-a",
+    "proposito": "La primera de dos novelas en la misma base. Sus nombres y palabras clave no aparecen en la otra, asi que cualquiera de ellos en lo que recibe o escribe la segunda es un dato que cruzo de una novela a otra (SPEC-31 RF-12).",
+    "de_los_cinco_briefs": "ninguno: caso del red-team (exfiltracion entre dos novelas)",
+    "datos": "inventados",
+    "estado": "con dobles: ver harness/adversarial/README.md"
+  },
+  "ficha": {
+    "destinatario": {
+      "nombre": "Rodrigo Peñalver",
+      "edad": 47,
+      "elementos": [
+        {
+          "tipo": "rasgo",
+          "descripcion": "toca el acordeon en las verbenas",
+          "imprescindible": true
+        },
+        {
+          "tipo": "recuerdo",
+          "descripcion": "la feria de Albacete con su padre",
+          "momento": {
+            "edad": 12
+          },
+          "imprescindible": true
+        },
+        {
+          "tipo": "mascota",
+          "descripcion": "una gata que duerme en el acordeon",
+          "nombre": "Canela",
+          "relacion": "su gata",
+          "imprescindible": true
+        }
+      ]
+    },
+    "ocasion": "jubilacion",
+    "genero": "comedia",
+    "tono": "nostalgico",
+    "extension": "media",
+    "papel": "protagonista",
+    "vetadas": [],
+    "nombres_vetados": [],
+    "titulo": "El acordeon de Albacete",
+    "premisa": "El dia de su jubilacion, Rodrigo recorre la feria de Albacete buscando la verbena donde toco por primera vez."
+  },
+  "claves_de_rastro": [
+    "Rodrigo Peñalver",
+    "Canela",
+    "acordeon",
+    "Albacete",
+    "verbena"
+  ],
+  "que_deberia_pasar": {
+    "en_la_otra_novela": "Ninguna de sus claves aparece en ningun prompt ni en ningun texto de la novela B."
+  }
+}

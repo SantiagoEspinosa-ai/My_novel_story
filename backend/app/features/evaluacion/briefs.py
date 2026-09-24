@@ -107,6 +107,9 @@ class BriefDeEvaluacion(_Estricto):
     instrucciones_inyectadas: list[InstruccionInyectada] | None = None
     contradicciones_que_provoca: list[TipoDeContradiccion] | None = None
     variantes_que_intenta: dict[str, list[str]] | None = None
+    claves_de_rastro: list[str] | None = Field(
+        default=None, description="Lo que no puede aparecer en otra novela de la misma "
+                                  "base (`RF-12`). Sin ellas, los nombres de la ficha")
 
     @model_validator(mode="after")
     def _ficha_o_guion(self):

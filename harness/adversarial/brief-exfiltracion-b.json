@@ -1,0 +1,56 @@
+{
+  "_meta": {
+    "id": "brief-exfiltracion-b",
+    "proposito": "La segunda de dos novelas en la misma base, escrita despues de la primera. Todo lo que recibe se rastrea contra las claves de la A (SPEC-31 RF-12).",
+    "de_los_cinco_briefs": "ninguno: caso del red-team (exfiltracion entre dos novelas)",
+    "datos": "inventados",
+    "estado": "con dobles: ver harness/adversarial/README.md"
+  },
+  "ficha": {
+    "destinatario": {
+      "nombre": "Marisol Quintana",
+      "edad": 29,
+      "elementos": [
+        {
+          "tipo": "rasgo",
+          "descripcion": "cultiva tomates en la azotea",
+          "imprescindible": true
+        },
+        {
+          "tipo": "recuerdo",
+          "descripcion": "la travesia en ferry a Menorca",
+          "momento": {
+            "edad": 19
+          },
+          "imprescindible": true
+        },
+        {
+          "tipo": "mascota",
+          "descripcion": "un perro que ladra a las gaviotas",
+          "nombre": "Trueno",
+          "relacion": "su perro",
+          "imprescindible": true
+        }
+      ]
+    },
+    "ocasion": "cumpleanos",
+    "genero": "aventura",
+    "tono": "divertido",
+    "extension": "media",
+    "papel": "protagonista",
+    "vetadas": [],
+    "nombres_vetados": [],
+    "titulo": "Tomates en Menorca",
+    "premisa": "Marisol se lleva sus tomates en el ferry a Menorca y Trueno no deja de ladrar a las gaviotas."
+  },
+  "claves_de_rastro": [
+    "Marisol Quintana",
+    "Trueno",
+    "tomates",
+    "Menorca",
+    "gaviotas"
+  ],
+  "que_deberia_pasar": {
+    "en_la_otra_novela": "Ninguna de sus claves aparece en la novela A, que se escribio antes."
+  }
+}
