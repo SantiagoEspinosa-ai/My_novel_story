@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "id": "brief-base",
+    "proposito": "La novela de referencia: una ficha corriente, sin trampas, contra la que se leen las otras cuatro. Es el brief de ejemplo del README, el que produce /ejemplos/novela-ejemplo.pdf y la novela de la revision humana (SPEC-31 RF-10, RF-11).",
+    "de_los_cinco_briefs": "el base",
+    "datos": "inventados",
+    "estado": "listo para ejecutar; sin ejecutar todavia"
+  },
+
+  "ficha_en": "ejemplos/brief-ejemplo.json",
+
+  "que_deberia_pasar": {
+    "en_la_generacion": "Diez capitulos aceptados sin rendicion. Ninguna vetada llega al texto, los nombres se escriben como en la ficha y cada imprescindible aparece en su capitulo.",
+    "en_la_puerta_de_publicacion": "La version se publica: INV-24, INV-28 e INV-29 pasan. INV-06 sale como no ejecutado, que es lo que es.",
+    "como_se_lee": "Es la linea de base. Un fallo aqui no es un fallo del brief: es un fallo del sistema con la ficha mas facil que tenemos, y se lee antes que cualquiera de los adversarios."
+  }
+}

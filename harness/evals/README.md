@@ -2,15 +2,22 @@
 
 Briefs de prueba y sus resultados esperados. La carpeta la declara
 `docs/architecture.md` § "El harness" junto a `documentos/` y `adversarial/`;
-esta es la primera que se crea, y se crea con un solo fichero porque hace
-falta ya.
+esta fue la primera que se creo.
 
-| Brief | Qué busca provocar | Estado |
-| --- | --- | --- |
-| `brief-incoherencia-temporal.json` | Incoherencias de cronología que ninguna puerta escena a escena puede ver | **Listo, sin ejecutar** |
+| Brief | Qué busca provocar | Entra por | Estado |
+| --- | --- | --- | --- |
+| `brief-base.json` | Nada: es la línea de base, el brief de ejemplo del README y la novela de la revisión humana | ficha (`ficha_en`: `ejemplos/brief-ejemplo.json`, referenciada y no copiada) | **Listo, sin ejecutar** |
+| `brief-injection.json` | Dos instrucciones en el texto libre: una que `PATRONES` reconoce y otra que no, a propósito | guion de entrevista | **Listo, sin ejecutar** |
+| `brief-incoherencia-temporal.json` | Incoherencias de cronología que ninguna puerta escena a escena puede ver | ficha (`misterio`; antes `terror`, que `SPEC-26` v3 retiró) | **Listo, sin ejecutar** |
+| `brief-contradicciones.json` | Las tres contradicciones que comprueba el código en la entrevista | guion de entrevista | **Listo, sin ejecutar** |
+| `brief-vetadas-por-variantes.json` | Colar las vetadas por plurales, mayúsculas, acentos y nombre de pila | ficha | **Listo, sin ejecutar** |
 
-De los cinco briefs que pide el enunciado, este es **el adversario temporal**.
-Los otros cuatro —incluido el de inyección en el texto libre— no están escritos.
+Son los cinco de `SPEC-31` `RF-01` y `RF-10`. **El formato** lo valida
+`backend/app/features/evaluacion/briefs.py`: `_meta` con `datos: "inventados"`, una
+ficha **o** un guion —nunca las dos— y `que_deberia_pasar`. Un guion es lo que diría el
+comprador turno a turno; `ficha_esperada` y `hechos_esperados` son lo que un
+Entrevistador correcto dejaría, y con dobles se reproducen. **«Inventados» es una
+declaración del fichero, no algo que una prueba pueda comprobar.**
 
 ## Cómo se ejecuta, cuando haya una generación con los arreglos puestos
 

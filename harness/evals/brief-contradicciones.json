@@ -1,0 +1,228 @@
+{
+  "_meta": {
+    "id": "brief-contradicciones",
+    "proposito": "Provocar en la entrevista las tres contradicciones que comprueba el codigo -edad frente a genero, edad frente a ocasion y recuerdo frente a edad- y ver que la ficha no se cierra hasta resolverlas (SPEC-25 RF-08, RF-09; SPEC-31 RF-10).",
+    "de_los_cinco_briefs": "el de contradicciones en la entrevista",
+    "datos": "inventados",
+    "estado": "listo para ejecutar; sin ejecutar todavia",
+    "requiere": [
+      "La entrevista contra la API: evaluar.py la hace en proceso, sin uvicorn. Cada turno llama al Entrevistador y gasta."
+    ]
+  },
+  "guion": {
+    "turnos": [
+      {
+        "respuesta": "Se llama Hugo Salcedo.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [],
+            "nombre": "Hugo Salcedo"
+          }
+        }
+      },
+      {
+        "respuesta": "Tiene 10 años.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          }
+        }
+      },
+      {
+        "respuesta": "Es para su boda, se casa en junio.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          },
+          "ocasion": "boda"
+        }
+      },
+      {
+        "respuesta": "Quiero que sea una historia romantica.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          },
+          "ocasion": "boda",
+          "genero": "romance"
+        }
+      },
+      {
+        "respuesta": "Tierna, que emocione sin ser triste.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno"
+        }
+      },
+      {
+        "respuesta": "Capitulos medianos.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno",
+          "extension": "media"
+        }
+      },
+      {
+        "respuesta": "Que sea el protagonista.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno",
+          "extension": "media",
+          "papel": "protagonista"
+        }
+      },
+      {
+        "respuesta": "Hace ceramica los domingos y regala todo lo que hace.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [
+              {
+                "tipo": "rasgo",
+                "descripcion": "hace ceramica los domingos y regala todo lo que hace",
+                "imprescindible": true
+              }
+            ],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno",
+          "extension": "media",
+          "papel": "protagonista"
+        }
+      },
+      {
+        "respuesta": "Cuando tenia 25 años se fue de Erasmus a Bolonia y alli conocio a su pareja.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [
+              {
+                "tipo": "rasgo",
+                "descripcion": "hace ceramica los domingos y regala todo lo que hace",
+                "imprescindible": true
+              },
+              {
+                "tipo": "recuerdo",
+                "descripcion": "el Erasmus en Bolonia donde conocio a su pareja",
+                "momento": {
+                  "edad": 25
+                },
+                "imprescindible": true
+              }
+            ],
+            "nombre": "Hugo Salcedo",
+            "edad": 10
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno",
+          "extension": "media",
+          "papel": "protagonista"
+        }
+      },
+      {
+        "cerrar": true,
+        "nota": "Tiene que fallar: la edad (10) choca con el genero romance, con la ocasion boda y con un recuerdo a los 25 años."
+      },
+      {
+        "respuesta": "Perdona, me he equivocado: tiene 30 años, no 10.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [
+              {
+                "tipo": "rasgo",
+                "descripcion": "hace ceramica los domingos y regala todo lo que hace",
+                "imprescindible": true
+              },
+              {
+                "tipo": "recuerdo",
+                "descripcion": "el Erasmus en Bolonia donde conocio a su pareja",
+                "momento": {
+                  "edad": 25
+                },
+                "imprescindible": true
+              }
+            ],
+            "nombre": "Hugo Salcedo",
+            "edad": 30
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno",
+          "extension": "media",
+          "papel": "protagonista"
+        },
+        "nota": "Resuelve las tres corrigiendo el dato, que es como se resuelven de verdad."
+      },
+      {
+        "respuesta": "Me gustan el titulo y la premisa que propones.",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [
+              {
+                "tipo": "rasgo",
+                "descripcion": "hace ceramica los domingos y regala todo lo que hace",
+                "imprescindible": true
+              },
+              {
+                "tipo": "recuerdo",
+                "descripcion": "el Erasmus en Bolonia donde conocio a su pareja",
+                "momento": {
+                  "edad": 25
+                },
+                "imprescindible": true
+              }
+            ],
+            "nombre": "Hugo Salcedo",
+            "edad": 30
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno",
+          "extension": "media",
+          "papel": "protagonista",
+          "titulo": "Barro y Bolonia",
+          "premisa": "La semana antes de su boda, Hugo vuelve a Bolonia a buscar el taller donde aprendio a hacer ceramica y donde empezo todo."
+        }
+      },
+      {
+        "cerrar": true
+      }
+    ]
+  },
+  "contradicciones_que_provoca": [
+    "edad_frente_a_genero",
+    "edad_frente_a_ocasion",
+    "recuerdo_frente_a_edad"
+  ],
+  "que_deberia_pasar": {
+    "en_la_entrevista": "El primer :cerrar devuelve 409 con las tres contradicciones abiertas. Cada una queda en el audit log como contradiccion_detectada, con su tipo y una huella, sin la descripcion. Tras la correccion de la edad no queda ninguna y la entrevista cierra.",
+    "en_la_generacion": "Una novela corriente: el brief mide la entrevista, no el pipeline.",
+    "punto_ciego_del_guion": "El guion no escucha las preguntas: contesta en su orden, no en el del Entrevistador. Con un modelo real puede preguntar otra cosa y recibir la respuesta de un turno que no toca; si el guion se acaba sin cerrar, la ejecucion lo dice (entrevista sin cerrar) y no se escribe novela. ficha_esperada es lo que un Entrevistador correcto dejaria en la ficha tras cada turno."
+  }
+}

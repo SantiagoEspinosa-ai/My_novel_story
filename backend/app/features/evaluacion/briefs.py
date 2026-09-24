@@ -19,12 +19,16 @@ declare.
 """
 
 import json
+import pathlib
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from app.commons.dominio.destinatario import FichaDeEntrevista
 from app.commons.dominio.enumeraciones import TipoDeContradiccion
+
+
+RAIZ_DEL_REPOSITORIO = pathlib.Path(__file__).resolve().parents[4]
 
 
 class BriefInvalido(ValueError):
@@ -89,6 +93,9 @@ class InstruccionInyectada(_Estricto):
 class BriefDeEvaluacion(_Estricto):
     meta: MetaDelBrief = Field(alias="_meta")
     ficha: FichaDeEntrevista | None = None
+    ficha_en: str | None = Field(
+        default=None, description="Ruta, desde la raiz del repositorio, de una ficha que "
+                                  "ya existe: se referencia en vez de copiarla")
     guion: GuionDeEntrevista | None = None
     que_deberia_pasar: dict[str, Any] = Field(min_length=1)
     # Lo que cada brief adversario declara que intenta, para que se pueda comprobar
@@ -106,7 +113,19 @@ class BriefDeEvaluacion(_Estricto):
         return self
 
 
-def validar(datos: dict) -> BriefDeEvaluacion:
+def validar(datos: dict, raiz=None) -> BriefDeEvaluacion:
+    """`ficha_en` se resuelve aqui: el brief base es la ficha de ejemplo del repositorio
+    (`SPEC-31` `RF-10`), y dos copias de la misma ficha acaban divergiendo."""
+    if datos.get("ficha_en"):
+        if datos.get("ficha") is not None:
+            raise BriefInvalido("un brief lleva `ficha` o `ficha_en`, no las dos")
+        ruta = pathlib.Path(raiz or RAIZ_DEL_REPOSITORIO) / datos["ficha_en"]
+        try:
+            with open(ruta, encoding="utf-8") as f:
+                datos = dict(datos, ficha=json.load(f))
+        except OSError as e:
+            raise BriefInvalido("`ficha_en` apunta a {0}, que no se puede leer: {1}".format(
+                datos["ficha_en"], e)) from None
     try:
         return BriefDeEvaluacion.model_validate(datos)
     except ValidationError as e:
