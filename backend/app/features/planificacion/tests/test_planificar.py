@@ -179,3 +179,34 @@ def test_los_planes_fuera_de_esquema_tienen_su_propio_tope(con):
                            tope=3, tope_de_formato=2)
     assert len(planificador.llamadas) == 3 and revisor.llamadas == []
     assert "esquema" in str(e.value)
+
+
+# --- `PLAN-27` E3: quien esta en cada escena -----------------------------------------
+
+def test_una_escena_del_plan_con_un_presente_no_declarado_no_valida():
+    from pydantic import ValidationError
+    from app.commons.configuracion.esquemas import PlanDeLaObra
+    d = plan_dict()
+    d["capitulos"][0]["escenas"][0]["personajes_presentes"] = ["per-irene", "per-nadie"]
+    with pytest.raises(ValidationError) as e:
+        PlanDeLaObra.model_validate(d)
+    # Por el presente y no por un campo de mas: antes de existir el campo, el plan ya no
+    # validaba, y la prueba habria pasado por el motivo equivocado.
+    assert "per-nadie" in str(e.value) and "no es un personaje declarado" in str(e.value)
+
+
+def test_los_presentes_se_acotan_a_la_obra_como_el_pov():
+    """`F-64`: los identificadores del plan son de su obra, tambien los presentes."""
+    from app.commons.configuracion.esquemas import PlanDeLaObra
+    from app.features.planificacion.ids import acotar_a_la_obra
+    d = plan_dict()
+    d["capitulos"][0]["escenas"][0]["personajes_presentes"] = ["per-irene", "per-brisa"]
+    p = acotar_a_la_obra(PlanDeLaObra.model_validate(d), "obra-x")
+    assert p.capitulos[0].escenas[0].personajes_presentes == ["obra-x-per-irene",
+                                                              "obra-x-per-brisa"]
+
+
+def test_el_prompt_del_planificador_pide_los_personajes_presentes(con):
+    planificador = Agente([_plan()])
+    service.planificar(con, "obra-x", ficha(), planificador, Agente([APROBADO]))
+    assert "personajes_presentes" in planificador.llamadas[0]

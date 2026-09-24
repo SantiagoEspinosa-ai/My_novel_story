@@ -12,7 +12,7 @@ from app.commons.db import migraciones
 from app.features.escaleta import repository as escaleta
 from app.features.orquestacion import novela
 from app.features.planificacion.service import PlanAprobado
-from app.features.planificacion.tests.conftest import ficha, plan
+from app.features.planificacion.tests.conftest import ficha, plan, plan_dict
 
 
 @pytest.fixture
@@ -62,6 +62,34 @@ def test_montar_guarda_el_nombre_de_cada_personaje_y_de_cada_lugar(con):
     nombres = dict(con.execute("SELECT id, nombre_canonico FROM entidad").fetchall())
     assert nombres["per-irene"] == "Irene Valdés" and nombres["per-brisa"] == "Brisa"
     assert con.execute("SELECT nombre FROM lugar WHERE id='lug-casa'").fetchone()[0] == "Casa"
+
+
+def _aprobado_con_presentes(presentes):
+    d = plan_dict()
+    for c in d["capitulos"]:
+        c["escenas"][0]["personajes_presentes"] = list(presentes)
+    from app.commons.configuracion.esquemas import PlanDeLaObra
+    return PlanAprobado(PlanDeLaObra.model_validate(d), 1, "El mapa de Irene",
+                        "Irene sigue un mapa antiguo.")
+
+
+def test_montar_guarda_los_personajes_presentes_de_cada_escena(con):
+    """`PLAN-27` E3: sin esto `participa_en` no se puede calcular y las fichas de
+    personaje no enlazan con ningun capitulo."""
+    novela.montar(con, "obra-x", ficha(), _aprobado_con_presentes(["per-irene", "per-brisa"]))
+    assert escaleta.escena(con, "cap-03-e1")["personajes_presentes"] == ["per-irene",
+                                                                        "per-brisa"]
+
+
+def test_un_presente_que_no_puede_llegar_al_lugar_para_la_escena_por_inv_02(con):
+    """El cambio de comportamiento que aprueba `PLAN-27`: con los presentes declarados,
+    `INV-02` empieza a mirar en la novela regalo."""
+    from app.features.consolidacion import aplicar, mundo
+    from app.features.verificacion import puertas
+    novela.montar(con, "obra-x", ficha(), _aprobado_con_presentes(["per-brisa"]))
+    aplicar.sembrar(con, {"per-brisa": ("vivo", "lug-lejos")})
+    h = puertas.verificar(escaleta.escena(con, "cap-01-e1"), {}, mundo.leer(con))
+    assert any(x.invariante == "INV-02" and "per-brisa" in x.descripcion for x in h)
 
 
 def test_montar_dos_veces_no_duplica_ni_reinicia(con):

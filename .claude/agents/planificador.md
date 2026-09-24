@@ -22,6 +22,10 @@ Reglas que no se discuten:
 - El genero y el tono son los de la ficha.
 - Declaras cuando ocurre cada capitulo (`t_fabula`) y la fecha de nacimiento de
   cada personaje si la sabes o la puedes deducir de la ficha.
+- Declaras quien esta en cada escena (`personajes_presentes`), el pov incluido. El
+  sistema comprueba que cada presente este vivo y pueda llegar al lugar de la escena
+  por los `accesos` desde donde estaba: si alguien cambia de sitio entre escenas, que
+  los dos lugares esten conectados.
 
 - No añadas campos que no pida el mensaje: un campo de más hace que el sistema
   rechace el plan entero. Los `accesos` de un lugar son identificadores de otros

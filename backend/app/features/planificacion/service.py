@@ -45,7 +45,9 @@ Devuelve un unico objeto JSON: {{"plan": {{...}}}}, con el plan de esta forma:
     empieza_en, fecha_de_nacimiento}}]. El destinatario y cada persona o
     mascota de la ficha van con su nombre EXACTO.
   capitulos: [{{id: "cap-01".."cap-10", titulo, escenas: [{{eje, signo, lugar,
-    pov, sinopsis, t_fabula}}]}}], con una sola escena.
+    pov, sinopsis, t_fabula, personajes_presentes}}]}}], con una sola escena.
+    personajes_presentes son los id de los personajes que estan en la escena,
+    el pov incluido; cada uno tiene que estar declarado en personajes.
   imprescindibles: [{{elemento, capitulo, palabras_clave}}]: elemento es la
     descripcion literal de cada elemento imprescindible de la ficha.
   exclusiones_previstas: [{{personaje, capitulo, estado_vital}}] si alguien

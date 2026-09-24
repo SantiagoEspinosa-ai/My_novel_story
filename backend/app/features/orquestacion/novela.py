@@ -62,6 +62,9 @@ def montar(con, obra, ficha, aprobado, sistema=None):
             "id": "{0}-e1".format(c.id), "orden": 1, "capitulo": c.id,
             "cambio_de_valor": {"eje": e.eje, "signo": e.signo},
             "pov": e.pov, "lugar": e.lugar, "t_fabula": e.t_fabula,
+            # `PLAN-27` E3: quien esta. Con esto `participa_en` se puede calcular, e
+            # `INV-02` empieza a mirar en la novela regalo.
+            "personajes_presentes": list(e.personajes_presentes) or None,
             "beats": [{"id": "{0}-b1".format(c.id), "texto": e.sinopsis,
                        "establece": e.establece}],
             "longitud_objetivo": [minimo, maximo]}])

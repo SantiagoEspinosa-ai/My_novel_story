@@ -147,6 +147,10 @@ class EscenaDelPlan(_DelDominio):
         default=None,
         description="`MomentoNarrativo.t_fabula`: cuando ocurre en la historia. "
                     "Lo declara el plan (`SPEC-26` `RF-04`)")
+    personajes_presentes: list[str] = Field(
+        default_factory=list,
+        description="`Escena.personajes_presentes` (`PLAN-27` E3). Vacio por defecto, "
+                    "para que los planes guardados sigan validando")
 
 
 class ImprescindibleDelPlan(_DelDominio):
@@ -233,6 +237,11 @@ class PlanDeLaObra(_DelDominio):
                     raise ValueError(
                         "{0} escena {1} tiene el POV en `{2}`, que no es un "
                         "personaje declarado".format(c.id, i, e.pov))
+                for p in e.personajes_presentes:
+                    if p not in personajes:
+                        raise ValueError(
+                            "{0} escena {1} pone presente a `{2}`, que no es un "
+                            "personaje declarado".format(c.id, i, p))
                 for h in e.establece:
                     if h not in hechos:
                         raise ValueError(

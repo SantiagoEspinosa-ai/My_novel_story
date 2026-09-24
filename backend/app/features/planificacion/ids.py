@@ -50,6 +50,7 @@ def acotar_a_la_obra(plan: PlanDeLaObra, obra: str) -> PlanDeLaObra:
         c["id"] = a(c["id"])
         for e in c["escenas"]:
             e["lugar"], e["pov"] = a(e["lugar"]), a(e["pov"])
+            e["personajes_presentes"] = [a(x) for x in e.get("personajes_presentes", [])]
     for i in d.get("imprescindibles", []):
         i["capitulo"] = a(i["capitulo"])
     for x in d.get("exclusiones_previstas", []):
