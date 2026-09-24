@@ -210,3 +210,16 @@ def test_el_prompt_del_planificador_pide_los_personajes_presentes(con):
     planificador = Agente([_plan()])
     service.planificar(con, "obra-x", ficha(), planificador, Agente([APROBADO]))
     assert "personajes_presentes" in planificador.llamadas[0]
+
+
+def test_relanzar_la_planificacion_no_pisa_las_versiones_anteriores(con):
+    """`F-111`, TLC `CE-8` (`RondasDePlanConservadas`): `planificar` volvia a numerar desde
+    la version 1 y, con `INSERT OR REPLACE`, pisaba las rondas de la ejecucion anterior."""
+    with pytest.raises(service.PlanNoAprobado):
+        service.planificar(con, "obra-x", ficha(), Agente([_plan()]),
+                           Agente([_rechazo("no tiene arco")]))
+    r = service.planificar(con, "obra-x", ficha(), Agente([_plan()]), Agente([APROBADO]))
+    versiones = repo.versiones(con, "obra-x")
+    assert [v["version"] for v in versiones] == [1, 2, 3, 4]
+    assert [v["aprobado"] for v in versiones] == [False, False, False, True]
+    assert r.version == 4

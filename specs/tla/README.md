@@ -265,7 +265,7 @@ Dos rondas escritas y una fila: la segunda ejecución vuelve a empezar en `versi
 `INSERT OR REPLACE` sustituye la fila del rechazo por la del plan fuera de esquema. Las
 objeciones del Revisor de la primera ejecución desaparecen, y no falla nada.
 
-**Cambio en el código:** ninguno todavía; `F-111`, abierto.
+**Cambio en el código:** `F-111`, cerrado: `planificar` numera desde la última versión guardada de la obra y ya no pisa las rondas anteriores. El tope por ejecución sigue abierto (`F-110`).
 
 ### CE-9 · Una caída entre las dos transacciones de consolidar bloquea la novela (`F-112` a)
 
