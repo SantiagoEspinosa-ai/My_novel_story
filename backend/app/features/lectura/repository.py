@@ -20,12 +20,35 @@ def obra(con, id_obra):
     return None if f is None else {"id": f[0], "titulo": f[1], "dedicatoria": f[2]}
 
 
-def capitulos(con, id_obra):
-    """Por `capitulo.orden`, que es el orden de lectura. Nunca por `id`."""
+def capitulos(con, id_obra, version=None):
+    """Los capitulos de la version `version` -la vigente si no se dice-, en su orden y con
+    su posicion como `orden` (`SPEC-23` `D-2`). La version se lee por SQL de
+    `capitulo_de_version`, como el manuscrito: con dos versiones, `capitulo` tiene el 2
+    viejo y el nuevo, los dos con `orden` 2, y leer la tabla entera daba dos «Capitulo 2».
+
+    Una obra sin versiones (anterior a `PLAN-23`) se lee como siempre: por
+    `capitulo.orden`, que es el orden de lectura. Nunca por `id`."""
+    if version is None:
+        version = _version_vigente(con, id_obra)
+    if version is not None:
+        return [{"id": f[0], "orden": f[1], "estado": f[2], "obra": id_obra}
+                for f in con.execute(
+                    "SELECT c.id, v.orden, c.estado FROM capitulo_de_version v "
+                    "JOIN capitulo c ON c.id = v.capitulo "
+                    "WHERE v.obra = ? AND v.numero = ? ORDER BY v.orden",
+                    (id_obra, version))]
     return [{"id": f[0], "orden": f[1], "estado": f[2], "obra": id_obra}
             for f in con.execute(
                 "SELECT id, orden, estado FROM capitulo WHERE obra = ? ORDER BY orden",
                 (id_obra,))]
+
+
+def _version_vigente(con, id_obra):
+    """La ultima version de la obra, o `None` si no tiene ninguna (o no hay tabla)."""
+    if "numero" not in _columnas(con, "version_de_obra"):
+        return None
+    return con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
+                       (id_obra,)).fetchone()[0]
 
 
 def capitulo(con, id_capitulo):

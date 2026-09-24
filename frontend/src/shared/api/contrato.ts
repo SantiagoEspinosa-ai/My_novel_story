@@ -472,6 +472,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/versiones/{numero}/capitulos/{id_capitulo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Capitulo De Version
+         * @description Un capitulo de una version, entero. `404` si no es de esa version (`RF-53`).
+         */
+        get: operations["capitulo_de_version_obras__id_obra__versiones__numero__capitulos__id_capitulo__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/versiones/{numero}/indice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Indice De Version
+         * @description El indice de una version: cada capitulo con su marca de cambio y cada escena con
+         *     su estado, sus hallazgos y su `estado_de_verificacion` en esa version (`RF-52`..`RF-54`).
+         */
+        get: operations["indice_de_version_obras__id_obra__versiones__numero__indice_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/trabajos/{id_trabajo}": {
         parameters: {
             query?: never;
@@ -591,6 +632,27 @@ export interface components {
              */
             orden: number;
         };
+        /** CapituloDelIndiceDeVersion */
+        CapituloDelIndiceDeVersion: {
+            /**
+             * Compartido
+             * @description True si es el mismo capitulo que el de su posicion en la anterior; False si cambio; nulo si la version no tiene anterior
+             */
+            compartido: boolean | null;
+            /** Escenas */
+            escenas: components["schemas"]["EscenaDelIndiceDeVersion"][];
+            estado: components["schemas"]["EstadoDeCapitulo"];
+            /**
+             * Id
+             * @description El id del Capitulo; nunca el de la obra (RF-37)
+             */
+            id: string;
+            /**
+             * Orden
+             * @description Orden de lectura; la lista ya viene en este orden
+             */
+            orden: number;
+        };
         /**
          * CapituloEnlazado
          * @description Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo.
@@ -623,6 +685,26 @@ export interface components {
              * @description El id del Capitulo; nunca el de la obra (RF-37)
              */
             id: string;
+            /** Orden */
+            orden: number;
+        };
+        /** CapituloLeidoDeVersion */
+        CapituloLeidoDeVersion: {
+            /** Compartido */
+            compartido: boolean | null;
+            /** Escenas */
+            escenas: components["schemas"]["EscenaLeidaDeVersion"][];
+            estado: components["schemas"]["EstadoDeCapitulo"];
+            /**
+             * Id
+             * @description El id del Capitulo; nunca el de la obra (RF-37)
+             */
+            id: string;
+            /**
+             * Numero
+             * @description VersionDeObra.numero
+             */
+            numero: number;
             /** Orden */
             orden: number;
         };
@@ -667,6 +749,26 @@ export interface components {
              */
             se_acepto_rindiendose: boolean;
         };
+        /** EscenaDelIndiceDeVersion */
+        EscenaDelIndiceDeVersion: {
+            /**
+             * Capitulo
+             * @description El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban
+             */
+            capitulo: string | null;
+            estado: components["schemas"]["EstadoDeEscena"];
+            /** @description sin_reverificar es un verde heredado de otra version: no es verde */
+            estado_de_verificacion: components["schemas"]["EstadoDeVerificacion"];
+            /** Hallazgos Abiertos */
+            hallazgos_abiertos: components["schemas"]["HallazgoAbierto"][];
+            /** Id */
+            id: string;
+            /**
+             * Se Acepto Rindiendose
+             * @description Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)
+             */
+            se_acepto_rindiendose: boolean;
+        };
         /**
          * EscenaLeida
          * @description Una escena para leer: la del indice mas su texto. **Nunca** el texto sin estado.
@@ -680,6 +782,32 @@ export interface components {
              */
             capitulo: string | null;
             estado: components["schemas"]["EstadoDeEscena"];
+            /** Hallazgos Abiertos */
+            hallazgos_abiertos: components["schemas"]["HallazgoAbierto"][];
+            /** Id */
+            id: string;
+            /**
+             * Personajes Presentes
+             * @description Escena.personajes_presentes: los que la pagina ofrece para renombrar. Nulo si la escena no los declara: no declarado, que no es nadie
+             */
+            personajes_presentes: string[] | null;
+            /**
+             * Se Acepto Rindiendose
+             * @description Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)
+             */
+            se_acepto_rindiendose: boolean;
+        };
+        /** EscenaLeidaDeVersion */
+        EscenaLeidaDeVersion: {
+            /** @description Nulo si la escena no tiene ningun borrador (p. ej. planificada) */
+            borrador: components["schemas"]["BorradorElegido"] | null;
+            /**
+             * Capitulo
+             * @description El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban
+             */
+            capitulo: string | null;
+            estado: components["schemas"]["EstadoDeEscena"];
+            estado_de_verificacion: components["schemas"]["EstadoDeVerificacion"];
             /** Hallazgos Abiertos */
             hallazgos_abiertos: components["schemas"]["HallazgoAbierto"][];
             /** Id */
@@ -869,6 +997,33 @@ export interface components {
              * @description El id de la Obra
              */
             id: string;
+            /** Titulo */
+            titulo: string;
+        };
+        /** IndiceDeVersion */
+        IndiceDeVersion: {
+            /** Anterior */
+            anterior: number | null;
+            /**
+             * Capitulos
+             * @description En el orden de la version
+             */
+            capitulos: components["schemas"]["CapituloDelIndiceDeVersion"][];
+            /**
+             * Dedicatoria
+             * @description Nula si la obra no tiene; nunca un relleno
+             */
+            dedicatoria: string | null;
+            /**
+             * Id
+             * @description El id de la Obra
+             */
+            id: string;
+            /**
+             * Numero
+             * @description VersionDeObra.numero
+             */
+            numero: number;
             /** Titulo */
             titulo: string;
         };
@@ -1839,6 +1994,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VersionDetalleSalida"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capitulo_de_version_obras__id_obra__versiones__numero__capitulos__id_capitulo__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+                numero: number;
+                id_capitulo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapituloLeidoDeVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    indice_de_version_obras__id_obra__versiones__numero__indice_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+                numero: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndiceDeVersion"];
                 };
             };
             /** @description Validation Error */

@@ -18,8 +18,9 @@ def _escena_del_indice(con, fila):
             "hallazgos_abiertos": repo.hallazgos_abiertos(con, fila["id"])}
 
 
-def indice(con, id_obra):
-    """`None` si la obra no existe: un id de capitulo no es una obra (`RF-37`)."""
+def indice(con, id_obra, version=None):
+    """`None` si la obra no existe: un id de capitulo no es una obra (`RF-37`). Los
+    capitulos son los de la version `version`, la vigente si no se dice."""
     obra = repo.obra(con, id_obra)
     if obra is None:
         return None
@@ -27,7 +28,7 @@ def indice(con, id_obra):
         {"id": c["id"], "orden": c["orden"], "estado": c["estado"],
          "escenas": [_escena_del_indice(con, e)
                      for e in repo.escenas_de_capitulo(con, id_obra, c["id"])]}
-        for c in repo.capitulos(con, id_obra)]
+        for c in repo.capitulos(con, id_obra, version)]
     return obra
 
 

@@ -10,6 +10,8 @@ cambio respecto a la anterior- y lo calcula el backend por identidad (`CE-5`).
 from app.commons.dominio import enumeraciones as enums
 from app.commons.dominio.modelos import _DelDominio
 from app.commons.trabajos.estados import EstadoDeTrabajo
+from app.features.lectura import schemas as lectura
+from pydantic import Field
 
 
 class VersionSalida(_DelDominio):
@@ -97,3 +99,37 @@ class TrabajoSalida(_DelDominio):
     resultado: dict | None
     motivo: str | None
     volvio_tras_abandono: bool
+
+
+# --- Leer una version (`PLAN-22` E15, `RF-52`..`RF-54`) --------------------------------
+# La forma de la lectura (`lectura/`) con lo que solo sabe una version: si el capitulo es
+# el mismo que el de esa posicion en la anterior (`compartido`, por identidad: `CE-5`) y
+# el `estado_de_verificacion` de cada escena **en esa version** (`D-1`). Se componen
+# aqui porque aqui se puede componer (`A-02`); no se calcula nada nuevo.
+
+class EscenaDelIndiceDeVersion(lectura.EscenaDelIndice):
+    estado_de_verificacion: enums.EstadoDeVerificacion = Field(
+        description="sin_reverificar es un verde heredado de otra version: no es verde")
+
+
+class CapituloDelIndiceDeVersion(lectura.CapituloDelIndice):
+    compartido: bool | None = Field(
+        description="True si es el mismo capitulo que el de su posicion en la anterior; "
+                    "False si cambio; nulo si la version no tiene anterior")
+    escenas: list[EscenaDelIndiceDeVersion]
+
+
+class IndiceDeVersion(lectura.Indice):
+    numero: int = Field(description="VersionDeObra.numero")
+    anterior: int | None
+    capitulos: list[CapituloDelIndiceDeVersion] = Field(description="En el orden de la version")
+
+
+class EscenaLeidaDeVersion(lectura.EscenaLeida):
+    estado_de_verificacion: enums.EstadoDeVerificacion
+
+
+class CapituloLeidoDeVersion(lectura.CapituloLeido):
+    numero: int = Field(description="VersionDeObra.numero")
+    compartido: bool | None
+    escenas: list[EscenaLeidaDeVersion]
