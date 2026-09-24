@@ -314,7 +314,30 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
     capitulo se pregunta si se sigue; un `False` para la generacion **entre capitulos**
     con `techo_de_gasto`, sin llegar a la puerta. Es donde el libro de gasto anota cada
     capitulo y comprueba el techo contra lo gastado.
+
+    `PLAN-22` E13c: deja la fase en `progreso_de_generacion` al entrar en cada una. Una
+    excepcion deja la obra `parada` con el nombre de la excepcion, y se relanza.
     """
+    from app.features.orquestacion import progreso
+    try:
+        r = _escribir_observado(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas,
+                                sistema, listas, lean, observacion, seguir)
+    except Exception as e:
+        progreso.fijar(con, obra, "parada", motivo=type(e).__name__)
+        raise
+    parada, publicacion = r["generacion"].parada, r["publicacion"]
+    if parada:
+        progreso.fijar(con, obra, "parada", motivo=str(parada.get("motivo")))
+    elif publicacion is not None and publicacion.publicada:
+        progreso.fijar(con, obra, "publicada")
+    else:
+        progreso.fijar(con, obra, "esperando_revision")
+    return r
+
+
+def _escribir_observado(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas,
+                        sistema, listas, lean, observacion, seguir=None):
+    """El cuerpo de `escribir`, con o sin observacion."""
     if observacion is None:
         return _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas,
                          sistema, listas, lean, None, seguir)
@@ -326,6 +349,11 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
         return _escribir(con, obra, ficha, _observados(agentes, observacion),
                          hasta_capitulo, carpeta_de_reglas, sistema, listas, lean,
                          observacion, seguir)
+
+
+# `PLAN-22` E13c: la fase en que entra la obra al llamar a cada agente.
+_FASE_DE = {"planificador": "planificando", "revisor": "revisando_plan",
+            "escritor": "escribiendo", "editor": "editando", "resumidor": "resumiendo"}
 
 
 def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sistema,
@@ -341,6 +369,12 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
     from app.commons.modelo.cliente import ConReintentos
     agentes = {k: a if k == "escritor" else
                ConReintentos(a, sistema.topes.reintentos_de_transporte)
+               for k, a in agentes.items()}
+    # `PLAN-22` E13c: cada agente deja la obra en su fase al llamarlo.
+    from app.features.orquestacion.progreso import ConFase
+    donde = {"capitulo": None, "total": None}
+    agentes = {k: ConFase(a, con, obra, _FASE_DE.get(k, "escribiendo"),
+                          lambda: (donde["capitulo"], donde["total"]))
                for k, a in agentes.items()}
     # Reanudar no rehace el plan: si la obra ya tiene uno aprobado, se usa ese.
     with _grupo(observacion, "planificacion"):
@@ -390,7 +424,9 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                  else [c.id for c in aprobado.plan.capitulos])
     if hasta_capitulo:
         capitulos = capitulos[:hasta_capitulo]
+    donde["total"] = len(aprobado.plan.capitulos)
     for numero, cap in enumerate(capitulos, 1):
+        donde["capitulo"] = numero
         # A Langfuse va el numero del capitulo, nunca su id: lo decide el modelo.
         with _grupo(observacion, "capitulo", numero):
             g = modulo_obra.generar_obra(
@@ -451,6 +487,9 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 nombres=nombres, imprescindibles=imprescindibles,
                 anterior_cruza_capitulo=True, observacion=observacion)
 
+        from app.features.orquestacion import progreso
+        progreso.fijar(con, obra, "en_la_puerta", total=donde["total"])
+        donde["capitulo"] = None
         with _grupo(observacion, "cierre"):
             publicada = puerta.publicar(
                 con, obra, ficha,

@@ -86,7 +86,16 @@ cd backend && pip install -r requirements.txt   # una vez
 cd backend && python -m pytest app -q           # las pruebas
 ```
 
-Todavía no hay build: el backend se ejecuta con `uvicorn app.main:app` y el frontend no existe.
+El backend se ejecuta con `uvicorn app.main:app`. El frontend (`PLAN-22`, la lectura web) vive en `frontend/`; sus pruebas no arrancan backend y el contrato se comprueba desde la raíz:
+
+```
+cd frontend && npm install            # una vez; necesita red
+cd frontend && npm test               # las pruebas del frontend
+cd frontend && npx steiger src        # las capas de FSD (VER-17)
+cd frontend && npm run contrato       # los tipos, desde contrato/openapi.json
+python -m pytest harness/documentos -q            # el validador del contrato
+python -X utf8 harness/documentos/contrato.py     # compara; --escribir regenera el congelado
+```
 
 La entrevista del destinatario (`SPEC-25`) se hace desde la terminal con el backend levantado. **Cada turno llama al modelo**, así que gasta dinero; necesita `modelos.entrevistador` en `backend/config/sistema.json`:
 

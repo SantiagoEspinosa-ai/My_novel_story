@@ -1,0 +1,2383 @@
+{
+  "components": {
+    "schemas": {
+      "BorradorElegido": {
+        "description": "El `Borrador` elegido de la escena: el aceptado o, si no consta, el ultimo.",
+        "properties": {
+          "texto": {
+            "description": "Byte a byte el del borrador, sin tocar (VER-60)",
+            "title": "Texto",
+            "type": "string"
+          },
+          "version": {
+            "description": "Borrador.version: el ancla de una seleccion (RF-47)",
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "texto"
+        ],
+        "title": "BorradorElegido",
+        "type": "object"
+      },
+      "BriefEntrada": {
+        "additionalProperties": false,
+        "description": "Lo que hace falta para dar de alta una `Obra`.\n\nSolo `titulo` y `premisa` son obligatorios, que es lo que dice la ficha de\n`Obra`. `persona` y `tiempo_verbal` son de `GuiaDeEstilo` y entran aqui\nporque sin ellos el Escaletador no puede empezar; el resto de la guia llega\ncon su propia feature.",
+        "properties": {
+          "extension_objetivo": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension Objetivo"
+          },
+          "genero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genero"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonaNarrativa"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premisa": {
+            "minLength": 1,
+            "title": "Premisa",
+            "type": "string"
+          },
+          "subgenero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subgenero"
+          },
+          "tiempo_verbal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TiempoVerbal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "titulo": {
+            "minLength": 1,
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "titulo",
+          "premisa"
+        ],
+        "title": "BriefEntrada",
+        "type": "object"
+      },
+      "CambioEntrada": {
+        "additionalProperties": false,
+        "description": "La misma peticion y la lista que el lector acepta, que tiene que ser la\npropuesta (`RF-48`, `RF-50`).",
+        "properties": {
+          "capitulos_propuestos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capitulos Propuestos",
+            "type": "array"
+          },
+          "clase": {
+            "$ref": "#/components/schemas/ClaseDePeticion"
+          },
+          "enunciado_nuevo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enunciado Nuevo"
+          },
+          "hecho": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hecho"
+          },
+          "nombre_nuevo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre Nuevo"
+          },
+          "personaje": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaje"
+          },
+          "texto": {
+            "title": "Texto",
+            "type": "string"
+          },
+          "version_de_partida": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version De Partida"
+          }
+        },
+        "required": [
+          "clase",
+          "texto",
+          "capitulos_propuestos"
+        ],
+        "title": "CambioEntrada",
+        "type": "object"
+      },
+      "CapituloDeVersionSalida": {
+        "additionalProperties": false,
+        "properties": {
+          "capitulo": {
+            "title": "Capitulo",
+            "type": "string"
+          },
+          "compartido": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compartido"
+          },
+          "escenas": {
+            "items": {
+              "$ref": "#/components/schemas/EscenaDeVersionSalida"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstadoDeCapitulo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "orden",
+          "capitulo",
+          "compartido",
+          "estado",
+          "escenas"
+        ],
+        "title": "CapituloDeVersionSalida",
+        "type": "object"
+      },
+      "CapituloDelIndice": {
+        "properties": {
+          "escenas": {
+            "description": "En orden de lectura",
+            "items": {
+              "$ref": "#/components/schemas/EscenaDelIndice"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeCapitulo"
+          },
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "orden": {
+            "description": "Orden de lectura; la lista ya viene en este orden",
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden",
+          "estado",
+          "escenas"
+        ],
+        "title": "CapituloDelIndice",
+        "type": "object"
+      },
+      "CapituloEnlazado": {
+        "description": "Una referencia a un `Capitulo`: su id y su orden, para enlazarlo y nombrarlo.",
+        "properties": {
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden"
+        ],
+        "title": "CapituloEnlazado",
+        "type": "object"
+      },
+      "CapituloLeido": {
+        "description": "Un capitulo de corrido: sus escenas en orden, **una por bloque** (`RF-41`).\n\nLo ensambla el backend -que escenas entran y en que orden-, pero no junta los\ntextos: cada escena lleva el suyo con su estado y sus hallazgos (`RF-39`).",
+        "properties": {
+          "escenas": {
+            "description": "En orden de lectura",
+            "items": {
+              "$ref": "#/components/schemas/EscenaLeida"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeCapitulo"
+          },
+          "id": {
+            "description": "El id del Capitulo; nunca el de la obra (RF-37)",
+            "title": "Id",
+            "type": "string"
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "orden",
+          "estado",
+          "escenas"
+        ],
+        "title": "CapituloLeido",
+        "type": "object"
+      },
+      "CapitulosPorSalida": {
+        "additionalProperties": false,
+        "properties": {
+          "cascada": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cascada",
+            "type": "array"
+          },
+          "selectiva": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Selectiva",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cascada",
+          "selectiva"
+        ],
+        "title": "CapitulosPorSalida",
+        "type": "object"
+      },
+      "ClaseDePeticion": {
+        "description": "`C-4`: lo que el lector puede pedir. Un hecho o un nombre.",
+        "enum": [
+          "hecho",
+          "nombre"
+        ],
+        "title": "ClaseDePeticion",
+        "type": "string"
+      },
+      "EscenaDeVersionSalida": {
+        "additionalProperties": false,
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "estado_de_verificacion": {
+            "$ref": "#/components/schemas/EstadoDeVerificacion"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "estado",
+          "estado_de_verificacion"
+        ],
+        "title": "EscenaDeVersionSalida",
+        "type": "object"
+      },
+      "EscenaDelIndice": {
+        "description": "Una escena en el indice: su estado y sus hallazgos, **nunca** sin ellos (`RF-39`).",
+        "properties": {
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban",
+            "title": "Capitulo"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "hallazgos_abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbierto"
+            },
+            "title": "Hallazgos Abiertos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "se_acepto_rindiendose": {
+            "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
+            "title": "Se Acepto Rindiendose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "capitulo",
+          "estado",
+          "se_acepto_rindiendose",
+          "hallazgos_abiertos"
+        ],
+        "title": "EscenaDelIndice",
+        "type": "object"
+      },
+      "EscenaLeida": {
+        "description": "Una escena para leer: la del indice mas su texto. **Nunca** el texto sin estado.",
+        "properties": {
+          "borrador": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BorradorElegido"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si la escena no tiene ningun borrador (p. ej. planificada)"
+          },
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El id del Capitulo que la contiene; nunca el de la obra. Nulo solo en escaletas anteriores a SPEC-21, que no lo guardaban",
+            "title": "Capitulo"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeEscena"
+          },
+          "hallazgos_abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbierto"
+            },
+            "title": "Hallazgos Abiertos",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "se_acepto_rindiendose": {
+            "description": "Resuelto en el backend: estado == aceptada_por_rendicion (RF-40)",
+            "title": "Se Acepto Rindiendose",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "capitulo",
+          "estado",
+          "se_acepto_rindiendose",
+          "hallazgos_abiertos",
+          "borrador"
+        ],
+        "title": "EscenaLeida",
+        "type": "object"
+      },
+      "EstadoDeCapitulo": {
+        "enum": [
+          "abierto",
+          "cerrado"
+        ],
+        "title": "EstadoDeCapitulo",
+        "type": "string"
+      },
+      "EstadoDeEscena": {
+        "enum": [
+          "planificada",
+          "generada",
+          "en_verificacion",
+          "rechazada",
+          "en_revision",
+          "aceptada",
+          "aceptada_por_rendicion",
+          "consolidada"
+        ],
+        "title": "EstadoDeEscena",
+        "type": "string"
+      },
+      "EstadoDeHallazgo": {
+        "enum": [
+          "abierto",
+          "resuelto",
+          "descartado",
+          "sin_veredicto"
+        ],
+        "title": "EstadoDeHallazgo",
+        "type": "string"
+      },
+      "EstadoDeVerificacion": {
+        "description": "El estado de una escena **en una version**, que no es `estado_de_escena`.\n\n`sin_reverificar` es el verde heredado de otra version: **no cuenta como verde**\n(`D-1`). No añade ninguna transicion a la maquina de `estado_de_escena`.",
+        "enum": [
+          "verificada",
+          "sin_reverificar",
+          "fallida"
+        ],
+        "title": "EstadoDeVerificacion",
+        "type": "string"
+      },
+      "EstadoVital": {
+        "enum": [
+          "vivo",
+          "muerto",
+          "desaparecido"
+        ],
+        "title": "EstadoVital",
+        "type": "string"
+      },
+      "FaseDeGeneracion": {
+        "description": "En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es\nque el pipeline termino sin publicar y ahora le toca a una persona.",
+        "enum": [
+          "planificando",
+          "revisando_plan",
+          "escribiendo",
+          "editando",
+          "resumiendo",
+          "en_la_puerta",
+          "publicada",
+          "parada",
+          "esperando_revision"
+        ],
+        "title": "FaseDeGeneracion",
+        "type": "string"
+      },
+      "FichaDeLugar": {
+        "description": "`Lugar` (`RF-43`).",
+        "properties": {
+          "atmosfera": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nula: la base no la guarda",
+            "title": "Atmosfera"
+          },
+          "capitulos_donde_aparece": {
+            "description": "Por ocurre_en y Capitulo.orden (RF-44)",
+            "items": {
+              "$ref": "#/components/schemas/CapituloEnlazado"
+            },
+            "title": "Capitulos Donde Aparece",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si la base no lo guarda (PLAN-27 E2)",
+            "title": "Nombre"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "atmosfera",
+          "capitulos_donde_aparece"
+        ],
+        "title": "FichaDeLugar",
+        "type": "object"
+      },
+      "FichaDePersonaje": {
+        "description": "`Personaje` (`RF-43`). Lo que la base no guarda viaja nulo: «sin dato», no «ninguno».",
+        "properties": {
+          "alias": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo: la base no guarda alias",
+            "title": "Alias"
+          },
+          "capitulos_donde_aparece": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CapituloEnlazado"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por participa_en y Capitulo.orden. Nulo si la obra no declara sus personajes_presentes: no declarado, que no es nadie (RF-44)",
+            "title": "Capitulos Donde Aparece"
+          },
+          "estado_vital": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstadoVital"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nombre_canonico": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si la base no lo guarda (PLAN-27 E2)",
+            "title": "Nombre Canonico"
+          },
+          "rol_dramatico": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RolDramatico"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo: la base no lo guarda"
+          }
+        },
+        "required": [
+          "id",
+          "nombre_canonico",
+          "alias",
+          "rol_dramatico",
+          "estado_vital",
+          "capitulos_donde_aparece"
+        ],
+        "title": "FichaDePersonaje",
+        "type": "object"
+      },
+      "Fichas": {
+        "properties": {
+          "lugares": {
+            "items": {
+              "$ref": "#/components/schemas/FichaDeLugar"
+            },
+            "title": "Lugares",
+            "type": "array"
+          },
+          "personajes": {
+            "items": {
+              "$ref": "#/components/schemas/FichaDePersonaje"
+            },
+            "title": "Personajes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "personajes",
+          "lugares"
+        ],
+        "title": "Fichas",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HallazgoAbierto": {
+        "description": "Un `Hallazgo` con estado `abierto` o `sin_veredicto`, con **su** estado.",
+        "properties": {
+          "descripcion": {
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDeHallazgo",
+            "description": "sin_veredicto es que falto el juicio, no que se violara"
+          },
+          "invariante": {
+            "description": "La INV-xx que se violo o no se pudo comprobar",
+            "title": "Invariante",
+            "type": "string"
+          },
+          "severidad": {
+            "$ref": "#/components/schemas/Severidad"
+          },
+          "verificador": {
+            "description": "Quien lo detecto",
+            "title": "Verificador",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invariante",
+          "verificador",
+          "severidad",
+          "estado",
+          "descripcion"
+        ],
+        "title": "HallazgoAbierto",
+        "type": "object"
+      },
+      "Indice": {
+        "description": "La portada y el indice de una obra, resueltos (`RF-38`, `RF-46`).\n\nNo lleva partes: la base no tiene tabla `parte` y el plan de la novela regalo no las\ndeclara (`PLAN-22` cuestion 3). No se pinta lo que no hay.",
+        "properties": {
+          "capitulos": {
+            "description": "Por Capitulo.orden",
+            "items": {
+              "$ref": "#/components/schemas/CapituloDelIndice"
+            },
+            "title": "Capitulos",
+            "type": "array"
+          },
+          "dedicatoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nula si la obra no tiene; nunca un relleno",
+            "title": "Dedicatoria"
+          },
+          "id": {
+            "description": "El id de la Obra",
+            "title": "Id",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "dedicatoria",
+          "capitulos"
+        ],
+        "title": "Indice",
+        "type": "object"
+      },
+      "ObraSalida": {
+        "additionalProperties": false,
+        "description": "Una obra nunca se devuelve sin su estructura.\n\n`RF-23` lo dice para la escena -texto, estado y hallazgos abiertos, nunca el\ntexto solo- y el motivo vale igual aqui: un dato suelto induce a darlo por\nbueno. Una obra recien creada devuelve `capitulos: []`, que es informacion,\nno un hueco.",
+        "properties": {
+          "capitulos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capitulos",
+            "type": "array"
+          },
+          "genero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genero"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "premisa": {
+            "title": "Premisa",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "premisa"
+        ],
+        "title": "ObraSalida",
+        "type": "object"
+      },
+      "PersonaNarrativa": {
+        "enum": [
+          "primera",
+          "segunda",
+          "tercera_limitada",
+          "tercera_omnisciente"
+        ],
+        "title": "PersonaNarrativa",
+        "type": "string"
+      },
+      "PeticionEntrada": {
+        "additionalProperties": false,
+        "description": "Los campos de `PeticionDeCambio` que da el lector. Con `hecho`, `hecho` y\n`enunciado_nuevo`; con `nombre`, `personaje` y `nombre_nuevo`. La obra va en la ruta\ny la version de partida, si no se dice, es la vigente.",
+        "properties": {
+          "clase": {
+            "$ref": "#/components/schemas/ClaseDePeticion"
+          },
+          "enunciado_nuevo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enunciado Nuevo"
+          },
+          "hecho": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hecho"
+          },
+          "nombre_nuevo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre Nuevo"
+          },
+          "personaje": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaje"
+          },
+          "texto": {
+            "title": "Texto",
+            "type": "string"
+          },
+          "version_de_partida": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version De Partida"
+          }
+        },
+        "required": [
+          "clase",
+          "texto"
+        ],
+        "title": "PeticionEntrada",
+        "type": "object"
+      },
+      "ProgresoDeGeneracion": {
+        "description": "En que punto va la generacion de una obra (`SPEC-22` `RF-60`). Lo resuelve el\nservidor: la interfaz lo pinta y no resta fechas.",
+        "properties": {
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Numero de capitulo (1-based), nulo fuera de uno",
+            "title": "Capitulo"
+          },
+          "desde": {
+            "description": "Cuando entro en la fase (UTC, AAAA-MM-DD HH:MM:SS)",
+            "title": "Desde",
+            "type": "string"
+          },
+          "fase": {
+            "$ref": "#/components/schemas/FaseDeGeneracion"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en parada: por que",
+            "title": "Motivo"
+          },
+          "obra": {
+            "description": "El id de la Obra",
+            "title": "Obra",
+            "type": "string"
+          },
+          "segundos_desde_la_ultima_actividad": {
+            "description": "Calculados por el servidor al responder, con su reloj",
+            "title": "Segundos Desde La Ultima Actividad",
+            "type": "integer"
+          },
+          "total_de_capitulos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total De Capitulos"
+          },
+          "ultima_actividad": {
+            "description": "Lo mas reciente entre la fase, las trazas y las llamadas a tool de la obra (UTC)",
+            "title": "Ultima Actividad",
+            "type": "string"
+          }
+        },
+        "required": [
+          "obra",
+          "fase",
+          "capitulo",
+          "total_de_capitulos",
+          "motivo",
+          "desde",
+          "ultima_actividad",
+          "segundos_desde_la_ultima_actividad"
+        ],
+        "title": "ProgresoDeGeneracion",
+        "type": "object"
+      },
+      "PropuestaSalida": {
+        "additionalProperties": false,
+        "properties": {
+          "capitulos": {
+            "$ref": "#/components/schemas/CapitulosPorSalida"
+          },
+          "capitulos_propuestos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitulos Propuestos"
+          },
+          "clase": {
+            "$ref": "#/components/schemas/ClaseDePeticion"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "obra": {
+            "title": "Obra",
+            "type": "string"
+          },
+          "promesa": {
+            "title": "Promesa",
+            "type": "string"
+          },
+          "punto_ciego": {
+            "title": "Punto Ciego",
+            "type": "string"
+          },
+          "salida": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalidaDeRegeneracion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version_de_partida": {
+            "title": "Version De Partida",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "obra",
+          "version_de_partida",
+          "clase",
+          "capitulos",
+          "salida",
+          "capitulos_propuestos",
+          "motivo",
+          "promesa",
+          "punto_ciego"
+        ],
+        "title": "PropuestaSalida",
+        "type": "object"
+      },
+      "RespuestaEntrada": {
+        "additionalProperties": false,
+        "properties": {
+          "respuesta": {
+            "minLength": 1,
+            "title": "Respuesta",
+            "type": "string"
+          }
+        },
+        "required": [
+          "respuesta"
+        ],
+        "title": "RespuestaEntrada",
+        "type": "object"
+      },
+      "RolDramatico": {
+        "enum": [
+          "protagonista",
+          "antagonista",
+          "aliado",
+          "guardian_del_umbral",
+          "victima",
+          "testigo"
+        ],
+        "title": "RolDramatico",
+        "type": "string"
+      },
+      "SalidaDeRegeneracion": {
+        "description": "`S-1` y `S-2`. La elige la medida del arrastre (`SPEC-23` v2), no una opinion.",
+        "enum": [
+          "cascada",
+          "selectiva"
+        ],
+        "title": "SalidaDeRegeneracion",
+        "type": "string"
+      },
+      "Severidad": {
+        "enum": [
+          "bloqueante",
+          "mayor",
+          "menor"
+        ],
+        "title": "Severidad",
+        "type": "string"
+      },
+      "TextoLibreEntrada": {
+        "additionalProperties": false,
+        "description": "Sin `max_length`: el limite de `RF-11` lo comprueba `texto_libre`, que\ndevuelve el motivo con las dos cifras. Un 422 generico de Pydantic diria que\nesta mal pero no cuanto sobra.",
+        "properties": {
+          "texto": {
+            "minLength": 1,
+            "title": "Texto",
+            "type": "string"
+          }
+        },
+        "required": [
+          "texto"
+        ],
+        "title": "TextoLibreEntrada",
+        "type": "object"
+      },
+      "TiempoVerbal": {
+        "enum": [
+          "presente",
+          "pasado"
+        ],
+        "title": "TiempoVerbal",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionDetalleSalida": {
+        "additionalProperties": false,
+        "properties": {
+          "anterior": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anterior"
+          },
+          "capitulos": {
+            "items": {
+              "$ref": "#/components/schemas/CapituloDeVersionSalida"
+            },
+            "title": "Capitulos",
+            "type": "array"
+          },
+          "commit": {
+            "title": "Commit",
+            "type": "string"
+          },
+          "creada_en": {
+            "title": "Creada En",
+            "type": "string"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "obra": {
+            "title": "Obra",
+            "type": "string"
+          },
+          "peticion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peticion"
+          }
+        },
+        "required": [
+          "numero",
+          "anterior",
+          "peticion",
+          "commit",
+          "creada_en",
+          "obra",
+          "capitulos"
+        ],
+        "title": "VersionDetalleSalida",
+        "type": "object"
+      },
+      "VersionSalida": {
+        "additionalProperties": false,
+        "properties": {
+          "anterior": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anterior"
+          },
+          "commit": {
+            "title": "Commit",
+            "type": "string"
+          },
+          "creada_en": {
+            "title": "Creada En",
+            "type": "string"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "peticion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peticion"
+          }
+        },
+        "required": [
+          "numero",
+          "anterior",
+          "peticion",
+          "commit",
+          "creada_en"
+        ],
+        "title": "VersionSalida",
+        "type": "object"
+      },
+      "VersionesSalida": {
+        "additionalProperties": false,
+        "properties": {
+          "obra": {
+            "title": "Obra",
+            "type": "string"
+          },
+          "versiones": {
+            "items": {
+              "$ref": "#/components/schemas/VersionSalida"
+            },
+            "title": "Versiones",
+            "type": "array"
+          }
+        },
+        "required": [
+          "obra",
+          "versiones"
+        ],
+        "title": "VersionesSalida",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Harness de novelas",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/capitulos/{id_capitulo}": {
+      "get": {
+        "description": "Un capitulo de corrido: sus escenas en orden, cada una con estado y hallazgos.",
+        "operationId": "capitulo_capitulos__id_capitulo__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_capitulo",
+            "required": true,
+            "schema": {
+              "title": "Id Capitulo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapituloLeido"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Capitulo",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
+    "/capitulos/{id_capitulo}/cerrar": {
+      "post": {
+        "description": "La segunda puerta con firma humana.\n\nDevuelve los `menor` que se dejan pasar: si no se enseñaran, `mayor` y\n`menor` volverian a producir el mismo comportamiento.",
+        "operationId": "cerrar_capitulo_capitulos__id_capitulo__cerrar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_capitulo",
+            "required": true,
+            "schema": {
+              "title": "Id Capitulo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cerrar Capitulo",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/entrevistas": {
+      "post": {
+        "operationId": "crear_entrevistas_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Crear",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}": {
+      "get": {
+        "operationId": "consultar_entrevistas__id_e__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/cerrar": {
+      "post": {
+        "description": "El comprador confirma la ficha. `409` dice que lo impide, no solo que no.",
+        "operationId": "cerrar_entrevistas__id_e__cerrar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cerrar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/hechos/{id_h}/confirmar": {
+      "post": {
+        "operationId": "confirmar_entrevistas__id_e__hechos__id_h__confirmar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id_h",
+            "required": true,
+            "schema": {
+              "title": "Id H",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirmar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/hechos/{id_h}/descartar": {
+      "post": {
+        "operationId": "descartar_entrevistas__id_e__hechos__id_h__descartar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id_h",
+            "required": true,
+            "schema": {
+              "title": "Id H",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Descartar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/texto-libre": {
+      "post": {
+        "operationId": "texto_libre_entrevistas__id_e__texto_libre_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextoLibreEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Texto Libre",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/turnos": {
+      "post": {
+        "operationId": "turno_entrevistas__id_e__turnos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespuestaEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Turno",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/escenas/{id_escena}": {
+      "get": {
+        "description": "Una escena con su estado, sus hallazgos abiertos y su texto elegido (`RF-39`).",
+        "operationId": "escena_escenas__id_escena__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscenaLeida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Escena",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
+    "/escenas/{id_escena}/aceptar": {
+      "post": {
+        "description": "La dispara una persona. El worker no tiene ninguna ruta que llegue aqui.\n\n`rindiendose` deja la escena en `aceptada_por_rendicion`, que **no es el\nmismo hecho** que `aceptada`: su delta entra igual al canon y quien lea el\nmanuscrito despues necesita saber cuales fueron.",
+        "operationId": "aceptar_escenas__id_escena__aceptar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rindiendose",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Rindiendose",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Aceptar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/escenas/{id_escena}/generar": {
+      "post": {
+        "description": "`202` y un identificador. Nunca el texto, y nunca sincrono.",
+        "operationId": "generar_escenas__id_escena__generar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/escenas/{id_escena}/rechazar": {
+      "post": {
+        "operationId": "rechazar_escenas__id_escena__rechazar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "motivo",
+            "required": true,
+            "schema": {
+              "title": "Motivo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rechazar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/obras": {
+      "post": {
+        "operationId": "alta_de_obra_obras_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BriefEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObraSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Alta De Obra",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/{id_obra}": {
+      "get": {
+        "operationId": "consultar_obra_obras__id_obra__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObraSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar Obra",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/{id_obra}/cambios": {
+      "post": {
+        "description": "`202` con el identificador de trabajo. `409` si no hay salida elegida -hoy,\nsiempre: falta la medida-, si la lista no es la propuesta o si `C-4` no la admite.\nCon `409` **no se guarda ni se encola nada**.",
+        "operationId": "cambios_obras__id_obra__cambios_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambioEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cambios",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/obras/{id_obra}/cambios/propuesta": {
+      "post": {
+        "description": "Los capitulos que se van a tocar, **antes** de tocarlos, con la promesa y su\npunto ciego (`RF-51`, `RF-55`). Sincrona y sin modelo. `409` si `C-4` no la admite.",
+        "operationId": "propuesta_obras__id_obra__cambios_propuesta_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeticionEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropuestaSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Propuesta",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/obras/{id_obra}/entregar": {
+      "post": {
+        "description": "`SPEC-25` `RF-21`: borra la entrevista y conserva la novela, sus vetadas y\nsus hechos. Devuelve cuantas filas se borraron, nunca que contenian.",
+        "operationId": "entregar_obras__id_obra__entregar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Entregar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/obras/{id_obra}/fichas": {
+      "get": {
+        "description": "Las fichas de personajes y lugares, cada una con los capitulos donde aparece.",
+        "operationId": "fichas_obras__id_obra__fichas_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fichas"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Fichas",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/indice": {
+      "get": {
+        "description": "La portada y el indice: capitulos por su orden, escenas con estado y hallazgos.",
+        "operationId": "indice_obras__id_obra__indice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Indice"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Indice",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/progreso": {
+      "get": {
+        "description": "En que punto va la generacion, con los segundos desde la ultima actividad. `404` si\nla obra no se ha empezado a generar: no se inventa una fase.",
+        "operationId": "progreso_obras__id_obra__progreso_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgresoDeGeneracion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Progreso",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/versiones": {
+      "get": {
+        "description": "Las versiones con su numero, su anterior, su commit, cuando se crearon y su\npeticion (`RF-53`).",
+        "operationId": "versiones_obras__id_obra__versiones_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionesSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Versiones",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/obras/{id_obra}/versiones/{numero}": {
+      "get": {
+        "description": "Los capitulos en orden: si es compartido con la anterior, su estado, y por\nescena su `estado_de_escena` y su `estado_de_verificacion` (`RF-52`..`RF-54`).",
+        "operationId": "version_obras__id_obra__versiones__numero__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "numero",
+            "required": true,
+            "schema": {
+              "title": "Numero",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDetalleSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Version",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/trabajos/{id_trabajo}": {
+      "get": {
+        "description": "El estado de un trabajo encolado: su resultado, o el motivo si fallo.\n\nEs la otra mitad de todos los `202`: sin esto el cliente sabe que se encolo\nalgo y no tiene forma de saber que paso.",
+        "operationId": "consultar_trabajo_trabajos__id_trabajo__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_trabajo",
+            "required": true,
+            "schema": {
+              "title": "Id Trabajo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar Trabajo",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    }
+  }
+}

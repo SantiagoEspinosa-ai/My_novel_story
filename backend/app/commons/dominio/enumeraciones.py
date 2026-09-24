@@ -370,3 +370,20 @@ class ClaseDePeticion(_Vocabulario):
 
     HECHO = "hecho"
     NOMBRE = "nombre"
+
+
+# --- Progreso de una generacion (`SPEC-22` `RF-60`) -------------------------
+
+class FaseDeGeneracion(_Vocabulario):
+    """En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es
+    que el pipeline termino sin publicar y ahora le toca a una persona."""
+
+    PLANIFICANDO = "planificando"
+    REVISANDO_PLAN = "revisando_plan"
+    ESCRIBIENDO = "escribiendo"
+    EDITANDO = "editando"
+    RESUMIENDO = "resumiendo"
+    EN_LA_PUERTA = "en_la_puerta"
+    PUBLICADA = "publicada"
+    PARADA = "parada"
+    ESPERANDO_REVISION = "esperando_revision"

@@ -310,6 +310,25 @@ TODAS = [
         # `SPEC-23`, `PLAN-23` A7, `C-4`. Tabla nueva, sin filas que migrar.
         lambda con: [con.execute(s) for s in sentencias(PETICION_SQL)],
     ),
+    Migracion(
+        15,
+        "el progreso de una generacion, una fila por cambio de fase",
+        # `SPEC-22` `RF-60`, `PLAN-22` E13c: `ProgresoDeGeneracion`. Solo se anade: la
+        # ultima fila de una obra es su progreso de hoy, y las anteriores dicen por donde
+        # paso. Tabla nueva, asi que no hay filas viejas que rellenar.
+        """
+        CREATE TABLE IF NOT EXISTS progreso_de_generacion (
+            id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+            obra               TEXT NOT NULL,
+            fase               TEXT NOT NULL,
+            capitulo           INTEGER,
+            total_de_capitulos INTEGER,
+            motivo             TEXT,
+            desde              TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_progreso_por_obra ON progreso_de_generacion (obra, id);
+        """,
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la

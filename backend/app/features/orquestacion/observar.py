@@ -144,3 +144,14 @@ def de_la_evaluacion(obs, celdas, pasada):
             motivo = "{0}: {1}".format(celda.resultado.value, celda.motivo or "sin motivo")
         obs.score(nombre=columna, referencia="evaluacion-{0}".format(pasada),
                   categoria=categoria, motivo=motivo)
+
+
+def del_inspector_visual(obs, juicio):
+    """`INV-30` (`PLAN-22` E13b): un score por pieza, `INV-30.<pieza>`, y el de la
+    invariante. Un ilegible sube `sin_veredicto` y ninguna pieza: no se miro nada que
+    valga. El motivo del agente **no sube**, porque puede citar el texto de la obra."""
+    if obs is None or juicio is None:
+        return
+    for c in juicio.comprobaciones:
+        obs.score(nombre="INV-30.{0}".format(c.pieza), categoria=c.veredicto)
+    obs.score(nombre="INV-30", categoria=juicio.estado)

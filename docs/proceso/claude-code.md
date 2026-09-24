@@ -78,6 +78,64 @@ ella. **Es una copia, no la fuente**: se actualiza copiando otra vez.
 
 ## Browser MCP
 
-**Ni configurado ni usado todavía.** Decidido Playwright MCP; espera a que exista la lectura
-web, porque sin ella no hay nada que inspeccionar (`EX-04`, `EX-13`). Cuando se use, aquí irá
-qué inspeccionó el agente, qué detectó y qué cambio provocó.
+**Configurado en `.mcp.json`** (`PLAN-22` E12): un solo servidor, Playwright MCP
+(`npx -y @playwright/mcp@0.0.82 --browser msedge --headless --isolated`). Es para la sesión que
+inspecciona la web; **ninguna delegación del pipeline lo carga** (toda lleva
+`--strict-mcp-config`) y el hook de policy niega sus tools a los agentes (`VER-108`).
+
+### La primera inspección real (`PLAN-22` E13, 2026-09-24)
+
+**Sobre qué.** La web de verdad: `uvicorn` con `HARNESS_BASE` apuntando a la base de
+`backend/semilla_lectura.py` (una obra **inventada** de cuatro capítulos, sin modelo) y el
+frontend con Vite, que manda `/api` al backend. Ninguna base real.
+
+**Cómo.** Una sesión de Claude Code lanzada con
+`claude -p --model sonnet --mcp-config .mcp.json --strict-mcp-config --tools ""` y solo las tools
+del browser permitidas, con un prompt que le pedía recorrer portada, índice, cada capítulo, una
+escena y las fichas, seguir cada enlace de las fichas, hacer capturas y devolver un JSON. **Coste
+leído del sobre de la delegación: 0,5766 USD** (`total_cost_usd`), 37 turnos, 115,5 s.
+
+**Qué inspeccionó.** Ocho páginas: la portada, el índice, los cuatro capítulos, la escena
+`cap-02-e1` y las fichas; y los cuatro enlaces de las fichas de lugar, que llegaron cada uno al
+capítulo que nombran.
+
+**Qué detectó el agente.** Nada que llamara error: un solo apunte de gravedad «baja» —que la
+ficha del personaje no enlaza ningún capítulo y dice «no declarado»—, que **es lo correcto**,
+porque la novela regalo todavía no declara los presentes. Su propia valoración dice que juzgó
+«en la inspección del árbol de accesibilidad».
+
+**Qué detectó la revisión de sus artefactos, y el agente no.** Mirando capturas de las mismas
+páginas —hechas aparte, con Edge sin cabeza— y los registros de consola que deja el MCP en
+`.playwright-mcp/`. El agente sí hizo capturas (cinco), pero el MCP las dejó en la raíz del
+repositorio porque no tenía `--output-dir`; desde E13b lo tiene:
+
+| Hallazgo | Qué se veía | A quién se devolvió | Cambio |
+| --- | --- | --- | --- |
+| `F-81` | En las fichas, «(sin nombre guardado)» iba dentro del título y lo partía en dos líneas | Frontend (error de pintado) | El aviso sale en su propia línea, fuera del `h3`. Prueba roja: `Fichas › un nombre nulo pinta el id y lo dice` |
+| `F-82` | En un capítulo, la etiqueta de estado quedaba pegada a la primera tarjeta | Frontend | Margen en `estilos.css`. **Sin prueba roja**: es CSS y jsdom no calcula el layout; lo comprobó una segunda captura |
+| `F-83` | La consola daba `404` en `/favicon.ico` en cada página | Frontend | Icono declarado en `index.html`. Prueba roja: `documento › index.html declara su icono` |
+| `F-84` | El agente dio por buena la web con los tres defectos de arriba | Proceso | Queda como punto ciego de `VER-109` y de `INV-30` (`VER-119`) |
+
+**Ningún error de texto**: el texto es inventado y no lo cubre ninguna `INV-xx`, así que no hubo
+nada que devolver al Escritor. El cambio va en el commit `PLAN-22 E13`.
+
+### El validador visual `INV-30`, en real (`PLAN-22` E13b.2, 2026-09-24)
+
+Sobre la misma web y la misma semilla, después de los arreglos de E13:
+`python -X utf8 inspeccion_visual.py lectura-semilla.db obra-semilla-inventada http://localhost:5199/obras/obra-semilla-inventada --modelo sonnet`. Una delegación en el agente
+`inspector_visual`, con `.mcp.json`, `--strict-mcp-config` y solo sus ocho tools del browser.
+
+- **Resultado: `INV-30` `pasa`**, las cinco piezas `pasa`, cada una con su motivo; ningún
+  hallazgo `INV-30` en la base. Esta vez el agente hizo **siete capturas** (en `.playwright-mcp/`)
+  y pidió la consola en cada carga, y dijo que no había errores: con el icono de `F-83` puesto,
+  ya no los hay.
+- **Coste leído de la delegación: 0,4872 USD** (`coste_usd` de sus medidas).
+- **Los scores no llegaron a Langfuse.** El worktree no tiene `backend/.env` —lo ignorado no
+  viaja— y el guion lo dijo (*«no se envia a Langfuse: sin claves»*): los seis scores
+  (`INV-30` e `INV-30.<pieza>`) se emitieron a un exportador en memoria. Que suban a una
+  instancia real está **sin ejercer**.
+- **Un `pasa` sobre una web que ya se había arreglado a mano no dice cuánto caza.** El único
+  caso en que el agente tuvo defectos delante (E13) no vio ninguno (`F-84`). Sesga hacia lo
+  cómodo: este verde es compatible con un validador que no mira.
+- ❌ **No vuelve al Escritor.** Si hubiera fallado, el hallazgo habría quedado abierto para
+  una persona; que el fallo vuelva solo al rol que toca está fuera de `RF-58` y sin hacer.

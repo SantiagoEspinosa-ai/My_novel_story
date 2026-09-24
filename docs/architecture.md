@@ -984,9 +984,14 @@ no es argumento), valida la salida, estima los tokens de lo devuelto y deja una 
 `llamada_a_herramienta`, sin argumentos ni resultado. Ninguna devuelve el texto de una escena.
 
 Cuatro barreras, porque ninguna está probada todavía contra Claude Code real: toda delegación
-del pipeline lleva `--tools ""`; el Escritor y el Editor, además, `--strict-mcp-config`,
-`--mcp-config` (en un fichero) y `--allowedTools` con sus tres tools; el hook de policy es una
-allowlist; y el frontmatter las declara.
+del pipeline lleva `--tools ""` y `--strict-mcp-config` —**toda**, tenga o no tools, desde
+`PLAN-22` DP-6: sin él, una delegación sin tools cargaría el browser MCP del `.mcp.json` de la
+raíz—; el Escritor y el Editor, además, `--mcp-config` (en un fichero) y `--allowedTools` con sus
+tres tools; el hook de policy es una allowlist; y el frontmatter las declara.
+
+**El `.mcp.json` de la raíz declara un solo servidor, Playwright MCP**, fijado a una versión, y
+es para la sesión de Claude Code que inspecciona la lectura web (`PLAN-22` E13), no para los
+agentes: ninguna delegación lo carga y el hook niega sus tools a todo agente del pipeline.
 
 **Punto ciego declarado**: lo que un agente trae con una tool entra en su contexto sin pasar por
 el presupuesto de `CLAUDE.md`, que es sobre lo que mandamos. Se mide y se registra junto a la

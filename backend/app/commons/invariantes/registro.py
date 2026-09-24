@@ -1,4 +1,4 @@
-"""El registro de las invariantes `INV-01`..`INV-27` (`INV-19` e `INV-20` reservadas).
+"""El registro de las invariantes `INV-01`..`INV-30` (`INV-19` e `INV-20` reservadas).
 
 Es la copia en codigo de la tabla de `docs/definitions.md`, y `VER-38` existe
 para comprobar que las dos digan lo mismo. Por eso se escribe a mano: si se
@@ -157,6 +157,12 @@ _LISTA = [
        "EventoCronologico, fechas de nacimiento, specs/lean/"),
     _r("INV-29", "Ningun capitulo de una version publicada esta en aceptada_por_rendicion",
        "obra", "bloqueante", "regla", "estado_de_escena de las escenas de cada capitulo"),
+    # `SPEC-22` `RF-58`, `PLAN-22` E13b: el validador visual. Lo juzga un agente con el
+    # browser MCP sobre la web servida, despues de publicar.
+    _r("INV-30", "La lectura web de una version renderiza la portada con su dedicatoria, el "
+       "indice con todos los capitulos en orden y las fichas con enlaces que llevan a su "
+       "capitulo, comprobado en el navegador con el browser MCP",
+       "obra", "mayor", "juez_llm", "la web servida, por Playwright MCP"),
 ]
 
 TODAS = {i.id: i for i in _LISTA}

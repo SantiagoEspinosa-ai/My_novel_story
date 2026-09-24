@@ -128,6 +128,7 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | FraseRecurrente | Frase que el sistema ha visto repetirse y que puede acabar siendo una muletilla. | **texto**, **desde\_capitulo**, **apariciones**, ultima\_aparicion |
 | PaseDeRevision | Pasada específica sobre el texto ya generado. | **tipo** → `tipo_de_pase`, ambito, hallazgos\[\] |
 | PeticionDeCambio | Lo que el lector pide cambiar de una versión de la obra (`SPEC-23`, `PLAN-23` `C-4`). No edita nada: produce una versión nueva. | **obra** → Obra, **version\_de\_partida** → VersionDeObra, **clase** → `clase_de_peticion`, hecho → HechoCanonico, enunciado\_nuevo, personaje → Personaje, nombre\_nuevo, **texto** (las palabras del lector), salida → `salida_de_regeneracion`, capitulos\_propuestos\[\] → Capitulo. Con `hecho`, lleva `hecho` y `enunciado_nuevo`; con `nombre`, `personaje` y `nombre_nuevo` |
+| ProgresoDeGeneracion | En qué punto va la generación de una obra, para enseñarlo mientras corre (`SPEC-22` `RF-60`). Cada cambio de fase añade una fila; la última es el progreso de hoy. | **obra** → Obra, **fase** → `fase_de_generacion`, capitulo (el número de capítulo en que está, 1-based; no el id), total\_de\_capitulos, **desde** (ISO-8601: cuándo entró en la fase), motivo (solo en `parada`: por qué), **ultima\_actividad** (derivada, no se persiste: lo más reciente entre `desde`, la última traza de delegación de una escena de la obra y la última llamada a tool de la obra), **segundos\_desde\_la\_ultima\_actividad** (derivada, la calcula el servidor con su reloj al responder) |
 
 ### Jerarquía de memoria
 
@@ -234,6 +235,16 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 
 **La relación que más rinde es `conoce`.** Con `sujeto`, `hecho`, `grado` y `desde_escena` se pueden detectar automáticamente tres clases de fallo: personajes que actúan con información que no tienen, revelaciones repetidas al lector y tensión que se desinfla porque el lector se adelantó sin que el texto lo aprovechara.
 
+### Vistas derivadas de la lectura (`SPEC-22`, no se persisten)
+
+Lo que la lectura web necesita y ninguna clase guarda. **Se calculan en el backend, al responder, y no tienen tabla**: la interfaz las recibe resueltas porque, si tuviera que deducirlas, estaría calculando dominio (`SPEC-22` `NF-06`). Son nombres literales del contrato, con las mismas reglas que un atributo.
+
+| Vista | De qué clase | Qué es | De dónde sale |
+| --- | --- | --- | --- |
+| se\_acepto\_rindiendose | Escena | Verdadero si y solo si **estado** = `aceptada_por_rendicion`. Una rendida se distingue siempre de una aceptada limpia, también después de consolidar, porque una escena rendida no pasa a `consolidada` (`SPEC-30` `RF-11`) | `SPEC-22` `RF-40` |
+| hallazgos\_abiertos\[\] → Hallazgo | Escena | Los hallazgos de la escena cuyo **estado** es `abierto` o `sin_veredicto`, cada uno **con su estado**: un `sin_veredicto` viaja como tal y no como `abierto`. Una lista vacía es *«se miró y no había»*, no *«no se sabe»* | `SPEC-22` `RF-39` |
+| capitulos\_donde\_aparece\[\] → Capitulo | Personaje, Lugar | Los capítulos donde la entidad **aparece**, por **Capitulo.orden**: para un `Personaje`, los de las escenas en que `participa_en` (`Escena.personajes_presentes`); para un `Lugar`, los de las escenas que `ocurre_en` él (`Escena.lugar`). Una mención en el texto **no** cuenta, ni haber entrado en el contexto de la escena. Con `personajes_presentes` sin declarar, la lista del personaje es **desconocida**, no vacía | `SPEC-22` `RF-44` |
+
 ## Vocabularios controlados
 
 **No todos los del proyecto están aquí, y conviene saberlo antes de buscar.** Este
@@ -273,8 +284,9 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `tipo_de_decision_de_politica` | DecisionDePolitica.tipo | coincidencia\_vetada, reescritura\_pedida, parada\_por\_vetada, instruccion\_en\_texto\_libre, contradiccion\_detectada, contradiccion\_resuelta, borrado\_al\_entregar, herramienta\_denegada, nombre\_mal\_escrito, parada\_por\_nombre |
 | `criterio_de_edicion` | ValoracionDelEditor.criterio | continuidad, tono, arco, coherencia\_de\_personajes, ritmo, personalizacion |
 | `clase_de_peticion` | PeticionDeCambio.clase | hecho, nombre (`PLAN-23` `C-4`) |
-| `salida_de_regeneracion` | PeticionDeCambio.salida | cascada (`S-1`), selectiva (`S-2`) (`SPEC-23` v2: la elige la medida del arrastre) |
-| `estado_de_verificacion` | Reverificacion.estado | verificada, sin\_reverificar (heredada: **no cuenta como verde**, `D-1`), fallida |
+| `salida_de_regeneracion` | PeticionDeCambio.salida | cascada, selectiva (`S-1` y `S-2`; `SPEC-23` v2: la elige la medida del arrastre) |
+| `estado_de_verificacion` | Reverificacion.estado | verificada, sin\_reverificar, fallida (`sin_reverificar` es la heredada, y **no cuenta como verde**: `D-1`) |
+| `fase_de_generacion` | ProgresoDeGeneracion.fase | planificando, revisando\_plan, escribiendo, editando, resumiendo, en\_la\_puerta, publicada, parada, esperando\_revision |
 
 **«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —y cuenta también `menciona`, **pendiente de medida** (`SPEC-21` C-2): excluirlo porque *«reescribiría media novela por una alusión de paso»* era una intuición de coste que no se había medido, y `menciona` es el único de los cuatro que mide el código—. Hoy `PARA_REGENERACION` sigue siendo `establece` y `depende` hasta que la medida lo confirme. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.
 

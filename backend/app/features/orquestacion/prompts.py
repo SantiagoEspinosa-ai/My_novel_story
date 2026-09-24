@@ -41,6 +41,7 @@ def huella(texto: str) -> str:
 def _plantillas():
     """Que plantillas usa cada rol. Importadas aqui dentro porque `novela` y `publicacion`
     importaran este modulo para envolver sus agentes."""
+    from app.features.auditoria import visual
     from app.features.entrevista import service as entrevista, texto_libre
     from app.features.generacion import prompt as generacion
     from app.features.orquestacion import ciclo, novela, publicacion
@@ -56,6 +57,7 @@ def _plantillas():
                    publicacion.PROMPT_FEEDBACK_LEAN, publicacion.PROMPT_INSTRUCCIONES],
         "juez": [ciclo.RUBRICA],
         "resumidor": [ciclo.PROMPT_RESUMEN],
+        "inspector_visual": [visual.PROMPT],
     }
 
 

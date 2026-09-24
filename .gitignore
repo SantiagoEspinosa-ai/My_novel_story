@@ -22,6 +22,8 @@ skills-lock.json
 
 # Salidas de ejecución: no se conservan ni se versionan.
 salida/
+# Capturas y registros de consola que deja Playwright MCP al inspeccionar la web.
+.playwright-mcp/
 
 # Python
 __pycache__/
