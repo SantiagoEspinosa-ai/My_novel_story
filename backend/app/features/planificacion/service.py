@@ -1,9 +1,15 @@
 """De la ficha a un plan aprobado (`SPEC-26` `RF-02`..`RF-07`).
 
 Cada ronda: el Planificador propone; el codigo cuenta la cobertura; si no hay
-huecos, el Revisor compara el plan con la ficha. Cualquier rechazo -esquema,
-cobertura o Revisor- gasta una ronda y sus objeciones entran en la siguiente.
-Tras `tope` rondas sin aprobar, **la generacion no empieza** (`PlanNoAprobado`).
+huecos, el Revisor compara el plan con la ficha. Un rechazo de cobertura o del
+Revisor gasta una ronda y sus objeciones entran en la siguiente. Tras `tope`
+rondas sin aprobar, **la generacion no empieza** (`PlanNoAprobado`).
+
+`F-68`: un plan que no cumple el esquema **no gasta ronda**. Se repite, con el
+error como objecion, hasta `tope_de_formato` veces en toda la planificacion -el
+mismo tope que un fallo de transporte-; pasado ese tope, tampoco empieza. En la
+segunda ejecucion real dos de las tres rondas se fueron en formato y el Revisor
+solo llego a ver un plan.
 
 Solo entran las objeciones **de la ronda anterior**: acumularlas todas haria que
 el Planificador siguiera corrigiendo cosas que ya arreglo.
@@ -111,11 +117,17 @@ def _leer_veredicto(bruto):
 
 
 def planificar(con, obra, ficha, planificador, revisor,
-               tope=config.TOPE_REVISIONES_DE_PLAN, sistema=None) -> PlanAprobado:
+               tope=config.TOPE_REVISIONES_DE_PLAN, sistema=None,
+               tope_de_formato=None) -> PlanAprobado:
     repo.asegurar_tablas(con)
+    if tope_de_formato is None:
+        tope_de_formato = (sistema.topes.reintentos_de_transporte if sistema
+                           else config.TOPE_REINTENTOS_TRANSPORTE)
     ficha_json = ficha.model_dump_json(indent=2)
     anteriores = []
-    for version in range(1, tope + 1):
+    rondas = fallos_de_formato = version = 0
+    while rondas < tope:
+        version += 1
         bruto = planificador.llamar(PROMPT_PLANIFICADOR.format(
             ficha=ficha_json, premisa=ficha.premisa or "(sin premisa)",
             titulo=ficha.titulo or "(sin titulo)", capitulos=EXTENSION["capitulos"],
@@ -128,7 +140,13 @@ def planificar(con, obra, ficha, planificador, revisor,
         except (ValueError, ValidationError) as e:
             anteriores = ["el plan no cumple el esquema: {0}".format(str(e)[:600])]
             repo.guardar(con, obra, version, None, False, "esquema", anteriores)
+            fallos_de_formato += 1
+            if fallos_de_formato > tope_de_formato:
+                raise PlanNoAprobado(
+                    "el plan no cumplio el esquema en {0} intentos: {1}".format(
+                        fallos_de_formato, anteriores[0]))
             continue
+        rondas += 1
         huecos = cobertura.huecos(plan, ficha)
         if huecos:
             anteriores = huecos

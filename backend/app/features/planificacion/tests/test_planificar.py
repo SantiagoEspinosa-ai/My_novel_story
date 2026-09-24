@@ -71,7 +71,7 @@ def test_un_plan_con_huecos_no_llega_al_revisor(con):
     assert v1["origen"] == "codigo" and "10 capitulos" in v1["objeciones"][0]
 
 
-def test_un_plan_que_no_cumple_el_esquema_gasta_una_ronda_y_se_dice(con):
+def test_un_plan_que_no_cumple_el_esquema_se_repite_y_se_dice(con):
     malo = {"titulo": "t", "premisa": "p", "plan": {"capitulos": []}}
     r = service.planificar(con, "obra-x", ficha(), Agente([malo, _plan()]),
                            Agente([APROBADO]))
@@ -154,3 +154,28 @@ def test_sin_plan_aprobado_se_planifica(con):
     r = service.reanudar_o_planificar(con, "obra-x", ficha(), Agente([_plan()]),
                                       Agente([APROBADO]))
     assert r.version == 1 and not r.reutilizado
+
+
+def test_un_plan_fuera_de_esquema_no_gasta_ronda_de_revision(con):
+    """`F-68`: en la segunda ejecucion real dos de las tres rondas se fueron en errores
+    de formato y el Revisor solo vio un plan. Con una sola ronda, dos planes fuera de
+    esquema no la gastan: el Revisor ve el tercero."""
+    malo = {"titulo": "t", "premisa": "p", "plan": {"capitulos": []}}
+    revisor = Agente([APROBADO])
+    r = service.planificar(con, "obra-x", ficha(), Agente([malo, malo, _plan()]), revisor,
+                           tope=1)
+    assert r.version == 3 and len(revisor.llamadas) == 1
+    assert [v["origen"] for v in repo.versiones(con, "obra-x")] == ["esquema", "esquema",
+                                                                     "revisor"]
+
+
+def test_los_planes_fuera_de_esquema_tienen_su_propio_tope(con):
+    """Y ese reintento tiene limite: sin el, un Planificador que nunca cumple el esquema
+    no terminaria. Tras `tope_de_formato` reintentos, la generacion no empieza."""
+    malo = {"titulo": "t", "premisa": "p", "plan": {"capitulos": []}}
+    planificador, revisor = Agente([malo]), Agente([APROBADO])
+    with pytest.raises(service.PlanNoAprobado) as e:
+        service.planificar(con, "obra-x", ficha(), planificador, revisor,
+                           tope=3, tope_de_formato=2)
+    assert len(planificador.llamadas) == 3 and revisor.llamadas == []
+    assert "esquema" in str(e.value)
