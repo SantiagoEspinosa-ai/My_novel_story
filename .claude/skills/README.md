@@ -2,7 +2,9 @@
 
 Contenido real de las skills instaladas. Se movió aquí desde `AGENTS.md`, que lo apunta, para mantener aquel archivo por debajo de su tope de líneas. La carpeta estuvo en `.agents/skills/` hasta que se trasladó a `myFactory/` (2026-09-24).
 
-El contenido real vive en `myFactory/skills/` y **se versiona con el repositorio**. **Claude Code no lee esta carpeta**: carga las skills de `.claude/skills/` (comprobado el 2026-09-24: con el contenido solo aquí, ninguna aparecía en la sesión). Por eso `.claude/skills/` es **una copia versionada** de esta carpeta, que es la fuente: se edita aquí y se copia con `python myFactory/sincronizar_skills.py`; `--comprobar` falla si las dos difieren. Copia y no enlace porque el repositorio tiene `core.symlinks=false` y git guardaría un texto con la ruta. ** Las dos de upstream se actualizan a mano: se reinstalan con `npx skills add <repo> --skill <nombre>` y se revisa el diff antes de aceptarlo. **Cada skill lleva su `PROCEDENCIA.md`** con el repositorio, el commit del que sale y la fecha: es donde hay que mirar para saber qué se instaló y desde dónde.
+El contenido real vive en `myFactory/skills/` y **se versiona con el repositorio**. **Claude Code no lee esta carpeta**: busca las skills del proyecto en `.claude/skills/`. Se comprobó el 2026-09-24: ninguna de las ocho aparecía entre las skills disponibles de la sesión, tampoco cuando estaban en `.agents/skills/`. Hasta que se decida cómo enlazarlas, una skill de aquí se usa leyendo su `SKILL.md`. `.claude/skills/` sigue en `.gitignore` porque `npx skills add` crea allí enlaces que git en Windows no guarda como tales, y no hacen falta.
+
+**Ninguna skill se actualiza sola, y no hay lockfile.** Las dos de upstream se actualizan a mano: se reinstalan con `npx skills add <repo> --skill <nombre>` y se revisa el diff antes de aceptarlo. **Cada skill lleva su `PROCEDENCIA.md`** con el repositorio, el commit del que sale y la fecha: es donde hay que mirar para saber qué se instaló y desde dónde.
 
 | Skill | Cuándo usarla | Procedencia |
 | --- | --- | --- |

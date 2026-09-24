@@ -12,7 +12,7 @@ con `EXAMEN.md` por encima de todo en lo que se entrega.
 
 ## Skills
 
-El contenido real está versionado en `myFactory/skills/`, con su tabla de uso y procedencia en
+El contenido real está versionado en `myFactory/skills/`, con una copia en `.claude/skills/` que es la que carga Claude Code, y su tabla de uso y procedencia en
 `myFactory/skills/README.md`. Ocho:
 
 | Skill | Para qué | Procedencia |

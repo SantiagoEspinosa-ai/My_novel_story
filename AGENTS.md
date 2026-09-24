@@ -129,7 +129,7 @@ Una rama solo puede estar checkouteada en **un** worktree a la vez. Lo ignorado 
 
 ## Skills
 
-El contenido real vive en `myFactory/skills/` y se versiona con el repositorio. **Claude Code no la carga sola**: busca las skills en `.claude/skills/`, así que una skill de aquí se lee a mano hasta que se decida enlazarlas. **Qué skill usar y cuándo, su procedencia y cómo se actualizan** —ninguna se actualiza sola, y `sqlite-vec` está abandonada y hay que contrastarla antes de fiarse— está en `myFactory/skills/README.md`.
+El contenido real vive en `myFactory/skills/` y se versiona con el repositorio. Claude Code las carga de `.claude/skills/`, que es **una copia versionada**: se edita en `myFactory/skills/` y se copia con `python myFactory/sincronizar_skills.py` (`--comprobar` falla si difieren). **Qué skill usar y cuándo, su procedencia y cómo se actualizan** —ninguna se actualiza sola, y `sqlite-vec` está abandonada y hay que contrastarla antes de fiarse— está en `myFactory/skills/README.md`.
 
 ## Todavía no existe
 

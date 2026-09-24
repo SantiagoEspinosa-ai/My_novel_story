@@ -1,11 +1,7 @@
-# Enlaces a las skills, no su contenido.
-#
-# El contenido real de las skills se versiona en `myFactory/skills/`. Ojo: Claude
-# Code NO lee esa carpeta, solo `.claude/skills/` (comprobado el 2026-09-24), así
-# que ignorar esto deja las skills sin cargar. `npx skills add` crea enlaces aquí
-# que git en Windows no guarda como enlaces: los convierte en
-# ficheros de texto con la ruta dentro. Se ignoran para que no ensucien el repo.
-.claude/skills/
+# .claude/skills/ SE VERSIONA: es donde Claude Code carga las skills y EXAMEN.md
+# exige .claude/ commiteada. Es una copia de myFactory/skills/, que es la fuente;
+# se regenera con `python myFactory/sincronizar_skills.py`. Copia y no enlace porque
+# core.symlinks=false: git guardaría un texto con la ruta en vez de la skill.
 
 # Lockfile de skills. Se ignora a propósito: el contenido real está versionado en
 # `myFactory/skills/`, que es la única garantía de que siga existiendo. `npx skills
