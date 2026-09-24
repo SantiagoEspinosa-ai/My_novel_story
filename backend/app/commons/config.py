@@ -81,6 +81,21 @@ TIEMPO_MAXIMO_LEAN_SEGUNDOS = 300
 # generacion se para entre capitulos, no a media delegacion (`PLAN-31` E5).
 TECHO_DE_GASTO_EVALUACION_USD = 150
 
+# **Decision de presupuesto, no medida** (`SPEC-33` cuestion 1): el techo de lo que pueden
+# gastar las generaciones lanzadas desde la web, separado del de la evaluacion para que el
+# uno no se coma el presupuesto del otro. Decision literal del autor: *«50 USD. Una novela
+# cuesta unos 17, asi que caben dos demos y margen para un tercero.»* Se compara contra lo
+# gastado en la base (`gasto_de_delegacion`), que es un suelo, y nunca contra una prevision.
+TECHO_DE_GASTO_GENERACION_WEB_USD = 50
+
+# **Medida, no estimacion**, y de otra base: la novela de ejemplo (`R1`) costo 16,8905 USD
+# en 36 delegaciones, todas con coste medido; el libro de gasto y Langfuse coinciden
+# (`harness/evals/medidas.md`). La confirmacion de la web la ensena como **referencia con su
+# fuente**, no como un coste de la base en la que se lanza (`SPEC-33` `RF-12`).
+REFERENCIA_NOVELA_DE_EJEMPLO = {
+    "usd": 16.8905, "delegaciones": 36,
+    "fuente": "R1, la novela de ejemplo: libro de gasto y Langfuse (harness/evals/medidas.md)"}
+
 # **Contrato, no estimacion.** `SPEC-26` `RF-11`: tres reescrituras despues del
 # primer intento. Agotadas, el capitulo se acepta por rendicion con sus
 # hallazgos visibles.

@@ -387,6 +387,14 @@ class Evaluacion(_DelDominio):
     techo_de_gasto_usd: float = Field(default=config.TECHO_DE_GASTO_EVALUACION_USD, gt=0)
 
 
+class GeneracionWeb(_DelDominio):
+    """Las generaciones lanzadas desde la web (`SPEC-33` cuestion 1). El techo es una
+    **decision de presupuesto**, no una medida: su marca vive con el numero en
+    `commons/config.py`."""
+
+    techo_de_gasto_usd: float = Field(default=config.TECHO_DE_GASTO_GENERACION_WEB_USD, gt=0)
+
+
 class Edicion(_DelDominio):
     """Los umbrales del Editor y de `INV-25`. **Provisionales**: su marca de no
     medido vive con el numero en `commons/config.py` (`SPEC-26` `RF-10`, `RF-16`)."""
@@ -487,6 +495,7 @@ class ConfiguracionDelSistema(_DelDominio):
     edicion: Edicion = Field(default_factory=Edicion)
     lean: Lean = Field(default_factory=Lean)
     evaluacion: Evaluacion = Field(default_factory=Evaluacion)
+    generacion_web: GeneracionWeb = Field(default_factory=GeneracionWeb)
     extensiones: dict[enums.ExtensionDeCapitulo, tuple[int, int]] = Field(
         default_factory=extensiones_por_defecto,
         description="`SPEC-32` `RF-07`: palabras por capitulo de cada opcion")
