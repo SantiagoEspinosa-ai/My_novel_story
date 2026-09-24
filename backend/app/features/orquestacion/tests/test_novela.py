@@ -459,7 +459,14 @@ def test_el_codigo_de_salida_es_1_si_la_puerta_no_abre():
     spec.loader.exec_module(guion)
     assert guion.codigo_de_salida({"publicacion": Publicacion(True, 1)}) == 0
     assert guion.codigo_de_salida({"publicacion": Publicacion(False, 3, {"motivo": "tope"})}) == 1
-    assert guion.codigo_de_salida({"publicacion": None}) == 0, "sin puerta (--capitulos), no es un fallo"
+    # `F-115` (TLA+, decision del autor 2026-09-24): esta linea fijaba el 0 tambien para una
+    # generacion **parada**, que se leia igual que una que termino bien. Se reescribe, no
+    # se borra: sin puerta y sin parada sigue siendo 0; con parada, 1.
+    from types import SimpleNamespace
+    sin_parada = SimpleNamespace(parada=None)
+    parada = SimpleNamespace(parada={"motivo": "bloqueante", "escena": "cap-09-e1"})
+    assert guion.codigo_de_salida({"publicacion": None, "generacion": sin_parada}) == 0,         "sin puerta (--capitulos) y sin parada, no es un fallo"
+    assert guion.codigo_de_salida({"publicacion": None, "generacion": parada}) == 1,         "una generacion parada no sale como si hubiera ido bien"
 
 
 def test_relanzar_escribir_no_vuelve_a_planificar(con, tmp_path):

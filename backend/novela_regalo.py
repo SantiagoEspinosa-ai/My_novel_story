@@ -127,7 +127,11 @@ def informe_de_hooks(observacion, registro_hooks):
 
 def codigo_de_salida(r) -> int:
     """`SPEC-30` `RF-04`: una novela que no pasa la puerta no sale como si hubiera ido
-    bien. Sin puerta (`--capitulos`) no es un fallo: no se evaluo."""
+    bien. Sin puerta (`--capitulos`) no es un fallo: no se evaluo. `F-115`: una generacion
+    **parada** tampoco sale con 0, llegue o no a la puerta."""
+    g = r.get("generacion")
+    if g is not None and getattr(g, "parada", None):
+        return 1
     p = r.get("publicacion")
     return 0 if p is None or p.publicada else 1
 
