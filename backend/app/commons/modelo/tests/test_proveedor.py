@@ -125,3 +125,78 @@ def test_sin_cwd_la_delegacion_arranca_en_la_raiz_del_repositorio(entorno):
     raiz = pathlib.Path(visto["cwd"])
     assert (raiz / ".claude" / "settings.json").exists()
     assert (raiz / "backend").is_dir()
+
+
+# --- `PLAN-28` E6: la delegacion ofrece las tools --------------------------------
+
+import json as _json  # noqa: E402
+import subprocess as _subprocess  # noqa: E402
+
+SOBRE = _json.dumps({"type": "result", "result": RESPUESTA_OK, "total_cost_usd": 0.01,
+                     "usage": {"input_tokens": 5, "output_tokens": 5}})
+
+
+def _orden_de(monkeypatch, **kw):
+    visto = {}
+
+    def run(orden, **opciones):
+        visto["orden"] = orden
+        if "--mcp-config" in orden:
+            with open(orden[orden.index("--mcp-config") + 1], encoding="utf-8") as f:
+                visto["config"] = _json.load(f)
+        return _subprocess.CompletedProcess(orden, 0, stdout=SOBRE, stderr="")
+
+    monkeypatch.setattr(proveedor.subprocess, "run", run)
+    proveedor._ejecutar_proceso("claude", "modelo", kw.pop("agente", "escritor"), "p", **kw)
+    return visto
+
+
+def test_con_herramientas_la_orden_lleva_mcp_estricto_y_solo_las_permitidas(monkeypatch):
+    v = _orden_de(monkeypatch, herramientas={"db": "obra.db", "obra": "obra-a",
+                                             "delegacion": "d1"})
+    orden = v["orden"]
+    assert "--strict-mcp-config" in orden
+    permitidas = orden[orden.index("--allowedTools") + 1].split(",")
+    assert permitidas == ["mcp__story_bible__hechos", "mcp__story_bible__ficha",
+                          "mcp__story_bible__cronologia"]
+
+
+def test_la_configuracion_mcp_va_en_un_fichero_con_obra_base_agente_y_delegacion(monkeypatch):
+    """En un fichero y no como cadena: la orden pasa por un `.CMD`, y un JSON con
+    comillas como argumento corre el riesgo de pasar por `cmd.exe` (hallazgo 3)."""
+    import os
+    v = _orden_de(monkeypatch, herramientas={"db": "obra.db", "obra": "obra-a",
+                                             "delegacion": "d1"})
+    servidor = v["config"]["mcpServers"]["story_bible"]
+    assert os.path.isabs(servidor["args"][0]) and servidor["args"][0].endswith("story_bible.py")
+    assert servidor["env"]["HARNESS_OBRA"] == "obra-a"
+    assert servidor["env"]["HARNESS_AGENTE"] == "escritor"
+    assert servidor["env"]["HARNESS_DELEGACION"] == "d1"
+    assert os.path.isabs(servidor["env"]["HARNESS_DB"])
+
+
+def test_sin_herramientas_la_orden_no_lleva_mcp(monkeypatch):
+    orden = _orden_de(monkeypatch)["orden"]
+    assert "--mcp-config" not in orden and "--allowedTools" not in orden
+
+
+def test_cada_delegacion_del_pipeline_apaga_las_herramientas_integradas(monkeypatch):
+    """`D-2`: `--tools \"\"` en todos los agentes, no solo en los que tienen tools."""
+    for agente in ("escritor", "planificador", "resumidor"):
+        orden = _orden_de(monkeypatch, agente=agente)["orden"]
+        assert orden[orden.index("--tools") + 1] == ""
+
+
+def test_la_delegacion_devuelve_su_identificador_en_las_medidas(entorno):
+    visto = {}
+
+    def ejecutar(ejecutable, modelo, agente, prompt, cwd=None, herramientas=None):
+        visto["herramientas"] = herramientas
+        return SOBRE
+
+    s = proveedor.SesionDelegada(agente="escritor", ejecutar=ejecutar)
+    s.herramientas = {"db": "obra.db", "obra": "obra-a"}
+    r = s.llamar("x")
+    assert r["medidas"]["delegacion"] == visto["herramientas"]["delegacion"]
+    assert s.llamar("y")["medidas"]["delegacion"] != r["medidas"]["delegacion"], \
+        "una delegacion nueva en cada llamada"

@@ -63,6 +63,11 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
+import tempfile
+import uuid
+
+from app.commons.politica.herramientas import PERMITIDAS, SERVIDOR
 
 VARIABLES = {
     "ejecutable": "HARNESS_CLAUDE_BIN",
@@ -169,6 +174,9 @@ class SesionDelegada:
         # ruta de las reglas del capitulo y donde apuntar lo que nieguen.
         self.reglas = None
         self.entorno = {}
+        # `SPEC-28`: si se fija (`{"db", "obra"}`), la delegacion ofrece las tools de
+        # la story bible por un servidor MCP. Solo el Escritor y el Editor lo tienen.
+        self.herramientas = None
 
     def __repr__(self):
         return "SesionDelegada(modelo={0!r}, agente={1!r})".format(self.nombre, self.agente)
@@ -181,6 +189,11 @@ class SesionDelegada:
                 extra["reglas"] = self.reglas
             if self.entorno:
                 extra["entorno"] = self.entorno
+            delegacion = None
+            if self.herramientas:
+                # Una por llamada: enlaza cada llamada a una tool con su traza.
+                delegacion = uuid.uuid4().hex
+                extra["herramientas"] = dict(self.herramientas, delegacion=delegacion)
             salida = self._ejecutar(_resolver_ejecutable(), self.nombre,
                                     self.agente, prompt, self.cwd, **extra)
         except FalloDeTransporte:
@@ -199,12 +212,32 @@ class SesionDelegada:
         if "result" in sobre and "type" in sobre:
             respuesta = _normalizar(interpretar(sobre["result"]))
             respuesta["medidas"] = medidas_de(sobre)
+            if delegacion:
+                respuesta["medidas"]["delegacion"] = delegacion
             return respuesta
         return _normalizar(sobre)
 
 
+SERVIDOR_DE_LA_STORY_BIBLE = RAIZ_DEL_REPOSITORIO / "backend" / "herramientas" / "story_bible.py"
+
+
+def _configuracion_mcp(agente, herramientas):
+    """`SPEC-28`: el servidor de la story bible, **en un fichero** y no como cadena. La
+    orden pasa por un `.CMD`, y un JSON con comillas como argumento corre el riesgo de
+    pasar por `cmd.exe` (hallazgo 13)."""
+    datos = {"mcpServers": {SERVIDOR: {
+        "command": sys.executable, "args": [str(SERVIDOR_DE_LA_STORY_BIBLE)],
+        "env": {"HARNESS_DB": os.path.abspath(herramientas["db"]),
+                "HARNESS_OBRA": herramientas["obra"], "HARNESS_AGENTE": agente or "",
+                "HARNESS_DELEGACION": herramientas["delegacion"]}}}}
+    fd, ruta = tempfile.mkstemp(prefix="mcp-", suffix=".json")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump(datos, f, ensure_ascii=False)
+    return ruta
+
+
 def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
-                      entorno=None):
+                      entorno=None, herramientas=None):
     """El prompt por **stdin**. Nunca como argumento: `cmd.exe` lo trunca.
 
     Se pide `--output-format json` porque devuelve **medidas de verdad**:
@@ -214,7 +247,14 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
     """
     orden = [ejecutable, "-p", "--output-format", "json", "--model", modelo]
     if agente:
-        orden += ["--agent", agente]
+        # `PLAN-28` `D-2`: toda delegacion del pipeline apaga las herramientas
+        # integradas; las unicas que quedan son las MCP que se le den abajo.
+        orden += ["--agent", agente, "--tools", ""]
+    config_mcp = None
+    if herramientas:
+        config_mcp = _configuracion_mcp(agente, herramientas)
+        orden += ["--mcp-config", config_mcp, "--strict-mcp-config",
+                  "--allowedTools", ",".join(PERMITIDAS.get(agente, ()))]
     # `SPEC-26` `RF-19`: los hooks solo actuan si ven `HARNESS_AGENTE`, y solo
     # lo ponemos aqui. Una sesion interactiva en el mismo proyecto no lo tiene.
     env = dict(os.environ, **(entorno or {}))
@@ -230,6 +270,9 @@ def _ejecutar_proceso(ejecutable, modelo, agente, prompt, cwd=None, reglas=None,
         raise FalloDeTransporte(
             "la delegacion no completo: {0}".format(type(e).__name__)
         ) from None
+    finally:
+        if config_mcp and os.path.exists(config_mcp):
+            os.remove(config_mcp)
     if r.returncode != 0:
         raise FalloDeTransporte(
             "la delegacion termino con codigo {0}".format(r.returncode))
