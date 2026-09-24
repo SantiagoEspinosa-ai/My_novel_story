@@ -458,11 +458,12 @@ La decisión es una función pura (`auditoria/publicacion.py`) y cada ronda deja
 `INV-27` sigue siendo `mayor`: que bloquee la publicación es regla de esta puerta, no un cambio
 de severidad.
 
-### Regenerar en una obra acumulativa (`SPEC-23` v2, `PLAN-23` Parte A)
+### Regenerar en una obra acumulativa (`SPEC-23` v4, `PLAN-23` Partes A y B)
 
-Lo común a las dos salidas está construido; **qué se escribe** espera a la medida del arrastre
-(`S-1` si la media es ≤ 3 capítulos, `S-2` si es > 3). Hasta entonces `regeneracion.SALIDA` es
-`None` y pedir un cambio responde `409` sin encolar nada.
+Lo común a las dos salidas está construido, y **la medida eligió `S-1`**: 2,33 capítulos ≤ 3
+sobre la novela de ejemplo, con sesgo a la baja, hacia `S-1` (`harness/evals/arrastre-SPEC-23.json`).
+`regeneracion.SALIDA` es `cascada`, y una prueba falla si cambia sin cambiar la medida. `S-2` no
+tiene rama: el worker no escribe nada que la medida no haya elegido.
 
 - **La medida** es `orquestacion/arrastre.py` (y `backend/medir_arrastre.py`): lee tablas, no
   escribe, se niega sin obra completa, sin usos o sin procedencia, y lleva en el mismo objeto la
@@ -491,11 +492,29 @@ Lo común a las dos salidas está construido; **qué se escribe** espera a la me
   la presencia, no el modelo.
 - **Endpoints**: `GET /obras/{id}/versiones`, `GET /obras/{id}/versiones/{numero}`,
   `POST /obras/{id}/cambios/propuesta` y `POST /obras/{id}/cambios`. El trabajo
-  `regenerar_obra` tiene su worker (`regeneracion.atender`), que **no escribe nada** mientras
-  no haya rama: las ramas son de la Parte B.
+  `regenerar_obra` tiene su worker (`regeneracion.atender`), que ejecuta la rama de la salida
+  con lo que el trabajo no guarda —los agentes, y opcionalmente la ficha, el sistema y Lean—.
+  **El worker de la API no tiene agentes** (`F-126`): el trabajo falla con su motivo y no
+  escribe nada. La regeneración real va por `backend/pedir_cambio.py`, que llama al mismo
+  servicio y solo gasta con `--confirmo-el-gasto`.
+- **La cascada** (`orquestacion/cascada.py`, `B-S1.1`). `k` es el primer capítulo que toca la
+  petición; la versión `n+1` comparte `1..k-1` por referencia y tiene `k..N` nuevos (`C-6`); el
+  mundo vivo se rebobina a la semilla más lo ya consolidado de la versión, **solo el de esa
+  obra** (`F-123`); los capítulos nuevos se escriben con `novela.escribir_version`, el mismo
+  montaje que la novela entera, **diciendo la versión** a todo lo que lee —el bucle, la
+  memoria, la puerta y la story bible, también por MCP (`HARNESS_VERSION`)—; se reverifica la
+  versión entera y pasa la puerta con sus propias rondas. Relanzar reutiliza la versión de la
+  petición y sigue desde el último consolidado. Sin agentes, sin plan, sin ficha (`F-91`) o con
+  una lista que no es `k..N`, se niega **antes de escribir nada**.
+- **La vigente es la última publicada** (`F-121`, TLC `CE-14`) y las rondas de la puerta son
+  **por versión** (`F-122`, TLC `CE-15`): mientras la cascada escribe, o si se para, el lector
+  sigue en la anterior. El PDF exporta el veredicto de la versión vigente.
+- **La promesa** (`B-S1.2`), antes de aceptar: *«reescribimos lo que dependía de esto: el
+  capítulo k y todos los siguientes»*, con su punto ciego.
 
-Lo que no hace: la puerta de publicación y el PDF **por versión**, ni la cronología y el
-generador de Lean por versión (`F-93`).
+Lo que no hace: la cronología y el generador de Lean por versión (`F-93`), las palabras clave
+de un imprescindible cuyo enunciado cambia (`F-125`), ni dar agentes al worker de la API
+(`F-126`).
 
 ### Severidad: bloqueante frente a mayor y menor
 
