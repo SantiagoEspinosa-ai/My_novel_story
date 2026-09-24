@@ -19,3 +19,9 @@ sqlite-vec
 # `app/commons/observabilidad/langfuse.py`; sin claves en `backend/.env` no se importa.
 # Version mayor fijada: la API de v4 va sobre OpenTelemetry y no es la de v2.
 langfuse>=4,<5
+
+# `SPEC-27`, `PLAN-27` E5: el PDF de la novela. Python puro, con enlaces internos y
+# fuentes TrueType (la DejaVu del repositorio, en `features/manuscrito/fuentes/`).
+fpdf2>=2.8
+# Solo para las pruebas: leen el PDF generado, su texto y sus enlaces.
+pypdf>=6
