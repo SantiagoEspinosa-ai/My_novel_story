@@ -54,6 +54,17 @@ CREATE TABLE IF NOT EXISTS traza_de_delegacion (
     cuando               TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (escena, agente, prompt_hash)
 );
+CREATE TABLE IF NOT EXISTS llamada_a_herramienta (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    delegacion       TEXT NOT NULL,
+    obra             TEXT NOT NULL,
+    agente           TEXT NOT NULL,
+    herramienta      TEXT NOT NULL,
+    validacion       TEXT NOT NULL,
+    latencia_ms      INTEGER,
+    tokens_estimados INTEGER,
+    cuando           TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 
@@ -113,3 +124,37 @@ def recortes_de_la_obra(con):
         for bloque, clase in json.loads(fila[0]):
             cuenta[(bloque, clase)] = cuenta.get((bloque, clase), 0) + 1
     return cuenta
+
+
+def guardar_llamada(con, delegacion, obra, agente, herramienta, validacion, latencia_ms,
+                    tokens_estimados):
+    """`SPEC-28` `RF-08`, `RF-09`: una fila por llamada a una tool.
+
+    **Sin argumentos ni resultado**: llevan datos de la story bible, y la story bible
+    lleva al destinatario (`SPEC-29` § "El limite", `VER-69`). `validacion` dice de
+    donde sale la fila (`ok`, `entrada_invalida`, `salida_invalida`, `no_existe`,
+    `herramienta_desconocida`); no es vocabulario del dominio, como `plan_de_obra.origen`.
+    """
+    asegurar_tablas(con)
+    with con:
+        con.execute(
+            "INSERT INTO llamada_a_herramienta (delegacion, obra, agente, herramienta, "
+            "validacion, latencia_ms, tokens_estimados) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (delegacion, obra, agente, herramienta, validacion, latencia_ms,
+             tokens_estimados))
+
+
+def llamadas_de(con, delegacion):
+    asegurar_tablas(con)
+    return [{"herramienta": f[0], "agente": f[1], "validacion": f[2], "latencia_ms": f[3],
+             "tokens_estimados": f[4]}
+            for f in con.execute(
+                "SELECT herramienta, agente, validacion, latencia_ms, tokens_estimados "
+                "FROM llamada_a_herramienta WHERE delegacion = ? ORDER BY id", (delegacion,))]
+
+
+def spans_de_herramientas(con, delegacion):
+    """El enganche de `SPEC-29`: exactamente lo que sube de cada llamada, y nada mas."""
+    return [{"nombre": l["herramienta"], "latencia_ms": l["latencia_ms"],
+             "validacion": l["validacion"], "tokens_estimados": l["tokens_estimados"]}
+            for l in llamadas_de(con, delegacion)]

@@ -99,3 +99,32 @@ def test_una_traza_sin_prompt_hash_se_guarda_igual(con):
     modulo_traza.registrar_fallo(t, clase="transporte")
     repo.guardar_traza(con, t)
     assert len(repo.trazas_de(con, "e2")) == 1
+
+
+# --- `PLAN-28` E3: las llamadas a tools, sin argumentos ni resultado -------------
+
+def test_una_llamada_a_herramienta_se_guarda_sin_argumentos_ni_resultado():
+    """Los argumentos y lo que devuelve llevan datos de la story bible, y la story
+    bible lleva al destinatario (`SPEC-29` § "El limite", `VER-69`)."""
+    import sqlite3
+    from app.features.observabilidad import repository as obs
+    con = sqlite3.connect(":memory:")
+    obs.guardar_llamada(con, delegacion="d1", obra="o", agente="escritor",
+                        herramienta="ficha", validacion="ok", latencia_ms=3,
+                        tokens_estimados=10)
+    columnas = {f[1] for f in con.execute("PRAGMA table_info(llamada_a_herramienta)")}
+    assert not columnas & {"argumentos", "resultado", "entrada", "salida"}
+    assert obs.llamadas_de(con, "d1")[0]["herramienta"] == "ficha"
+
+
+def test_el_span_de_una_herramienta_lleva_solo_lo_que_sube():
+    """El enganche de `SPEC-29`: un conjunto de claves exacto, para que un campo nuevo
+    no se cuele sin que nadie lo vea (`RF-09`)."""
+    import sqlite3
+    from app.features.observabilidad import repository as obs
+    con = sqlite3.connect(":memory:")
+    obs.guardar_llamada(con, delegacion="d1", obra="o", agente="editor",
+                        herramienta="hechos", validacion="ok", latencia_ms=5,
+                        tokens_estimados=7)
+    [span] = obs.spans_de_herramientas(con, "d1")
+    assert set(span) == {"nombre", "latencia_ms", "validacion", "tokens_estimados"}

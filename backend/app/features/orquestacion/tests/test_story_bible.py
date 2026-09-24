@@ -126,3 +126,55 @@ def test_las_lecturas_funcionan_con_una_conexion_de_solo_lectura(tmp_path):
     assert tools.leer_hechos(ro, "obra-a", sb.EntradaHechos()).hechos
     assert tools.leer_ficha(ro, "obra-a", sb.EntradaFicha(id="obra-a-per-irene")).personaje
     assert tools.leer_cronologia(ro, "obra-a", sb.EntradaCronologia()).eventos
+
+
+# --- E3: atender una llamada: validar, leer, medir y registrar -------------------
+
+from app.features.observabilidad import repository as obs  # noqa: E402
+
+
+def _atender(con, nombre, argumentos, agente="escritor"):
+    return tools.atender(con, con, "obra-a", agente, "del-1", nombre, argumentos)
+
+
+def test_una_entrada_fuera_de_esquema_devuelve_error_visible_y_queda_registrada(con):
+    """`RF-02`: el agente ve el error; y queda la fila, porque una tool que falla en
+    silencio no se distingue de una que no se llamo."""
+    r = _atender(con, "ficha", {"id": "obra-a-per-irene", "obra": "obra-b"})
+    assert r["isError"] and "obra" in r["content"][0]["text"]
+    assert [l["validacion"] for l in obs.llamadas_de(con, "del-1")] == ["entrada_invalida"]
+
+
+def test_una_salida_fuera_de_esquema_no_se_devuelve(con):
+    with con:
+        con.execute("UPDATE entidad SET vital = 'zombi' WHERE id = 'obra-a-per-irene'")
+    r = _atender(con, "ficha", {"id": "obra-a-per-irene"})
+    assert r["isError"]
+    assert obs.llamadas_de(con, "del-1")[-1]["validacion"] == "salida_invalida"
+
+
+def test_una_herramienta_desconocida_se_rechaza_y_se_registra(con):
+    r = _atender(con, "borrar_todo", {})
+    assert r["isError"]
+    assert obs.llamadas_de(con, "del-1")[-1]["validacion"] == "herramienta_desconocida"
+
+
+def test_una_entidad_de_otra_obra_devuelve_error_sin_decir_de_cual(con):
+    r = _atender(con, "ficha", {"id": "obra-b-per-irene"})
+    assert r["isError"] and "obra-b" not in r["content"][0]["text"].replace("obra-b-per-irene", "")
+    assert obs.llamadas_de(con, "del-1")[-1]["validacion"] == "no_existe"
+
+
+def test_los_tokens_de_lo_devuelto_se_estiman_y_se_guardan(con):
+    r = _atender(con, "cronologia", {})
+    [fila] = obs.llamadas_de(con, "del-1")
+    assert not r["isError"] and fila["validacion"] == "ok"
+    assert fila["tokens_estimados"] == len(r["content"][0]["text"]) // 4 > 0
+
+
+def test_atender_no_toca_el_presupuesto():
+    """`RF-08`: lo que devuelve una tool se mide, no se presupuesta. Que el modulo no
+    importe lo que reserva o recorta lo hace comprobable de forma estatica."""
+    import inspect
+    fuente = inspect.getsource(tools)
+    assert "reservar" not in fuente and "recorte" not in fuente
