@@ -128,11 +128,14 @@ enchufarlo a la puerta de publicación es `SPEC-30`.
 ## Model checking del sistema: TLA+
 
 **Qué es.** Describir el harness como máquina de estados y dejar que TLC recorra todas las
-ejecuciones de un modelo pequeño. **Aquí.** Cinco capítulos y dos intentos; cinco
-invariantes de seguridad más `TypeOK`, y dos propiedades temporales —`VersionesSoloCrecen`
-y `Terminacion`, la de vivacidad—; cinco contraejemplos documentados
-(`specs/tla/`). **Estado.** Verificado sobre el flujo de la rama `main`; rehacerlo contra
-`backend/` está decidido y pendiente (`EX-07`).
+ejecuciones de un modelo pequeño. **Aquí.** `specs/tla/HarnessBackend.tla` modela `backend/`:
+cinco capítulos y dos reintentos; once invariantes de seguridad más `TypeOK`, y dos propiedades
+temporales —`VersionesSoloCrecen` y `Terminacion`, la de vivacidad—. **Estado.** El modelo
+corregido pasa; con los valores del código de hoy, TLC rompe nueve invariantes (`CE-6`…`CE-15`,
+siete de `backend/`, registrados como `F-110`…`F-114` y `F-116`, y dos del diseño de
+`PLAN-23`). La vivacidad del código de hoy está comprobada en tres capítulos, no en cinco
+(`specs/tla/README.md`). El modelo de la rama `main`, con `CE-1`…`CE-5`, se conserva como
+historia.
 
 ## Evals y red-teaming
 

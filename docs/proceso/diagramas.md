@@ -44,32 +44,59 @@ versiones (`SPEC-23`, `EX-14`). Tampoco aparecen todavía las tools (`SPEC-28`) 
 
 ## Máquina de estados de TLA+
 
-Las acciones de `specs/tla/HarnessNovela.tla`. **Modela el flujo de la rama `main`, no el de
-`backend/`**; rehacerlo contra `backend/` está decidido y pendiente (`EX-07`), y la escalera
-de modelos de `Reintentar` y `AgotarEscalera` desaparece al hacerlo.
+Las acciones de `specs/tla/HarnessBackend.tla`, que modela **`backend/`** (`EX-07`). Cada
+estado del diagrama es un valor de la variable `fase`; cada flecha, una acción, y cada acción
+es lo que el código deja escrito en la base en una transacción. Qué función implementa cada
+una está en `specs/tla/README.md` § "Qué implementa cada acción". El modelo anterior, el de la
+rama `main` (`HarnessNovela.tla`), se conserva allí como historia.
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Configurado: Configurar
-  Configurado --> Planificado: Planificar
-  Planificado --> Validando: Escribir
-  Validando --> Validando: Reintentar
-  Validando --> Planificado: ValidarPasa
-  Validando --> Planificado: AgotarEscalera
-  Planificado --> Publicada: Publicar
-  Validando --> Caido: Caer
-  Caido --> Planificado: Reanudar
-  Planificado --> Detenido: AgotarTope
-  Publicada --> Planificado: Regenerar
-  Publicada --> [*]: Terminado
-  Detenido --> [*]: Terminado
+  [*] --> configuracion
+  configuracion --> planificacion: Configurar
+  planificacion --> planificacion: PlanFueraDeEsquema (no gasta ronda) / RechazarPlan
+  planificacion --> montaje: AprobarPlan / ReutilizarPlan
+  montaje --> escritura: Montar
+  montaje --> puerta: Montar (todo hecho)
+  escritura --> escritura: FalloDeTransporteDelEscritor / Reverificar
+  escritura --> validacion: Escribir
+  validacion --> escritura: PedirReescrituraPorVetada / FallarCalidad
+  validacion --> rindiendo: FallarCalidad (intentos agotados)
+  validacion --> marcando: PasarLimpio / PasarSinVeredicto
+  marcando --> resumen: MarcarConsolidada
+  rindiendo --> consolidando_rendida: Rendir
+  consolidando_rendida --> resumen: ConsolidarRendida
+  resumen --> escritura: Resumir
+  resumen --> puerta: Resumir (ultimo)
+  puerta --> reescritura_puerta: PedirReescrituraDeObra
+  reescritura_puerta --> puerta: ReescribirEnPuerta
+  puerta --> publicada: PublicarVersion
+  publicada --> escritura: Regenerar (PLAN-23)
+  escritura --> detenido: AgotarTope / FalloDeContrato / transporte agotado
+  validacion --> detenido: Bloquear / vetada agotada / ChocarConSuDelta
+  puerta --> detenido: FallarLean / FallarSinArreglo / PuertaAgotada
+  planificacion --> detenido: plan no aprobado
+  escritura --> caido: Caer
+  validacion --> caido: Caer
+  marcando --> caido: Caer
+  resumen --> caido: Caer
+  puerta --> caido: Caer
+  caido --> planificacion: Reanudar
+  publicada --> [*]: Terminado
+  detenido --> [*]: Terminado
 ```
 
-Los estados son una lectura para el diagrama; en la especificación el estado es el valor de
-sus variables. Lo que TLC comprueba sobre 5 capítulos y 2 intentos: `NuncaPublicaSinValidar`,
-`NuncaPierdeCapitulos`, `NoReescribeCerrados`, `NoSaltaCapitulos` y `ReintentosAcotados`
-como invariantes, y `VersionesSoloCrecen` y `Terminacion` como propiedades temporales
-(`specs/tla/HarnessNovela.cfg`).
+`Caer` puede ocurrir en cualquier fase de trabajo; en el diagrama solo se dibujan las cinco
+que producen contraejemplos. `marcando` y `consolidando_rendida` existen porque consolidar son
+dos transacciones (`F-112`): con la corrección, las dos flechas se funden en una.
+
+Lo que TLC comprueba sobre 5 capítulos y 2 reintentos (`specs/tla/HarnessBackend.cfg`):
+`NuncaPublicaSinValidar`, `NuncaPierdeCapitulos`, `NoReescribeCerrados`, `NoSaltaCapitulos`,
+`SoloSobreConsolidadas`, `MemoriaCompleta`, `ReintentosAcotados`, `RondasDePlanConservadas`,
+`DelegacionesAcotadas`, `CadaVersionTieneSuTope` y `LectorVeLoPublicado` como invariantes, y
+`VersionesSoloCrecen` y `Terminacion` como propiedades temporales. Con los valores del código
+de hoy (`BackendDeHoy.cfg`) fallan nueve —siete por `backend/` y dos por el diseño de
+`PLAN-23`—; los contraejemplos están en `specs/tla/README.md`.
 
 ## Esquema SQLite
 
