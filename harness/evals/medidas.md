@@ -220,3 +220,15 @@ El Entrevistador real **detectó las tres contradicciones** del brief —edad 10
 frente a boda y frente a un recuerdo a los 25— y la entrevista cerró tras corregir la edad, con la
 premisa y el título aceptados. El plan no se aprobó: el nombre del destinatario había llegado
 anonimizado a la ficha (`F-146`). 3,1154 USD en 16 delegaciones.
+
+## B4 · La demo de la cascada: parada en el capítulo 8 por `F-148` (2026-09-24)
+
+Petición real sobre la novela de ejemplo: renombrar al dueño de la venta del cruce (datos
+inventados). La propuesta, sin modelo, eligió `cascada` desde el capítulo 4 —el primero donde
+está presente— y compartió 1 a 3. Se escribieron y consolidaron los capítulos 4 a 7 de la
+versión 2; el 8 paró en la puerta por `INV-02` (`F-148`, un defecto nuestro, no del texto). **La
+versión 1 siguió siendo la que ve el lector**: `D-2` se sostuvo con una parada real a mitad.
+Reverificación sin modelo: 7 verificadas, ninguna fallida, 3 sin reverificar (las no escritas).
+**7,6566 USD en 14 delegaciones**, con coste medido en todas; 1.033 s. Relanzar no repite lo
+consolidado.
+
