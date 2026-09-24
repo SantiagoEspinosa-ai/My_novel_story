@@ -3,20 +3,54 @@
     "id": "brief-incoherencia-temporal",
     "proposito": "Provocar incoherencias de cronologia que solo la verificacion formal en Lean puede cazar, porque ninguna puerta escena a escena las ve.",
     "de_los_cinco_briefs": "el adversario temporal",
+    "datos": "inventados",
     "estado": "listo para ejecutar; sin ejecutar todavia",
     "requiere": [
-      "F-47 enchufado o no: el brief vale igual, y de hecho vale mas si INV-08 sigue desconectada, porque entonces Lean es el unico que caza L-1",
-      "F-46 resuelto para que L-4 pueda disparar: hoy `excluye` llega vacia y esa parte del brief no se puede medir"
+      "F-47 cerrado: INV-08 esta enchufada en la puerta de capitulo y Lean mira lo mismo por otro camino. El brief vale igual: lo que prueba es que Lean llega a la puerta de publicacion (SPEC-30) como INV-28",
+      "F-46 cerrado: `excluye` sale de `cambios_de_estado_vital` del delta persistido, asi que L-4 puede disparar"
     ]
   },
 
-  "brief": {
+  "ficha": {
+    "destinatario": {
+      "nombre": "Ana Roldan",
+      "edad": 38,
+      "elementos": [
+        {
+          "tipo": "recuerdo",
+          "descripcion": "el verano de 1998 en la casa familiar, cuando su hermana Marta desaparecio en el bosque de detras",
+          "momento": {"anio": 1998, "edad": 10},
+          "imprescindible": true
+        },
+        {
+          "tipo": "persona",
+          "descripcion": "su hermana, desaparecida en el bosque en 1998",
+          "nombre": "Marta Roldan",
+          "relacion": "su hermana",
+          "imprescindible": true
+        },
+        {
+          "tipo": "persona",
+          "descripcion": "su abuela, que murio en el incendio de 2003 y contaba lo que habia pasado en la casa en 1962",
+          "nombre": "Elena Soler",
+          "relacion": "su abuela",
+          "imprescindible": true
+        },
+        {
+          "tipo": "rasgo",
+          "descripcion": "guarda todas las llaves viejas que encuentra",
+          "imprescindible": false
+        }
+      ]
+    },
+    "ocasion": "cumpleanos",
+    "genero": "misterio",
+    "tono": "nostalgico",
+    "extension": "media",
+    "papel": "protagonista",
+    "vetadas": [],
+    "nombres_vetados": [],
     "titulo": "La casa de los dos veranos",
-    "genero": "terror",
-    "subgenero": "casa encantada",
-    "persona": "tercera_limitada",
-    "tiempo_verbal": "pasado",
-    "extension_objetivo": 10,
     "premisa": "Ana vuelve a la casa familiar en el verano de 2019 para vaciarla antes de venderla. La novela alterna ese presente con el verano de 1998, cuando su hermana Marta desaparecio en el bosque de detras. Su abuela Elena, que murio en el incendio de 2003, es quien contaba lo que habia pasado en la casa en 1962. Cada capitulo salta entre las dos lineas sin avisar al lector: el salto se nota por el detalle, no por un rotulo."
   },
 
@@ -29,12 +63,8 @@
 
   "que_deberia_pasar": {
     "en_las_puertas_de_escena": "Nada, o casi nada. Cada escena por separado es coherente: la de 1998 lo es, la de 2019 lo es. `INV-02` mira una escena en su puerta y no ve la relacion entre dos. Ese es el punto del brief.",
-    "en_lean": "`verificar-real` devuelve 1 y nombra los pares concretos de eventos en conflicto.",
-    "lectura_si_lean_no_dispara": "No significa que la obra sea coherente. Significa que hay que mirar el informe de cobertura del generador: cuantos eventos se convirtieron, y cuantos personajes se quedaron sin fecha de nacimiento. Un cero con la mitad de los eventos fuera no es un cero."
-  },
-
-  "limitacion_declarada": {
-    "que": "Este fichero usa solo los campos que `BriefEntrada` acepta hoy: titulo, premisa, genero, subgenero, extension_objetivo, persona, tiempo_verbal.",
-    "por_que_importa": "El enunciado del examen pide un brief bastante mas rico -destinatario, edad, rasgos, recuerdos, palabras prohibidas- y nada de eso existe todavia en el esquema. Inventar aqui campos que el backend rechazaria con un 422 daria un fichero que parece listo y no se puede ejecutar. Cuando el esquema crezca, este brief crece con el."
+    "en_lean": "`verificar-real` devuelve 1 y nombra los pares concretos de eventos en conflicto. Desde `SPEC-30` corre solo en la puerta de publicacion, como `INV-28`, y la version no se publica.",
+    "lectura_si_lean_no_dispara": "No significa que la obra sea coherente. Significa que hay que mirar el informe de cobertura del generador: cuantos eventos se convirtieron, y cuantos personajes se quedaron sin fecha de nacimiento. Un cero con la mitad de los eventos fuera no es un cero.",
+    "sobre_los_ganchos": "Los cuatro ganchos se conservan tal como se escribieron para la version de terror: no dependen del genero. `L-4` ya se puede medir (`F-46` cerrado); la frase que dice lo contrario es de cuando se escribio. Donde dice 'el arquitecto', hoy es el Planificador (`SPEC-26`)."
   }
 }
