@@ -10,7 +10,7 @@ version: 1
 
 > **Historial.** v1: redactada con las tres respuestas del autor del 2026-09-24 (los nombres
 > entran por campos propios, el modelo ve nombres inventados, y se pseudonimiza todo lo que
-> sale). Tres cuestiones abiertas al final.
+> sale). Cuatro cuestiones abiertas al final.
 
 # SPEC-34 — Pseudonimización de los nombres
 
@@ -82,3 +82,10 @@ más y falla en silencio, la primera.
    recibe un prompt montado por el harness sino una página. *Propuesta:* la inspección se hace
    sobre una base de datos inventados, como la semilla de la lectura, y no sobre una obra real.
    Coste: `INV-30` deja de inspeccionar la novela entregada.
+4. **La pantalla de la entrevista** (`SPEC-33`, de otra sesión). Hoy pinta tal cual la
+   pregunta y la ficha del Entrevistador y reconstruye la conversación con
+   `GET /entrevistas/{id}/turnos`. Con `RF-01` la conversación necesita un sitio donde pedir
+   los nombres, y el historial tiene que decir qué se pidió fuera del modelo. La sesión del
+   frontend pide revisar esa parte **antes de aprobar el plan**; el plan no se aprueba sin
+   esa revisión.
+
