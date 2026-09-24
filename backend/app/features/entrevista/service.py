@@ -236,20 +236,37 @@ def _auditar(con, e, estado):
                                           "huella": huella(c.descripcion)})
 
 
+def _observado(agente, observar, obra, nombre):
+    """`SPEC-29`: cada turno es una traza en la sesion de su obra, y cada llamada al
+    Entrevistador un span. `observar(obra, nombre)` la crea; sin el, nada cambia."""
+    if observar is None:
+        return agente, None
+    from app.commons.observabilidad.observacion import SesionObservada
+    obs = observar(obra, nombre)
+    return SesionObservada(agente, obs, "entrevistador",
+                           obs.versiones.get("entrevistador")), obs
+
+
 def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
-          tope=config.TOPE_REINTENTOS_TRANSPORTE, extensiones=None) -> Turno:
+          tope=config.TOPE_REINTENTOS_TRANSPORTE, extensiones=None, observar=None) -> Turno:
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
+    entrevistador, obs = _observado(entrevistador, observar, e.obra, "turno_de_entrevista")
     antes = _estado(e, reglas, anio_actual)
     error = None
     for _ in range(tope):
         try:
             ficha, pregunta, juicios, confirmados = _interpretar(
                 e, entrevistador.llamar(_prompt(e, antes, respuesta, error, extensiones)))
+            if obs is not None:
+                obs.score(nombre="schema", categoria="pasa")
             break
         except (ValueError, ValidationError, TypeError) as ex:
             error = str(ex)[:800]
+            if obs is not None:
+                # Sin el mensaje: el de Pydantic cita la ficha.
+                obs.score(nombre="schema", categoria="falla")
     else:
         raise EntrevistadorIlegible(
             "el entrevistador no devolvio una ficha valida en {0} intentos: "
@@ -263,11 +280,12 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
     return Turno(e, pregunta, despues)
 
 
-def pegar_texto(con, id_e, texto, extractor) -> list:
+def pegar_texto(con, id_e, texto, extractor, observar=None) -> list:
     """`RF-11`..`RF-14`. El texto no se guarda: solo los hechos propuestos."""
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
+    extractor, _ = _observado(extractor, observar, e.obra, "texto_libre")
     r = texto_libre.extraer(con, e.obra, texto, extractor)
     e.ficha = texto_libre.anadir_propuestos(e.ficha, r.hechos)
     repo.guardar(con, e)

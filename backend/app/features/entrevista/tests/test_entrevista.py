@@ -222,3 +222,66 @@ def test_la_ficha_cerrada_lleva_la_extension_elegida(con):
     e = service.crear(con)
     _turno(con, e.id, Entrevistador([_dice(ficha_completa(extension="larga"))]))
     assert service.cerrar(con, e.id).extension.value == "larga"
+
+
+# --- `PLAN-29` E8: la entrevista, en la misma sesion -------------------------------
+
+def _observar(con):
+    from app.commons.observabilidad.exportador import ExportadorEnMemoria
+    from app.commons.observabilidad.observacion import Observacion
+    exportador = ExportadorEnMemoria()
+
+    def fabrica(obra, nombre):
+        return Observacion(exportador, con=con, obra=obra, nombre=nombre)
+    return fabrica, exportador
+
+
+def _enviados(exportador, tipo):
+    return [e for t, e in exportador.enviados if t == tipo]
+
+
+def test_un_turno_es_una_traza_en_la_sesion_de_su_obra(con):
+    from app.commons.observabilidad.envio import sesion_de
+    fabrica, exportador = _observar(con)
+    t = service.crear(con)
+    service.turno(con, t.id, "respuesta", Entrevistador([_dice(ficha_completa())]),
+                  REGLAS, anio_actual=2026, observar=fabrica)
+    trazas = _enviados(exportador, "traza")
+    assert [tr["nombre"] for tr in trazas] == ["turno_de_entrevista"]
+    assert trazas[0]["sesion"] == sesion_de(t.obra)
+    spans = _enviados(exportador, "span")
+    assert [s["nombre"] for s in spans] == ["entrevistador"]
+
+
+def test_la_entrevista_y_la_generacion_de_la_misma_obra_comparten_sesion(con):
+    """`SPEC-29` `RF-01`, `RF-12`: el valor nace con la entrevista y la obra lo hereda."""
+    from app.commons.observabilidad.exportador import ExportadorEnMemoria
+    from app.commons.observabilidad.observacion import Observacion
+    fabrica, exportador = _observar(con)
+    t = service.crear(con)
+    service.turno(con, t.id, "respuesta", Entrevistador([_dice(ficha_completa())]),
+                  REGLAS, anio_actual=2026, observar=fabrica)
+    generacion = Observacion(ExportadorEnMemoria(), obra=t.obra)
+    assert _enviados(exportador, "traza")[0]["sesion"] == generacion.sesion
+
+
+def test_un_turno_con_ficha_invalida_da_score_schema_falla(con):
+    fabrica, exportador = _observar(con)
+    t = service.crear(con)
+    service.turno(con, t.id, "respuesta",
+                  Entrevistador([{"sin": "ficha"}, _dice(ficha_completa())]),
+                  REGLAS, anio_actual=2026, observar=fabrica)
+    schema = [s["categoria"] for s in _enviados(exportador, "score") if s["nombre"] == "schema"]
+    assert schema == ["falla", "pasa"]
+    assert len(_enviados(exportador, "span")) == 2
+
+
+def test_nada_de_la_ficha_ni_de_la_respuesta_sube_en_un_turno(con):
+    fabrica, exportador = _observar(con)
+    t = service.crear(con)
+    service.turno(con, t.id, "RESPUESTA-DEL-COMPRADOR-8812",
+                  Entrevistador([_dice(ficha_completa(), pregunta="PREGUNTA-5530")]),
+                  REGLAS, anio_actual=2026, observar=fabrica)
+    todo = repr(exportador.enviados)
+    for dato in ("RESPUESTA-DEL-COMPRADOR-8812", "PREGUNTA-5530", "Irene", "Brisa", "Lisboa"):
+        assert dato not in todo, dato

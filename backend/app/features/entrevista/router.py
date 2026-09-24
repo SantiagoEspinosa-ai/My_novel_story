@@ -62,6 +62,12 @@ def _fabrica(request, nombre):
     return getattr(request.app.state, nombre, None) or _sesion_del_entrevistador
 
 
+def _observar(request):
+    """`SPEC-29`: una fabrica `(obra, nombre) -> Observacion`, o nada. Sin ella la
+    entrevista sigue igual y no se envia nada."""
+    return getattr(request.app.state, "observabilidad", None)
+
+
 def _reglas():
     return carga.cargar_sistema().contradicciones
 
@@ -107,11 +113,11 @@ def consultar(id_e: str, con: sqlite3.Connection = Depends(conexion)):
 def turno(id_e: str, entrada: RespuestaEntrada, request: Request,
           tareas: BackgroundTasks, con: sqlite3.Connection = Depends(conexion)):
     _existe(con, id_e)
-    fabrica, reglas = _fabrica(request, "entrevistador"), _reglas()
+    fabrica, reglas, observar = _fabrica(request, "entrevistador"), _reglas(), _observar(request)
     id_t = cola.encolar(con, "turno_de_entrevista", {"entrevista": id_e})
     tareas.add_task(_ejecutar, _ruta(request), id_t, lambda c: turno_a_dict(
         service.turno(c, id_e, entrada.respuesta, fabrica(), reglas,
-                      date.today().year, extensiones=_extensiones())))
+                      date.today().year, extensiones=_extensiones(), observar=observar)))
     return {"id_trabajo": id_t}
 
 
@@ -123,11 +129,11 @@ def texto_libre(id_e: str, entrada: TextoLibreEntrada, request: Request,
         validar_longitud(entrada.texto)
     except TextoDemasiadoLargo as e:
         raise HTTPException(422, str(e))
-    fabrica = _fabrica(request, "extractor")
+    fabrica, observar = _fabrica(request, "extractor"), _observar(request)
     id_t = cola.encolar(con, "texto_libre", {"entrevista": id_e})
 
     def _trabajo(c):
-        r = service.pegar_texto(c, id_e, entrada.texto, fabrica())
+        r = service.pegar_texto(c, id_e, entrada.texto, fabrica(), observar=observar)
         return {"hechos": [h.model_dump(mode="json") for h in r.hechos],
                 "instrucciones_detectadas": r.instrucciones_detectadas}
 

@@ -133,3 +133,27 @@ def test_una_inyeccion_por_la_api_queda_en_el_audit_log(cliente):
             "instruccion_en_texto_libre"]
     finally:
         del app.state.extractor
+
+
+def test_el_router_sin_observabilidad_sigue_igual(cliente):
+    from app.main import app as aplicacion
+    assert getattr(aplicacion.state, "observabilidad", None) is None
+    e = cliente.post("/entrevistas").json()
+    r = _trabajo(cliente, cliente.post("/entrevistas/{0}/turnos".format(
+        e["id"]), json={"respuesta": "hola"}))
+    assert r["estado"] == "terminado", r
+
+
+def test_el_router_con_observabilidad_manda_una_traza_por_turno(cliente):
+    from app.commons.observabilidad.exportador import ExportadorEnMemoria
+    from app.commons.observabilidad.observacion import Observacion
+    exportador = ExportadorEnMemoria()
+    app.state.observabilidad = lambda obra, nombre: Observacion(exportador, obra=obra,
+                                                                nombre=nombre)
+    try:
+        e = cliente.post("/entrevistas").json()
+        _trabajo(cliente, cliente.post("/entrevistas/{0}/turnos".format(
+            e["id"]), json={"respuesta": "hola"}))
+    finally:
+        del app.state.observabilidad
+    assert [t for t, _ in exportador.enviados].count("traza") == 1

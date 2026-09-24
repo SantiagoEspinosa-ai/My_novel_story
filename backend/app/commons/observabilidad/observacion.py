@@ -33,6 +33,9 @@ class Observacion:
         # `RF-06`: el catalogo de vetadas de la obra, `{forma: Vetada}`, para enviar una
         # coincidencia por su nivel y su id sin enviar la forma cuando no es global.
         self.vetadas = {}
+        # `RF-05`: la version de prompt de cada rol, `{rol: huella}`. La fija quien crea
+        # la observacion: una feature que no puede importar el registro de prompts.
+        self.versiones = {}
         self.emitir("traza", TrazaEnviada(id=self.traza, nombre=nombre, sesion=self.sesion))
 
     def emitir(self, tipo, objeto):
