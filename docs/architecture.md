@@ -435,6 +435,27 @@ la escena, el control no desapareció: se movió aquí, que es donde una persona
 si el conjunto se sostiene. Sin esta puerta, un hallazgo `mayor` se quedaba sin ninguna
 consecuencia.
 
+### La puerta de publicación (`SPEC-30` v4)
+
+Cuando la novela entera está escrita, `novela.escribir` llama a la puerta
+(`orquestacion/publicacion.py`) y nadie la lanza a mano. Una versión se publica solo si
+ningún capítulo está rendido (`INV-29`, **decisión nuestra, más estricta que el enunciado**),
+no queda ninguna `bloqueante` abierta, Lean devuelve `0` (`INV-28`; el `2` y un Lean que no
+se pudo ejecutar también bloquean) y no queda ningún hallazgo de obra del Editor (`INV-27`).
+La decisión es una función pura (`auditoria/publicacion.py`) y cada ronda deja su veredicto en
+`veredicto_de_publicacion`, que es lo que lee la exportación a PDF.
+
+- **Un fallo de Lean vuelve al Editor como feedback y la generación se detiene sin
+  reescribir** (`RF-06`): lo que Lean mira lo fija el plan antes de escribir.
+- **Un `INV-27` se convierte en instrucciones** para los capítulos implicados, que se
+  reescriben a **delta fijo** (`RF-10`): se acepta solo si los hechos no cambian, y el canon no
+  se mueve. Tope de 2 rondas, contado en la base para que relanzar no lo reinicie.
+- **`INV-06` queda sin ejecutar** y cada veredicto lo dice (`RF-12`): exige una comparación
+  semántica y hoy no hay quién la haga.
+
+`INV-27` sigue siendo `mayor`: que bloquee la publicación es regla de esta puerta, no un cambio
+de severidad.
+
 ### Severidad: bloqueante frente a mayor y menor
 
 La diferencia se implementa una vez, en `commons/invariantes/`, y no se resuelve caso por

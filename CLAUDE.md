@@ -100,4 +100,6 @@ La novela regalo de principio a fin (`SPEC-26`), a partir de la ficha cerrada de
 cd backend && python -X utf8 novela_regalo.py FICHA.json --capitulos 1
 ```
 
+**La puerta de publicación ejecuta Lean** (`SPEC-30`): necesita `lake` (Lean 4.34.0). Se busca en `HARNESS_LAKE`, `ELAN_HOME`, el `PATH` y `~/.elan/bin`; sin él, la versión no se publica y el informe lo dice.
+
 **Los guiones de ejecución real gastan dinero** y por eso no están aquí como comando suelto: `backend/f6_seis_escenas.py` delega en sesiones de verdad. Necesitan `HARNESS_MODELO_ESCRITOR`, `HARNESS_MODELO_JUEZ` y `HARNESS_MODELO_RESUMIDOR`, y se lanzan con `python -X utf8` porque la consola de Windows no es UTF-8 por defecto.

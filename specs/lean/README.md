@@ -6,6 +6,15 @@ Comprueba cuatro invariantes temporales sobre la cronología de una obra, leída
 de la misma SQLite que usa el harness. Si alguna falla, el ejecutable devuelve
 1 y la versión no se publica.
 
+> **Desde `PLAN-30` (2026-09-24) lo llama el backend, solo.** La puerta de publicación
+> (`backend/app/features/auditoria/lean.py`) copia esta carpeta a un temporal, genera la
+> cronología desde la base, compila y ejecuta `verificar-real`, y lee su salida: `0` con
+> `#COBERTURA` es limpio; cualquier otra cosa bloquea (`SPEC-30` `RF-09`). Cada violación sale
+> además en una línea `#VIOLACION <inv> <ev,ev> <detalle>`, que es lo que el Editor recibe
+> (`RF-03`). Tiempos medidos en `medidas.md`. **En la novela regalo solo `L-1` tiene datos**
+> mientras nadie declare los presentes de cada escena (`PLAN-27` E3): un `0` ahí es «`L-1`
+> limpio».
+
 ---
 
 ## Lo que esto destapó: no faltaban tablas, el modelado impedía que Lean dijera nada
