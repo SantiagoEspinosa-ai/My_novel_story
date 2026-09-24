@@ -186,12 +186,33 @@ class SesionDelegada:
         self.herramientas = None
         # `PLAN-22` E13b: la ruta de un `.mcp.json` que se carga tal cual (el browser).
         self.mcp_fijo = None
+        # `SPEC-33` `RF-18`: `(agente, coste_usd) -> None`, llamado una vez por delegacion,
+        # tambien cuando falla. `coste_usd` es `None` si no se midio: nunca cero.
+        self.anotador = None
 
     def __repr__(self):
         return "SesionDelegada(modelo={0!r}, agente={1!r})".format(self.nombre, self.agente)
 
     def llamar(self, prompt: str) -> dict:
-        """Devuelve la respuesta normalizada con sus `medidas` dentro."""
+        """Devuelve la respuesta normalizada con sus `medidas` dentro.
+
+        Con `anotador`, cada delegacion deja su coste (`SPEC-33` `RF-18`): la que sale bien,
+        la ilegible, que se pago igual, y la que no llego, sin coste. Un anotador que falla
+        no se calla: perder el gasto en silencio es peor que ver el error.
+        """
+        coste = None
+        try:
+            r = self._llamar(prompt)
+            coste = (r.get("medidas") or {}).get("coste_usd") if isinstance(r, dict) else None
+            return r
+        except RespuestaIlegible as e:
+            coste = (e.medidas or {}).get("coste_usd")
+            raise
+        finally:
+            if self.anotador is not None:
+                self.anotador(self.agente, coste)
+
+    def _llamar(self, prompt: str) -> dict:
         try:
             extra = {}
             if self.reglas:

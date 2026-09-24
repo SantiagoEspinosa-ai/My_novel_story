@@ -339,6 +339,25 @@ TODAS = [
             "tema": "TEXT", "falta": "TEXT", "avisos": "TEXT",
             "contradicciones_abiertas": "TEXT", "cuando": "TEXT"}),
     ),
+    Migracion(
+        17,
+        "cada delegacion deja su coste en la base",
+        # `SPEC-33` `RF-18`, `PLAN-33` E4: `GastoDeDelegacion`. Hasta aqui el coste solo
+        # llegaba a Langfuse y a `Contador`, en memoria (`F-144`). Tabla nueva, sin filas
+        # que migrar: lo gastado antes no se puede reconstruir, y por eso lo gastado de
+        # una base es un **suelo**.
+        """
+        CREATE TABLE IF NOT EXISTS gasto_de_delegacion (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            obra        TEXT NOT NULL,
+            agente      TEXT NOT NULL,
+            generacion  TEXT,
+            coste_usd   REAL,
+            cuando      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_gasto_por_obra ON gasto_de_delegacion (obra, generacion);
+        """,
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la

@@ -6,8 +6,22 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión («Aprobado PLAN-33. Empieza y realiza todo»)"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
-version: 1
+version: 2
 ---
+
+> **v2 (2026-09-24), corrección de ubicación al implementar E4.** `docs/architecture.md`: *una
+> feature no importa de otra, y `orquestacion/` es la única autorizada a componer*. El plan ponía
+> en `features/regalo/` cosas que componen, y hacía que `regalo` importara de `lectura`. Cambia
+> **dónde** viven tres piezas; los pasos, las pruebas y lo que cierra cada uno siguen igual:
+> - **Escribir el gasto** (E4) va a `app/commons/modelo/gasto.py`, porque lo usan la entrevista
+>   y la orquestación, y ninguna de las dos puede importar de `regalo`.
+> - **`agentes()` y el lanzamiento** (E5, E11) van a módulos nuevos de `orquestacion/`
+>   (`regalo.py` y `router_regalo.py`), sin tocar su `router.py`, que `PLAN-22` tiene a medias.
+> - **`features/regalo/`** solo lee: la estantería, el gasto y el estado de la generación, por
+>   SQL y sin importar `lectura` (E6 lee `progreso_de_generacion` directamente).
+>
+> Además, en E2–E3 el turno vive en `pages/entrevista` y no en `entities/turno` (steiger funde
+> un slice con una sola referencia), y el intervalo es `INTERVALO_DE_REGALO_MS`.
 
 # PLAN-33 — La novela regalo en la web
 
