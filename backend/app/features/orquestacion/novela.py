@@ -49,6 +49,11 @@ def montar(con, obra, ficha, aprobado, sistema=None):
         if p.fecha_de_nacimiento:
             aplicar.fijar_fecha_de_nacimiento(con, p.id, p.fecha_de_nacimiento)
     mundo.sembrar_lugares(con, {l.id: l.accesos for l in plan.mundo.lugares})
+    # `PLAN-27` E2: los nombres, despues de sembrar, como la fecha de nacimiento.
+    for p in plan.mundo.personajes:
+        aplicar.fijar_nombre(con, p.id, p.nombre)
+    for l in plan.mundo.lugares:
+        mundo.fijar_nombre_de_lugar(con, l.id, l.nombre)
     # `SPEC-32` `RF-09`: la extension que eligio el comprador, no una constante.
     minimo, maximo = rango_de_palabras(ficha.extension, sistema)
     for c in plan.capitulos:

@@ -55,6 +55,15 @@ def test_la_obra_queda_con_su_titulo_y_su_genero(con):
     assert tuple(fila) == ("El mapa de Irene", "aventura")
 
 
+def test_montar_guarda_el_nombre_de_cada_personaje_y_de_cada_lugar(con):
+    """`PLAN-27` E2: una ficha titulada `per-irene` no sirve de regalo. Los nombres solo
+    vivian en el JSON del plan."""
+    novela.montar(con, "obra-x", ficha(), _aprobado())
+    nombres = dict(con.execute("SELECT id, nombre_canonico FROM entidad").fetchall())
+    assert nombres["per-irene"] == "Irene Valdés" and nombres["per-brisa"] == "Brisa"
+    assert con.execute("SELECT nombre FROM lugar WHERE id='lug-casa'").fetchone()[0] == "Casa"
+
+
 def test_montar_dos_veces_no_duplica_ni_reinicia(con):
     """Relanzar tras una caida no puede rehacer lo que ya estaba."""
     novela.montar(con, "obra-x", ficha(), _aprobado())

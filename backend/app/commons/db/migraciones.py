@@ -278,6 +278,15 @@ TODAS = [
         # presupuestarlo. Opcional: una delegacion sin tools no tiene identificador.
         lambda con: anadir_columnas(con, "traza_de_delegacion", {"delegacion": "TEXT"}),
     ),
+    Migracion(
+        11,
+        "personajes y lugares guardan su nombre",
+        # `PLAN-27` E2: `Personaje.nombre_canonico` y `Lugar.nombre`, que el dominio ya
+        # define y solo vivian en el JSON del plan. Las filas de antes se quedan a
+        # `NULL`: no se finge un nombre que nadie guardo.
+        lambda con: (anadir_columnas(con, "entidad", {"nombre_canonico": "TEXT"}),
+                     anadir_columnas(con, "lugar", {"nombre": "TEXT"})),
+    ),
 ]
 
 

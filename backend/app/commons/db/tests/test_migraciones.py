@@ -218,3 +218,19 @@ def test_la_migracion_anade_delegacion_a_una_base_anterior():
     assert "delegacion" in columnas
     assert con.execute("SELECT agente, delegacion FROM traza_de_delegacion").fetchone() \
         == ("escritor", None)
+
+
+def test_la_migracion_de_nombres_anade_las_columnas_sin_perder_filas():
+    """`PLAN-27` E2: `Personaje.nombre_canonico` y `Lugar.nombre`. Una base de antes gana
+    las columnas, y lo que ya habia se queda con el nombre a `NULL`: no se finge."""
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+        CREATE TABLE entidad (id TEXT PRIMARY KEY, vital TEXT NOT NULL, lugar TEXT NOT NULL,
+                              fecha_de_nacimiento TEXT);
+        CREATE TABLE lugar (id TEXT PRIMARY KEY, accesos TEXT NOT NULL DEFAULT '[]');
+        INSERT INTO entidad (id, vital, lugar) VALUES ('per-1', 'vivo', 'lug-1');
+        INSERT INTO lugar (id) VALUES ('lug-1');
+    """)
+    migraciones.migrar(con)
+    assert con.execute("SELECT id, nombre_canonico FROM entidad").fetchone() == ("per-1", None)
+    assert con.execute("SELECT id, nombre FROM lugar").fetchone() == ("lug-1", None)

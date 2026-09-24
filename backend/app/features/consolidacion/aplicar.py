@@ -27,7 +27,9 @@ CREATE TABLE IF NOT EXISTS entidad (
     -- `SPEC-21` C-3. Opcional: exigirla romperia todas las obras generadas
     -- hasta hoy. Como es opcional, quien no la tenga **no pasa** la
     -- comprobacion de edad: la salta, y la consulta lo dice aparte.
-    fecha_de_nacimiento TEXT
+    fecha_de_nacimiento TEXT,
+    -- `PLAN-27` E2: `Personaje.nombre_canonico`. Lo fija `montar` desde el plan.
+    nombre_canonico TEXT
 );
 CREATE TABLE IF NOT EXISTS escena_consolidada (
     escena TEXT PRIMARY KEY
@@ -58,9 +60,19 @@ def sembrar(con, entidades):
     # migracion cambia.
     with con:
         for id_e, (vital, lugar) in entidades.items():
+            # `PLAN-27` E2: `ON CONFLICT DO UPDATE` y no `OR REPLACE`, que borra la fila
+            # y deja a `NULL` lo que no va en el `INSERT`: el nombre y la fecha.
             con.execute(
-                "INSERT OR REPLACE INTO entidad (id, vital, lugar) "
-                "VALUES (?, ?, ?)", (id_e, vital, lugar))
+                "INSERT INTO entidad (id, vital, lugar) VALUES (?, ?, ?) "
+                "ON CONFLICT(id) DO UPDATE SET vital = excluded.vital, "
+                "lugar = excluded.lugar", (id_e, vital, lugar))
+
+
+def fijar_nombre(con, personaje, nombre):
+    """`Personaje.nombre_canonico`, con la forma de `fijar_fecha_de_nacimiento`."""
+    with con:
+        con.execute("UPDATE entidad SET nombre_canonico = ? WHERE id = ?",
+                    (nombre, personaje))
 
 
 def fijar_fecha_de_nacimiento(con, personaje, fecha):

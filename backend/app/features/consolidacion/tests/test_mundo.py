@@ -123,3 +123,28 @@ def test_una_revelacion_posterior_no_pisa_lo_que_ya_se_sabia(con):
     aplicar.consolidar(con, "e4", {
         "revelaciones": [{"sujeto": "per-marta", "hecho": "hec-herencia"}]})
     assert mundo.leer(con)["conocimiento"][("per-marta", "hec-herencia")]["desde"] is None
+
+
+# --- `PLAN-27` E2: los nombres del canon ------------------------------------------
+
+def test_volver_a_sembrar_no_borra_un_nombre_ya_fijado(con):
+    """`INSERT OR REPLACE` borra la fila y la vuelve a escribir: todo lo que no va en el
+    `INSERT` -el nombre- se quedaria a `NULL` sin que nada fallara (Regla 7)."""
+    aplicar.fijar_nombre(con, "per-marta", "Marta Ibarra")
+    mundo.fijar_nombre_de_lugar(con, "lug-salon", "El salón de la casa")
+    aplicar.sembrar(con, {"per-marta": ("vivo", "lug-cocina")})
+    mundo.sembrar_lugares(con, {"lug-salon": ["lug-cocina"]})
+    assert con.execute("SELECT nombre_canonico, lugar FROM entidad WHERE id='per-marta'"
+                       ).fetchone() == ("Marta Ibarra", "lug-cocina")
+    assert con.execute("SELECT nombre FROM lugar WHERE id='lug-salon'"
+                       ).fetchone() == ("El salón de la casa",)
+
+
+def test_sembrar_lugares_no_depende_del_orden_de_las_columnas():
+    """`mundo.sembrar_lugares` insertaba por posicion: con una columna mas en medio,
+    los accesos habrian caido en otra."""
+    c = sqlite3.connect(":memory:")
+    c.execute("CREATE TABLE lugar (id TEXT PRIMARY KEY, nombre TEXT, "
+              "accesos TEXT NOT NULL DEFAULT '[]')")
+    mundo.sembrar_lugares(c, {"lug-a": ["lug-b"]})
+    assert c.execute("SELECT nombre, accesos FROM lugar").fetchone() == (None, '["lug-b"]')

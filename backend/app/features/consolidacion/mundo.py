@@ -33,7 +33,9 @@ CREATE TABLE IF NOT EXISTS conocimiento (
 );
 CREATE TABLE IF NOT EXISTS lugar (
     id      TEXT PRIMARY KEY,
-    accesos TEXT NOT NULL DEFAULT '[]'
+    accesos TEXT NOT NULL DEFAULT '[]',
+    -- `PLAN-27` E2: `Lugar.nombre`. Lo fija `montar` desde el plan.
+    nombre  TEXT
 );
 """
 
@@ -77,8 +79,18 @@ def sembrar_lugares(con, accesos: dict):
     asegurar_tablas(con)
     with con:
         for id_lugar, vecinos in accesos.items():
-            con.execute("INSERT OR REPLACE INTO lugar VALUES (?, ?)",
+            # Columnas con nombre (una migracion cambia el orden) y sin `OR REPLACE`,
+            # que borraria el nombre ya fijado (`PLAN-27` E2).
+            con.execute("INSERT INTO lugar (id, accesos) VALUES (?, ?) "
+                        "ON CONFLICT(id) DO UPDATE SET accesos = excluded.accesos",
                         (id_lugar, json.dumps(vecinos)))
+
+
+def fijar_nombre_de_lugar(con, lugar, nombre):
+    """`Lugar.nombre`."""
+    asegurar_tablas(con)
+    with con:
+        con.execute("UPDATE lugar SET nombre = ? WHERE id = ?", (nombre, lugar))
 
 
 def aplicar_conocimiento(con, escena, delta):
