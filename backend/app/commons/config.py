@@ -73,6 +73,14 @@ TOPE_REINTENTOS_DE_PUBLICACION = 2
 # corto cuesta una parada visible, no un verde falso.
 TIEMPO_MAXIMO_LEAN_SEGUNDOS = 300
 
+# **Decision de presupuesto, no medida** (`SPEC-31`): la fija el autor para todas las
+# ejecuciones reales de la evaluacion, y el enunciado no pone ninguna. No caduca con
+# nada porque no estima nada: el coste de una novela con el pipeline actual esta sin
+# medir, y por eso el techo se comprueba contra lo gastado (`gasto_de_evaluacion`) y
+# nunca contra una prevision. Se puede pasar en lo que cueste el capitulo en curso: la
+# generacion se para entre capitulos, no a media delegacion (`PLAN-31` E5).
+TECHO_DE_GASTO_EVALUACION_USD = 150
+
 # **Contrato, no estimacion.** `SPEC-26` `RF-11`: tres reescrituras despues del
 # primer intento. Agotadas, el capitulo se acepta por rendicion con sus
 # hallazgos visibles.

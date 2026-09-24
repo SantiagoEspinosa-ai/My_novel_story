@@ -126,3 +126,21 @@ def del_cierre(obs, cierre, ronda):
     obs.score(nombre="INV-27", referencia=ref,
               categoria="falla" if "abierto" in estados
               else "sin_veredicto" if estados else "pasa")
+
+
+_DE_LA_TABLA = {"pasó": "pasa", "falló": "falla", "sin veredicto": "sin_veredicto"}
+
+
+def de_la_evaluacion(obs, celdas, pasada):
+    """`SPEC-31` `RF-07`: la fila de la tabla de la evaluacion, un score por columna, con la
+    pasada en la referencia. «No aplica», «no ejecutado» y «sin ejecutar» suben como
+    `no_aplica` con su motivo, que es un texto fijo del codigo. Nada de la obra sube."""
+    if obs is None:
+        return
+    for columna, celda in celdas.items():
+        categoria = _DE_LA_TABLA.get(celda.resultado.value, "no_aplica")
+        motivo = None
+        if categoria in ("no_aplica", "sin_veredicto"):
+            motivo = "{0}: {1}".format(celda.resultado.value, celda.motivo or "sin motivo")
+        obs.score(nombre=columna, referencia="evaluacion-{0}".format(pasada),
+                  categoria=categoria, motivo=motivo)

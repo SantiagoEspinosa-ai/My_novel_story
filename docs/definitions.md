@@ -230,6 +230,7 @@ Las relaciones son lo que convierte una taxonomía en ontología. Esta tabla es 
 | contradice | HechoCanonico | HechoCanonico | N:M | Detección de conflictos |
 | verificada\_por | Escena | Verificador | N:M | Puertas de calidad |
 | deriva\_de | Borrador | Escena, Escaleta | N:1 | Linaje y reproducibilidad |
+| valorado\_en | Borrador | ValoracionDelEditor | 1:N (una por `criterio_de_edicion`, hasta seis) | Las seis notas del Editor de **cada versión** del borrador, también las que no bajan del umbral: sin ellas no se puede comparar el Editor con el autor ni medir un tuning (`SPEC-31` `RF-03`, `RF-04`, `RF-08`; `PLAN-31` E4). Una valoración ilegible no deja ninguna |
 
 **La relación que más rinde es `conoce`.** Con `sujeto`, `hecho`, `grado` y `desde_escena` se pueden detectar automáticamente tres clases de fallo: personajes que actúan con información que no tienen, revelaciones repetidas al lector y tensión que se desinfla porque el lector se adelantó sin que el texto lo aprovechara.
 

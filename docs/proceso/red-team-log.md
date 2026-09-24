@@ -3,7 +3,10 @@
 Casos adversariales, qué validador los detectó —o que no los detectó ninguno— y cómo se
 resolvió. **Hoy ningún caso se ha lanzado contra el modelo real**: los de abajo están
 probados con dobles, o aparecieron en una ejecución real sin que nadie los buscara. El
-corpus que `SPEC-31` pide vivirá en `harness/adversarial/`, que todavía no existe.
+corpus que `SPEC-31` pide vive en **`harness/adversarial/casos.json`** (`RT-01`…`RT-06`,
+`PLAN-31` E8), con su detector o `ninguno` en cada caso; aquí se enlaza, no se copia.
+**`RT-05` encontró una fuga**: la segunda novela de una base recibe el mundo de la
+primera (`F-100`).
 
 ## Casos probados
 
@@ -28,5 +31,5 @@ corpus que `SPEC-31` pide vivirá en `harness/adversarial/`, que todavía no exi
 | --- | --- |
 | El brief adversarial de injection, contra el modelo real | Sin ejecutar |
 | Evasión de vetadas por variantes, contra el modelo real | Sin ejecutar |
-| Exfiltración de datos entre dos novelas, a propósito | Sin ejecutar contra el modelo. Las tools solo leen la obra de la delegación, que fija el harness y no es argumento (`SPEC-28` `RF-06`, `VER-91`) |
+| Exfiltración de datos entre dos novelas, a propósito | **Probado con dobles** (`RT-05`, `RT-06`): las tools no fugan, **el prompt del Escritor sí** (`F-100`). Sin ejecutar contra el modelo |
 | Datos del destinatario en lo que se envía a Langfuse | Sin ejecutar; es la prueba de `SPEC-29` `RF-07` |

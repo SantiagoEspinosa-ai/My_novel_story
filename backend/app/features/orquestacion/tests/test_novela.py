@@ -799,3 +799,149 @@ def test_el_informe_cuenta_las_palabras_del_texto_elegido_aunque_no_se_marcara(c
                     "VALUES ('cap-01-e1', 1, 'una dos tres', 'doble', 'h')")
     assert _guion().palabras_de(con, "cap-01-e1") == 3
     assert _guion().palabras_de(con, "cap-02-e1") is None
+
+
+# --- `PLAN-31` E5: `seguir` entre capitulos, y el coste de la puerta en el total ---
+
+def _con_coste(agentes, coste=0.01):
+    return {k: _ConSobre(a, coste) for k, a in agentes.items()}
+
+
+def test_escribir_se_detiene_entre_capitulos_cuando_seguir_dice_que_no(con, tmp_path):
+    """`SPEC-31` `RF-06`: al alcanzar el techo, la generacion se para **entre**
+    capitulos -no a media delegacion- con `techo_de_gasto`, y no llega a la puerta."""
+    consultas = []
+
+    def seguir(numero, coste):
+        consultas.append((numero, dict(coste)))
+        return numero < 2
+    lean = _LeanFijo()
+    r = novela.escribir(con, "obra-x", ficha(), _con_coste(_agentes_para_la_novela_entera()),
+                        carpeta_de_reglas=str(tmp_path), lean=lean, seguir=seguir)
+    g = r["generacion"]
+    assert [n for n, _ in consultas] == [1, 2]
+    assert g.escenas_hechas == ["obra-x-cap-01-e1", "obra-x-cap-02-e1"]
+    assert g.parada["motivo"] == "techo_de_gasto"
+    assert lean.llamadas == 0 and r["publicacion"] is None
+    assert consultas[0][1]["delegaciones"] >= 3 and consultas[0][1]["usd"] > 0, \
+        "a `seguir` le llega lo que costo ese capitulo"
+
+
+class _EditorDeLaPuerta(_Fijo):
+    """Contesta segun lo que le pidan: la rubrica de capitulo, el juicio de obra (primero
+    un final abrupto, despues bien) o las instrucciones para el capitulo implicado."""
+
+    def __init__(self, valoraciones, juicios=None):
+        super().__init__(valoraciones)
+        self.juicios = juicios or [
+            {"arco_cerrado": True, "final_abrupto": True, "justificacion": "x"},
+            {"arco_cerrado": True, "final_abrupto": False, "justificacion": "y"}]
+
+    def llamar(self, prompt):
+        import re
+        self.llamadas.append(prompt)
+        if "Juzga una novela para regalar entera" in prompt:
+            return self.juicios.pop(0) if len(self.juicios) > 1 else self.juicios[0]
+        if "CAPITULOS IMPLICADOS" in prompt and "instruccion" in prompt:
+            capitulo = re.search(r"CAPITULOS IMPLICADOS\n- ([\w-]+):", prompt).group(1)
+            return {"instrucciones": [{"capitulo": capitulo, "instruccion": "cierra el viaje"}]}
+        return self.r
+
+
+def test_el_coste_del_juicio_de_obra_entra_en_el_total(con, tmp_path):
+    """`PLAN-31` hallazgo 3: el juicio de obra no se sumaba. Diez capitulos con el
+    Escritor, el Editor y el Resumidor (30) mas el juicio de obra (1): 31 delegaciones
+    con coste, y ninguna sin medir."""
+    agentes = _agentes_para_la_novela_entera()
+    agentes["editor"] = _EditorDeLaPuerta(agentes["editor"].r, juicios=[
+        {"arco_cerrado": True, "final_abrupto": False, "justificacion": "bien"}])
+    medidos = _con_coste({k: v for k, v in agentes.items()
+                          if k not in ("planificador", "revisor")})
+    r = novela.escribir(con, "obra-x", ficha(), dict(agentes, **medidos),
+                        carpeta_de_reglas=str(tmp_path), lean=_LeanFijo())
+    assert r["publicacion"].publicada, r["publicacion"].parada
+    coste = r["generacion"].coste
+    assert coste["delegaciones"] == 31, coste
+    assert coste["sin_coste"] == 0 and abs(coste["usd"] - 0.31) < 1e-9
+    assert r["coste_del_cierre"]["delegaciones"] == 1
+
+
+def test_el_coste_de_las_reescrituras_de_la_puerta_entra_en_el_total(con, tmp_path):
+    """Un final abrupto en la primera ronda: el Editor da la instruccion, el capitulo 10
+    se reescribe (Escritor, Editor y Resumidor) y la segunda ronda juzga otra vez. Todo
+    eso se paga y todo eso cuenta."""
+    base = _agentes_para_la_novela_entera()
+    base["editor"] = _EditorDeLaPuerta(base["editor"].r)
+    medidos = _con_coste({k: v for k, v in base.items() if k not in ("planificador", "revisor")})
+    r = novela.escribir(con, "obra-x", ficha(), dict(base, **medidos),
+                        carpeta_de_reglas=str(tmp_path), lean=_LeanFijo())
+    assert r["publicacion"].publicada and r["publicacion"].rondas == 2, r["publicacion"].parada
+    cierre = r["coste_del_cierre"]
+    # dos juicios, una instruccion, y la reescritura: Escritor, Editor y Resumidor.
+    assert cierre["delegaciones"] == 6, cierre
+    assert r["generacion"].coste["delegaciones"] == 30 + 6
+
+
+def test_el_gasto_se_anota_por_capitulo_y_sobrevive_a_una_caida(tmp_path):
+    """Lo que `seguir` anota en la base queda aunque el proceso muera despues: el
+    Resumidor se cae del todo en el capitulo 3 y los dos primeros siguen en el libro."""
+    from app.commons.configuracion import carga
+    from app.commons.modelo import proveedor
+    from app.features.evaluacion import repository as libro
+    base = str(tmp_path / "evaluacion.db")
+    c = sqlite3.connect(base)
+    c.row_factory = sqlite3.Row
+    migraciones.migrar(c)
+    agentes = _agentes_para_la_novela_entera()
+
+    class _SeCaeEnElTercero(_Fijo):
+        def llamar(self, prompt):
+            self.llamadas.append(prompt)
+            if len(self.llamadas) >= 3:
+                raise proveedor.FalloDeTransporte("la delegacion no completo")
+            return self.r
+    agentes["resumidor"] = _SeCaeEnElTercero(agentes["resumidor"].r)
+
+    def seguir(numero, coste):
+        libro.anotar(c, ejecucion="e-1", brief="brief-base", pasada="antes",
+                     capitulo=str(numero), **coste)
+        return True
+    with pytest.raises(proveedor.FalloDeTransporte):
+        novela.escribir(c, "obra-x", ficha(), _con_coste(agentes),
+                        carpeta_de_reglas=str(tmp_path), lean=_LeanFijo(),
+                        sistema=carga.cargar_sistema(), seguir=seguir)
+    c.close()
+    otra = sqlite3.connect(base)
+    assert [f["capitulo"] for f in libro.filas(otra)] == ["1", "2"]
+
+
+# --- `PLAN-31` E9: el coste en el guion de la novela regalo ------------------------
+
+def test_novela_regalo_con_dobles_informa_el_juicio_de_obra_en_el_coste(tmp_path, monkeypatch,
+                                                                       capsys):
+    """El guion sumaba el ciclo, el Planificador y el Revisor, y el juicio de obra se
+    perdia. Ahora entra en el total y se dice aparte, con su nombre."""
+    from app.commons.modelo.contador import Contador
+    from app.commons.observabilidad.exportador import ExportadorEnMemoria
+    guion = _guion()
+    assert guion.Contador is Contador, "uno solo, el de commons, con su prueba"
+    agentes = _agentes_para_la_novela_entera()
+    agentes["editor"] = _EditorDeLaPuerta(agentes["editor"].r, juicios=[
+        {"arco_cerrado": True, "final_abrupto": False, "justificacion": "bien"}])
+    medidos = _con_coste(agentes, coste=0.01)
+    medidos["planificador"] = Contador(medidos["planificador"])
+    medidos["revisor"] = Contador(medidos["revisor"])
+    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno: medidos)
+    monkeypatch.setattr(guion, "crear_exportador", lambda: ExportadorEnMemoria())
+    escribir = guion.novela.escribir
+    monkeypatch.setattr(guion.novela, "escribir",
+                        lambda *a, **kw: escribir(*a, **dict(kw, lean=_LeanFijo())))
+    ruta_ficha = tmp_path / "ficha.json"
+    ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
+    codigo = guion.main([str(ruta_ficha), "--base", str(tmp_path / "r.db"), "--obra", "obra-x"])
+    salida = capsys.readouterr().out
+    assert codigo == 0, salida
+    # 10 capitulos x 3 + el juicio de obra + el Planificador y el Revisor.
+    assert "delegaciones: 33 | sin coste medido: 0" in salida, salida
+    assert "0.3300 USD" in salida
+    assert "cierre (juicio de obra y puerta de publicacion): 1 delegaciones, 0.0100 USD" in salida

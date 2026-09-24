@@ -116,6 +116,7 @@ backend/
       entrevista/            # la ficha del destinatario, por turnos, y el texto libre (SPEC-25)
       planificacion/         # de la ficha a un plan aprobado: Planificador, Revisor y cobertura (SPEC-26)
       politica/              # listas de palabras vetadas en tres niveles (SPEC-25)
+      evaluacion/            # briefs de evaluacion, libro de gasto, tabla por brief y rastro de exfiltracion (SPEC-31)
       orquestacion/          # compone las anteriores; unica autorizada a hacerlo
       lectura/               # consultas de solo lectura que alimentan el frontend
       manuscrito/            # la obra entera: el texto sin tocar, el libro como dato y su PDF (SPEC-27)
@@ -785,6 +786,26 @@ Tres carpetas y no más. Una cuarta necesita spec, que es justo lo que faltó pa
 **Un eval y el red-teaming no son lo mismo**, y por eso son dos carpetas: un eval mide
 concordancia contra un criterio, y el red-teaming busca una violación bajo presión
 adversaria. Distinta pregunta, distinto corpus, distinto criterio de salida.
+
+**Qué hay hoy en cada una** (`SPEC-31`, `PLAN-31` E1–E14):
+
+- `evals/`: los cinco briefs de `RF-01` y `RF-10` —ficha o guion de entrevista, nunca los
+  dos—, `resultados.md`, la tabla por brief que **genera** `backend/evaluar.py` y no se
+  edita a mano, y `medidas.md`. El formato lo valida `features/evaluacion/briefs.py`.
+- `adversarial/`: `casos.json` (`RT-01`…`RT-06`, cada uno con su detector o `ninguno`) y las
+  dos fichas disjuntas del caso de exfiltración. Lo que no detectó nadie está también.
+- `documentos/`: sigue sin existir.
+
+**Lo que se ejecuta contra el modelo lo lanza `backend/evaluar.py`, y gasta.** La pieza
+que sí es código de producción vive en el backend: `features/evaluacion/` —el formato de
+los briefs, el libro `gasto_de_evaluacion`, la tabla y el rastro— y
+`orquestacion/evaluacion.py`, que reúne lo que dice cada validador de una obra porque
+cruza features (`A-02`). La regla de lectura de la tabla —**sin constancia de ejecución
+no hay «pasó»**— está en ese módulo, con la constancia que declara cada validador.
+
+**Una base por ejecución, un libro para todas.** El techo de 150 USD se acumula en el
+libro (`--libro`), y cada novela se escribe en su propia base (`--base`), porque la segunda
+novela de una base recibe el mundo de la primera (`F-100`).
 
 ### El ensamblador del manuscrito no corrige nada
 

@@ -113,3 +113,34 @@ def test_el_editor_se_lanza_aislado_sin_claude_md(tmp_path):
     cwd = pathlib.Path(sesion.cwd)
     assert (cwd / ".claude" / "agents" / "editor.md").exists()
     assert not (cwd / "CLAUDE.md").exists() and sesion.agente == "editor"
+
+
+# --- `PLAN-31` E4: las seis notas del Editor se guardan, por version de borrador ---
+
+def test_el_editor_guarda_las_seis_notas_aunque_ninguna_baje_del_umbral(con):
+    """`SPEC-31` `RF-03`, `RF-04` y `RF-08` necesitan las seis notas de cada capitulo.
+    Hasta aqui solo quedaban las que bajaban del umbral, como texto de un `INV-26`."""
+    _generar(con, Editor([_valoraciones()]))
+    notas = repo.valoraciones_del_editor(con, "e1")
+    assert sorted(n["criterio"] for n in notas) == sorted(CRITERIOS)
+    assert {n["version"] for n in notas} == {1}
+    assert {n["nota"] for n in notas} == {4}
+    assert all(n["justificacion"] == "bien resuelto" for n in notas)
+
+
+def test_una_valoracion_ilegible_no_deja_notas_y_sigue_siendo_sin_veredicto(con):
+    _generar(con, Editor([{"valoraciones": "no es una lista"}]))
+    assert repo.valoraciones_del_editor(con, "e1") == []
+    estados = [f[0] for f in con.execute(
+        "SELECT estado FROM hallazgo WHERE invariante = 'INV-26'")]
+    assert estados == ["sin_veredicto"]
+
+
+def test_las_notas_de_cada_reescritura_quedan_con_su_version_de_borrador(con):
+    _generar(con, Editor([_valoraciones(nota_ritmo=2), _valoraciones()]))
+    notas = repo.valoraciones_del_editor(con, "e1")
+    assert {n["version"] for n in notas} == {1, 2}
+    ritmo = {n["version"]: n for n in notas if n["criterio"] == "ritmo"}
+    assert ritmo[1]["nota"] == 2 and ritmo[1]["instruccion"] == "acorta la escena del puerto"
+    assert ritmo[2]["nota"] == 4
+    assert len(notas) == 12

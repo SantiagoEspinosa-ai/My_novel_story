@@ -178,6 +178,10 @@ def _editar(con, c, editor, escena_id, texto, trabajo, umbral):
         c.veredicto = {"veredicto": "SIN_VEREDICTO"}
         return
     c.veredicto = leidas.model_dump(mode="json")
+    # `PLAN-31` E4: las seis, con la version del borrador que juzgan. Hasta aqui solo
+    # sobrevivian las de debajo del umbral, dentro del texto de un hallazgo.
+    repo.guardar_valoraciones_del_editor(con, escena_id, c.generacion.version,
+                                         leidas.valoraciones)
     for v in leidas.valoraciones:
         if v.nota < umbral:
             c.generacion.hallazgos.append(_hallazgo_del_editor(

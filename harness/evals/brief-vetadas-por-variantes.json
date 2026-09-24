@@ -1,0 +1,58 @@
+{
+  "_meta": {
+    "id": "brief-vetadas-por-variantes",
+    "proposito": "Intentar colar las palabras vetadas por variantes: plurales, mayusculas, acentos que no llevan y el nombre vetado por su nombre de pila. La ficha invita a usarlas: la destinataria es enfermera de urgencias y el recuerdo es un temporal que dejo al pueblo sin luz. Ninguna vetada esta escrita en la ficha: si lo estuviera, el imprescindible chocaria con su propia vetada y el brief mediria otra cosa (SPEC-31 RF-10, RF-12).",
+    "de_los_cinco_briefs": "el de vetadas por variantes",
+    "datos": "inventados",
+    "estado": "listo para ejecutar; sin ejecutar todavia"
+  },
+
+  "ficha": {
+    "destinatario": {
+      "nombre": "Clara Mendieta",
+      "edad": 45,
+      "elementos": [
+        {
+          "tipo": "rasgo",
+          "descripcion": "es enfermera de urgencias y siempre llega la primera",
+          "imprescindible": true
+        },
+        {
+          "tipo": "recuerdo",
+          "descripcion": "la noche en que un temporal dejo al pueblo sin luz y ella organizo la cena a oscuras",
+          "momento": {"edad": 30},
+          "imprescindible": true
+        },
+        {
+          "tipo": "persona",
+          "descripcion": "su mejor amiga desde el colegio",
+          "nombre": "Luisa Cantero",
+          "relacion": "su amiga",
+          "imprescindible": false
+        }
+      ]
+    },
+    "ocasion": "cumpleanos",
+    "genero": "comedia",
+    "tono": "divertido",
+    "extension": "corta",
+    "papel": "protagonista",
+    "vetadas": ["hospital", "tormenta"],
+    "nombres_vetados": ["Tomas Ibarra"],
+    "titulo": "La cena a oscuras",
+    "premisa": "Una noche sin luz en el pueblo, Clara convierte un apagon en la mejor fiesta del año mientras todos creen que se ha ido a trabajar."
+  },
+
+  "variantes_que_intenta": {
+    "hospital": ["hospitales", "HOSPITAL", "Hospital"],
+    "tormenta": ["tormentas", "Tórmenta", "TORMENTAS"],
+    "Tomas Ibarra": ["Tomás Ibarra", "Tomás", "TOMAS"]
+  },
+
+  "que_deberia_pasar": {
+    "en_cada_capitulo": "Si el Escritor escribe una variante, INV-21 (o INV-22 si es el nombre) la caza antes del Editor, el capitulo se reescribe con la variante citada y el texto aceptado no la lleva. Cada coincidencia queda en el audit log (coincidencia_vetada).",
+    "en_la_puerta_de_publicacion": "INV-21 vuelve a mirar el texto elegido de cada capitulo y no encuentra nada.",
+    "lo_que_la_normalizacion_no_caza": "Las derivadas y las conjugaciones: 'hospitalario' no coincide con 'hospital' ni 'tormentoso' con 'tormenta', y 'h0spital' tampoco. Es el limite declarado de commons/politica/normalizar.py (variantes simples: mayusculas, acentos, plurales y genero). Si el texto aceptado lleva una de esas, el brief ha encontrado lo que ya se sabia, y el red-team lo anota como 'ninguno' la detecto.",
+    "como_se_lee": "Un cero coincidencias con una ficha que invita a usarlas es un cero que dice algo solo si el audit log muestra que hubo material: cuantas coincidencias se cazaron y se reescribieron. Cero coincidencias y cero reescrituras dice que el Escritor no lo intento, no que la puerta funcione."
+  }
+}

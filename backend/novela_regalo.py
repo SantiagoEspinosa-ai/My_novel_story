@@ -36,6 +36,7 @@ from app.commons.configuracion import carga  # noqa: E402
 from app.commons.db import migraciones, procedencia  # noqa: E402
 from app.commons.dominio.destinatario import FichaDeEntrevista  # noqa: E402
 from app.commons.modelo import proveedor  # noqa: E402
+from app.commons.modelo.contador import Contador  # noqa: E402
 from app.commons.observabilidad.langfuse import crear_exportador  # noqa: E402
 from app.commons.observabilidad.observacion import Observacion  # noqa: E402
 from app.features.manuscrito import exportar  # noqa: E402
@@ -44,28 +45,6 @@ from app.features.planificacion import repository as planes  # noqa: E402
 from app.features.planificacion.service import PlanNoAprobado  # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-
-
-class Contador:
-    """Suma el coste de un agente que no pasa por las trazas del ciclo."""
-
-    def __init__(self, sesion):
-        self.sesion, self.nombre = sesion, sesion.nombre
-        self.usd, self.delegaciones, self.sin_coste = 0.0, 0, 0
-
-    @property
-    def entorno(self):
-        return self.sesion.entorno
-
-    def llamar(self, prompt):
-        self.delegaciones += 1
-        r = self.sesion.llamar(prompt)
-        usd = ((r or {}).get("medidas") or {}).get("coste_usd")
-        if usd is None:
-            self.sin_coste += 1
-        else:
-            self.usd += usd
-        return r
 
 
 def agentes(sistema, entorno):
@@ -231,6 +210,13 @@ def main(argv=None):
     print("delegaciones: {0} | sin coste medido: {1}".format(delegaciones, sin_coste))
     print("coste leido: {0:.4f} USD{1}".format(
         usd, " (SUELO: hay delegaciones sin coste)" if sin_coste else ""))
+    # `PLAN-31` E9: el juicio de obra y la puerta ya estan en el total; se dicen aparte
+    # porque hasta aqui no se sumaban, y quien compare con una medida vieja lo tiene que saber.
+    cierre = r.get("coste_del_cierre")
+    if cierre is not None:
+        print("  cierre (juicio de obra y puerta de publicacion): {0} delegaciones, "
+              "{1:.4f} USD{2}".format(cierre["delegaciones"], cierre["usd"],
+                                      " (SUELO)" if cierre["sin_coste"] else ""))
     print("tiempo: {0:.0f} s".format(time.time() - arranque))
     informe_de_hooks(observacion, registro_hooks)
     if r["cierre"]:
