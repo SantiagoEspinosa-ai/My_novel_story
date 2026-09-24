@@ -270,6 +270,14 @@ TODAS = [
         # despues de entregar. Opcional: una ficha puede no traerla.
         lambda con: anadir_columnas(con, "obra", {"dedicatoria": "TEXT"}),
     ),
+    Migracion(
+        10,
+        "cada traza sabe de que delegacion es",
+        # `SPEC-28` `RF-08`, `PLAN-28` E8: enlaza la traza con sus llamadas a tools
+        # (`llamada_a_herramienta.delegacion`), para sumar lo que devolvieron sin
+        # presupuestarlo. Opcional: una delegacion sin tools no tiene identificador.
+        lambda con: anadir_columnas(con, "traza_de_delegacion", {"delegacion": "TEXT"}),
+    ),
 ]
 
 

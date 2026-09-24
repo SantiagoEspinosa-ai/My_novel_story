@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS traza_de_delegacion (
     resultado            TEXT,
     clase_de_fallo       TEXT,
     salida_fallida       TEXT,
+    delegacion           TEXT,
     cuando               TEXT NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (escena, agente, prompt_hash)
 );
@@ -86,15 +87,18 @@ def guardar_traza(con, t):
             "INSERT OR REPLACE INTO traza_de_delegacion "
             "(escena, agente, prompt_hash, trabajo, modelo, modelos, recortes, "
             " fichas, tokens_para_recortar, tokens_estimados, resultado, "
-            " clase_de_fallo, salida_fallida) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " clase_de_fallo, salida_fallida, delegacion) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (t.escena, t.agente, t.prompt_hash or "", t.trabajo, t.modelo,
              json.dumps(list(t.modelos or [])),
              json.dumps([[r.bloque, r.clase] if hasattr(r, "bloque") else list(r)
                          for r in (t.recortes or [])]),
              json.dumps([list(f) for f in (t.fichas or [])]),
              t.tokens_para_recortar, t.tokens_estimados, t.resultado,
-             t.clase_de_fallo, t.salida_fallida))
+             t.clase_de_fallo, t.salida_fallida,
+             # `PLAN-28` E8: viaja en las medidas de la respuesta (`proveedor`), que
+             # tanto `bucle` como `ciclo` ya copian a la traza.
+             (t.medidas or {}).get("delegacion")))
 
 
 def trazas_de(con, escena):
@@ -102,14 +106,26 @@ def trazas_de(con, escena):
     filas = con.execute(
         "SELECT escena, agente, prompt_hash, trabajo, modelo, modelos, recortes, "
         "fichas, tokens_para_recortar, tokens_estimados, resultado, "
-        "clase_de_fallo, salida_fallida, cuando FROM traza_de_delegacion "
+        "clase_de_fallo, salida_fallida, cuando, delegacion FROM traza_de_delegacion "
         "WHERE escena = ? ORDER BY cuando, agente", (escena,))
     return [{"escena": f[0], "agente": f[1], "prompt_hash": f[2],
              "trabajo": f[3], "modelo": f[4], "modelos": json.loads(f[5]),
              "recortes": json.loads(f[6]), "fichas": json.loads(f[7]),
              "tokens_para_recortar": f[8], "tokens_estimados": f[9],
              "resultado": f[10], "clase_de_fallo": f[11],
-             "salida_fallida": f[12], "cuando": f[13]} for f in filas]
+             "salida_fallida": f[12], "cuando": f[13], "delegacion": f[14],
+             "herramientas": _herramientas_de(con, f[14])} for f in filas]
+
+
+def _herramientas_de(con, delegacion):
+    """Cuantas llamadas a tools hizo la delegacion y cuantos tokens estimados
+    devolvieron, sin presupuestarlos (`SPEC-28` `RF-08`). Sin llamadas, los tokens se
+    quedan ausentes: un cero se leeria como una medida."""
+    if not delegacion:
+        return {"llamadas": 0, "tokens_estimados": None}
+    f = con.execute("SELECT COUNT(*), SUM(tokens_estimados) FROM llamada_a_herramienta "
+                    "WHERE delegacion = ?", (delegacion,)).fetchone()
+    return {"llamadas": f[0], "tokens_estimados": f[1]}
 
 
 def recortes_de_la_obra(con):

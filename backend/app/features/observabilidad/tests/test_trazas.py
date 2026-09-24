@@ -128,3 +128,34 @@ def test_el_span_de_una_herramienta_lleva_solo_lo_que_sube():
                         tokens_estimados=7)
     [span] = obs.spans_de_herramientas(con, "d1")
     assert set(span) == {"nombre", "latencia_ms", "validacion", "tokens_estimados"}
+
+
+# --- `PLAN-28` E8: cada delegacion, enlazada con sus llamadas a tools ------------
+
+def test_la_traza_de_una_delegacion_suma_los_tokens_de_sus_herramientas():
+    """`SPEC-28` `RF-08`: lo que devuelven las tools se registra «junto a la llamada», sin
+    presupuestarlo. La delegacion llega en las medidas de la respuesta."""
+    import sqlite3
+    from app.commons.modelo import traza as modulo_traza
+    from app.features.observabilidad import repository as obs
+    con = sqlite3.connect(":memory:")
+    t = modulo_traza.nueva(agente="escritor", escena="e1", trabajo="w")
+    t.medidas = {"delegacion": "d1"}
+    obs.guardar_traza(con, t)
+    for tokens in (10, 32):
+        obs.guardar_llamada(con, "d1", "o", "escritor", "hechos", "ok", 3, tokens)
+    obs.guardar_llamada(con, "d2", "o", "escritor", "hechos", "ok", 3, 999)
+    [fila] = obs.trazas_de(con, "e1")
+    assert fila["delegacion"] == "d1"
+    assert fila["herramientas"] == {"llamadas": 2, "tokens_estimados": 42}
+
+
+def test_una_traza_sin_delegacion_dice_cero_llamadas_y_tokens_sin_medir():
+    """Sin tools no hay llamadas; los tokens no se ponen a cero, se dejan ausentes."""
+    import sqlite3
+    from app.commons.modelo import traza as modulo_traza
+    from app.features.observabilidad import repository as obs
+    con = sqlite3.connect(":memory:")
+    obs.guardar_traza(con, modulo_traza.nueva(agente="resumidor", escena="e1", trabajo="w"))
+    [fila] = obs.trazas_de(con, "e1")
+    assert fila["herramientas"] == {"llamadas": 0, "tokens_estimados": None}

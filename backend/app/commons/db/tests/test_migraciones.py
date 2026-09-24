@@ -197,3 +197,24 @@ def test_la_migracion_anade_dedicatoria_a_una_base_anterior():
     columnas = {f[1] for f in con.execute("PRAGMA table_info(obra)")}
     assert "dedicatoria" in columnas
     assert con.execute("SELECT titulo, dedicatoria FROM obra").fetchone() == ("T", None)
+
+
+def test_la_migracion_anade_delegacion_a_una_base_anterior():
+    """`PLAN-28` E8: cada traza sabe de que delegacion es, para enlazarla con sus
+    llamadas a tools. Una columna en una tabla que ya existe se migra (`F-51`)."""
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+        CREATE TABLE traza_de_delegacion (escena TEXT NOT NULL, agente TEXT NOT NULL,
+            prompt_hash TEXT NOT NULL DEFAULT '', trabajo TEXT, modelo TEXT,
+            modelos TEXT NOT NULL DEFAULT '[]', recortes TEXT NOT NULL DEFAULT '[]',
+            fichas TEXT NOT NULL DEFAULT '[]', tokens_para_recortar INTEGER,
+            tokens_estimados INTEGER, resultado TEXT, clase_de_fallo TEXT,
+            salida_fallida TEXT, cuando TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (escena, agente, prompt_hash));
+        INSERT INTO traza_de_delegacion (escena, agente) VALUES ('e1', 'escritor');
+    """)
+    migraciones.migrar(con)
+    columnas = {f[1] for f in con.execute("PRAGMA table_info(traza_de_delegacion)")}
+    assert "delegacion" in columnas
+    assert con.execute("SELECT agente, delegacion FROM traza_de_delegacion").fetchone() \
+        == ("escritor", None)
