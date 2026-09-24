@@ -5,7 +5,7 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 3
+version: 4
 ---
 
 > **Historial.** v1: redactada con la decisión del autor sobre el presupuesto
@@ -13,7 +13,8 @@ version: 3
 > qué se ajusta y quién revisa, y confirma las tres propuestas. Sin cuestiones
 > abiertas. v3 (2026-09-24), corrección documental que conserva la aprobación: `VER-30`,
 > que la spec citaba, está obsoleta desde `SPEC-26` v3; y la cifra de 21,6 USD no era la
-> única medida. Lo encontró `PLAN-31`.
+> única medida. Lo encontró `PLAN-31`. v4 (2026-09-24): `RF-02` distingue «no ejecutado»,
+> por la condición del autor al aceptar la excepción de `INV-06` (`SPEC-30` `RF-12`).
 
 # SPEC-31 — Evaluación del sistema
 
@@ -52,7 +53,9 @@ comprueba contra lo gastado, no contra una previsión.
 - **RF-02.** Cada brief se ejecuta de principio a fin y deja una fila en **una
   tabla por brief**, con una columna por validador y su resultado: pasó, falló,
   no aplica o sin veredicto. **Un brief que no llegó a ejecutarse dice «sin
-  ejecutar»**, no se rellena.
+  ejecutar»**, no se rellena. **Un validador que el sistema no ejecuta nunca dice «no
+  ejecutado»** en todas las filas —hoy `INV-06`, `SPEC-30` `RF-12`—, porque un validador que no
+  corre no es un validador que pasó.
 - **RF-03.** **Una iteración de tuning**: un cambio, los mismos briefs antes y
   después, y los resultados de las dos pasadas con la versión de prompt que
   produjo cada una (`SPEC-29` `RF-05`). **Un resultado plano o peor se informa

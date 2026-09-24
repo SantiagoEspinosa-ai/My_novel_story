@@ -2,9 +2,9 @@
 id: PLAN-28
 spec: SPEC-28
 titulo: Implementación de las tools de lectura de la story bible
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
 ---

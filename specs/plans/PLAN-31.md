@@ -2,9 +2,9 @@
 id: PLAN-31
 spec: SPEC-31
 titulo: Implementación de la evaluación del sistema
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
 ---
@@ -188,7 +188,8 @@ Además `test_sin_hallazgos_y_sin_constancia_de_ejecucion_no_es_paso`,
 `test_un_hallazgo_sin_veredicto_no_se_cuenta_como_pasado`,
 `test_una_invariante_obsoleta_sale_como_no_aplica`,
 `test_un_validador_que_disparo_y_se_resolvio_dice_paso_con_sus_disparos` y
-`test_lean_2_es_sin_veredicto`.
+`test_lean_2_es_sin_veredicto` y `test_inv06_sale_como_no_ejecutado_en_todas_las_filas`
+(`SPEC-30` `RF-12`, `SPEC-31` `RF-02`).
 
 ### E7 · Exfiltración entre dos novelas, con dobles
 

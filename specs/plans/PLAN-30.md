@@ -6,8 +6,12 @@ estado: en_revision
 aprobada_por:
 fecha_aprobacion:
 fecha: 2026-09-24
-version: 1
+version: 2
 ---
+
+> **Historial.** v2 (2026-09-24): el autor resuelve `C-1` a `C-4` y `SPEC-30` pasa a v4 con
+> ellas. Aquí cambian E4, E10 y E13, y la tabla de evaluación de `PLAN-31` gana la columna
+> «no ejecutado» de `INV-06`.
 
 # PLAN-30 — La puerta de publicación
 
@@ -16,9 +20,8 @@ verde y se puede commitear solo. **Ningún paso llama al modelo real**, salvo E1
 dinero y necesita un sí explícito. Lean no es un modelo: E5 y E12 lo ejecutan de verdad sin
 coste.
 
-**Este plan no se puede aprobar tal cual.** Salieron cuatro cosas que la spec no decide y que
-el código no deja decidir por su cuenta (§ "Cuatro decisiones antes de aprobar"). Si el autor
-elige algo que cambia `SPEC-30`, la spec pasa a v3 y se aprueba antes que este plan.
+Las cuatro cosas que la spec no decidía (§ "Cuatro decisiones, resueltas") las decidió el autor
+el 2026-09-24, y están en `SPEC-30` v4.
 
 ## Lo que se encontró al preparar el plan
 
@@ -66,7 +69,11 @@ elige algo que cambia `SPEC-30`, la spec pasa a v3 y se aprueba antes que este p
     reservadas para edad y ubicuidad: los números nuevos no las toman. No hay código de Langfuse
     en `backend/`.
 
-## Cuatro decisiones antes de aprobar
+## Cuatro decisiones, resueltas
+
+El autor eligió la propuesta en las cuatro: `C-1` (a), `C-2` (b), `C-3` (a) y `C-4` (a), esta
+última con dos condiciones —escrita como decisión nuestra con su motivo, y visible como
+«no ejecutado» en la tabla de evaluación—. Se conservan las opciones tal como se plantearon.
 
 - **`C-1` · Qué es reescribir un capítulo consolidado** (bloquea E9 y E10).
   (a) **Reescribir a delta fijo** (`SPEC-23` `S-3`): el borrador nuevo pasa por las puertas de
@@ -153,9 +160,11 @@ abierta, Lean `2`, Lean no disponible.
 `test_una_vetada_en_un_capitulo_no_publica`, `test_lean_1_no_publica`,
 `test_el_2_de_lean_bloquea_igual_que_el_1`, `test_lean_no_disponible_no_publica_y_no_es_reintentable`,
 `test_un_inv27_abierto_no_publica`, `test_un_inv27_sin_veredicto_no_publica`,
+`test_un_fallo_de_lean_no_es_reintentable` (`C-2`),
 `test_un_menor_de_obra_no_bloquea`,
 `test_un_mayor_de_capitulo_de_un_intento_anterior_no_bloquea` y
-`test_inv06_sale_como_no_comprobada`.
+`test_inv06_sale_como_no_ejecutada_y_no_bloquea` (`C-4`: el veredicto la lista como no
+ejecutada, con su motivo).
 
 ### E5 · Lean dice qué eventos implica cada violación
 
@@ -209,12 +218,14 @@ el intento con «el delta cambió: no es una corrección local».
 `test_una_reescritura_que_cambia_el_delta_se_rechaza` y
 `test_una_reescritura_con_una_vetada_no_se_acepta`.
 
-### E10 · El bucle: el Editor convierte el fallo en instrucciones, tope 2 *(depende de `C-2`)*
+### E10 · El bucle: Lean al Editor y parada; `INV-27` con instrucciones, tope 2
 
-`publicar` evalúa la puerta: si se abre, publica; si una condición no es reintentable o se agotó
-el tope, **se detiene con error** (`RF-04`); si no, el Editor recibe las violaciones con sus
-eventos, los hallazgos `INV-27` y los resúmenes —nunca la obra entera— y devuelve instrucciones
-por capítulo. Las rondas se cuentan en `veredicto_de_publicacion`, así que **relanzar no
+`publicar` evalúa la puerta: si se abre, publica. **Si Lean falla, el Editor recibe las
+violaciones con sus eventos como feedback, su diagnóstico va al informe y la generación se
+detiene sin reescribir** (`SPEC-30` `RF-06`). Si queda un hallazgo `INV-27`, el Editor recibe
+los hallazgos y los resúmenes —nunca la obra entera— y devuelve instrucciones por capítulo, que
+se reescriben según E9. Si se agota el tope o falla algo no reintentable, **se detiene con
+error** (`RF-04`). Las rondas se cuentan en `veredicto_de_publicacion`, así que **relanzar no
 reinicia el contador** (la lección de `CE-4`).
 
 **Prueba que falla primero:**
@@ -223,8 +234,8 @@ reinicia el contador** (la lección de `CE-4`).
 `test_nunca_hay_un_tercer_reintento`,
 `test_una_instruccion_para_un_capitulo_no_implicado_se_ignora_y_se_informa`,
 `test_no_gasta_las_reescrituras_del_editor`, `test_relanzar_no_reinicia_el_contador`,
-`test_toda_secuencia_de_veredictos_termina_publicada_o_detenida` y, con `C-2` (b),
-`test_un_fallo_de_l1_va_al_editor_y_detiene_sin_reescribir`.
+`test_toda_secuencia_de_veredictos_termina_publicada_o_detenida` y
+`test_un_fallo_de_l1_va_al_editor_y_detiene_sin_reescribir` (`C-2`).
 
 ### E11 · Conectarlo a la novela y al guion
 

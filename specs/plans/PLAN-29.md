@@ -2,9 +2,9 @@
 id: PLAN-29
 spec: SPEC-29
 titulo: Implementación de la observabilidad en Langfuse, y qué sube y qué no
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
 ---

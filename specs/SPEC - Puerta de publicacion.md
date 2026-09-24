@@ -3,9 +3,9 @@ id: SPEC-30
 titulo: La puerta de publicación, con Lean
 estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
-fecha_aprobacion: 2026-09-23
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-23
-version: 3
+version: 4
 ---
 
 > **Historial.** v1: redactada con la decisión del autor sobre la rendición
@@ -14,6 +14,10 @@ version: 3
 > cuestiones abiertas. v3 (2026-09-24), corrección documental que conserva la aprobación:
 > la regla de TLA+ que modela la rendición es `ExigirValidacionCompleta`, no
 > `PublicarAlAgotarTope`, que es el freno de delegaciones. Lo encontró `PLAN-30`.
+> v4 (2026-09-24): el autor decide las cuatro cuestiones que abrió `PLAN-30` (`C-1` a
+> `C-4`), y con ellas cambian `RF-06` y `RF-07` y entran `RF-10` a `RF-12`. Aprobada con su
+> decisión literal, citada en cada requisito. Contrastadas las cuatro con `EXAMEN.md`: ninguna
+> lo contradice, y `C-2` es literalmente lo que pide §5c.
 
 # SPEC-30 — La puerta de publicación
 
@@ -67,21 +71,42 @@ capítulo. Cuántas novelas caen ahí está **sin medir**.
 
 ### Resuelto por el autor (v2)
 
-- **RF-06 (antes `O-1`). El Editor convierte el fallo en instrucciones para el
-  Escritor** sobre los capítulos implicados, que vuelven a escribirse y a pasar
-  por sus puertas antes de volver a esta. **Tope: 2 reintentos**, el mismo que
-  `INV-21` e `INV-22` (`SPEC-26` `RF-13`). Las reescrituras por nota del Editor
-  tienen 3 (`SPEC-26` `RF-11`); este bucle no las comparte. Agotado el tope, se
-  aplica `RF-04`.
-- **RF-07 (antes `O-2`). Los hallazgos de obra del Editor** (`SPEC-26` `RF-12`:
-  el arco, la coherencia entre capítulos y el final) **bloquean la
-  publicación**, y se resuelven por el mismo camino y con el mismo tope que
-  `RF-06`.
+- **RF-06 (antes `O-1`; cambia en v4, `C-2`). Un fallo de Lean vuelve al Editor como
+  feedback y la generación se detiene, sin reescribir.** El Editor recibe las violaciones con
+  sus eventos y su diagnóstico queda en el informe de parada (`RF-04`), que dice que el dato
+  viene del plan. Motivo: lo que Lean comprueba lo fija el plan antes de escribir, así que
+  reescribir la prosa no puede arreglarlo, y reintentar sería gasto sin efecto. En palabras
+  del autor: *«Vuelve al Editor como feedback y la generación se detiene sin reescribir — el
+  enunciado pide justo eso, que el fallo vuelva al editor.»*
+- **RF-07 (antes `O-2`; cambia en v4). Los hallazgos de obra del Editor** (`SPEC-26`
+  `RF-12`: el arco, la coherencia entre capítulos y el final) **bloquean la publicación.**
+  El Editor los convierte en instrucciones para el Escritor sobre los capítulos implicados,
+  que se reescriben según `RF-10` y vuelven a pasar por sus puertas. **Tope: 2 reintentos**,
+  el mismo que `INV-21` e `INV-22`; no comparte las 3 reescrituras por nota del Editor
+  (`SPEC-26` `RF-11`). Agotado el tope, se aplica `RF-04`.
 - **RF-08 (antes `O-3`). Cubre la primera versión desde ya**, y las que produzca
   una regeneración cuando `SPEC-23` esté aprobada. Una «versión» con identidad
   propia todavía no existe en el código (`F-43`, `EX-14`).
 - **RF-09. El `2` de Lean bloquea igual que el `1`.** «No había bastante dato
   para mirar» no es «se miró y está bien» (`F-54`).
+
+### Decidido por el autor (v4)
+
+- **RF-10 (`C-1`). Reescribir un capítulo ya consolidado es reescribir solo su texto, y
+  aceptarlo solo si los hechos no cambian** (`SPEC-23` `S-3`): el borrador nuevo pasa por las
+  puertas de texto y su delta tiene que coincidir con el que ya se aplicó. El canon no se
+  mueve y nada posterior queda invalidado.
+- **RF-11 (`C-3`). Una escena rendida se queda en `aceptada_por_rendicion` después de
+  consolidar.** Que la consolidación lo pise contradice `docs/definitions.md`, que la define
+  como estado y no como campo porque quien lea la obra necesita saber cuáles fueron. Que está
+  consolidada lo sigue diciendo el registro de consolidación.
+- **RF-12 (`C-4`). `INV-06` queda sin comprobar, y la puerta no bloquea por ella.** **Es una
+  decisión nuestra, una excepción a la Regla 8, y este es su motivo: `INV-06` exige una
+  comparación semántica entre hechos canónicos, y hoy no hay quién la haga.** Dos
+  condiciones del autor van con ella: queda escrita así, y aparece en el veredicto de la
+  puerta y en la tabla de evaluación (`SPEC-31`) como **validador no ejecutado**. En sus
+  palabras: *«Un validador que no corre no es un validador que pasó, y el enunciado se
+  cumple solo si eso se dice.»*
 
 ## Qué queda explícitamente fuera
 
