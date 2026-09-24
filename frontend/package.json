@@ -1,0 +1,35 @@
+{
+  "name": "lectura-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "La lectura web de una novela regalo (SPEC-22). Consume la API; no toca la base.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "contrato": "openapi-typescript ../contrato/openapi.json -o src/shared/api/contrato.ts",
+    "fsd": "steiger src"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@feature-sliced/steiger-plugin": "^0.7.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.13.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "ajv": "^8.20.0",
+    "jsdom": "^30.1.1",
+    "openapi-typescript": "^7.13.0",
+    "steiger": "^0.6.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.1"
+  }
+}
