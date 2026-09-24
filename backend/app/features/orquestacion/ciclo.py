@@ -65,6 +65,7 @@ Mira: si la escena mueve un valor dramatico, si la tension escala, si el punto
 de vista se sostiene, y si la prosa evita la explicacion de lo que ya se ve.
 """
 
+PROMPT_RESUMEN = "Condensa esta escena.\n\nESCENA\n"
 
 RUBRICA_DEL_EDITOR = """Juzga este capitulo de una novela para regalar con tu rubrica.
 Una nota de 1 a 5 por criterio -continuidad, tono, arco,
@@ -320,7 +321,7 @@ def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo",
         c.fallo = "delta:" + type(e).__name__
         return c
 
-    bruto, _ = _delegar(resumidor, "Condensa esta escena.\n\nESCENA\n" + texto,
+    bruto, _ = _delegar(resumidor, PROMPT_RESUMEN + texto,
                         "resumidor", escena_id, trabajo, c.trazas)
     c.resumen = bruto
     return c

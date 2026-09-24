@@ -707,7 +707,7 @@ def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
                           "moveria el canon debajo de lo ya escrito"}
     repo.aceptar_reescritura(con, escena_id, c.generacion.version)
     texto = ciclo.texto_de(con, escena_id, c.generacion.version)
-    bruto, _ = ciclo._delegar(resumidor, "Condensa esta escena.\n\nESCENA\n" + texto,
+    bruto, _ = ciclo._delegar(resumidor, ciclo.PROMPT_RESUMEN + texto,
                               "resumidor", escena_id, "reescritura", c.trazas)
     if bruto:
         memoria.guardar_resumen(

@@ -33,13 +33,16 @@ class Observacion:
         self.emitir("traza", TrazaEnviada(id=self.traza, nombre=nombre, sesion=self.sesion))
 
     def emitir(self, tipo, objeto):
+        """Devuelve si salio: quien lleva la cuenta de lo enviado no marca una perdida."""
         try:
             self.exportador.enviar(tipo, objeto)
+            return True
         except Exception as e:  # noqa: BLE001 — cualquier fallo del exportador es una perdida
             self.perdidas += 1
             if self.con is not None:
                 perdidas.guardar(self.con, self.sesion, tipo, getattr(objeto, "nombre", None)
                                  or getattr(objeto, "rol", None), e)
+            return False
 
     @property
     def padre(self):
@@ -64,7 +67,8 @@ class Observacion:
         self.emitir("score", ScoreEnviado(traza=self.traza, **campos))
 
     def prompt(self, rol, version, plantilla):
-        self.emitir("prompt", VersionDePrompt(rol=rol, version=version, plantilla=plantilla))
+        return self.emitir("prompt", VersionDePrompt(rol=rol, version=version,
+                                                     plantilla=plantilla))
 
     @contextlib.contextmanager
     def grupo(self, nombre, capitulo=None):
