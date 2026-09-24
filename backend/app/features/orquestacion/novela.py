@@ -264,7 +264,7 @@ def _scores_del_plan(con, obra, observacion):
 
 
 def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=None,
-             sistema=None, listas=None, lean=None, observacion=None):
+             sistema=None, listas=None, lean=None, observacion=None, seguir=None):
     """Ficha → plan aprobado → obra montada → capitulos → cierre de la novela.
 
     Genera capitulo a capitulo, en el orden del plan, y se para en la primera
@@ -274,10 +274,15 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
     Con `observacion` (`SPEC-29`), la generacion es una traza de Langfuse: un span
     por llamada a cada rol, colgado de `planificacion`, de su capitulo o de `cierre`,
     y el agregado de la novela. **Sin observacion, nada cambia.**
+
+    Con `seguir(numero, coste_del_capitulo)` (`SPEC-31` `RF-06`), al terminar cada
+    capitulo se pregunta si se sigue; un `False` para la generacion **entre capitulos**
+    con `techo_de_gasto`, sin llegar a la puerta. Es donde el libro de gasto anota cada
+    capitulo y comprueba el techo contra lo gastado.
     """
     if observacion is None:
         return _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas,
-                         sistema, listas, lean, None)
+                         sistema, listas, lean, None, seguir)
     from app.features.orquestacion import prompts
     prompts.enviar_nuevas(con, observacion)
     # `SPEC-28` `RF-09`: lo que sube de cada llamada a una tool, y nada mas.
@@ -285,11 +290,11 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
     with observacion.grupo("novela"):
         return _escribir(con, obra, ficha, _observados(agentes, observacion),
                          hasta_capitulo, carpeta_de_reglas, sistema, listas, lean,
-                         observacion)
+                         observacion, seguir)
 
 
 def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sistema,
-              listas, lean, observacion):
+              listas, lean, observacion, seguir=None):
     import tempfile
     from app.commons.configuracion import carga
     from app.features.orquestacion import obra as modulo_obra
@@ -374,7 +379,13 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
         if g.parada:
             total.parada = g.parada
             break
-    cierre, publicada = None, None
+        if seguir is not None and not seguir(numero, dict(g.coste)):
+            total.parada = {"escena": (g.escenas_hechas or [None])[-1],
+                            "motivo": "techo_de_gasto", "tras_capitulo": numero,
+                            "detalle": "el libro de gasto dijo que no se sigue: se para "
+                                       "entre capitulos, no a media delegacion"}
+            break
+    cierre, publicada, coste_del_cierre = None, None, None
     if not hasta_capitulo and total.parada is None:
         # `SPEC-30` `RF-02`: la puerta de publicacion se evalua sola al acabar la
         # novela, con Lean dentro. Su primera ronda ya cierra la novela (`cerrar`),
@@ -382,7 +393,20 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
         from app.features.auditoria.lean import VerificadorLean
         from app.features.orquestacion import publicacion as puerta
 
+        # `PLAN-31` E5: el juicio de obra, el feedback de Lean y las instrucciones del
+        # Editor no pasan por las trazas del ciclo, y las reescrituras de la puerta no se
+        # sumaban. Todo eso se paga, y todo eso entra en el total.
+        from app.commons.modelo.contador import Contador
+        juez_de_la_puerta = Contador(agentes["editor"])
+        reescrituras = modulo_obra.Generacion().coste
+
         def reescribir(con_, escena_id, instrucciones):
+            r = _reescribir(con_, escena_id, instrucciones)
+            for k in reescrituras:
+                reescrituras[k] += (r.get("coste") or {}).get(k, 0)
+            return r
+
+        def _reescribir(con_, escena_id, instrucciones):
             return modulo_obra.reescribir_capitulo(
                 con_, obra, escena_id, agentes["escritor"], agentes["editor"],
                 agentes["resumidor"], instrucciones=instrucciones,
@@ -395,7 +419,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
             publicada = puerta.publicar(
                 con, obra, ficha,
                 lean or VerificadorLean(tiempo=sistema.lean.tiempo_maximo_segundos),
-                agentes["editor"], agentes["editor"], reescribir,
+                juez_de_la_puerta, juez_de_la_puerta, reescribir,
                 tope=sistema.topes.reintentos_de_publicacion, vetadas=vetadas,
                 umbral_nombre=sistema.edicion.umbral_repeticion_nombre,
                 longitud_frase=sistema.edicion.longitud_frase_repetida)
@@ -404,4 +428,9 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 observar.de_la_puerta(observacion, ev)
         if publicada.evaluaciones:
             cierre = publicada.evaluaciones[0].cierre
-    return {"plan": aprobado, "generacion": total, "cierre": cierre, "publicacion": publicada}
+        coste_del_cierre = {k: reescrituras[k] + v
+                            for k, v in juez_de_la_puerta.resumen().items()}
+        for k in total.coste:
+            total.coste[k] += coste_del_cierre[k]
+    return {"plan": aprobado, "generacion": total, "cierre": cierre, "publicacion": publicada,
+            "coste_del_cierre": coste_del_cierre}

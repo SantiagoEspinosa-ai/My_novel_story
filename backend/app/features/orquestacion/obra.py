@@ -683,6 +683,14 @@ def informe(g: Generacion) -> str:
     return "\n".join(lineas)
 
 
+def _con_coste(c, resultado):
+    """`PLAN-31` E5: lo que costo la reescritura, para que quien la pidio lo sume. Se
+    calcula al volver, con las trazas que haya: tambien la del Resumidor."""
+    g = Generacion()
+    _acumular_coste(g, c.trazas)
+    return dict(resultado, coste=g.coste)
+
+
 def _mismo_delta(a, b):
     return (json.dumps(a or {}, sort_keys=True, ensure_ascii=False)
             == json.dumps(b or {}, sort_keys=True, ensure_ascii=False))
@@ -727,15 +735,16 @@ def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
     observar.del_ciclo(observacion, c)
     ciclo.guardar_trazas(con, c)
     if c.fallo:
-        return {"aceptada": False, "motivo": c.fallo}
+        return _con_coste(c, {"aceptada": False, "motivo": c.fallo})
     if c.generacion.hallazgos:
-        return {"aceptada": False, "motivo": "no pasa sus puertas: {0}".format(
-            ", ".join(sorted({h.invariante for h in c.generacion.hallazgos})))}
+        return _con_coste(c, {"aceptada": False, "motivo": "no pasa sus puertas: {0}".format(
+            ", ".join(sorted({h.invariante for h in c.generacion.hallazgos})))})
     aplicado = deltas.ultimo(con, escena_id)
     if aplicado is None or not _mismo_delta(aplicado["delta"], c.generacion.leida_delta):
-        return {"aceptada": False,
-                "motivo": "el delta cambio: no es una correccion local, y aceptarlo "
-                          "moveria el canon debajo de lo ya escrito"}
+        return _con_coste(c, {
+            "aceptada": False,
+            "motivo": "el delta cambio: no es una correccion local, y aceptarlo "
+                      "moveria el canon debajo de lo ya escrito"})
     repo.aceptar_reescritura(con, escena_id, c.generacion.version)
     texto = ciclo.texto_de(con, escena_id, c.generacion.version)
     bruto, _ = ciclo._delegar(resumidor, ciclo.PROMPT_RESUMEN + texto,
@@ -746,4 +755,4 @@ def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
             [h for h in (bruto.get("hechos_clave") or []) if memoria.IDENTIFICADOR.match(str(h))],
             obra=obra)
     _registrar_imprescindibles(con, escena, (imprescindibles or {}).get(escena_id))
-    return {"aceptada": True, "version": c.generacion.version, "motivo": ""}
+    return _con_coste(c, {"aceptada": True, "version": c.generacion.version, "motivo": ""})

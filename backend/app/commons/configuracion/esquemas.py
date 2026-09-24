@@ -380,6 +380,13 @@ class Lean(_DelDominio):
     tiempo_maximo_segundos: int = Field(default=config.TIEMPO_MAXIMO_LEAN_SEGUNDOS, gt=0)
 
 
+class Evaluacion(_DelDominio):
+    """La evaluacion de `SPEC-31`. El techo es una **decision de presupuesto**, no una
+    medida: su marca vive con el numero en `commons/config.py`."""
+
+    techo_de_gasto_usd: float = Field(default=config.TECHO_DE_GASTO_EVALUACION_USD, gt=0)
+
+
 class Edicion(_DelDominio):
     """Los umbrales del Editor y de `INV-25`. **Provisionales**: su marca de no
     medido vive con el numero en `commons/config.py` (`SPEC-26` `RF-10`, `RF-16`)."""
@@ -479,6 +486,7 @@ class ConfiguracionDelSistema(_DelDominio):
         default_factory=ReglasDeContradiccion)
     edicion: Edicion = Field(default_factory=Edicion)
     lean: Lean = Field(default_factory=Lean)
+    evaluacion: Evaluacion = Field(default_factory=Evaluacion)
     extensiones: dict[enums.ExtensionDeCapitulo, tuple[int, int]] = Field(
         default_factory=extensiones_por_defecto,
         description="`SPEC-32` `RF-07`: palabras por capitulo de cada opcion")

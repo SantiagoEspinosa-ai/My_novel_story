@@ -40,6 +40,10 @@
     "edad_minima_por_ocasion": {"boda": 18, "jubilacion": 18}
   },
 
+  "evaluacion": {
+    "techo_de_gasto_usd": 150
+  },
+
   "extensiones": {
     "corta": [1000, 1150],
     "media": [1150, 1350],
