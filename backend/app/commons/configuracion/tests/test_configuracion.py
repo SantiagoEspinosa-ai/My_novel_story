@@ -297,3 +297,22 @@ def test_falta_el_rango_de_una_opcion_es_error(tmp_path):
     with pytest.raises(carga.ConfiguracionInvalida, match="larga"):
         carga.cargar_sistema(_con_extensiones(tmp_path, {
             "corta": [1000, 1150], "media": [1150, 1350]}))
+
+
+# --- `SPEC-30` `RF-07`: el tope de la puerta de publicacion ----------------------
+
+def test_el_tope_de_publicacion_es_2_y_cuenta_aparte(tmp_path):
+    """El mismo numero que las vetadas, pero su propio contador: no comparte las
+    reescrituras del Editor ni las de `INV-21`."""
+    from app.commons import config
+    s = carga.cargar_sistema(_escribir(tmp_path, "sistema.json", SISTEMA_MINIMO))
+    assert s.topes.reintentos_de_publicacion == config.TOPE_REINTENTOS_DE_PUBLICACION == 2
+    assert s.lean.tiempo_maximo_segundos == config.TIEMPO_MAXIMO_LEAN_SEGUNDOS
+
+
+def test_un_tope_de_publicacion_negativo_no_carga(tmp_path):
+    """Con el motivo en el `match`: el nombre del campo solo tambien lo daria un
+    campo desconocido, y la prueba pasaria antes de existir el tope (Regla 11)."""
+    with pytest.raises(carga.ConfiguracionInvalida, match="greater than or equal"):
+        carga.cargar_sistema(_escribir(tmp_path, "sistema.json", dict(
+            SISTEMA_MINIMO, topes={"reintentos_de_publicacion": -1})))

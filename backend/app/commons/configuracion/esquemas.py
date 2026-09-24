@@ -361,6 +361,14 @@ class Topes(_DelDominio):
     revisiones_de_plan: int = Field(default=config.TOPE_REVISIONES_DE_PLAN, gt=0)
     reescrituras_del_editor: int = Field(
         default=config.TOPE_REESCRITURAS_DEL_EDITOR, ge=0)
+    reintentos_de_publicacion: int = Field(
+        default=config.TOPE_REINTENTOS_DE_PUBLICACION, ge=0)
+
+
+class Lean(_DelDominio):
+    """Como se ejecuta la verificacion formal en la puerta (`SPEC-30` `RF-02`)."""
+
+    tiempo_maximo_segundos: int = Field(default=config.TIEMPO_MAXIMO_LEAN_SEGUNDOS, gt=0)
 
 
 class Edicion(_DelDominio):
@@ -461,6 +469,7 @@ class ConfiguracionDelSistema(_DelDominio):
     contradicciones: ReglasDeContradiccion = Field(
         default_factory=ReglasDeContradiccion)
     edicion: Edicion = Field(default_factory=Edicion)
+    lean: Lean = Field(default_factory=Lean)
     extensiones: dict[enums.ExtensionDeCapitulo, tuple[int, int]] = Field(
         default_factory=extensiones_por_defecto,
         description="`SPEC-32` `RF-07`: palabras por capitulo de cada opcion")
