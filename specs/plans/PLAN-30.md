@@ -2,11 +2,13 @@
 id: PLAN-30
 spec: SPEC-30
 titulo: Implementación de la puerta de publicación, con Lean
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 2
+fecha_aplicacion: 2026-09-24
+commit_de_aplicacion: a8b8311
 ---
 
 > **Historial.** v2 (2026-09-24): el autor resuelve `C-1` a `C-4` y `SPEC-30` pasa a v4 con
