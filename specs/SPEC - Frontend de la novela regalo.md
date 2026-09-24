@@ -1,12 +1,30 @@
 ---
 id: SPEC-33
 titulo: La novela regalo en la web — estantería, entrevista, generación en vivo y coste
-estado: en_revision
-aprobada_por: ""
-fecha_aprobacion: ""
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión (decisión literal citada abajo)"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
-version: 2
+version: 3
 ---
+
+> **v3 (2026-09-24), aprobada.** Decisión literal del autor: *«Aprobada, con las propuestas de
+> las cuestiones 2 a 5. Techo propio para las generaciones desde la web: 50 USD. Separado del de
+> la evaluación, como propones —una novela cuesta unos 17, así que caben dos demos y margen para
+> un tercero—. Y bien lo de enseñar lo gastado como suelo: lo anterior a guardar el coste por
+> delegación no está en la base, y sumar como si estuviera sería el sesgo hacia lo barato de
+> siempre.»*
+>
+> **Dos correcciones de hecho al preparar `PLAN-33`, que no cambian ninguna decisión:**
+> - `RF-10`: el historial **ya existe en parte**. La tabla `turno_de_entrevista` guarda la
+>   pregunta y la respuesta de cada turno, y `borrar_de_la_obra` la borra con la ficha. Lo que
+>   falta es que guarde el tema, los avisos, las contradicciones y cuándo, y que esté definida en
+>   `docs/definitions.md`. La v1 decía que no había historial: fue un negativo sin comprobar.
+> - `RF-18`: la v1 lo describía como «un atributo nuevo de la traza de delegación». **No puede
+>   serlo**: solo el ciclo de escena deja traza, y el Planificador, el Revisor, el juicio de la
+>   puerta y el Entrevistador se cuentan en memoria (`Contador`) y se pierden al terminar. Lo que
+>   se aprobó —que **cada** delegación guarde su coste, también esas— no cambia; lo que cambia es
+>   que no cabe en la traza. Dónde vive es cosa del plan.
 
 > **v2 (2026-09-24):** el autor decide la confirmación de `RF-12` (la última generación, la
 > referencia de 16,89 USD y lo gastado del techo) y descarta la imagen de portada. La cuestión 1
@@ -25,8 +43,8 @@ version: 2
 > - Sobre la paleta: *«Sigue con la provisional marcada como tal; con los tokens en un solo sitio
 >   es cambiar un fichero.»*
 >
-> Lo que queda por decidir está en § "Cuestiones para la aprobación", cada cuestión con su
-> propuesta. Hasta que este fichero diga `estado: aprobada` no hay plan.
+> Las cuestiones de § "Cuestiones para la aprobación" quedaron decididas en v3: la 1 con 50 USD,
+> y de la 2 a la 5 con sus propuestas.
 
 ## Qué problema resuelve
 
@@ -80,8 +98,9 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
 - **RF-09** — Cerrar la entrevista solo se ofrece cuando el backend dice `puede_cerrar`. Si el
   cierre devuelve `409`, se enseñan su motivo, lo que falta y las contradicciones, tal como vienen.
 - **RF-10** — **La conversación sobrevive a recargar la página**: el historial de turnos es estado
-  del backend, no de la página. Eso exige una clase nueva en `docs/definitions.md`, que va allí
-  antes que el código (cuestión 2).
+  del backend, no de la página. La tabla `turno_de_entrevista` ya guarda la pregunta y la
+  respuesta de cada turno; falta el resto de lo que la cuestión 2 aprobó, y su clase en
+  `docs/definitions.md`, que va allí antes que el código.
 
 ### Lanzar la generación
 
@@ -101,7 +120,9 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
   Una confirmación que no se puede leer sin haberla aceptado no cuenta: el botón que gasta no
   está disponible hasta que las cifras han cargado.
 - **RF-13** — No puede haber dos generaciones de la misma obra en curso a la vez. La segunda
-  petición recibe `409` con el motivo.
+  petición recibe `409` con el motivo. **Tampoco se lanza si lo gastado ya alcanza el techo**:
+  lo comprueba el backend y responde `409` con el motivo. El botón desactivado de la web es la
+  cara visible de esa regla, no la regla.
 
 ### La generación, visible
 
@@ -121,9 +142,10 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
 
 ### El coste en vivo
 
-- **RF-18** — **Cada delegación guarda su coste en la base** junto a su traza, también la del
-  Planificador y la del Revisor. Es un atributo nuevo de la traza de delegación: se define primero
-  en `docs/definitions.md` y lleva su migración en el mismo commit (`CLAUDE.md`).
+- **RF-18** — **Cada delegación guarda su coste en la base**, pase o no por el ciclo de escena:
+  el Escritor, el Editor y el Resumidor, pero **también el Planificador, el Revisor, el juicio de
+  la puerta y el Entrevistador**, que hoy no dejan traza. Lo que se guarda se define primero en
+  `docs/definitions.md` y lleva su migración en el mismo commit (`CLAUDE.md`).
 - **RF-19** — Una delegación que no trae coste guarda **ausente, nunca cero**. En la web se lee
   **«sin medir»**, y el total, si alguna falta, se marca como **suelo** allí mismo, no en una
   nota al pie (la misma regla que `coste_es_suelo` de `SPEC-29`).
@@ -170,7 +192,9 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
 
 Cada una lleva una propuesta. Aprobar la spec sin comentarios es aprobar las propuestas.
 
-1. **Qué techo, y qué hace al tocarlo.** Hoy **el único techo de gasto que existe es el de la
+1. **Qué techo, y qué hace al tocarlo.** **Decidido en v3: 50 USD**, propio de las
+   generaciones desde la web y separado del de la evaluación; el resto de la propuesta, aprobado
+   tal cual. Hoy **el único techo de gasto que existe es el de la
    evaluación**: `evaluacion.techo_de_gasto_usd = 150` en `backend/config/sistema.json`
    (`SPEC-31`). Ninguno gobierna una generación lanzada desde la web. *Propuesta:*
    - **Un techo propio de las generaciones**, en `sistema.json` junto al de la evaluación y
