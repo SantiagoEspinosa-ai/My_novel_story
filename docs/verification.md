@@ -572,6 +572,21 @@ los 10 hechos declarados para `obra-la-casa`»* distingue las dos situaciones si
 tenga que acordarse de sospechar. Mientras el informe imprima cantidades sin su ámbito,
 seguirá habiendo una cuarta causa.
 
+**Y a escala de agente: un agente que nunca se ejecuta no es un agente que funciona.** `F-76` y
+`F-77` son la misma familia. El Editor y el Resumidor llevaban semanas **escritos, probados y
+contados como hechos**, y nunca habían corrido con datos reales. La primera ejecución real que
+llegó hasta ellos (`R0`, `harness/evals/medidas.md`) terminó con **código de salida 0** y un
+capítulo aceptado. Por dentro, el Editor no había juzgado nada, porque su esquema rechazaba el
+campo `medidas` que añade el transporte, y el Resumidor no había resumido, porque su prompt no le
+daba la lista que su definición le exige. Los dos habían pasado todas sus pruebas: los dobles no
+añadían `medidas` y no leían definiciones de agente. **El código 0 escondía los dos**, igual que un
+cero escondía que `INV-03` no llegó a mirar (`F-30`).
+
+La consecuencia práctica es la de siempre, a otra escala. **Un agente cuenta como hecho cuando ha
+corrido con datos reales y se ha mirado lo que devolvió**, no cuando pasa sus pruebas. Y tras una
+ejecución real, el código de salida no es la respuesta: hay que leer en la base qué juzgó cada
+agente (`.agents/skills/novela-regalo/SKILL.md` § "Inspeccionar").
+
 ### Regla 9 — Una comprobación que depende de un orden necesita al menos dos elementos que lo ejerzan
 
 **Con uno solo, puede pasar por un empate que se resolvió al azar, y entonces está en verde
