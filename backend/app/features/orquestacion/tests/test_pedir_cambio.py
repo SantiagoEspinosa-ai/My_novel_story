@@ -157,3 +157,37 @@ def test_una_base_que_no_existe_no_se_crea(tmp_path, monkeypatch, capsys):
     codigo = guion.main(["--base", str(ruta), "--obra", OBRA] + HECHO)
     assert codigo == 1 and not ruta.exists()
     assert "no existe" in capsys.readouterr().out
+
+
+def test_un_renombrado_con_la_ficha_en_un_fichero_se_propone_aunque_la_base_no_la_tenga(
+        tmp_path, monkeypatch, capsys):
+    """La novela de ejemplo ya entregada no tiene ficha en la base (`F-91`), y la demo la da
+    con `--ficha`. La propuesta la necesitaba para saber quien es el destinatario y la leia
+    solo de la base: ningun renombrado se admitia, con `--ficha` o sin ella. La prueba de
+    arriba no lo veia porque cambia un hecho, que no mira al destinatario."""
+    ruta = _en_fichero(tmp_path, con_ficha=False)
+    ruta_ficha = tmp_path / "ficha.json"
+    ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
+    guion = _preparado(monkeypatch)
+    codigo = guion.main(["--base", ruta, "--obra", OBRA, "--ficha", str(ruta_ficha),
+                         "--personaje", "obra-x-per-brisa", "--nombre", "Nala",
+                         "--texto", "el perro se llama Nala"])
+    salida = capsys.readouterr().out
+    assert codigo == 2, salida
+    assert "el capítulo 1 y todos los siguientes" in salida
+
+
+def test_con_la_ficha_en_un_fichero_el_destinatario_sigue_sin_poder_renombrarse(
+        tmp_path, monkeypatch, capsys):
+    """La otra cara de la de arriba: la ficha del fichero sirve para lo mismo que la de la
+    base, tambien para negarse. Sin esto el arreglo abriria el nombre del destinatario."""
+    ruta = _en_fichero(tmp_path, con_ficha=False)
+    ruta_ficha = tmp_path / "ficha.json"
+    ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
+    guion = _preparado(monkeypatch)
+    codigo = guion.main(["--base", ruta, "--obra", OBRA, "--ficha", str(ruta_ficha),
+                         "--personaje", "obra-x-per-irene", "--nombre", "Nala",
+                         "--texto", "que se llame de otra forma"])
+    salida = capsys.readouterr().out
+    assert codigo == 1, salida
+    assert "no se renombra" in salida

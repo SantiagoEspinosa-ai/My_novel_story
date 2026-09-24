@@ -140,8 +140,14 @@ def main(argv=None):
 def _ejecutar(con, args):
     migraciones.migrar(con)
     peticion = _peticion(args)
+    # `F-147`: la ficha se lee antes de proponer. La propuesta la necesita para saber
+    # quien es el destinatario, y una obra entregada ya no la tiene en la base (`F-91`).
+    ficha = None
+    if args.ficha:
+        with open(args.ficha, encoding="utf-8") as f:
+            ficha = FichaDeEntrevista.model_validate(json.load(f))
     try:
-        propuesta = regeneracion.proponer(con, args.obra, peticion)
+        propuesta = regeneracion.proponer(con, args.obra, peticion, ficha)
     except regeneracion.PeticionNoAdmitida as e:
         print("la peticion no se admite: {0}".format(e))
         return 1
@@ -153,10 +159,7 @@ def _ejecutar(con, args):
               "--confirmo-el-gasto.")
         return 2
 
-    if args.ficha:
-        with open(args.ficha, encoding="utf-8") as f:
-            ficha = FichaDeEntrevista.model_validate(json.load(f))
-    else:
+    if ficha is None:
         ficha = cascada.ficha_de(con, args.obra)
     if ficha is None:
         print("\nla obra {0} no tiene ficha en la base: se borra al entregar (F-91). Sin "
@@ -168,7 +171,7 @@ def _ejecutar(con, args):
     procedencia.registrar(con, sistema=sistema.huella)
     try:
         id_trabajo, id_peticion = regeneracion.pedir(con, args.obra, dict(
-            peticion, capitulos_propuestos=propuesta["capitulos_propuestos"]))
+            peticion, capitulos_propuestos=propuesta["capitulos_propuestos"]), ficha)
     except (regeneracion.PeticionNoAdmitida, regeneracion.SalidaSinElegir,
             regeneracion.ListaCambiada) as e:
         print("\nno se pudo pedir: {0}".format(e))

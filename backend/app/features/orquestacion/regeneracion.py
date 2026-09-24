@@ -357,14 +357,19 @@ def vetadas_de_version(con, obra, numero, base=()):
     return resultado
 
 
-def _destinatarios(con, obra, plan):
+def _destinatarios(con, obra, plan, ficha=None):
     """Los personajes que son el destinatario, segun la ficha. `None` si no hay ficha:
-    se borra al entregar (`SPEC-25` `RF-21`), y entonces **no consta**."""
+    se borra al entregar (`SPEC-25` `RF-21`), y entonces **no consta**. Quien la tenga
+    fuera de la base -la terminal, con `--ficha`- la da, y se usa esa (`F-147`)."""
     from app.features.entrevista import repository as entrevistas
-    try:
-        fichas = [entrevistas.leer(con, i).ficha for i in entrevistas.de_la_obra(con, obra)]
-    except sqlite3.OperationalError:
-        return None
+    if ficha is not None:
+        fichas = [ficha]
+    else:
+        try:
+            fichas = [entrevistas.leer(con, i).ficha
+                      for i in entrevistas.de_la_obra(con, obra)]
+        except sqlite3.OperationalError:
+            return None
     nombres = {f.destinatario.nombre for f in fichas
                if f.destinatario is not None and f.destinatario.nombre}
     if not nombres:
@@ -372,7 +377,7 @@ def _destinatarios(con, obra, plan):
     return {p.id for p in plan.mundo.personajes if p.nombre in nombres}
 
 
-def _validar(con, obra, numero, peticion):
+def _validar(con, obra, numero, peticion, ficha=None):
     try:
         clase = CP(peticion.get("clase"))
     except ValueError:
@@ -393,7 +398,7 @@ def _validar(con, obra, numero, peticion):
     nombres = nombres_de_version(con, obra, numero)
     if plan is None or personaje not in nombres:
         raise PeticionNoAdmitida("`{0}` no es un personaje de esta obra".format(personaje))
-    destinatarios = _destinatarios(con, obra, plan)
+    destinatarios = _destinatarios(con, obra, plan, ficha)
     if destinatarios is None:
         raise PeticionNoAdmitida(
             "no consta quien es el destinatario -no hay ficha de la obra-, asi que no se "
@@ -434,13 +439,13 @@ def capitulos_afectados(con, obra, numero, peticion):
     return [c for c in brief.capitulos_de_version(con, obra, numero) if c in tocados]
 
 
-def proponer(con, obra, peticion):
+def proponer(con, obra, peticion, ficha=None):
     """Lo que se haria, **sin modelo y sin tocar nada** (`RF-51`, `RF-55`): los
     capitulos de cada salida, la elegida si la hay, la promesa y su punto ciego."""
     numero = peticion.get("version_de_partida") or brief.version_vigente(con, obra)
     if numero is None:
         raise PeticionNoAdmitida("la obra {0} no tiene versiones".format(obra))
-    clase = _validar(con, obra, numero, peticion)
+    clase = _validar(con, obra, numero, peticion, ficha)
     afectados = capitulos_afectados(con, obra, numero, peticion)
     if not afectados:
         raise PeticionNoAdmitida(
@@ -467,12 +472,12 @@ def promesa(salida, k):
     return PROMESA
 
 
-def pedir(con, obra, peticion):
+def pedir(con, obra, peticion, ficha=None):
     """Guarda la peticion y encola su trabajo. Devuelve `(id_trabajo, id_peticion)`.
 
     Sin salida elegida **no guarda ni encola nada**. Si la lista aceptada no es la que
     la propuesta da hoy, tampoco: el lector acepto otra cosa."""
-    propuesta = proponer(con, obra, peticion)
+    propuesta = proponer(con, obra, peticion, ficha)
     if propuesta["salida"] is None:
         raise SalidaSinElegir(SIN_SALIDA)
     aceptada = list(peticion.get("capitulos_propuestos") or [])
