@@ -79,6 +79,24 @@ def test_un_timeout_deja_traza_y_no_guarda_salida(con):
     assert r.traza.salida_fallida is None
 
 
+class _DelegacionQueSeCae:
+    """Lo que lanza la delegacion real cuando `claude -p` no responde o muere."""
+
+    nombre = "delegacion"
+
+    def llamar(self, prompt):
+        from app.commons.modelo import proveedor
+        raise proveedor.FalloDeTransporte("la delegacion no completo: TimeoutExpired")
+
+
+def test_el_fallo_de_transporte_de_la_delegacion_real_se_captura(con):
+    """`F-74`: habia dos clases `FalloDeTransporte`, la del doble y la del proveedor, y
+    el bucle solo capturaba la del doble. Un timeout real subia como traza y tumbaba la
+    novela: el doble no tenia la forma de lo real."""
+    r = agente.generar(con, "e1", _ctx(), _DelegacionQueSeCae(), techo=10_000)
+    assert r.fallo == "transporte" and r.traza.resultado == "fallo"
+
+
 def test_ya_no_hay_techo_que_liberar(con):
     """Lo que `SPEC-14` C-1 se llevo, y con ello `MF-25`.
 

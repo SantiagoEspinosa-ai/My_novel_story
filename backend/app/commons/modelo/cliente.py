@@ -16,6 +16,13 @@ from app.commons.config import TOPE_REINTENTOS_TRANSPORTE
 CLASES_DE_FALLO = ("transporte", "contrato")
 
 
+class FalloDeTransporte(Exception):
+    """El proceso no arranco, no respondio o murio. Por `O-3` **si** se reintenta.
+
+    `F-74`: vive aqui, una sola vez. Habia una en `doble.py` y otra en `proveedor.py`,
+    y el bucle capturaba la del doble: un timeout real no lo capturaba nadie."""
+
+
 def se_reintenta(clase_de_fallo: str) -> bool:
     if clase_de_fallo not in CLASES_DE_FALLO:
         raise ValueError("clase de fallo desconocida: {0!r}".format(clase_de_fallo))

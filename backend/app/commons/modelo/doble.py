@@ -41,8 +41,8 @@ class Guion:
         self._i = 0
 
 
-class FalloDeTransporte(Exception):
-    pass
+# `F-74`: la misma clase que lanza la delegacion real, no una propia.
+from app.commons.modelo.cliente import FalloDeTransporte  # noqa: E402,F401
 
 
 # El POV que los fixtures planifican. El doble lo respeta salvo que el

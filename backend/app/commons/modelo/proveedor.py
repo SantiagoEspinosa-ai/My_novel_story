@@ -84,8 +84,7 @@ class FaltaEntorno(RuntimeError):
     pass
 
 
-class FalloDeTransporte(Exception):
-    """El proceso no arranco, no respondio o murio. Por `O-3` **si** se reintenta."""
+from app.commons.modelo.cliente import FalloDeTransporte  # noqa: E402,F401  (`F-74`)
 
 
 class RespuestaIlegible(Exception):
