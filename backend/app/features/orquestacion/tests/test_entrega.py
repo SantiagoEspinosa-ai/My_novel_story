@@ -166,3 +166,48 @@ def test_tras_entregar_no_queda_ningun_dato_de_la_ficha_en_ninguna_tabla(tmp_pat
                              ensure_ascii=False)
         for dato in ("Zanzibar", "Xiada", "Quirico", "Irene"):
             assert dato not in volcado, "{0} sigue en la tabla {1}".format(dato, tabla)
+
+
+# --- `SPEC-32` `RF-02`, `RF-03`: la dedicatoria es de la obra y sobrevive --------
+
+DEDICATORIA = "Para Quirina, que encontro el faro de Xiada"
+SOLO_DE_LA_FICHA = ("Quirino Ortega", "silba tangos de Zanzibar")
+
+
+def _montada_y_entregada(con):
+    """La variante de `VER-69` que si monta la obra antes de entregar: sin montar,
+    la dedicatoria no llega nunca a `obra` y la prueba no distingue nada."""
+    from app.features.orquestacion import novela
+    from app.features.planificacion.service import PlanAprobado
+    from app.features.planificacion.tests.conftest import plan
+    e = repo_entrevista.crear(con)
+    datos = ficha_completa(dedicatoria=DEDICATORIA, regalado_por=SOLO_DE_LA_FICHA[0]
+                           ).model_dump(mode="json")
+    datos["destinatario"]["elementos"].append(
+        {"tipo": "rasgo", "descripcion": SOLO_DE_LA_FICHA[1]})
+    e.ficha = type(e.ficha).model_validate(datos)
+    e.cerrada = True
+    repo_entrevista.guardar(con, e, respuesta=CONVERSACION, pregunta="¿Y su edad?")
+    novela.montar(con, e.obra, e.ficha, PlanAprobado(plan(), 1, "T", "P"))
+    entrega.entregar(con, e.obra)
+    return e
+
+
+def _volcado_por_tabla(con):
+    return {t: json.dumps(con.execute("SELECT * FROM " + t).fetchall(), ensure_ascii=False)
+            for (t,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+
+
+def test_tras_entregar_la_dedicatoria_sigue_en_la_obra(con):
+    e = _montada_y_entregada(con)
+    assert con.execute("SELECT dedicatoria FROM obra WHERE id = ?",
+                       (e.obra,)).fetchone()[0] == DEDICATORIA
+    donde = [t for t, v in _volcado_por_tabla(con).items() if DEDICATORIA in v]
+    assert donde == ["obra"], "solo en la obra, no en ninguna copia de la ficha"
+
+
+def test_tras_entregar_una_obra_montada_no_queda_ningun_otro_dato_de_la_ficha(con):
+    _montada_y_entregada(con)
+    for tabla, volcado in _volcado_por_tabla(con).items():
+        for dato in SOLO_DE_LA_FICHA + (CONVERSACION,):
+            assert dato not in volcado, "{0} sigue en la tabla {1}".format(dato, tabla)
