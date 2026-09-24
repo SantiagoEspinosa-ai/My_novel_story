@@ -175,14 +175,15 @@ def main(argv=None):
         return 1
     except proveedor.FalloDeTransporte as e:
         # `F-72`: un agente agoto sus reintentos. Relanzar reanuda desde el ultimo
-        # capitulo completado (`F-38`, `F-67`); el coste de lo escrito vive en
-        # `traza_de_delegacion`, y el del Planificador y el Revisor, aqui.
+        # capitulo completado (`F-38`, `F-67`). El coste de lo escrito **no** esta en
+        # `traza_de_delegacion`, que no tiene columna de coste (`F-144`): solo llega a
+        # Langfuse. El del Planificador y el Revisor, aqui.
         print("\n=== PARADA POR TRANSPORTE ===")
         print(str(e))
         print("un agente agoto sus {0} reintentos; relanzar reanuda desde el ultimo "
               "capitulo completado".format(sistema.topes.reintentos_de_transporte))
-        print("coste de los capitulos: sin medir en este informe (queda en "
-              "traza_de_delegacion); del plan: {0:.4f} USD".format(
+        print("coste de los capitulos: sin medir en este informe (solo en "
+              "Langfuse); del plan: {0:.4f} USD".format(
                   ag["planificador"].usd + ag["revisor"].usd))
         print("tiempo: {0:.0f} s".format(time.time() - arranque))
         informe_de_hooks(observacion, registro_hooks)
