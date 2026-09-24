@@ -2,14 +2,18 @@
 id: PLAN-23
 spec: SPEC-23
 titulo: Implementación de la regeneración en una obra acumulativa
-estado: en_revision
-aprobada_por: ""
-fecha_aprobacion: ""
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
 ---
 
 # PLAN-23 — Regenerar en una obra acumulativa
+
+> **Aprobado (2026-09-24)** con `C-1` a `C-6`, **y con el renombrado dentro**: el ejemplo del
+> enunciado es *«el perro se llama Nala»*, y un `409` en la demo es el peor sitio donde
+> descubrirlo. `C-4` queda reescrita abajo con la vía mínima, que no versiona la story bible.
 
 Cómo se construye `SPEC-23` v2. Cada paso empieza por la prueba que falla, deja las pruebas
 actuales en verde y se puede commitear solo. **Ningún paso llama al modelo real**: todo va
@@ -138,11 +142,30 @@ rechacen expresamente.
   huella es la lista ordenada de deltas aplicados antes de la escena, más la huella de la semilla.
   Un verde cuya huella no coincide con la de su versión **no cuenta**. Cierra la mitad de la
   decisión abierta de `docs/verification.md`: *qué identifica un estado*.
-- **`C-4` · Qué se puede pedir** (bloquea A7). **Propuesta:** un cambio del `enunciado` de un
-  `HechoCanonico` de la obra, con las palabras del lector. **Renombrar un personaje no se admite**
-  y se responde `409` con el motivo: la story bible no tiene versión (hallazgo 15). Tampoco se
-  admite un hecho que ninguna escena de la versión usa. **Choca con el ejemplo del enunciado; ver
-  la cuestión abierta 1.**
+- **`C-4` · Qué se puede pedir** (bloquea A7). **Decidido por el autor:** dos clases de petición.
+  - **Un hecho:** un cambio del `enunciado` de un `HechoCanonico` de la obra, con las palabras del
+    lector. No se admite un hecho que ninguna escena de la versión usa.
+  - **Un nombre:** el `nombre_canonico` de un `Personaje` de la obra pasa a otro. **La identidad
+    del personaje no cambia** (`Personaje.id`), así que no hace falta versionar la story bible
+    entera. La vía mínima tiene cuatro piezas:
+    1. **Un nombre por versión, no por obra.** El renombrado vive en la petición, como el
+       enunciado nuevo de un hecho, y los nombres de una versión son los del plan con los
+       renombrados de su cadena de peticiones (`regeneracion.nombres_de_version`). La versión
+       anterior conserva el suyo: sus fichas y su `INV-22` siguen leyendo el nombre viejo.
+    2. **Lo afectado lo decide el texto, no el modelo.** Los capítulos que se tocan son los que
+       contienen el nombre viejo, como palabra entera, en su texto aceptado, más aquellos en los
+       que el personaje está presente (`personajes_presentes`, `PLAN-27` E3). Con `S-1`, desde el
+       primero de ellos hasta el final; con `S-2`, exactamente esos, y el resto se reverifica.
+       Un capítulo compartido no puede contener el nombre viejo, por construcción.
+    3. **El nombre viejo, vetado en la versión nueva.** Entra como nombre vetado de nivel novela
+       (`SPEC-25`) solo para los capítulos de la versión nueva: si el Escritor lo arrastra, `INV-21`
+       lo devuelve, que es la regla que ya sabe hacerlo.
+    4. **El material del Escritor, con el nombre nuevo.** La sinopsis y los beats del plan, y los
+       enunciados de los hechos, salen con la sustitución hecha para los capítulos regenerados. Si
+       no, el prompt le pediría el nombre viejo y el punto 3 lo rechazaría hasta agotar el tope.
+  - **No se admite:** renombrar al **destinatario**, cuyo nombre es un dato de la ficha del
+    comprador y no del plan; ni un nombre nuevo que ya sea de otro personaje de la obra. Los dos
+    responden `409` con su motivo.
 - **`C-5` · Un capítulo compartido y `cerrado` que falla la reverificación** (solo `S-2`).
   **Propuesta:** no se reabre (`RF-30`, `VER-29`). En la versión nueva sale como no verificado,
   con sus hallazgos de versión (`RF-54`), y la salida es una petición nueva que lo incluya.
@@ -157,7 +180,8 @@ Ninguno de estos nombres existe hoy. **Son propuestas y entran en A0**, antes de
 | Qué | Dónde | Atributos (propuestos) |
 | --- | --- | --- |
 | Clase `VersionDeObra` | Plano Obra | **obra** → Obra, **numero** (la identidad; la `ronda` de `CE-5`), anterior → VersionDeObra, **capitulos[]** → Capitulo (en orden, compartidos por referencia), peticion → PeticionDeCambio, **commit** (`MF-27`), creada_en |
-| Clase `PeticionDeCambio` | Plano Proceso | **obra**, **version_de_partida** → VersionDeObra, **hecho** → HechoCanonico, **enunciado_nuevo**, **texto** (las palabras del lector), salida → `salida_de_regeneracion`, capitulos_propuestos[] → Capitulo |
+| Clase `PeticionDeCambio` | Plano Proceso | **obra**, **version_de_partida** → VersionDeObra, **clase** → `clase_de_peticion`, hecho → HechoCanonico, enunciado_nuevo, personaje → Personaje, nombre_nuevo, **texto** (las palabras del lector), salida → `salida_de_regeneracion`, capitulos_propuestos[] → Capitulo. Con `hecho`, lleva `hecho` y `enunciado_nuevo`; con `nombre`, `personaje` y `nombre_nuevo` |
+| Enumeración `clase_de_peticion` | Vocabularios | `hecho`, `nombre` (`C-4`) |
 | Clase `Reverificacion` | Plano Calidad | **version** → VersionDeObra, **escena** → Escena, **huella_del_estado**, **estado** → `estado_de_verificacion`, hallazgos[] (de esta versión; no son filas de `Hallazgo`) |
 | Enumeración `salida_de_regeneracion` | Vocabularios | `cascada` (`S-1`), `selectiva` (`S-2`) |
 | Enumeración `estado_de_verificacion` | Vocabularios | `verificada`, `sin_reverificar` (heredada: **no cuenta como verde**, `D-1`), `fallida` |
@@ -340,7 +364,10 @@ no empieza, y el corte A0–A5 sigue siendo coherente.
 
 ### A7 · La petición, el hecho de la versión, la propuesta y la puerta cerrada
 
-- **La petición**: la tabla `peticion_de_cambio` y su validación (`C-4`).
+- **La petición**: la tabla `peticion_de_cambio` y su validación (`C-4`), de las dos clases.
+- **Los nombres de una versión** (`regeneracion.nombres_de_version`), la sustitución en el
+  material del Escritor y el nombre viejo como vetada de novela para la versión nueva (`C-4`,
+  puntos 1, 3 y 4). Los capítulos afectados por un renombrado, por texto y por presencia (punto 2).
 - **Los hechos de una versión**: los de la obra con el enunciado nuevo de su petición, compuestos
   por `regeneracion.hechos_de_version`. `menciona` se calcula en la versión nueva contra el
   enunciado nuevo. `HechoCanonico` no se edita.
@@ -361,7 +388,11 @@ no empieza, y el corte A0–A5 sigue siendo coherente.
 `test_pedir_con_una_lista_distinta_de_la_propuesta_es_409`,
 `test_el_enunciado_nuevo_vale_en_la_version_nueva_y_no_en_la_anterior`,
 `test_una_peticion_sobre_un_hecho_de_otra_obra_se_rechaza`,
-`test_renombrar_un_personaje_es_409_con_motivo` (si `C-4` se aprueba así) y
+`test_un_renombrado_toca_los_capitulos_que_contienen_el_nombre_viejo_y_los_de_su_presencia`,
+`test_la_version_anterior_conserva_el_nombre_viejo_en_sus_fichas_y_en_inv22`,
+`test_en_la_version_nueva_el_nombre_viejo_es_una_vetada`,
+`test_el_material_del_escritor_lleva_el_nombre_nuevo`,
+`test_renombrar_al_destinatario_o_a_un_nombre_ya_usado_es_409` y
 `test_editar_el_hecho_a_mano_sigue_prohibido`.
 
 **Amplía** `VER-116`.
@@ -470,11 +501,7 @@ final.
 
 ## Cuestiones abiertas para la aprobación
 
-1. **El ejemplo del enunciado es un cambio de nombre** (*«el perro se llama Nala»*), y `C-4`
-   propone no admitir renombrados. La demo obligatoria es un cambio del lector propagado a los
-   capítulos afectados, y un cambio de hecho lo cumple. Pero si en la presentación se prueba un
-   nombre, `C-4` responde `409`. Admitir renombrados necesita una story bible por versión, que este
-   plan no hace.
+1. **Resuelta por el autor**: el renombrado entra, por la vía mínima de `C-4`.
 2. `C-1` a `C-6`, con sus propuestas.
 3. Los nombres de la tabla de `docs/definitions.md`: son propuesta y entran en A0.
 4. Registrar migración también para las tablas nuevas, que cambia la costumbre de hasta hoy.
@@ -483,7 +510,7 @@ final.
 
 - No hace la puerta de publicación **por versión** ni el PDF por versión.
 - No hace el contrato congelado ni ninguna página (`PLAN-22`).
-- No renombra personajes ni da versión a la story bible, salvo que la cuestión abierta 1 lo cambie.
+- No da versión a la story bible: un renombrado cambia el nombre de una versión, no la story bible (`C-4`). No renombra al destinatario.
 - No implementa `S-5`, ni pone `obra` al mundo vivo para varias obras en una base (hallazgo 8).
 - No toca `RF-19`, `RF-30`, `INV-05` ni la máquina de `estado_de_escena`.
 - No vuelve a levantar el acta de las escenas reescritas a delta fijo (hallazgo 9): lo informa.

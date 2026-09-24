@@ -371,6 +371,7 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-27 | El juicio de obra no encuentra un arco roto ni un final abrupto | obra | mayor | juez\_llm | resúmenes de capítulo, `Borrador.texto` del último capítulo |
 | INV-28 | La verificación formal de la cronología de la obra devuelve `0`: ninguna violación de `L-1`…`L-4`, y con dato bastante para mirar (`2` no es `0`) | obra | bloqueante | regla | `EventoCronologico`, fechas de nacimiento, `specs/lean/` |
 | INV-29 | Ningún capítulo de una versión publicada está en `aceptada_por_rendicion` | obra | bloqueante | regla | `estado_de_escena` de las escenas de cada capítulo |
+| INV-30 | La lectura web de una versión renderiza la portada con su dedicatoria, el índice con todos los capítulos en orden y las fichas con enlaces que llevan a su capítulo, comprobado en el navegador con el browser MCP (`SPEC-22` `RF-58`) | obra | mayor | juez\_llm | la web servida, por Playwright MCP |
 
 **La columna «Qué lee» existe para hacer verificable una regla del recorte.** `SPEC-12`
 fija que la forma reducida de un bloque de contexto **nunca puede llevarse lo que lee una

@@ -2,14 +2,19 @@
 id: PLAN-22
 spec: SPEC-22
 titulo: Implementación del frontend de lectura y del contrato congelado
-estado: en_revision
-aprobada_por: ""
-fecha_aprobacion: ""
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
 ---
 
 # PLAN-22 — La lectura web y el contrato congelado
+
+> **Aprobado (2026-09-24)** con las propuestas de las cuestiones 1 a 4, **y con el validador
+> visual con score** (cuestión 5): entra como `SPEC-22` `RF-58` e `INV-30`, en el paso E13b. Lo
+> que queda fuera del día, y se documenta como **no hecho**, es que su fallo vuelva solo al
+> Escritor o al rol que toca.
 
 Cómo se construye `SPEC-22`. Cada paso empieza por la prueba que falla, deja la suite en verde
 (`python -m pytest app -q` desde `backend/` y, desde E6, `npm test` desde `frontend/`) y se puede
@@ -288,6 +293,36 @@ cambio provocó, con su commit.
 
 **Abre** `VER-109`. **Cierra la mitad de `EX-04`.**
 
+### E13b · El validador visual: `INV-30`, con nombre, punto en el harness y score (`RF-58`)
+
+Un agente nuevo, `inspector_visual` (`.claude/agents/inspector_visual.md`), cuyas únicas tools son
+las de Playwright MCP. El harness lo delega con `--mcp-config .mcp.json --strict-mcp-config`, tras
+publicar una versión, con la URL de la web servida. Recorre portada, índice, cada capítulo y las
+fichas, sigue cada enlace de una ficha, y devuelve un JSON con una comprobación por pieza
+(`portada`, `indice`, `capitulos`, `fichas`, `enlaces`), cada una con `pasa` o `falla` y su motivo.
+El harness lo valida con esquema; un JSON ilegible es `sin_veredicto`, nunca `pasa`. Si alguna
+falla, deja un hallazgo `INV-30` con su motivo. Cada comprobación sube como score `INV-30.<pieza>`
+en la traza de la generación, en la sesión de la obra. `hooks/policy.py` da al inspector solo las
+tools del browser.
+
+- **Punto de ejecución:** la puerta de publicación, después de publicar, como `INV-27`.
+- **No hace (❌, documentado en `docs/proceso/diagramas.md` y en `EX-04`):** devolver el fallo al
+  Escritor o al rol correspondiente. El hallazgo queda abierto y lo resuelve una persona.
+
+**Ficheros:** `.claude/agents/inspector_visual.md`, `backend/app/features/auditoria/visual.py`
+(nuevo), `backend/app/commons/invariantes/registro.py`, `backend/app/commons/politica/herramientas.py`,
+`backend/app/features/orquestacion/observar.py`, sus pruebas, y `backend/inspeccion_visual.py`
+(nuevo: el guion que la lanza sobre una base y una URL).
+
+**Prueba que falla primero:** `test_un_veredicto_con_una_pieza_que_falla_deja_inv30_y_su_score`.
+Además `test_un_veredicto_ilegible_es_sin_veredicto_y_no_pasa`,
+`test_cada_pieza_sube_como_score_en_la_sesion_de_la_obra`,
+`test_el_inspector_solo_tiene_las_tools_del_browser` y
+`test_inv30_esta_en_el_registro_con_la_fila_de_definitions`. La ejecución real, sobre la base de E11,
+es E13b.2 y va en el mismo registro que E13.
+
+**Abre** `VER-119`.
+
 ### E14 · Lo que la página necesita para pedir un cambio
 
 - **`GET /escenas/{id}/hechos`**: los hechos que usa una escena, de `uso_de_hecho`, con su
@@ -372,6 +407,7 @@ Todos los números **están por reservar**. `PLAN-29` reservó `VER-94`…`VER-1
 | `VER-110` | La página recibe los hechos de una escena y el trabajo tiene forma | E14 |
 | `VER-111` | La interfaz no confirma sin enseñar los capítulos, y la promesa va con su punto ciego | E16 |
 | `VER-112` | Las marcas de cambio y el verde heredado se pintan tal como llegan, y la versión anterior se navega entera | E17 |
+| `VER-119` | `INV-30`: cada pieza de la web tiene veredicto con esquema, un ilegible no pasa, y cada una sube como score. **Punto ciego:** lo juzga un agente, que puede ver bien lo que está mal; y el fallo no vuelve solo al Escritor | E13b |
 | `MF-29` | *El contrato se movió de un lado y el otro no se enteró* | E1 |
 
 ## Cuestiones abiertas para la aprobación
@@ -381,8 +417,8 @@ Todos los números **están por reservar**. `PLAN-29` reservó `VER-94`…`VER-1
 2. **`DA-6` se da por resuelta con el reparto**: la selección vive en la página y viaja un hecho.
 3. **Las partes de `RF-38`.** *Propuesta:* el índice no lleva partes mientras no haya dato, y se dice.
 4. **`RF-42`** no tiene atributo en `Obra`. *Propuesta:* fuera del día.
-5. **La mitad automática de `EX-04`**: un validador visual con nombre, punto del harness y score.
-   Necesita una decisión.
+5. **Resuelta por el autor**: el validador visual entra (E13b, `RF-58`, `INV-30`); que el fallo
+   vuelva solo al Escritor queda fuera y se documenta como no hecho.
 
 ## Lo que este plan no hace
 

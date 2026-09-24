@@ -6,8 +6,12 @@ aprobada_por: "@Santiago Espinosa Domínguez"
 fecha_aprobacion: 2026-09-23
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
-version: 2
+version: 3
 ---
+
+> **v3 (2026-09-24), decisión del autor en sesión:** entra `RF-58`, el validador visual con
+> nombre, punto en el harness y score en Langfuse (`EXAMEN.md` §5a). Que su fallo vuelva solo
+> al Escritor queda fuera y se documenta como no hecho. El resto de la spec no cambia.
 
 # SRS — Frontend de lectura y contrato congelado
 
@@ -324,6 +328,7 @@ De `CLAUDE.md` y `docs/architecture.md`, no negociables desde aquí:
 | ID | Requisito | Origen | Verifica |
 | --- | --- | --- | --- |
 | **RF-56** | Lo que cambia con **la novela** y lo que cambia con **la máquina** son dos cosas distintas y viven en dos ficheros distintos. Lo de la novela llega al frontend **por la API**, como atributos de `Obra`; **el frontend no lee ficheros de configuración** | nuevo | fila nueva |
+| **RF-58** | **La lectura web se valida con el browser MCP como validador, no solo como inspección.** Un agente con Playwright MCP abre la web real de una versión, recorre portada, índice, capítulos y fichas, y devuelve un veredicto por comprobación con su motivo, validado con esquema. El resultado es `INV-30`, se guarda como hallazgo si falla y sube a Langfuse como score en la sesión de la obra. **Fuera:** que el fallo vuelva solo al Escritor o al rol que toca | nuevo, v3 | fila nueva |
 | **RF-57** | **Nada de la configuración del sistema cruza el contrato.** Ningún campo del congelado expone nombres de modelo por agente, topes de delegación, techo de contexto ni la ruta de la base | nuevo | fila nueva |
 
 > **Por qué `RF-57` es un requisito y no una precaución.** Un campo que se cuela una vez en
