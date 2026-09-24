@@ -192,7 +192,8 @@ def _juicio_de_obra(con, obra, escenas, juez):
         " y ".join(problemas), bruto.get("justificacion") or ""))]
 
 
-def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=None):
+def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=None,
+           version=None):
     """Lo que solo se puede comprobar con la novela entera escrita.
 
     `INV-24` es `bloqueante`: con un imprescindible sin aparecer, la novela **no
@@ -201,8 +202,8 @@ def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=No
     """
     umbral_nombre = umbral_nombre or config.UMBRAL_REPETICION_NOMBRE
     longitud_frase = longitud_frase or config.LONGITUD_FRASE_REPETIDA
-    # `PLAN-23` A6: las de la version vigente, no las de la obra entera.
-    escenas = regeneracion.escenas_de_version(con, obra)
+    # `PLAN-23` A6: las de la version -la vigente si no se dice-, no las de la obra entera.
+    escenas = regeneracion.escenas_de_version(con, obra, version)
 
     faltan = []
     # `F-65`: `uso_de_hecho` no guarda la obra y todas las novelas llaman a sus

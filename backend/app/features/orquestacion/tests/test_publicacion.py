@@ -238,3 +238,63 @@ def test_toda_secuencia_de_veredictos_termina_publicada_o_detenida(con):
         p = publicacion.publicar(c, "obra-x", ficha(), LeanFijo(), juez,
                                  Editor(INSTRUYE_CAP10), Reescritor())
         assert p.publicada != (p.parada is not None)
+
+
+# --- `PLAN-23` B-S1.1, `F-122` (TLC `CE-15`): las rondas de la puerta son de su version --
+
+def _version_2(con):
+    """La version 2 de `obra-x`, que comparte todos los capitulos de la 1: basta para
+    que la puerta tenga que saber de que version cuenta las rondas."""
+    from app.features.brief import repository as brief
+    return brief.crear_version(con, "obra-x", brief.capitulos_de_version(con, "obra-x", 1),
+                               anterior=1)
+
+
+def test_las_rondas_de_la_puerta_se_cuentan_por_version(con):
+    _escrita(con)
+    _evaluar(con, LeanFijo(), JuezDeObra(ABRUPTO))
+    _evaluar(con, LeanFijo(), JuezDeObra(BIEN))
+    assert _version_2(con) == 2
+    assert veredictos.rondas(con, "obra-x", 1) == 2
+    assert veredictos.rondas(con, "obra-x", 2) == 0
+    e = publicacion.evaluar(con, "obra-x", ficha(), LeanFijo(), JuezDeObra(BIEN), version=2)
+    assert e.ronda == 1, "la version 2 empieza su propia cuenta"
+    assert veredictos.ultimo(con, "obra-x", 2)["ronda"] == 1
+    assert veredictos.ultimo(con, "obra-x", 1)["ronda"] == 2
+
+
+def test_la_version_2_no_hereda_las_rondas_gastadas_por_la_1(con):
+    """La traza de `CE-15`: la 1 se publica en su primera ronda y la 2 se detenia por
+    tope habiendo gastado una sola de las suyas."""
+    _escrita(con)
+    assert _publicar(con, LeanFijo(), Secuencia(BIEN), Editor(INSTRUYE_CAP10),
+                     Reescritor()).publicada
+    _version_2(con)
+    p = publicacion.publicar(con, "obra-x", ficha(), LeanFijo(), Secuencia(ABRUPTO, BIEN),
+                             Editor(INSTRUYE_CAP10), Reescritor(), tope=1, version=2)
+    assert p.publicada and p.rondas == 2, p.parada
+
+
+def test_la_migracion_da_la_version_1_a_los_veredictos_de_antes():
+    """Una base de antes: `veredicto_de_publicacion` con clave `(obra, ronda)`. Antes de
+    esta migracion ninguna regeneracion pudo escribir nada (`RAMAS` estaba vacio), asi
+    que todo veredicto guardado es de la version 1."""
+    c = sqlite3.connect(":memory:")
+    c.executescript("""
+        CREATE TABLE esquema_version (version INTEGER PRIMARY KEY, descripcion TEXT NOT NULL,
+            aplicada_en TEXT NOT NULL DEFAULT (datetime('now')));
+        CREATE TABLE veredicto_de_publicacion (obra TEXT NOT NULL, ronda INTEGER NOT NULL,
+            publica INTEGER NOT NULL, condiciones TEXT NOT NULL, codigo_lean INTEGER,
+            no_ejecutadas TEXT NOT NULL, cuando TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (obra, ronda));
+        INSERT INTO veredicto_de_publicacion (obra, ronda, publica, condiciones,
+            no_ejecutadas) VALUES ('obra-x', 1, 0, '[]', '[]'), ('obra-x', 2, 1, '[]', '[]');
+    """)
+    c.executemany("INSERT INTO esquema_version (version, descripcion) VALUES (?, 'x')",
+                  [(n,) for n in range(1, 16)])
+    c.commit()
+    migraciones.migrar(c)
+    assert veredictos.rondas(c, "obra-x", 1) == 2
+    assert veredictos.ultimo(c, "obra-x", 1)["publica"] is True
+    c.execute("INSERT INTO veredicto_de_publicacion (obra, version, ronda, publica, "
+              "condiciones, no_ejecutadas) VALUES ('obra-x', 2, 1, 0, '[]', '[]')")

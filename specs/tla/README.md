@@ -386,7 +386,10 @@ queda así. La corrección modelada: la vigente es la última **publicada**.
 tope habiendo gastado **una** ronda de las dos que tiene: la ronda que la 1 usó para publicarse
 se le descuenta.
 
-**Cambio en el código:** ninguno; es del diseño de `PLAN-23` y va a su sesión (`D-5`).
+**Cambio en el código:** `F-122`, en `PLAN-23` B-S1.1. `veredicto_de_publicacion` lleva `version`
+y clave `(obra, version, ronda)` (migración 16), y la puerta cuenta las rondas de la versión que
+evalúa. El modelo no se ha vuelto a pasar por TLC con el arreglo: la prueba que lo cubre es
+`test_la_version_2_no_hereda_las_rondas_gastadas_por_la_1`, la traza de este contraejemplo.
 
 ## Discrepancias entre el código y los documentos
 

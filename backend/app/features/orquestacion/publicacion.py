@@ -74,14 +74,18 @@ def _conciliar(con, antes, despues, comprobadas, ronda):
 
 
 def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=(), umbral_nombre=None,
-            longitud_frase=None) -> Evaluacion:
+            longitud_frase=None, version=None) -> Evaluacion:
+    """Una ronda de la puerta sobre la version `version` (sin ella, la vigente). Las
+    rondas se cuentan **por version** (`PLAN-23` `F-122`, TLC `CE-15`)."""
     veredictos.asegurar_tablas(con)
-    ronda = veredictos.rondas(con, obra) + 1
-    # `PLAN-23` A6: la version vigente.
-    escenas = _de_la_version(con, obra)
+    version = _numero(con, obra, version)
+    ronda = veredictos.rondas(con, obra, version) + 1
+    # `PLAN-23` A6: las escenas de la version que se evalua.
+    escenas = _de_la_version(con, obra, version)
     antes = [h for h in _abiertos_de_obra(con, escenas) if h["invariante"] in NIVEL_OBRA]
 
-    cierre = novela.cerrar(con, obra, ficha, juez_de_obra, umbral_nombre, longitud_frase)
+    cierre = novela.cerrar(con, obra, ficha, juez_de_obra, umbral_nombre, longitud_frase,
+                           version=version)
     comprobadas = {"INV-24", "INV-25", "INV-28"}
     if cierre["estado"] != "novela_incompleta":
         comprobadas.add("INV-27")
@@ -112,7 +116,7 @@ def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=(), umbral_nombre=None
         resultado.violaciones, {ev["id"]: ev["capitulo"]
                                 for ev in cronologia.eventos_de(con, obra)},
         [h for h in hallazgos if h["invariante"] == "INV-27"])
-    veredictos.guardar(con, obra, decision, resultado.codigo)
+    veredictos.guardar(con, obra, decision, resultado.codigo, version)
     return Evaluacion(decision, ronda, implicados, resultado, cierre)
 
 
@@ -161,7 +165,8 @@ def _lista(filas):
 
 
 def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
-             tope=None, vetadas=(), umbral_nombre=None, longitud_frase=None) -> Publicacion:
+             tope=None, vetadas=(), umbral_nombre=None, longitud_frase=None,
+             version=None) -> Publicacion:
     """El bucle de la puerta (`SPEC-30` v4 `RF-04`, `RF-06`, `RF-07`).
 
     - Si se abre, la version se publica.
@@ -179,14 +184,16 @@ def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
     from app.features.consolidacion import memoria
 
     tope = config.TOPE_REINTENTOS_DE_PUBLICACION if tope is None else tope
+    # `PLAN-23` `F-122`: el tope es de la version, no de la obra.
+    version = _numero(con, obra, version)
     ignoradas, evaluaciones = [], []
     while True:
-        previas = veredictos.rondas(con, obra)
+        previas = veredictos.rondas(con, obra, version)
         if previas > tope:
             return Publicacion(False, previas, {"motivo": "tope", "rondas": previas},
                                ignoradas, evaluaciones)
         e = evaluar(con, obra, ficha, lean, juez_de_obra, vetadas, umbral_nombre,
-                    longitud_frase)
+                    longitud_frase, version=version)
         evaluaciones.append(e)
         if e.decision.publica:
             return Publicacion(True, e.ronda, None, ignoradas, evaluaciones)
@@ -219,7 +226,7 @@ def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
             resumenes=_lista("{0}: {1}".format(r["escena"], r["texto"])
                              for r in memoria.resumenes_hasta(
                                  con, 10 ** 9, obra=obra, escenas=[
-                                     e["id"] for e in _de_la_version(con, obra)]))))
+                                     e["id"] for e in _de_la_version(con, obra, version)]))))
         instrucciones = (bruto.get("instrucciones") if isinstance(bruto, dict) else None) or []
         for i in instrucciones:
             if not isinstance(i, dict):
@@ -228,10 +235,20 @@ def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
             if capitulo not in implicados or not texto:
                 ignoradas.append((capitulo, texto))
                 continue
-            for escena in escaleta.escenas_de_capitulo(con, capitulo):
+            for escena in escaleta.escenas_de_capitulo(con, capitulo, obra):
                 reescribir(con, escena["id"], [texto])
 
 
-def _de_la_version(con, obra):
+def _numero(con, obra, version):
+    """La version que pasa por la puerta: la dada o, si no, la vigente. Una obra sin
+    versiones (dada de alta antes de `PLAN-23`) cuenta como la 1."""
+    from app.features.brief import repository as brief
+    if version is not None:
+        return version
+    vigente = brief.version_vigente(con, obra)
+    return vigente if vigente is not None else 1
+
+
+def _de_la_version(con, obra, version=None):
     from app.features.orquestacion import regeneracion
-    return regeneracion.escenas_de_version(con, obra)
+    return regeneracion.escenas_de_version(con, obra, version)
