@@ -103,6 +103,8 @@ class Fila:
     """`None` si el brief no se ejecuto en esta pasada."""
     ejecucion: str | None = None
     coste: str | None = None
+    version_del_escritor: str | None = None
+    """`RF-03`: la huella del prompt del Escritor con que se hizo (`SPEC-29` `RF-05`)."""
 
 
 def _celda(fila, columna):
@@ -144,10 +146,12 @@ def generar(filas) -> str:
             fila = por_clave.get((brief, pasada)) or Fila(brief, pasada, None)
             lineas.append("| {0} | ".format(brief)
                           + " | ".join(_celda(fila, c).texto for c in cols) + " |")
-        lineas += ["", "| ejecucion | brief | coste |", "| --- | --- | --- |"]
+        lineas += ["", "| ejecucion | brief | coste | version del prompt del escritor |",
+                   "| --- | --- | --- | --- |"]
         for brief in briefs:
             fila = por_clave.get((brief, pasada)) or Fila(brief, pasada, None)
-            lineas.append("| {0} | {1} | {2} |".format(
-                fila.ejecucion or "sin ejecutar", brief, fila.coste or "sin medir"))
+            lineas.append("| {0} | {1} | {2} | {3} |".format(
+                fila.ejecucion or "sin ejecutar", brief, fila.coste or "sin medir",
+                fila.version_del_escritor or "sin medir"))
         lineas.append("")
     return "\n".join(lineas)

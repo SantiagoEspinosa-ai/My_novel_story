@@ -148,3 +148,38 @@ def test_evaluar_pasa_el_rastro_contra_las_obras_anteriores(tmp_path, capsys):
     salida = capsys.readouterr().out
     assert "=== RASTRO DE OTRAS NOVELAS ===" in salida
     assert "brief-base-antes-1: limpio" in salida
+
+
+# --- `PLAN-31` E11: los resultados como scores, y la version del prompt -----------
+
+def test_cada_celda_de_la_tabla_tiene_su_score_en_la_traza(tmp_path, capsys):
+    """`SPEC-31` `RF-07`: los resultados de cada ejecucion llegan a Langfuse como scores.
+    Uno por columna de la fila, con la pasada en la referencia; lo que no paso ni fallo
+    sube como `sin_veredicto` o `no_aplica` con su motivo, nunca como `pasa`."""
+    exportador = ExportadorEnMemoria()
+    d = _dobles(_Llamados())
+    d["exportador"] = lambda: exportador
+    assert evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto"), dobles=d) == 0
+    from app.features.evaluacion import tabla
+    scores = [e for t, e in exportador.enviados
+              if t == "score" and e.get("referencia") == "evaluacion-antes"]
+    assert sorted(s["nombre"] for s in scores) == sorted(tabla.columnas())
+    por_nombre = {s["nombre"]: s for s in scores}
+    assert por_nombre["INV-01"]["categoria"] == "pasa"
+    assert por_nombre["INV-06"]["categoria"] == "no_aplica" and por_nombre["INV-06"]["motivo"]
+    assert por_nombre["INV-08"]["categoria"] == "sin_veredicto"
+
+
+def test_la_tabla_dice_que_version_del_prompt_del_escritor_produjo_cada_pasada(tmp_path,
+                                                                             capsys):
+    """`RF-03`: el tuning compara dos pasadas, y cada una dice con que prompt del Escritor
+    se hizo (`SPEC-29` `RF-05`: la huella de su definicion y sus plantillas)."""
+    from app.features.orquestacion import prompts
+    evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto", "--capitulos", "1"),
+                 dobles=_dobles(_Llamados()))
+    version = prompts.version_de("escritor")
+    filas = libro.filas(sqlite3.connect(str(tmp_path / "evaluacion.db")))
+    assert {f["version_del_escritor"] for f in filas} == {version}
+    tabla = (tmp_path / "resultados.md").read_text(encoding="utf-8")
+    linea = next(l for l in tabla.splitlines() if l.startswith("| brief-base-antes-1 |"))
+    assert version in linea

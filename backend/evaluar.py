@@ -191,7 +191,8 @@ def regenerar_tabla(con_libro, ruta_tabla, umbral=None):
             con.row_factory = sqlite3.Row
             celdas = evaluacion.resultados(con, e["obra"], umbral)
             con.close()
-        filas.append(tabla.Fila(brief, pasada, celdas, ejecucion=e["ejecucion"], coste=coste))
+        filas.append(tabla.Fila(brief, pasada, celdas, ejecucion=e["ejecucion"], coste=coste,
+                                version_del_escritor=e["version_del_escritor"]))
     with open(ruta_tabla, "w", encoding="utf-8") as f:
         f.write(tabla.generar(filas))
     return filas
@@ -250,7 +251,7 @@ def main(argv=None, dobles=None):
     from app.commons.observabilidad.observacion import Observacion
     from app.features.evaluacion import briefs
     from app.features.evaluacion import repository as libro
-    from app.features.orquestacion import novela
+    from app.features.orquestacion import novela, observar, prompts
     from app.features.planificacion.service import PlanNoAprobado
 
     dobles = dobles or {}
@@ -287,9 +288,13 @@ def main(argv=None, dobles=None):
     print("\nejecucion: {0} | base: {1}".format(ejecucion, base))
     exportador = (dobles.get("exportador") or _crear_exportador)()
 
+    # `RF-03`: la version del prompt del Escritor, la huella del repositorio (`SPEC-29`).
+    version = prompts.version_de("escritor")
+
     def anotar(tramo, obra_, coste):
         libro.anotar(con_libro, ejecucion=ejecucion, brief=brief.meta.id, pasada=args.pasada,
-                     capitulo=tramo, obra=obra_, base=base, **coste)
+                     capitulo=tramo, obra=obra_, base=base, version_del_escritor=version,
+                     **coste)
 
     if brief.guion is not None:
         r = _entrevista(brief, base, dobles, exportador, anotar)
@@ -352,8 +357,12 @@ def main(argv=None, dobles=None):
     print("tiempo: {0:.0f} s".format(time.time() - arranque))
     for linea in rastro_contra_anteriores(con_libro, ejecucion, con, obra):
         print(linea)
-    regenerar_tabla(con_libro, args.tabla, umbral)
+    filas = regenerar_tabla(con_libro, args.tabla, umbral)
     print("\ntabla: " + args.tabla)
+    # `RF-07`: la fila de esta ejecucion, como scores de su traza.
+    for f in filas:
+        if f.ejecucion == ejecucion:
+            observar.de_la_evaluacion(observacion, f.celdas, args.pasada)
     print("\n=== LANGFUSE ===")
     print(guion.estado_de_langfuse(observacion, observacion.vaciar()))
     return codigo
