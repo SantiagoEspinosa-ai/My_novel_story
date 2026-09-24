@@ -29,42 +29,26 @@ import sqlite3
 import sys
 import tempfile
 import time
+import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.commons.configuracion import carga  # noqa: E402
 from app.commons.db import migraciones, procedencia  # noqa: E402
 from app.commons.dominio.destinatario import FichaDeEntrevista  # noqa: E402
-from app.commons.modelo import proveedor  # noqa: E402
-from app.commons.modelo.contador import Contador  # noqa: E402
+from app.commons.modelo import gasto, proveedor  # noqa: E402
 from app.commons.observabilidad.langfuse import crear_exportador  # noqa: E402
 from app.commons.observabilidad.observacion import Observacion  # noqa: E402
 from app.features.manuscrito import exportar  # noqa: E402
-from app.features.orquestacion import ciclo, novela  # noqa: E402
+from app.features.orquestacion import novela  # noqa: E402
+# `SPEC-33` `RF-11`: los mismos agentes y el mismo total que la web, no una copia.
+from app.features.orquestacion.regalo import agentes, coste_total  # noqa: E402
 from app.features.planificacion import repository as planes  # noqa: E402
 from app.features.planificacion.service import PlanNoAprobado  # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
 
-def agentes(sistema, entorno):
-    m = sistema.modelos
-    faltan = [n for n in ("planificador", "revisor_plan", "editor", "escritor", "resumidor")
-              if not getattr(m, n)]
-    if faltan:
-        raise SystemExit("faltan modelos en config/sistema.json: " + ", ".join(faltan))
-    sesiones = {
-        "planificador": Contador(proveedor.SesionDelegada(modelo=m.planificador,
-                                                          agente="planificador")),
-        "revisor": Contador(proveedor.SesionDelegada(modelo=m.revisor_plan,
-                                                     agente="revisor_plan")),
-        "escritor": proveedor.SesionDelegada(modelo=m.escritor, agente="escritor"),
-        "editor": ciclo.editor_aislado(modelo=m.editor),
-        "resumidor": proveedor.SesionDelegada(modelo=m.resumidor, agente="resumidor"),
-    }
-    for s in sesiones.values():
-        (s.sesion if isinstance(s, Contador) else s).entorno.update(entorno)
-    return sesiones
 
 
 def estado_de_langfuse(observacion, vaciado) -> str:
@@ -154,9 +138,13 @@ def main(argv=None):
     registro_hooks = os.path.join(tempfile.gettempdir(), "hooks-{0}.jsonl".format(args.obra))
     if os.path.exists(registro_hooks):
         os.remove(registro_hooks)
+    # `SPEC-33` `RF-18`: cada delegacion deja su coste en la base, con el identificador de
+    # esta ejecucion. Es lo que la web suma como gastado.
+    generacion = "gen-" + uuid.uuid4().hex[:10]
     ag = agentes(sistema, {"HARNESS_DB": os.path.abspath(args.base),
                            "HARNESS_OBRA": args.obra,
-                           "HARNESS_REGISTRO_HOOKS": registro_hooks})
+                           "HARNESS_REGISTRO_HOOKS": registro_hooks},
+                 anotar=gasto.anotador(con, args.obra, generacion))
 
     # `SPEC-29`: con claves en `backend/.env`, la generacion es una traza de Langfuse en la
     # sesion de su obra; sin ellas no se envia nada, y el informe lo dice.
@@ -191,10 +179,8 @@ def main(argv=None):
         print(estado_de_langfuse(observacion, observacion.vaciar()))
         return 1
     g = r["generacion"]
-    usd = g.coste["usd"] + ag["planificador"].usd + ag["revisor"].usd
-    sin_coste = g.coste["sin_coste"] + ag["planificador"].sin_coste + ag["revisor"].sin_coste
-    delegaciones = (g.coste["delegaciones"] + ag["planificador"].delegaciones
-                    + ag["revisor"].delegaciones)
+    total = coste_total(r, ag)
+    usd, sin_coste, delegaciones = total["usd"], total["sin_coste"], total["delegaciones"]
 
     print("\n=== PLAN ===")
     print("aprobado en la ronda {0}{1}".format(

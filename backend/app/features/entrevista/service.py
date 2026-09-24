@@ -236,6 +236,15 @@ def _auditar(con, e, estado):
                                           "huella": huella(c.descripcion)})
 
 
+def _con_gasto(agente, con, obra):
+    """`SPEC-33` `RF-18`: una `SesionDelegada` deja el coste de cada llamada en la base, en
+    la obra de la entrevista. Un doble sin `anotador` no se toca: no es una delegacion."""
+    if hasattr(agente, "anotador"):
+        from app.commons.modelo import gasto
+        agente.anotador = gasto.anotador(con, obra)
+    return agente
+
+
 def _observado(agente, observar, obra, nombre, con):
     """`SPEC-29`: cada turno es una traza en la sesion de su obra, y cada llamada al
     Entrevistador un span. `observar(obra, nombre, con)` la crea —la conexion es donde
@@ -253,8 +262,8 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
-    entrevistador, obs = _observado(entrevistador, observar, e.obra, "turno_de_entrevista",
-                                     con)
+    entrevistador, obs = _observado(_con_gasto(entrevistador, con, e.obra), observar, e.obra,
+                                     "turno_de_entrevista", con)
     antes = _estado(e, reglas, anio_actual)
     error = None
     for _ in range(tope):
@@ -290,7 +299,8 @@ def pegar_texto(con, id_e, texto, extractor, observar=None) -> list:
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
-    extractor, _ = _observado(extractor, observar, e.obra, "texto_libre", con)
+    extractor, _ = _observado(_con_gasto(extractor, con, e.obra), observar, e.obra,
+                              "texto_libre", con)
     r = texto_libre.extraer(con, e.obra, texto, extractor)
     e.ficha = texto_libre.anadir_propuestos(e.ficha, r.hechos)
     repo.guardar(con, e)

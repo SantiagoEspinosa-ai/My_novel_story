@@ -721,7 +721,7 @@ def test_sin_plan_aprobado_el_guion_informa_y_sale_con_1(tmp_path, monkeypatch, 
     ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
     base = str(tmp_path / "regalo.db")
     sumados = {"planificador": _Sumado(0.5, 3, 0), "revisor": _Sumado(0.25, 1, 1)}
-    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno: sumados)
+    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno, **_: sumados)
 
     def no_aprueba(con, obra, *a, **kw):
         planes.asegurar_tablas(con)
@@ -782,7 +782,7 @@ def test_un_transporte_agotado_sale_como_informe_y_no_como_traza(tmp_path, monke
     guion = _guion()
     ruta_ficha = tmp_path / "ficha.json"
     ruta_ficha.write_text(ficha().model_dump_json(), encoding="utf-8")
-    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno: {
+    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno, **_: {
         "planificador": _Sumado(0.5, 1, 0), "revisor": _Sumado(0.25, 1, 0)})
 
     def se_cae(con, obra, *a, **kw):
@@ -931,14 +931,17 @@ def test_novela_regalo_con_dobles_informa_el_juicio_de_obra_en_el_coste(tmp_path
     from app.commons.modelo.contador import Contador
     from app.commons.observabilidad.exportador import ExportadorEnMemoria
     guion = _guion()
-    assert guion.Contador is Contador, "uno solo, el de commons, con su prueba"
+    # `PLAN-33` E5: los agentes viven en `orquestacion/regalo.py`, y el `Contador` con ellos.
+    from app.features.orquestacion import regalo
+    assert regalo.Contador is Contador, "uno solo, el de commons, con su prueba"
+    assert not hasattr(guion, "Contador"), "el guion no arma agentes"
     agentes = _agentes_para_la_novela_entera()
     agentes["editor"] = _EditorDeLaPuerta(agentes["editor"].r, juicios=[
         {"arco_cerrado": True, "final_abrupto": False, "justificacion": "bien"}])
     medidos = _con_coste(agentes, coste=0.01)
     medidos["planificador"] = Contador(medidos["planificador"])
     medidos["revisor"] = Contador(medidos["revisor"])
-    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno: medidos)
+    monkeypatch.setattr(guion, "agentes", lambda sistema, entorno, **_: medidos)
     monkeypatch.setattr(guion, "crear_exportador", lambda: ExportadorEnMemoria())
     escribir = guion.novela.escribir
     monkeypatch.setattr(guion.novela, "escribir",
