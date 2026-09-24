@@ -1,0 +1,22 @@
+/* SPEC-33 RF-14..RF-20: la generacion en vivo. Solo variables del tema (SPEC-22 RF-59). */
+.generacion__cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: var(--espacio-m); flex-wrap: wrap; }
+.generacion__capitulos {
+  list-style: none; padding: 0; margin: var(--espacio-l) 0;
+  display: grid; gap: var(--espacio-m); grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+.generacion__capitulo { display: grid; gap: var(--espacio-s); align-content: start; transition: box-shadow 0.3s; }
+.generacion__capitulo[data-fase="no_empezado"] { opacity: 0.6; }
+.generacion__capitulo[data-fase="escribiendo"], .generacion__capitulo[data-fase="editando"],
+.generacion__capitulo[data-fase="resumiendo"] { box-shadow: var(--sombra-media); border-color: var(--color-acento); }
+.generacion__numero { font-family: var(--fuente-titulos); font-size: 1.1rem; }
+.generacion__motivo { margin: 0; font-size: 0.85rem; color: var(--color-textoSuave); }
+.generacion__notas { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--espacio-xs); border-top: 1px solid var(--color-linea); padding-top: var(--espacio-s); }
+.generacion__nota { font-family: var(--fuente-interfaz); font-size: 0.8rem; display: flex; flex-wrap: wrap; gap: var(--espacio-xs) var(--espacio-s); align-items: baseline; animation: aparecer 0.4s ease-out; }
+.generacion__nota--baja strong { color: var(--color-acento); }
+.generacion__criterio { min-width: 9em; color: var(--color-textoSuave); }
+.generacion__justificacion, .generacion__instruccion { flex-basis: 100%; margin: 0; color: var(--color-textoSuave); }
+.coste { font-family: var(--fuente-interfaz); font-size: 0.85rem; color: var(--color-textoSuave); display: flex; gap: var(--espacio-s); align-items: baseline; margin: 0; }
+.coste__cifra { color: var(--color-texto); font-variant-numeric: tabular-nums; }
+.coste__suelo { color: var(--color-acento); }
+@keyframes aparecer { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .generacion__nota { animation: none; } }

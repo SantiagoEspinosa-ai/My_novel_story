@@ -1,7 +1,9 @@
 // Datos de prueba **inventados** de la novela regalo en la web (SPEC-33), con la forma del
 // congelado: el tipo sale de contrato.ts y tests/regalo.test.ts los valida contra el mismo
 // esquema. Viven aparte de fixtures.ts, que es de PLAN-22.
-import type { Historial, TurnoDeEntrevista } from "@/shared/api";
+import type {
+  CapituloEnGeneracion, GeneracionEnVivo, Historial, TurnoDeEntrevista,
+} from "@/shared/api";
 
 export const turnoConAviso: TurnoDeEntrevista = {
   orden: 1,
@@ -47,6 +49,38 @@ export const historialListo: Historial = {
 
 export const historialCerrado: Historial = { ...historialListo, cerrada: true, puede_cerrar: false };
 
+const CRITERIOS = ["continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
+  "personalizacion"] as const;
+
+function capitulo(numero: number, cambios: Partial<CapituloEnGeneracion> = {}): CapituloEnGeneracion {
+  return { numero, fase: null, motivo: null, desde: null, notas: [], ...cambios };
+}
+
+/** Diez capitulos en fases distintas: uno cerrado con sus notas, uno editando, uno parado. */
+export const generacionEnCurso: GeneracionEnVivo = {
+  obra: "obra-regalo-inventada",
+  total_de_capitulos: 10,
+  capitulos: [
+    capitulo(1, { fase: "resumiendo", desde: "2026-09-24 10:00:00", notas: CRITERIOS.map(
+      (criterio, i) => ({ criterio, nota: i === 4 ? 2 : 4, justificacion: `sobre ${criterio}`,
+        instruccion: i === 4 ? "acelera el final" : null, bajo_el_umbral: i === 4 })) }),
+    capitulo(2, { fase: "editando", desde: "2026-09-24 10:04:00" }),
+    capitulo(3, { fase: "parada", motivo: "FalloDeTransporte", desde: "2026-09-24 10:05:00" }),
+    ...Array.from({ length: 7 }, (_, i) => capitulo(i + 4)),
+  ],
+  coste: { generacion: "gen-inventada", usd: 1.25, delegaciones: 7, sin_coste: 0, es_suelo: false },
+};
+
+export const generacionConSuelo: GeneracionEnVivo = {
+  ...generacionEnCurso,
+  coste: { generacion: "gen-inventada", usd: 1.5, delegaciones: 9, sin_coste: 1, es_suelo: true },
+};
+
+export const generacionSinMedir: GeneracionEnVivo = {
+  ...generacionEnCurso,
+  coste: { generacion: "gen-inventada", usd: null, delegaciones: 2, sin_coste: 2, es_suelo: true },
+};
+
 export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }> = {
   turnoConAviso: { esquema: "TurnoDeEntrevistaSalida", datos: turnoConAviso },
   turnoSinNada: { esquema: "TurnoDeEntrevistaSalida", datos: turnoSinNada },
@@ -54,6 +88,9 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   historialAbierto: { esquema: "HistorialSalida", datos: historialAbierto },
   historialListo: { esquema: "HistorialSalida", datos: historialListo },
   historialCerrado: { esquema: "HistorialSalida", datos: historialCerrado },
+  generacionEnCurso: { esquema: "GeneracionEnVivo", datos: generacionEnCurso },
+  generacionConSuelo: { esquema: "GeneracionEnVivo", datos: generacionConSuelo },
+  generacionSinMedir: { esquema: "GeneracionEnVivo", datos: generacionSinMedir },
 };
 
 type Respuesta = { estado?: number; cuerpo: unknown };

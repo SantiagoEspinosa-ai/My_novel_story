@@ -13,6 +13,9 @@ export type ProgresoDeGeneracion = Esquemas["ProgresoDeGeneracion"];
 // SPEC-33: la novela regalo en la web.
 export type TurnoDeEntrevista = Esquemas["TurnoDeEntrevistaSalida"];
 export type Historial = Esquemas["HistorialSalida"];
+export type GeneracionEnVivo = Esquemas["GeneracionEnVivo"];
+export type CapituloEnGeneracion = Esquemas["CapituloEnGeneracion"];
+export type CosteDeLaGeneracion = Esquemas["CosteDeLaGeneracion"];
 /**
  * Lo que la pagina lee de `GET /trabajos/{id}`. En esta rama el congelado no lo tipa; lo tipa
  * `PLAN-22` E14 (`TrabajoSalida`), y al fusionarlo este tipo pasa a salir de alli.
@@ -89,6 +92,7 @@ export function crearCliente(fetchInyectado: Fetch) {
     cerrarEntrevista: (entrevista: string) =>
       enviar<unknown>(`/entrevistas/${e(entrevista)}/cerrar`),
     trabajo: (id: string) => leer<Trabajo>(`/trabajos/${e(id)}`),
+    generacion: (obra: string) => leer<GeneracionEnVivo>(`/obras/${e(obra)}/generacion`),
   };
 }
 
