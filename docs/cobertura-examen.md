@@ -40,6 +40,10 @@ Cada vuelta se detiene en lo que haya que decidir. La 1 se paró en nueve decisi
 decisión). La 3 no encontró ninguno nuevo, pero **la condición de parada no se cumple**: pide
 cero bloqueantes.
 
+**Después de la vuelta 3** (2026-09-24): el autor decide `EX-16` y `EX-17`, que recoge
+`SPEC-32`. Quedan bloqueantes **`EX-04`** y **`EX-07`**, y ninguno espera una decisión: el
+primero, a la lectura web; el segundo, a la sesión de TLA+.
+
 ## Identificadores reservados
 
 Reservados el 2026-09-23 antes de escribir, según `docs/sesiones-concurrentes.md`. El más alto publicado en todas las ramas era `SPEC-26`.
@@ -51,6 +55,7 @@ Reservados el 2026-09-23 antes de escribir, según `docs/sesiones-concurrentes.m
 | `SPEC-29` | Observabilidad en Langfuse (`EX-02`) | v2, `en_revision`, sin cuestiones abiertas: falta la aprobación |
 | `SPEC-30` | La puerta de publicación, con Lean (`EX-03`) | v2, `en_revision`, sin cuestiones abiertas: falta la aprobación |
 | `SPEC-31` | Evaluación: cinco briefs, tabla, tuning, revisión humana y red-team (`EX-05`, `EX-06`) | v2, `en_revision`, sin cuestiones abiertas: falta la aprobación |
+| `SPEC-32` | La dedicatoria en `Obra` y la extensión preguntada (`EX-16`, `EX-17`) | `aprobada` el 2026-09-24 con la decisión literal del autor |
 
 ## Huecos de documentación
 
@@ -68,8 +73,8 @@ Reservados el 2026-09-23 antes de escribir, según `docs/sesiones-concurrentes.m
 | **EX-10** | § "Los repositorios deben incluir también": README con brief reproducible, `.env.example`, `ejemplos/novela-ejemplo.pdf`, vídeo en `presentacion/`, `.claude/` con memoria y comandos, configuración MCP | Ningún documento los recogía | Ausencia | **Cerrado** en la vuelta 1 como rutas reservadas en `AGENTS.md` § "Todavía no existe". Crearlos es trabajo, no documentación. Qué memoria se commitea (hoy vive fuera del repositorio) se decide al crearla |
 | **EX-11** | § `/docs` `:134`: carpeta `/docs` con seis documentos de proceso —spec inicial, trade-offs, explainers, diagramas, registro de iteraciones y red-team log—, más skills y subagentes referenciados desde allí | `Docs/` era **normativa**, no de proceso, y en git se llamaba `Docs`: en Windows `Docs/` y `docs/` son la misma carpeta, así que no podían convivir. Ningún documento recoge los seis | Contradicción de nombre y ausencia | **Cerrado en la vuelta 3**: nombre, 2026-09-23; los seis documentos más el de Claude Code, en `docs/proceso/`. Lo que esos documentos no pueden contar todavía —resultados de evaluación, tuning, red-team contra el modelo real— dice *sin ejecutar* y va con `SPEC-31`, que es hueco de sistema |
 | **EX-12** | Todo el enunciado: novela para regalar, diez capítulos | `AGENTS.md` describía el proyecto como *«novelas largas (caso base: terror, una sola obra)»* | Obsoleto | **Cerrado** en la vuelta 1 |
-| **EX-16** | §2 `:24` *«Una portada con dedicatoria personalizada»* | `docs/definitions.md` pone `dedicatoria` en `FichaDeEntrevista`, y `SPEC-25` `RF-21` **borra la ficha al entregar**. `SPEC-22` `RF-46` dice que es atributo de `Obra` —todavía no está en `docs/definitions.md`— y que *«la escribe una persona»*. Ningún documento dice que la de la entrevista pase a `Obra` antes del borrado: después de entregar, la portada se quedaría sin ella | Contradicción entre dos specs aprobadas | **Bloqueante. Espera decisión** (vuelta 2) |
-| **EX-17** | §1 `:13`: el entrevistador *«recoge los datos del destinatario: nombre, edad, rasgos, recuerdos, género, tono y extensión»* | `SPEC-25` `RF-03`: *«La extensión no se pregunta: son 10 capítulos de entre 1.000 y 1.500 palabras… La ficha la registra»*. Y el código contradice a su spec: `backend/app/commons/dominio/destinatario.py:24`, *«la extension no se pregunta ni se guarda en la ficha»* | Contradicción | **Bloqueante. Espera decisión** (vuelta 2) |
+| **EX-16** | §2 `:24` *«Una portada con dedicatoria personalizada»* | `docs/definitions.md` pone `dedicatoria` en `FichaDeEntrevista`, y `SPEC-25` `RF-21` **borra la ficha al entregar**. `SPEC-22` `RF-46` dice que es atributo de `Obra` —todavía no está en `docs/definitions.md`— y que *«la escribe una persona»*. Ningún documento dice que la de la entrevista pase a `Obra` antes del borrado: después de entregar, la portada se quedaría sin ella | Contradicción entre dos specs aprobadas | **Decidido y documentado (2026-09-24)**: lo recoge `SPEC-32`, `aprobada`. Pasa a hueco de sistema: va a su plan |
+| **EX-17** | §1 `:13`: el entrevistador *«recoge los datos del destinatario: nombre, edad, rasgos, recuerdos, género, tono y extensión»* | `SPEC-25` `RF-03`: *«La extensión no se pregunta: son 10 capítulos de entre 1.000 y 1.500 palabras… La ficha la registra»*. Y el código contradice a su spec: `backend/app/commons/dominio/destinatario.py:24`, *«la extension no se pregunta ni se guarda en la ficha»* | Contradicción | **Decidido y documentado (2026-09-24)**: lo recoge `SPEC-32`, `aprobada`. Pasa a hueco de sistema: va a su plan |
 
 ## Huecos de sistema
 
