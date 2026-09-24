@@ -2,7 +2,7 @@
 // de contrato.ts, generado de contrato/openapi.json, y fixtures.test.ts los valida en
 // ejecucion contra el mismo esquema. Toda fixture con capitulos trae al menos dos (NF-05),
 // y los ids de capitulo ordenan al reves que su orden de lectura (Regla 11).
-import type { CapituloLeido, EscenaLeida, Fichas, Indice } from "./cliente";
+import type { CapituloLeido, EscenaLeida, Fichas, Indice } from "@/shared/api";
 
 const TEXTO = "Primer texto  inventado,\ncon dos espacios y un salto.\n";
 
