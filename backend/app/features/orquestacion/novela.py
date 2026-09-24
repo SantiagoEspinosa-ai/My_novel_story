@@ -272,6 +272,8 @@ def escribir(con, obra, ficha, agentes, hasta_capitulo=None, carpeta_de_reglas=N
                          sistema, listas, lean, None)
     from app.features.orquestacion import prompts
     prompts.enviar_nuevas(con, observacion)
+    # `SPEC-28` `RF-09`: lo que sube de cada llamada a una tool, y nada mas.
+    observacion.herramientas_de = lambda d: observabilidad.spans_de_herramientas(con, d)
     with observacion.grupo("novela"):
         return _escribir(con, obra, ficha, _observados(agentes, observacion),
                          hasta_capitulo, carpeta_de_reglas, sistema, listas, lean,
@@ -385,6 +387,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
                 longitud_frase=sistema.edicion.longitud_frase_repetida)
             for ev in publicada.evaluaciones or []:
                 observar.del_cierre(observacion, ev.cierre, ev.ronda)
+                observar.de_la_puerta(observacion, ev)
         if publicada.evaluaciones:
             cierre = publicada.evaluaciones[0].cierre
     return {"plan": aprobado, "generacion": total, "cierre": cierre, "publicacion": publicada}

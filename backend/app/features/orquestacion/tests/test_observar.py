@@ -190,3 +190,98 @@ def test_sin_coincidencias_inv21_pasa_si_se_comprobo():
     obs = _obs()
     observar.del_ciclo(obs, _ciclo())
     assert "INV-21" not in _por_nombre(obs), "sin lista no se miro: no se dice que pase"
+
+
+# --- `PLAN-29` E14: los spans de las tools y el score de Lean -----------------------
+
+def _tools_en(con):
+    from app.features.observabilidad import repository as observabilidad
+    observabilidad.guardar_llamada(con, "del-1", "obra-a", "escritor", "mcp__story_bible__ficha",
+                                   "ok", 12, 340)
+    observabilidad.guardar_llamada(con, "del-1", "obra-a", "escritor",
+                                   "mcp__story_bible__hechos", "entrada_invalida", 3, None)
+    return lambda d: observabilidad.spans_de_herramientas(con, d)
+
+
+class _ConDelegacion:
+    nombre, agente = "m-1", "escritor"
+
+    def llamar(self, prompt):
+        return {"texto": "x", "medidas": {"delegacion": "del-1", "coste_usd": 0.1}}
+
+
+def test_cada_llamada_a_una_tool_es_un_span_bajo_su_rol():
+    from app.commons.observabilidad.observacion import SesionObservada
+    obs = _obs()
+    obs.herramientas_de = _tools_en(obs.con)
+    s = SesionObservada(_ConDelegacion(), obs, rol="escritor")
+    s.llamar("prompt")
+    spans = [e for t, e in obs.exportador.enviados if t == "span"]
+    rol = [x for x in spans if x["tipo"] == "rol"][0]
+    tools = [x for x in spans if x["tipo"] == "tool"]
+    assert [t["nombre"] for t in tools] == ["mcp__story_bible__ficha",
+                                             "mcp__story_bible__hechos"]
+    assert all(t["padre"] == rol["id"] for t in tools)
+    assert tools[0]["latencia_ms"] == 12 and tools[0]["tokens_estimados"] == 340
+    assert tools[1]["validacion"] == "entrada_invalida" and "tokens_estimados" not in tools[1]
+
+
+def test_el_span_de_una_tool_no_lleva_argumentos_ni_resultado():
+    from app.commons.observabilidad.envio import SpanEnviado
+    from app.commons.observabilidad.observacion import SesionObservada
+    obs = _obs()
+    obs.herramientas_de = _tools_en(obs.con)
+    SesionObservada(_ConDelegacion(), obs, rol="escritor").llamar("prompt")
+    for t, e in obs.exportador.enviados:
+        if t == "span" and e["tipo"] == "tool":
+            assert set(e) <= {"id", "traza", "padre", "nombre", "tipo", "capitulo",
+                              "latencia_ms", "validacion", "tokens_estimados"}
+            SpanEnviado.model_validate(e)
+
+
+def _evaluacion(codigo, rendidos=()):
+    """La decision la toma `puerta.decidir`, la real: una hecha a mano podria publicar
+    con un Lean que no aprobo."""
+    from types import SimpleNamespace
+    from app.features.auditoria import publicacion as puerta
+    lean = puerta.ResultadoLean(codigo)
+    return SimpleNamespace(ronda=1, lean=lean,
+                           decision=puerta.decidir(list(rendidos), [], lean))
+
+
+@pytest.mark.parametrize("codigo, categoria", [(0, "pasa"), (1, "falla"),
+                                               (2, "sin_veredicto"), (None, "sin_veredicto")])
+def test_lean_da_su_score_y_el_2_no_es_un_aprobado(codigo, categoria):
+    obs = _obs()
+    observar.de_la_puerta(obs, _evaluacion(codigo))
+    assert _por_nombre(obs)["INV-28"]["categoria"] == categoria
+
+
+def test_lean_con_codigo_2_es_sin_veredicto_y_no_aprobado():
+    obs = _obs()
+    observar.de_la_puerta(obs, _evaluacion(2))
+    s = _por_nombre(obs)
+    assert s["INV-28"]["categoria"] == "sin_veredicto"
+    assert s["publicacion"]["categoria"] == "falla"
+
+
+def test_lean_que_no_corre_es_sin_veredicto():
+    obs = _obs()
+    observar.de_la_puerta(obs, _evaluacion(None))
+    assert _por_nombre(obs)["INV-28"]["categoria"] == "sin_veredicto"
+
+
+def test_una_invariante_no_ejecutada_no_sube_como_pasa():
+    """`SPEC-30` `C-4`: un validador que no corre no es un validador que paso."""
+    obs = _obs()
+    observar.de_la_puerta(obs, _evaluacion(0))
+    inv06 = _por_nombre(obs)["INV-06"]
+    assert inv06["categoria"] == "no_aplica" and "comparacion semantica" in inv06["motivo"]
+
+
+def test_un_capitulo_rendido_da_inv29_falla_sin_su_id():
+    obs = _obs()
+    observar.de_la_puerta(obs, _evaluacion(0, ["obra-a-cap-03"]))
+    s = _por_nombre(obs)
+    assert s["INV-29"]["categoria"] == "falla" and s["INV-29"].get("valor") is None
+    assert "cap-03" not in repr(obs.exportador.enviados)

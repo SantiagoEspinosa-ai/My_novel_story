@@ -89,6 +89,26 @@ def de_las_rondas_del_plan(obs, versiones):
                       categoria="pasa" if v["aprobado"] else "falla")
 
 
+def de_la_puerta(obs, ev):
+    """La puerta de publicacion (`SPEC-30`), por ronda: Lean (`INV-28`), los capitulos
+    rendidos (`INV-29`) y la decision. El `2` de Lean y un Lean que no llego a correr son
+    «sin veredicto», no un aprobado (`RF-04`). Y lo que la puerta declara no ejecutado
+    (`INV-06`) sube como `no_aplica` con su motivo fijo: no ha pasado, no se ha mirado."""
+    if obs is None or ev is None:
+        return
+    ref = "ronda-{0}".format(ev.ronda)
+    codigo = ev.lean.codigo
+    obs.score(nombre="INV-28", referencia=ref,
+              categoria={0: "pasa", 1: "falla"}.get(codigo, "sin_veredicto"))
+    # El capitulo va por nada: su id lo decidio el modelo.
+    obs.score(nombre="INV-29", referencia=ref, categoria="falla" if any(
+        c.invariante == "INV-29" for c in ev.decision.condiciones) else "pasa")
+    for n in ev.decision.no_ejecutadas:
+        obs.score(nombre=n.invariante, referencia=ref, categoria="no_aplica", motivo=n.motivo)
+    obs.score(nombre="publicacion", referencia=ref,
+              categoria="pasa" if ev.decision.publica else "falla")
+
+
 def del_cierre(obs, cierre, ronda):
     """`INV-24`, `INV-25` e `INV-27`, por ronda de la puerta de publicacion."""
     if obs is None or not cierre:
