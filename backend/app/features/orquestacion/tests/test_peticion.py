@@ -163,7 +163,10 @@ def test_el_enunciado_nuevo_vale_en_la_version_nueva_y_no_en_la_anterior(con):
         "h-cocina"] == "Brisa duerme en la cocina"
     # Y lo que recibe el Escritor de la version nueva (y el acta, para `menciona`).
     escaleta.guardar_escaleta(con, OBRA, [regeneracion.escena_para_regenerar(con, OBRA, 2, 3)])
-    material = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-03-v2-e1"), OBRA)
+    # La version que se escribe se dice: la vigente sigue siendo la 1 hasta publicar la 2
+    # (`F-121`, TLC `CE-14`).
+    material = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-03-v2-e1"), OBRA,
+                                           version=2)
     assert {h["id"]: h["enunciado"] for h in material["hechos"]}["h-cocina"] == \
         "Brisa duerme en el jardin"
 
@@ -192,9 +195,12 @@ def test_la_version_anterior_conserva_el_nombre_viejo_en_sus_fichas_y_en_inv22(c
     assert "Brisa" in novela.nombres_para_inv22(con, OBRA, ficha(), _plan(), 1)
     assert "Nala" in novela.nombres_para_inv22(con, OBRA, ficha(), _plan(), 2)
     assert "Brisa" not in novela.nombres_para_inv22(con, OBRA, ficha(), _plan(), 2)
-    # La story bible sirve la version que se escribe, la vigente.
-    f = story_bible.leer_ficha(con, OBRA, EntradaFicha(id="per-brisa")).personaje
+    # La story bible sirve la version que se escribe, que se le dice (`F-121`): sin
+    # decirla, la vigente, que es la 1 mientras la 2 no se publique.
+    f = story_bible.leer_ficha(con, OBRA, EntradaFicha(id="per-brisa"), version=2).personaje
     assert f.nombre_canonico == "Nala" and f.id == "per-brisa"
+    assert story_bible.leer_ficha(con, OBRA, EntradaFicha(id="per-brisa")
+                                  ).personaje.nombre_canonico == "Brisa"
 
 
 def test_en_la_version_nueva_el_nombre_viejo_es_una_vetada(con):

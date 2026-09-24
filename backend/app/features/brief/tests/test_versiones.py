@@ -50,7 +50,8 @@ def test_crear_la_version_2_no_cambia_ninguna_fila_de_la_1(con):
     assert n == 2
     assert _filas(con, 1) == antes
     assert con.execute("SELECT * FROM version_de_obra WHERE numero = 1").fetchall() == version_1
-    assert brief.version_vigente(con, "obra-a") == 2
+    # `F-121` (TLC `CE-14`): creada no es publicada; la vigente sigue siendo la 1.
+    assert brief.version_vigente(con, "obra-a") == 1
 
 
 def test_dos_versiones_con_los_mismos_capitulos_se_distinguen_por_su_numero(con):

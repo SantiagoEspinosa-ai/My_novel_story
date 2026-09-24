@@ -369,7 +369,12 @@ paso siguiente a pedir el cambio, todo lo que lee «la vigente» (desde A6, `bri
 manuscrito) ve una versión con capítulos sin escribir; si la regeneración para a mitad, se
 queda así. La corrección modelada: la vigente es la última **publicada**.
 
-**Cambio en el código:** ninguno; es del diseño de `PLAN-23` y va a su sesión (`D-5`).
+**Cambio en el código:** `F-121`, en `PLAN-23` B-S1.1: la corrección modelada, tal cual. La vigente
+es la última versión con una ronda de la puerta que publica y, sin ninguna, la 1
+(`commons/obra/vigente.py`, única copia de la regla). El modelo no se ha vuelto a pasar por TLC
+con el arreglo: la prueba que lo cubre es
+`test_la_version_vigente_es_la_ultima_publicada_y_no_la_ultima_creada`, la traza de este
+contraejemplo.
 
 ### CE-15 · Con `PLAN-23`, la versión 2 hereda las rondas de puerta que gastó la 1
 
@@ -395,7 +400,7 @@ evalúa. El modelo no se ha vuelto a pasar por TLC con el arreglo: la prueba que
 
 | | Discrepancia | Resolución |
 | --- | --- | --- |
-| **D-5** | `PLAN-23` A3 crea la versión antes de escribirla y `version_vigente` devuelve la última creada; el plan no hace la puerta por versión | Es `CE-14` y `CE-15`. Va a la sesión de `PLAN-23`: no es código de este árbol ni decisión de esta especificación |
+| **D-5** | `PLAN-23` A3 crea la versión antes de escribirla y `version_vigente` devuelve la última creada; el plan no hace la puerta por versión | Es `CE-14` y `CE-15`. **Resuelta en `PLAN-23` B-S1.1**: `F-121` (la vigente es la última publicada) y `F-122` (las rondas de la puerta, por versión) |
 | **D-6** | `SPEC-18` C-3, tal como lo resume `commons/invariantes/severidad.py`, dice que un `sin_veredicto` no pasa como éxito y que su sitio es el cierre de capítulo; en la novela regalo el cierre de capítulo solo informa (`g.cierre`, `novela.py:373`) y la puerta de publicación no lo mira | Es `CE-11` / `F-113`. Decide el autor, porque cambia `SPEC-30` `RF-01` |
 
 ## Historia: el modelo de la rama `main` (obsoleto)

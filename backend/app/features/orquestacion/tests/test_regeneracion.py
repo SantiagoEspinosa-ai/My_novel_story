@@ -219,6 +219,11 @@ def _novela_con_dos_versiones(con):
         "longitud_objetivo": [1, 5000]}])
     o.escribir(con, "cap-02-v2-e1", "Texto nuevo del capitulo 2.")
     memoria.guardar_resumen(con, "cap-02-v2-e1", 2, "Resumen nuevo 2.", [], obra=OBRA)
+    # `F-121` (TLC `CE-14`): la vigente es la ultima **publicada**. Estas pruebas miran lo
+    # que ve el lector con la 2 ya publicada, asi que la puerta la deja pasar.
+    from app.features.auditoria import publicacion as puerta
+    from app.features.auditoria import repository as veredictos
+    veredictos.guardar(con, OBRA, puerta.decidir([], [], puerta.ResultadoLean(0)), 0, 2)
 
 
 def test_con_dos_versiones_cada_lector_ve_solo_las_escenas_de_la_suya(con):

@@ -480,7 +480,8 @@ Lo común a las dos salidas está construido; **qué se escribe** espera a la me
   vigente (`C-3`); si no, la escena está `sin_reverificar`. `INV-06` e `INV-04` salen como no
   ejecutadas, cada una con su motivo.
 - **Cada lector ve solo su versión**: `regeneracion.escenas_de_version` (la vigente si no se
-  dice) la usan el bucle de escenas, la memoria del Escritor, el cierre, la puerta de
+  dice; la vigente es **la última publicada**, y sin ninguna la 1: `F-121`, TLC `CE-14`, regla
+  única en `commons/obra/vigente.py`) la usan el bucle de escenas, la memoria del Escritor, el cierre, la puerta de
   publicación, la story bible, el manuscrito y la medida. Los imprescindibles se asignan por
   posición del capítulo en la versión, no por un identificador construido.
 - **La petición** (`C-4`) es de un hecho o de un nombre y vive en `features/revision/`. No edita
