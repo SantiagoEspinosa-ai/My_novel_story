@@ -183,3 +183,64 @@ def test_la_tabla_dice_que_version_del_prompt_del_escritor_produjo_cada_pasada(t
     tabla = (tmp_path / "resultados.md").read_text(encoding="utf-8")
     linea = next(l for l in tabla.splitlines() if l.startswith("| brief-base-antes-1 |"))
     assert version in linea
+
+
+# --- `--reanudar` y el coste del capitulo parado (`F-117`) --------------------------
+
+class _ConPovMalUnaVez(_Llamados):
+    """El Escritor declara un POV ajeno la **primera** vez que escribe el capitulo 3:
+    `INV-04` es `bloqueante` y la novela se para ahi, como la novela de ejemplo en el 9."""
+
+    def __call__(self, sistema, entorno, ficha):
+        agentes = super().__call__(sistema, entorno, ficha)
+        original, veces = agentes["escritor"].r, {"cap-03": 0}
+
+        def escritor(prompt):
+            r = original(prompt)
+            if "cap-03" in prompt and veces["cap-03"] == 0:
+                veces["cap-03"] += 1
+                return dict(r, pov_usado="per-nadie")
+            return r
+        agentes["escritor"].r = escritor
+        return agentes
+
+
+def test_el_coste_de_un_capitulo_parado_entra_en_el_libro(tmp_path, capsys):
+    """`F-117`: el libro anotaba cada capitulo al terminarlo, y el que se paraba a medias no
+    llegaba a anotarse. En la novela de ejemplo faltaron 1,1074 USD de 14,0463."""
+    evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto"),
+                 dobles=_dobles(_ConPovMalUnaVez()))
+    capsys.readouterr()
+    filas = libro.filas(sqlite3.connect(str(tmp_path / "evaluacion.db")))
+    trazas = sqlite3.connect(str(tmp_path / "novela.db")).execute(
+        "SELECT COUNT(*) FROM traza_de_delegacion").fetchone()[0]
+    assert sum(f["delegaciones"] for f in filas if f["capitulo"] != "plan") == trazas
+    assert any(f["capitulo"].startswith("3") for f in filas)
+
+
+def test_reanudar_sigue_la_misma_ejecucion_en_su_base_y_publica(tmp_path, capsys):
+    """El checkpoint de `EXAMEN.md` §4 desde `evaluar.py`: la misma ejecucion, la misma base
+    y la misma obra; no se vuelve a planificar, y el capitulo parado se reescribe."""
+    evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto"),
+                 dobles=_dobles(_ConPovMalUnaVez()))
+    capsys.readouterr()
+    llamados = _Llamados()
+    codigo = evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto",
+                                "--reanudar", "brief-base-antes-1"), dobles=_dobles(llamados))
+    salida = capsys.readouterr().out
+    assert codigo == 0, salida
+    filas = libro.filas(sqlite3.connect(str(tmp_path / "evaluacion.db")))
+    assert {f["ejecucion"] for f in filas} == {"brief-base-antes-1"}
+    assert [f["capitulo"] for f in filas].count("plan") == 1, "no se vuelve a planificar"
+    # `F-118`: el `bloqueante` del intento descartado se cierra al aceptar la version que
+    # pasa, y la puerta publica. Se lee de su veredicto, no de lo que se imprime.
+    ultimo = sqlite3.connect(str(tmp_path / "novela.db")).execute(
+        "SELECT publica FROM veredicto_de_publicacion ORDER BY ronda DESC LIMIT 1").fetchone()
+    assert ultimo == (1,), salida
+
+
+def test_reanudar_una_ejecucion_que_no_existe_se_niega(tmp_path, capsys):
+    codigo = evaluar.main(_argv(tmp_path, "brief-base", "--confirmo-el-gasto",
+                                "--reanudar", "brief-base-antes-7"),
+                          dobles=_dobles(_Llamados()))
+    assert codigo == 5 and "brief-base-antes-7" in capsys.readouterr().out

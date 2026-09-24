@@ -213,3 +213,30 @@ def test_el_delta_se_guarda_con_la_version_del_borrador_que_se_consolido(con):
                        _mundo(), techo=10_000)
     assert c.consolidada is True
     assert deltas.ultimo(con, "e1")["version"] == c.generacion.version
+
+
+def test_consolidar_cierra_los_hallazgos_de_puerta_que_la_version_aceptada_ya_no_tiene(con):
+    """`F-118`: un intento anterior dejo un `INV-04` `bloqueante` abierto; la escena se
+    reescribio y paso la puerta, pero el hallazgo del intento descartado seguia abierto, y la
+    puerta de publicacion no publicaba nunca. Es `_conciliar` de la puerta, un nivel abajo."""
+    repo.guardar_hallazgo(con, "INV-04", "verificador_de_reglas", "e1", "bloqueante",
+                          "abierto", "el POV planificado es per-marta y el usado per-nadie")
+    c = ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(),
+                       DobleQueDevuelve({"veredicto": "PASA", "problemas": []}),
+                       DobleQueDevuelve({"texto": "Marta baja.", "hechos_clave": []}),
+                       _mundo(), techo=10_000)
+    assert c.consolidada is True
+    fila = con.execute("SELECT estado, motivo_de_cierre FROM hallazgo WHERE invariante='INV-04'"
+                       ).fetchone()
+    assert fila[0] == "resuelto" and "ya no lo tiene" in fila[1]
+
+
+def test_consolidar_no_cierra_un_hallazgo_que_la_version_aceptada_sigue_teniendo(con):
+    """Un `INV-17` que produce la version aceptada -rendida con el- se queda abierto."""
+    repo.guardar_hallazgo(con, "INV-26", "editor", "e1", "mayor", "abierto", "ritmo: nota 2")
+    ciclo.ejecutar(con, "e1", _ctx(), DobleDelModelo(),
+                   DobleQueDevuelve({"veredicto": "PASA", "problemas": []}),
+                   DobleQueDevuelve({"texto": "Marta baja.", "hechos_clave": []}),
+                   _mundo(), techo=10_000)
+    assert con.execute("SELECT estado FROM hallazgo WHERE invariante='INV-26'").fetchone()[0] \
+        == "abierto", "solo se concilian las invariantes de la puerta de escena"

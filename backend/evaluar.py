@@ -34,6 +34,7 @@ Entrevistador: es como lo prueban `test_evaluar.py` y `test_entrevistar.py`, sin
 
 import argparse
 import os
+import re
 import sqlite3
 import sys
 import tempfile
@@ -209,6 +210,9 @@ def _argumentos(argv):
     p.add_argument("--tabla", default=os.path.join(RAIZ, "harness", "evals", "resultados.md"))
     p.add_argument("--capitulos", type=int, default=None)
     p.add_argument("--confirmo-el-gasto", action="store_true")
+    p.add_argument("--reanudar", default=None, metavar="EJECUCION",
+                   help="Sigue una ejecucion parada en su base, desde el ultimo capitulo "
+                        "completado (EXAMEN.md 4: checkpoint por capitulo)")
     return p.parse_args(argv)
 
 
@@ -273,12 +277,28 @@ def main(argv=None, dobles=None):
               "delante, relanza con --confirmo-el-gasto.")
         return 2
 
-    ejecucion = libro.siguiente_ejecucion(con_libro, brief.meta.id, args.pasada)
+    if args.reanudar:
+        # El checkpoint: la misma ejecucion, su base y su obra. Solo de un brief con
+        # ficha: la obra de un guion la numera la entrevista, y reanudarla es otra cosa.
+        previa = next((e for e in libro.ejecuciones(con_libro)
+                       if e["ejecucion"] == args.reanudar and e["brief"] == brief.meta.id
+                       and e["pasada"] == args.pasada), None)
+        if previa is None or brief.guion is not None:
+            print("\nNO SE REANUDA: no hay ejecucion {0} de {1} en la pasada {2} con ficha "
+                  "en el libro {3}.".format(args.reanudar, brief.meta.id, args.pasada,
+                                           args.libro))
+            return 5
+        ejecucion = args.reanudar
+    else:
+        ejecucion = libro.siguiente_ejecucion(con_libro, brief.meta.id, args.pasada)
     base = os.path.abspath(args.base or os.path.join(AQUI, "evaluacion-{0}.db".format(ejecucion)))
+    if args.reanudar and not os.path.exists(base):
+        print("\nNO SE REANUDA: no existe la base {0}.".format(base))
+        return 5
     con = sqlite3.connect(base)
     con.row_factory = sqlite3.Row
     migraciones.migrar(con)
-    otras = otras_novelas(con)
+    otras = [o for o in otras_novelas(con) if not (args.reanudar and o == ejecucion)]
     if otras:
         print("\nNO EMPIEZA: la base {0} ya tiene otra novela ({1}). La segunda novela de una "
               "base recibe el mundo de la primera (F-100): una base por ejecucion.".format(
@@ -320,16 +340,23 @@ def main(argv=None, dobles=None):
         if not isinstance(ag[rol], Contador):
             ag[rol] = Contador(ag[rol])
     plan_anotado = []
+    # `F-117`: lo anotado capitulo a capitulo en esta ejecucion, para anotar al final lo
+    # que costo un capitulo que se paro a medias, que `seguir` no llega a ver.
+    anotado = {"usd": 0.0, "delegaciones": 0, "sin_coste": 0}
 
     def anotar_plan():
         if not plan_anotado:
             plan_anotado.append(True)
+            if ag["planificador"].resumen()["delegaciones"] == 0:
+                return  # al reanudar no se planifica: no hay tramo que anotar
             anotar("plan", obra, {k: ag["planificador"].resumen()[k] + ag["revisor"].resumen()[k]
                                   for k in ("usd", "delegaciones", "sin_coste")})
 
     def seguir(numero, coste):
         anotar_plan()
         anotar(str(numero), obra, coste)
+        for k in anotado:
+            anotado[k] += coste.get(k) or 0
         return libro.puede_empezar(con_libro, techo)
 
     observacion = Observacion(exportador, con=con, obra=obra, nombre="generacion")
@@ -348,6 +375,16 @@ def main(argv=None, dobles=None):
         if r["coste_del_cierre"] is not None:
             anotar("cierre", obra, r["coste_del_cierre"])
         g = r["generacion"]
+        resto = {k: (g.coste.get(k) or 0) - anotado[k] for k in anotado}
+        if g.parada and resto["delegaciones"] > 0:
+            m = re.search(r"cap-(\d+)", str(g.parada.get("escena") or ""))
+            # El tramo es su capitulo: al reanudar tendra dos filas, el intento parado y el
+            # que termino, y las dos son gasto de verdad.
+            if m:
+                anotar(str(int(m.group(1))), obra, resto)
+            else:
+                print("AVISO: {0} USD de un capitulo parado sin numero no se anotan".format(
+                    round(resto["usd"], 4)))
         print("\n=== CAPITULOS ===")
         print("hechos: {0}".format(len(g.escenas_hechas)))
         print("parada: {0}".format((g.parada or {}).get("motivo") or "(ninguna)"))

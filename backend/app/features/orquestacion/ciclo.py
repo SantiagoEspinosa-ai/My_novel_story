@@ -50,6 +50,7 @@ from app.commons.modelo import proveedor, traza as modulo_traza
 from app.features.consolidacion import aplicar
 from app.features.escaleta import repository as repo
 from app.features.orquestacion import bucle
+from app.features.verificacion.puertas import INVARIANTES_DE_LA_PUERTA
 from app.commons.dominio.enumeraciones import EstadoDeHallazgo
 from app.commons.dominio.modelos import Hallazgo
 from app.commons import config
@@ -351,6 +352,7 @@ def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo",
                            version=c.generacion.version, al_consolidar=al_consolidar)
         repo.marcar_consolidada(con, escena_id)
         c.consolidada = True
+        _conciliar_la_puerta(con, escena_id, c)
     except (aplicar.DeltaIncompatible, aplicar.YaConsolidada) as e:
         c.fallo = "delta:" + type(e).__name__
         return c
@@ -359,6 +361,25 @@ def consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo="ciclo",
                         "resumidor", escena_id, trabajo, c.trazas)
     c.resumen = bruto
     return c
+
+
+def _conciliar_la_puerta(con, escena_id, c):
+    """`F-118`: los hallazgos de la puerta de escena que la version aceptada ya no produce
+    se cierran como resueltos, con motivo. Sin esto, un `bloqueante` de un intento
+    descartado -o de una ejecucion anterior, al reanudar- seguia abierto aunque la escena
+    se reescribiera y pasara, y la puerta de publicacion no publicaba nunca. Es lo que
+    `publicacion._conciliar` hace a nivel de obra, un nivel abajo. Solo las invariantes de
+    la puerta: las del Editor o las de obra no las vuelve a mirar este intento."""
+    actuales = {(h.invariante, h.descripcion)
+                for h in (c.generacion.hallazgos if c.generacion else [])}
+    version = c.generacion.version if c.generacion else None
+    for h in repo.hallazgos_abiertos(con, escena_id):
+        if (h["invariante"] in INVARIANTES_DE_LA_PUERTA
+                and (h["invariante"], h["descripcion"]) not in actuales):
+            repo.cerrar_hallazgo(
+                con, h["id"], EstadoDeHallazgo.RESUELTO,
+                "la version {0} aceptada ya no lo tiene: paso la puerta de escena".format(
+                    version))
 
 
 def texto_de(con, escena_id, version):
