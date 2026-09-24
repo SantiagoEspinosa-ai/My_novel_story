@@ -59,6 +59,7 @@ tres acentos graves seria absurdo.
 
 import json
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -68,6 +69,10 @@ VARIABLES = {
     "modelo_escritor": "HARNESS_MODELO_ESCRITOR",
     "modelo_juez": "HARNESS_MODELO_JUEZ",
 }
+
+
+# `backend/app/commons/modelo/proveedor.py` -> la raiz, donde viven `.claude/`.
+RAIZ_DEL_REPOSITORIO = pathlib.Path(__file__).resolve().parents[4]
 
 
 class FaltaEntorno(RuntimeError):
@@ -152,9 +157,13 @@ class SesionDelegada:
             )
         self.agente = agente
         # `cwd` aisla: `claude` carga CLAUDE.md desde el arbol del directorio
-        # de trabajo. `None` significa el del proyecto, que es lo que quiere el
-        # Escritor; el Juez se lanza desde uno vacio.
-        self.cwd = cwd
+        # de trabajo. Sin `cwd` se arranca en la **raiz del repositorio**, que
+        # es lo que quiere el Escritor; el Juez y el Editor se lanzan desde uno
+        # aislado. `F-61`: antes `None` heredaba el directorio del proceso
+        # -`backend/` en los guiones- y Claude Code, que solo lee
+        # `.claude/settings.json` de la carpeta donde arranca, no cargaba los
+        # hooks. Se midio con dos sesiones minimas identicas.
+        self.cwd = cwd if cwd is not None else str(RAIZ_DEL_REPOSITORIO)
         self._ejecutar = ejecutar or _ejecutar_proceso
         # `SPEC-26`: lo que leen los hooks. Se fija desde fuera, por obra: la
         # ruta de las reglas del capitulo y donde apuntar lo que nieguen.

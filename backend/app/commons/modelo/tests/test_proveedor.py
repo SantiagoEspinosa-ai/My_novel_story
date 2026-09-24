@@ -108,3 +108,20 @@ def test_el_cwd_viaja_al_ejecutor_porque_es_lo_que_aisla(entorno):
 
     proveedor.SesionDelegada(ejecutar=ejecutar, cwd="/un/directorio/vacio").llamar("x")
     assert visto["cwd"] == "/un/directorio/vacio"
+
+
+def test_sin_cwd_la_delegacion_arranca_en_la_raiz_del_repositorio(entorno):
+    """`F-61`: Claude Code solo carga los hooks de `.claude/settings.json` si la
+    sesion arranca en la carpeta que lo contiene. Heredando el directorio del
+    proceso -`backend/` en los guiones- los hooks no se cargaban nunca."""
+    import pathlib
+    visto = {}
+
+    def ejecutar(ejecutable, modelo, agente, prompt, cwd=None):
+        visto["cwd"] = cwd
+        return RESPUESTA_OK
+
+    proveedor.SesionDelegada(ejecutar=ejecutar).llamar("x")
+    raiz = pathlib.Path(visto["cwd"])
+    assert (raiz / ".claude" / "settings.json").exists()
+    assert (raiz / "backend").is_dir()
