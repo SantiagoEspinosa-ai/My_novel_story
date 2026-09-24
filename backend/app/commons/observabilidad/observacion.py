@@ -63,7 +63,9 @@ class Observacion:
         if not ok:
             self.perdidas += 1
             if self.con is not None:
-                perdidas.guardar(self.con, self.sesion, "vaciado", None, TimeoutError())
+                perdidas.guardar(self.con, self.sesion, "vaciado", None,
+                                 getattr(self.exportador, "error_de_vaciado", None)
+                                 or TimeoutError())
         return ok
 
     @property

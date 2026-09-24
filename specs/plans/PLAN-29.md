@@ -268,7 +268,7 @@ y que `tokens_estimados` guarda el sobre), `docs/verification.md`, `docs/cobertu
 exportador real y comprobar en la interfaz la sesión, los spans, los scores, las versiones de
 prompt, que **buscando cada dato inventado no aparece nada** y que una llamada sin coste **no
 muestra coste inferido**; y con un host que no responde, que termina y deja `envio_perdido`.
-**(b) Gasta dinero:** `novela_regalo.py` con una ficha inventada y `--capitulos 1`, más un turno
+**Hecho (a), 2026-09-24**, con los datos inventados de E9 y dobles de agente: se mandaron 4 trazas, 50 spans, 175 scores y 7 versiones de prompt. Se leyeron de vuelta por la API, porque la organización es posterior al 16-09-2026 y la lectura de trazas antigua está retirada; las observaciones salen de `GET /api/public/v2/observations` y los scores de `GET /api/public/v3/scores`. Llegaron 50 observaciones en 4 trazas de **una sola sesión**, y 175 scores. Ninguna observación lleva input, output ni modelo; ninguna tiene coste, porque los dobles no lo dan y no se infiere; 34 de las 50 llevan su versión de prompt. **Ninguno de los 14 datos inventados del destinatario aparece** en lo leído, buscados tal cual, en minúsculas y sin acentos. Las versiones de prompt leídas desde la API están **sin comprobar**. Con el host caído apareció `F-75`, ya cerrado. **(b) Gasta dinero:** `novela_regalo.py` con una ficha inventada y `--capitulos 1`, más un turno
 de entrevista con la misma obra. Lo que no llegue se dice «sin medir».
 
 ## Qué filas `VER-xx` abre

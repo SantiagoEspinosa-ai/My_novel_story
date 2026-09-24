@@ -1,3 +1,4 @@
+import pytest
 """`PLAN-29` E10: el adaptador del SDK, las claves y `.env.example`.
 
 Nada sale de la maquina: el SDK es un doble con las firmas de `langfuse` 4.15.4, leidas
@@ -29,9 +30,11 @@ class Observacion_:
 
 
 class SdkDoble:
-    def __init__(self, flush_colgado=False):
+    def __init__(self, flush_colgado=False, error_en_el_log=None):
         self.llamadas = []
         self._colgado = flush_colgado
+        # `F-75`: el SDK real no lanza cuando el envio falla; lo escribe en su log y vuelve.
+        self._error_en_el_log = error_en_el_log
 
     @staticmethod
     def create_trace_id(*, seed=None):
@@ -51,6 +54,10 @@ class SdkDoble:
     def flush(self):
         if self._colgado:
             threading.Event().wait(5)
+        if self._error_en_el_log:
+            import logging
+            logging.getLogger(self._error_en_el_log).error(
+                "Unexpected error occurred. Please check your request and contact support")
         self.llamadas.append(("flush",))
 
 
@@ -168,6 +175,21 @@ def test_un_flush_que_no_vuelve_es_una_perdida():
     assert b.vaciar(timeout=1) is True
 
 
+@pytest.mark.parametrize("logger", ["langfuse", "opentelemetry.exporter.otlp.proto.http.trace_exporter"])
+def test_un_envio_que_el_sdk_solo_escribe_en_su_log_es_una_perdida(logger):
+    """`F-75`, visto en `PLAN-29` E13 contra un host que no responde: `flush()` volvia
+    normal, el error solo iba al log, y el informe decia «enviado» con cero perdidas."""
+    a, _, _ = _adaptador(error_en_el_log=logger)
+    assert a.vaciar(timeout=1) is False
+
+
+def test_un_error_ya_contado_no_cuenta_dos_veces():
+    a, sdk, _ = _adaptador(error_en_el_log="langfuse")
+    assert a.vaciar(timeout=1) is False
+    sdk._error_en_el_log = None
+    assert a.vaciar(timeout=1) is True
+
+
 def test_env_example_lista_las_variables_y_ningun_valor():
     lineas = [l.strip() for l in (BACKEND / ".env.example").read_text(encoding="utf-8")
               .splitlines() if l.strip() and not l.lstrip().startswith("#")]
@@ -187,3 +209,14 @@ def test_backend_env_esta_en_gitignore():
 def test_ninguna_prueba_lee_el_env_real():
     assert not credenciales.RUTA.exists()
     assert credenciales.RUTA != BACKEND / ".env"
+
+
+def test_la_perdida_del_log_queda_en_envio_perdido_con_su_clase():
+    import sqlite3
+    from app.commons.observabilidad import perdidas
+    from app.commons.observabilidad.observacion import Observacion
+    a, _, _ = _adaptador(error_en_el_log="langfuse")
+    con = sqlite3.connect(":memory:")
+    obs = Observacion(a, con=con, obra="obra-x", nombre="generacion")
+    assert obs.vaciar(timeout=1) is False and obs.perdidas == 1
+    assert [p["clase"] for p in perdidas.de(con)] == ["ErrorDelSDK"]

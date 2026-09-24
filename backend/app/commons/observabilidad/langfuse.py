@@ -23,6 +23,7 @@ agregado—, que la sesion se fije con `propagate_attributes`, que no se infiera
 `model` y que no se exporten spans ajenos lo comprueba `PLAN-29` E13, no estas pruebas.
 """
 
+import logging
 import threading
 
 from app.commons.observabilidad import credenciales
@@ -56,8 +57,29 @@ class _IdsFijados:
         return self._azar.generate_trace_id()
 
 
+class ErrorDelSDK(Exception):
+    """`F-75`: el SDK escribio un error en su log. No se guarda el mensaje: puede citar lo
+    que se intentaba enviar."""
+
+
+class _ErroresDelLog(logging.Handler):
+    """Cuenta los registros de nivel ERROR de los loggers del SDK. El SDK real no lanza
+    cuando un envio falla: lo escribe en su log y `flush()` vuelve normal."""
+
+    def __init__(self):
+        super().__init__(level=logging.ERROR)
+        self.cuenta = 0
+
+    def emit(self, registro):
+        self.cuenta += 1
+
+
+LOGGERS_DEL_SDK = ("langfuse", "opentelemetry")
+
+
 class ExportadorLangfuse:
     motivo = None
+    error_de_vaciado = None
 
     def __init__(self, claves, sdk=None, propagar=None):
         self._ids = None
@@ -71,6 +93,10 @@ class ExportadorLangfuse:
             propagar = propagar or langfuse.propagate_attributes
         self._sdk, self._propagar = sdk, propagar
         self._trazas = {}  # nuestro id -> (id de Langfuse, sesion, nombre)
+        self._errores = _ErroresDelLog()
+        for nombre in LOGGERS_DEL_SDK:
+            logging.getLogger(nombre).addHandler(self._errores)
+        self._errores_vistos = 0
 
     def enviar(self, tipo, objeto):
         getattr(self, "_" + tipo)(objeto)
@@ -135,7 +161,17 @@ class ExportadorLangfuse:
         hilo = threading.Thread(target=vaciar, daemon=True)
         hilo.start()
         hilo.join(timeout)
-        return not hilo.is_alive() and resultado.get("ok", False)
+        if hilo.is_alive() or not resultado.get("ok", False):
+            self.error_de_vaciado = TimeoutError()
+            return False
+        # `F-75`: un vaciado que termino pero dejo errores en el log del SDK tampoco llego.
+        nuevos = self._errores.cuenta - self._errores_vistos
+        self._errores_vistos = self._errores.cuenta
+        if nuevos:
+            self.error_de_vaciado = ErrorDelSDK()
+            return False
+        self.error_de_vaciado = None
+        return True
 
 
 def crear_exportador(ruta=None, sdk=None, propagar=None):
