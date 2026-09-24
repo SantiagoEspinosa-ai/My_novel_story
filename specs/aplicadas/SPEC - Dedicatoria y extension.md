@@ -1,11 +1,13 @@
 ---
 id: SPEC-32
 titulo: La dedicatoria es de la obra, y la extensión se pregunta
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión (decisión literal citada abajo)"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
+fecha_aplicacion: 2026-09-24
+commit_de_aplicacion: a240b34
 ---
 
 # SPEC-32 — La dedicatoria es de la obra, y la extensión se pregunta

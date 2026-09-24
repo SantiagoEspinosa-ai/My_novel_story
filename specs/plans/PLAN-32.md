@@ -2,11 +2,13 @@
 id: PLAN-32
 spec: SPEC-32
 titulo: Implementación de la dedicatoria en Obra y la extensión preguntada
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
+fecha_aplicacion: 2026-09-24
+commit_de_aplicacion: a240b34
 ---
 
 # PLAN-32 — La dedicatoria en `Obra` y la extensión preguntada
