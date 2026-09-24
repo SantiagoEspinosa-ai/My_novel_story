@@ -341,6 +341,19 @@ def cerrar_hallazgo(con, id_hallazgo, estado, motivo: str):
                     "WHERE id = ?", (str(estado), motivo, id_hallazgo))
 
 
+def borrar_hallazgo_repetido(con, id_hallazgo):
+    """Borra un hallazgo **recien creado** que repite uno abierto (`PLAN-30` E8).
+
+    La puerta de publicacion vuelve a comprobar el nivel obra en cada ronda, y
+    `novela.cerrar` abre un hallazgo nuevo cada vez. Si el problema sigue, se queda el
+    de la ronda anterior y este sobra: cerrarlo como `resuelto` falsearia el recuento
+    por invariante, y dejar los dos lo duplicaria. Solo para eso: un hallazgo que
+    alguien ya vio no se borra, se cierra con motivo (`cerrar_hallazgo`).
+    """
+    with con:
+        con.execute("DELETE FROM hallazgo WHERE id = ?", (id_hallazgo,))
+
+
 def guardar_hallazgo(con, invariante, verificador, escena, severidad, estado, descripcion):
     with con:
         con.execute(
