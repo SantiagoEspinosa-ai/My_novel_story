@@ -236,13 +236,14 @@ def _auditar(con, e, estado):
                                           "huella": huella(c.descripcion)})
 
 
-def _observado(agente, observar, obra, nombre):
+def _observado(agente, observar, obra, nombre, con):
     """`SPEC-29`: cada turno es una traza en la sesion de su obra, y cada llamada al
-    Entrevistador un span. `observar(obra, nombre)` la crea; sin el, nada cambia."""
+    Entrevistador un span. `observar(obra, nombre, con)` la crea —la conexion es donde
+    queda una perdida (`RF-09`)—; sin el, nada cambia."""
     if observar is None:
         return agente, None
     from app.commons.observabilidad.observacion import SesionObservada
-    obs = observar(obra, nombre)
+    obs = observar(obra, nombre, con)
     return SesionObservada(agente, obs, "entrevistador",
                            obs.versiones.get("entrevistador")), obs
 
@@ -252,7 +253,8 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
-    entrevistador, obs = _observado(entrevistador, observar, e.obra, "turno_de_entrevista")
+    entrevistador, obs = _observado(entrevistador, observar, e.obra, "turno_de_entrevista",
+                                     con)
     antes = _estado(e, reglas, anio_actual)
     error = None
     for _ in range(tope):
@@ -285,7 +287,7 @@ def pegar_texto(con, id_e, texto, extractor, observar=None) -> list:
     e = _leer(con, id_e)
     if e.cerrada:
         raise EntrevistaCerrada(id_e)
-    extractor, _ = _observado(extractor, observar, e.obra, "texto_libre")
+    extractor, _ = _observado(extractor, observar, e.obra, "texto_libre", con)
     r = texto_libre.extraer(con, e.obra, texto, extractor)
     e.ficha = texto_libre.anadir_propuestos(e.ficha, r.hechos)
     repo.guardar(con, e)

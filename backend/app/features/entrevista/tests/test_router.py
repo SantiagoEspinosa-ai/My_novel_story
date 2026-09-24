@@ -148,7 +148,7 @@ def test_el_router_con_observabilidad_manda_una_traza_por_turno(cliente):
     from app.commons.observabilidad.exportador import ExportadorEnMemoria
     from app.commons.observabilidad.observacion import Observacion
     exportador = ExportadorEnMemoria()
-    app.state.observabilidad = lambda obra, nombre: Observacion(exportador, obra=obra,
+    app.state.observabilidad = lambda obra, nombre, con=None: Observacion(exportador, obra=obra,
                                                                 nombre=nombre)
     try:
         e = cliente.post("/entrevistas").json()
@@ -157,3 +157,19 @@ def test_el_router_con_observabilidad_manda_una_traza_por_turno(cliente):
     finally:
         del app.state.observabilidad
     assert [t for t, _ in exportador.enviados].count("traza") == 1
+
+
+def test_la_fabrica_de_la_app_fija_la_version_del_entrevistador():
+    from app.commons.observabilidad.exportador import ExportadorEnMemoria
+    from app.features.orquestacion import prompts
+    from app.main import fabrica_de_observacion
+    obs = fabrica_de_observacion(ExportadorEnMemoria())("obra-a", "turno_de_entrevista", None)
+    assert obs.versiones["entrevistador"] == prompts.registro()["entrevistador"].version
+
+
+def test_sin_claves_la_app_no_activa_la_observabilidad():
+    from app.main import activar_observabilidad
+    from fastapi import FastAPI
+    otra = FastAPI()
+    assert activar_observabilidad(otra) is None
+    assert getattr(otra.state, "observabilidad", None) is None

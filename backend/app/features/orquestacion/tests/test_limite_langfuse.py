@@ -126,7 +126,7 @@ def enviado(tmp_path):
     auditoria.asegurar_tabla(con)
     exportador = ExportadorEnMemoria()
 
-    def observar(obra, nombre):
+    def observar(obra, nombre, con_=None):
         return Observacion(exportador, con=con, obra=obra, nombre=nombre)
 
     ficha = _ficha()

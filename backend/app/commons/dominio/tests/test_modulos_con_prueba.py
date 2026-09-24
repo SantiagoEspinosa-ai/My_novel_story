@@ -38,7 +38,8 @@ import pathlib
 RAIZ = pathlib.Path(__file__).resolve().parents[3]
 
 # Ficheros que no son modulos que probar.
-EXENTOS = {"__init__.py"}
+# `conftest.py` no es codigo de produccion: lo carga pytest, no lo importa nadie.
+EXENTOS = {"__init__.py", "conftest.py"}
 
 
 def _modulos_de_produccion():

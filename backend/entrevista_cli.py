@@ -76,6 +76,9 @@ def dialogar(cliente, entrada=input, salida=print, espera=1.0):
             r = cliente.post("/entrevistas/{0}/cerrar".format(e["id"]))
             if r.status_code == 200:
                 salida("Ficha confirmada.")
+                # `SPEC-29` `RF-12`: la sesion de Langfuse nace con la entrevista, y la
+                # generacion solo cae en ella si recibe esta misma obra.
+                salida("Obra: {0}. Pasala a la generacion con --obra {0}".format(e["obra"]))
                 return r.json()
             salida("Todavia no se puede cerrar: " + str(r.json()["detail"]["motivo"]))
             continue

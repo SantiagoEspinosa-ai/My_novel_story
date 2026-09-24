@@ -6,6 +6,7 @@ sabe que hay un doble, solo habla HTTP.
 """
 
 import ast
+import re
 import pathlib
 
 import pytest
@@ -68,3 +69,14 @@ def test_la_cli_no_importa_ninguna_feature():
     modulos += [a.name for n in ast.walk(ast.parse(fuente))
                 if isinstance(n, ast.Import) for a in n.names]
     assert not [m for m in modulos if m.startswith("app")]
+
+
+def test_al_cerrar_la_cli_ensena_el_identificador_de_la_obra(cliente):
+    """`SPEC-29` `RF-12`: la sesion nace con la entrevista, y la generacion tiene que
+    recibir la misma obra (`--obra`) para caer en ella."""
+    respuestas = iter(["Irene Valdés", "34", "le encantan los mapas", ":cerrar"])
+    dicho = []
+    entrevista_cli.dialogar(cliente, entrada=lambda _: next(respuestas),
+                            salida=dicho.append, espera=0)
+    obra = [d for d in dicho if "--obra" in d]
+    assert obra and re.search(r"obra-[0-9a-f]{10}", obra[0])

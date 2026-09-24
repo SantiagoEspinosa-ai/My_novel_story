@@ -36,6 +36,8 @@ from app.commons.configuracion import carga  # noqa: E402
 from app.commons.db import migraciones, procedencia  # noqa: E402
 from app.commons.dominio.destinatario import FichaDeEntrevista  # noqa: E402
 from app.commons.modelo import proveedor  # noqa: E402
+from app.commons.observabilidad.langfuse import crear_exportador  # noqa: E402
+from app.commons.observabilidad.observacion import Observacion  # noqa: E402
 from app.features.orquestacion import ciclo, novela  # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +85,26 @@ def agentes(sistema, entorno):
     return sesiones
 
 
+def estado_de_langfuse(observacion, vaciado) -> str:
+    """`SPEC-29` `RF-09`: lo que paso con el envio, dicho. Apagado no es enviado, y un
+    envio con perdidas no es un envio completo."""
+    motivo = getattr(observacion.exportador, "motivo", None)
+    if motivo:
+        return "apagado: " + motivo
+    if observacion.perdidas or not vaciado:
+        return ("enviado con perdidas: {0} envios no llegaron{1}; ver la tabla "
+                "envio_perdido".format(observacion.perdidas,
+                                       "" if vaciado else ", y el vaciado final no termino"))
+    return "enviado"
+
+
+def scores_de_hooks(observacion, filas):
+    """Lo que Claude Code ejecuto de verdad, como score: un `0` pasa, cualquier otro no."""
+    for fila in filas:
+        observacion.score(nombre="hook.{0}".format(fila["hook"]),
+                          categoria="pasa" if fila.get("codigo") == 0 else "falla")
+
+
 def codigo_de_salida(r) -> int:
     """`SPEC-30` `RF-04`: una novela que no pasa la puerta no sale como si hubiera ido
     bien. Sin puerta (`--capitulos`) no es un fallo: no se evaluo."""
@@ -112,9 +134,13 @@ def main(argv=None):
                            "HARNESS_OBRA": args.obra,
                            "HARNESS_REGISTRO_HOOKS": registro_hooks})
 
+    # `SPEC-29`: con claves en `backend/.env`, la generacion es una traza de Langfuse en la
+    # sesion de su obra; sin ellas no se envia nada, y el informe lo dice.
+    observacion = Observacion(crear_exportador(), con=con, obra=args.obra, nombre="generacion")
     arranque = time.time()
     r = novela.escribir(con, args.obra, ficha, ag, hasta_capitulo=args.capitulos,
-                        carpeta_de_reglas=tempfile.gettempdir(), sistema=sistema)
+                        carpeta_de_reglas=tempfile.gettempdir(), sistema=sistema,
+                        observacion=observacion)
     g = r["generacion"]
     usd = g.coste["usd"] + ag["planificador"].usd + ag["revisor"].usd
     sin_coste = g.coste["sin_coste"] + ag["planificador"].sin_coste + ag["revisor"].sin_coste
@@ -150,6 +176,7 @@ def main(argv=None):
             filas = [json.loads(l) for l in f if l.strip()]
         for fila in filas:
             print("  {hook} sobre {agente}: codigo {codigo}".format(**fila))
+        scores_de_hooks(observacion, filas)
     else:
         print("  NINGUNO: los hooks no dejaron constancia. O Claude Code no los "
               "lanzo, o no les llego HARNESS_REGISTRO_HOOKS.")
@@ -170,6 +197,8 @@ def main(argv=None):
         if pub.evaluaciones:
             for n in pub.evaluaciones[-1].decision.no_ejecutadas:
                 print("  no ejecutada: {0} ({1})".format(n.invariante, n.motivo))
+    print("\n=== LANGFUSE ===")
+    print(estado_de_langfuse(observacion, observacion.vaciar()))
     return codigo_de_salida(r)
 
 

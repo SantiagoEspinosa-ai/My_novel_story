@@ -620,3 +620,39 @@ def test_cada_coincidencia_esta_en_el_audit_log_y_en_el_envio(con, tmp_path):
     assert auditadas and len(enviadas) == auditadas
     assert all(s["nivel"] == "novela" and "termino" not in s for s in enviadas)
     assert "hospital" not in repr(obs.exportador.enviados)
+
+
+# --- `PLAN-29` E11: el guion de la novela regalo informa de Langfuse -------------
+
+def _guion():
+    import importlib.util
+    import pathlib
+    ruta = pathlib.Path(__file__).resolve().parents[4] / "novela_regalo.py"
+    spec = importlib.util.spec_from_file_location("novela_regalo", ruta)
+    guion = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(guion)
+    return guion
+
+
+def test_el_estado_de_langfuse_se_informa_sin_claves(con):
+    from app.commons.observabilidad.exportador import ExportadorNulo
+    from app.commons.observabilidad.observacion import Observacion
+    obs = Observacion(ExportadorNulo("sin claves en backend/.env: faltan X"), con=con,
+                      obra="obra-x")
+    assert _guion().estado_de_langfuse(obs, vaciado=True) == \
+        "apagado: sin claves en backend/.env: faltan X"
+
+
+def test_el_estado_de_langfuse_dice_las_perdidas(con):
+    obs = _observacion(con, falla=True)
+    estado = _guion().estado_de_langfuse(obs, vaciado=False)
+    assert estado.startswith("enviado con perdidas") and "envio_perdido" in estado
+
+
+def test_los_hooks_del_registro_dan_un_score_cada_uno(con):
+    obs = _observacion(con)
+    _guion().scores_de_hooks(obs, [
+        {"hook": "validar_capitulo", "agente": "escritor", "codigo": 0},
+        {"hook": "policy", "agente": "editor", "codigo": 2}])
+    s = [(e["nombre"], e["categoria"]) for e in _enviados(obs, "score")]
+    assert s == [("hook.validar_capitulo", "pasa"), ("hook.policy", "falla")]

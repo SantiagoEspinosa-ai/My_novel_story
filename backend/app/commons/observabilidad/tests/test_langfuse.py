@@ -182,3 +182,8 @@ def test_backend_env_esta_en_gitignore():
     r = subprocess.run(["git", "check-ignore", "-q", str(BACKEND / ".env.example")],
                        cwd=BACKEND)
     assert r.returncode == 1, ".env.example se versiona"
+
+
+def test_ninguna_prueba_lee_el_env_real():
+    assert not credenciales.RUTA.exists()
+    assert credenciales.RUTA != BACKEND / ".env"

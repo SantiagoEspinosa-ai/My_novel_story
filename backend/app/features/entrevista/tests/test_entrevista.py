@@ -231,7 +231,7 @@ def _observar(con):
     from app.commons.observabilidad.observacion import Observacion
     exportador = ExportadorEnMemoria()
 
-    def fabrica(obra, nombre):
+    def fabrica(obra, nombre, con_=None):
         return Observacion(exportador, con=con, obra=obra, nombre=nombre)
     return fabrica, exportador
 
