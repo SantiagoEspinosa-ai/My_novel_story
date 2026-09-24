@@ -84,7 +84,8 @@ HERRAMIENTAS = {
 }
 
 
-def atender(con_lectura, con_traza, obra, agente, delegacion, nombre, argumentos) -> dict:
+def atender(con_lectura, con_traza, obra, agente, delegacion, nombre, argumentos,
+            version=None) -> dict:
     """Valida la entrada, lee, valida la salida, mide y registra (`SPEC-28` `RF-02`, `RF-08`).
 
     Devuelve la forma de un resultado de tool MCP: `{content, isError}`. Un error de
@@ -112,7 +113,7 @@ def atender(con_lectura, con_traza, obra, agente, delegacion, nombre, argumentos
     except ValidationError as e:
         return error("entrada_invalida", "entrada fuera de esquema: {0}".format(e))
     try:
-        salida = leer(con_lectura, obra, entrada)
+        salida = leer(con_lectura, obra, entrada, version=version)
     except NoExisteEnLaObra as e:
         return error("no_existe", str(e))
     except ValidationError:

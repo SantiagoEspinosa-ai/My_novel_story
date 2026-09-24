@@ -189,8 +189,12 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                  vetadas=None, tope_vetadas=None, genero=None, nombres=None,
                  imprescindibles=None, editor=False, anterior_cruza_capitulo=False,
                  observacion=None, tope_transporte=None, delegaciones_previas=0,
-                 acotar_mundo=False):
+                 acotar_mundo=False, version=None):
     """Genera las escenas en orden. Se detiene en la primera `bloqueante`.
+
+    `version` es la de la obra que se escribe (`PLAN-23` B-S1.1); sin ella, la vigente.
+    La cascada la dice siempre: desde `F-121` la vigente es la ultima publicada, y la
+    version que se escribe todavia no lo esta.
 
     Con `observacion` (`SPEC-29` `RF-04`), cada intento deja sus scores.
 
@@ -221,8 +225,8 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # aqui porque componer entre features es de `orquestacion/` (`A-02`), y se
     # le pasa a `escaleta/` como valor.
     from app.features.orquestacion import regeneracion
-    de_la_version = regeneracion.escenas_de_version(con, obra)
-    repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra),
+    de_la_version = regeneracion.escenas_de_version(con, obra, version)
+    repo.asignar_t_discurso(con, obra, _orden_de_capitulos(con, obra, version),
                             escenas=[e["id"] for e in de_la_version])
     g = Generacion(vetadas_comprobadas=bool(vetadas), genero=genero)
     if vetadas:
@@ -234,7 +238,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
     # Sin `capitulo`, las de la version vigente (`PLAN-23` A6), leidas despues de
     # numerarlas: el `t_discurso` recien asignado tiene que llegar a `reunir_material`.
     escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
-               else regeneracion.escenas_de_version(con, obra))
+               else regeneracion.escenas_de_version(con, obra, version))
     for escena in escenas:
         if hasta is not None and escena["orden"] > hasta:
             break
@@ -261,7 +265,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
 
         material = reunir_material(con, escena, obra, inmutable,
                                    anterior_cruza_capitulo=anterior_cruza_capitulo,
-                                   acotar_mundo=acotar_mundo)
+                                   acotar_mundo=acotar_mundo, version=version)
         bloques = ensamblado.montar(material)
         tamanos = ensamblado.tamanos(bloques)
 
@@ -299,10 +303,11 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
             # Se agotaron los intentos y lo que queda no corrompe el canon:
             # `RF-24`. La escena pasa a `aceptada_por_rendicion` y **no** a
             # `aceptada`, para que quien lea el manuscrito pueda distinguirlas.
-            version = rendicion.menos_malo([(v, h) for v, h, _ in intentos])
-            elegido = next(c2 for v, _, c2 in intentos if v == version)
-            repo.rendir_escena(con, escena["id"], version)
-            texto_rendido = ciclo.texto_de(con, escena["id"], version)
+            # `rendida` y no `version`: `version` es la de la obra (`PLAN-23` B-S1.1).
+            rendida = rendicion.menos_malo([(v, h) for v, h, _ in intentos])
+            elegido = next(c2 for v, _, c2 in intentos if v == rendida)
+            repo.rendir_escena(con, escena["id"], rendida)
+            texto_rendido = ciclo.texto_de(con, escena["id"], rendida)
             c = ciclo.consolidar_y_resumir(
                 elegido, con, escena["id"], texto_rendido, resumidor,
                 "obra-{0}-rendicion".format(escena["orden"]),
@@ -313,7 +318,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
                     _acta_de_la_escena(escena, obra, material["hechos"]),
                     texto_rendido, elegido),
                 hechos=material["hechos"])
-            g.rendidas.append((escena["id"], version, len(intentos)))
+            g.rendidas.append((escena["id"], rendida, len(intentos)))
             if c.fallo:
                 g.parada = {"escena": escena["id"], "motivo": c.fallo,
                             "intentos": len(intentos), "hallazgos": []}
@@ -338,7 +343,7 @@ def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
         _actualizar_fichas(con, escena, c, obra)
         g.escenas_hechas.append(escena["id"])
 
-    g.cierre = evaluar_cierre(con, obra, capitulo, vetadas=vetadas)
+    g.cierre = evaluar_cierre(con, obra, capitulo, vetadas=vetadas, version=version)
     return g
 
 
@@ -394,7 +399,7 @@ def inversiones_del_capitulo(temporal, capitulo_de_cada_evento, capitulo):
     return dict(temporal, inversiones=del_capitulo)
 
 
-def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
+def evaluar_cierre(con, obra, capitulo=None, vetadas=None, version=None):
     """Dice si el capitulo **podria** cerrarse. No lo cierra.
 
     La firma es humana y la dispara el cliente de la API, nunca el worker
@@ -411,7 +416,7 @@ def evaluar_cierre(con, obra, capitulo=None, vetadas=None):
     # mientras quede un capitulo por escribir.
     from app.features.orquestacion import regeneracion
     escenas = (repo.escenas_de_capitulo(con, capitulo) if capitulo
-               else regeneracion.escenas_de_version(con, obra))
+               else regeneracion.escenas_de_version(con, obra, version))
     estados = [EE(e["estado"]) for e in escenas]
     # `INV-21`, segunda linea: cada escena ya se comprobo antes de consolidarse,
     # pero un texto puede llegar por otro camino -una edicion a mano- y el
@@ -730,7 +735,7 @@ def _mismo_delta(a, b):
 def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
                         instrucciones=None, inmutable="", techo=100_000, vetadas=None,
                         nombres=None, imprescindibles=None, anterior_cruza_capitulo=False,
-                        observacion=None, acotar_mundo=False):
+                        observacion=None, acotar_mundo=False, version=None):
     """Reescribe **solo el texto** de una escena ya consolidada, y lo acepta solo si
     los hechos no cambian (`SPEC-30` v4 `RF-10`, `C-1`; `SPEC-23` `S-3`).
 
@@ -747,9 +752,10 @@ def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
     if escena.get("borrador_aceptado") is None:
         repo.aceptar_reescritura(con, escena_id, repo.intentos_de(con, escena_id))
         escena = repo.escena(con, escena_id)
+    # `version` (`PLAN-23` B-S1.1): la memoria y los hechos de la version que se publica.
     material = reunir_material(con, escena, obra, inmutable,
                                anterior_cruza_capitulo=anterior_cruza_capitulo,
-                               acotar_mundo=acotar_mundo)
+                               acotar_mundo=acotar_mundo, version=version)
     bloques = ensamblado.montar(material)
     tamanos = ensamblado.tamanos(bloques)
     try:

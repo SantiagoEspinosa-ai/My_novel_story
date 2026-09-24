@@ -80,3 +80,13 @@ def test_cada_llamada_deja_su_fila_con_la_delegacion(base):
     _lanzar([_llamar("hechos", {}, 1), _llamar("ficha", {"id": "nadie"}, 2)], **_entorno(base))
     con = sqlite3.connect(base)
     assert [l["validacion"] for l in obs.llamadas_de(con, "del-7")] == ["ok", "no_existe"]
+
+
+def test_harness_version_llega_como_numero_y_sin_ella_es_la_vigente():
+    """`PLAN-23` B-S1.1: el servidor lee la version que se escribe de `HARNESS_VERSION`."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("servidor_story_bible", SCRIPT)
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    assert modulo.version_del_entorno({"HARNESS_VERSION": "2"}) == 2
+    assert modulo.version_del_entorno({}) is None

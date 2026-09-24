@@ -128,8 +128,10 @@ def test_la_propuesta_lista_los_capitulos_antes_de_tocarlos_y_no_encola_nada(con
 
 
 def test_la_propuesta_lleva_la_promesa_y_su_punto_ciego_literales(con):
+    # La promesa de `D-3` empieza igual con cualquier salida; con `S-1` (B-S1.2) dice
+    # ademas hasta donde llega (`test_con_s1_la_promesa_dice_que_se_reescribe_hasta_el_final`).
     p = regeneracion.proponer(con, OBRA, _hecho())
-    assert p["promesa"] == PROMESA and p["punto_ciego"] == PUNTO_CIEGO
+    assert p["promesa"].startswith(PROMESA) and p["punto_ciego"] == PUNTO_CIEGO
 
 
 def test_con_una_salida_elegida_la_propuesta_da_su_lista(con, monkeypatch):

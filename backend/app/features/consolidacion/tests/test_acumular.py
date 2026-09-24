@@ -140,3 +140,27 @@ def test_el_resumen_de_acciones_del_guion_lee_el_delta_guardado():
     guion = (Path(__file__).resolve().parents[4] / "obra_diez_capitulos.py").read_text(
         encoding="utf-8")
     assert "SELECT delta FROM" not in guion and "deltas.contar_acciones(" in guion
+
+
+def test_rebobinar_una_obra_no_toca_el_mundo_de_otra_de_la_misma_base():
+    """`F-123`: `rebobinar` borraba **todo** el mundo vivo -las entidades, los lugares y el
+    conocimiento de las demas obras de la base- y los nombres de los lugares. Con `obra`,
+    solo lo de su prefijo, que es como acota `F-100`."""
+    con = _base()
+    aplicar.sembrar(con, {"obra-a-per-ana": ("vivo", "obra-a-lug-casa"),
+                          "obra-b-per-leo": ("vivo", "obra-b-lug-faro")})
+    mundo.sembrar_lugares(con, {"obra-a-lug-casa": [], "obra-b-lug-faro": []})
+    mundo.fijar_nombre_de_lugar(con, "obra-a-lug-casa", "Casa")
+    mundo.fijar_nombre_de_lugar(con, "obra-b-lug-faro", "Faro")
+    mundo.sembrar_conocimiento(con, [{"sujeto": "obra-b-per-leo", "hecho": "h-luz"}])
+    de_b = mundo.leer(con, obra="obra-b")
+    mundo.rebobinar(con, {"entidades_vivas": {"obra-a-per-ana": "muerto"},
+                          "ubicaciones": {"obra-a-per-ana": "obra-a-lug-casa"},
+                          "accesos": {"obra-a-lug-casa": []}, "conocimiento": {}},
+                    obra="obra-a")
+    assert mundo.leer(con, obra="obra-b") == de_b
+    assert mundo.leer(con, obra="obra-a")["entidades_vivas"] == {"obra-a-per-ana": "muerto"}
+    nombres = dict(con.execute("SELECT id, nombre FROM lugar WHERE id LIKE 'obra-%'"))
+    assert nombres == {"obra-a-lug-casa": "Casa", "obra-b-lug-faro": "Faro"}
+    # Y lo que no es de ninguna de las dos (la semilla del fixture, sin prefijo), tampoco.
+    assert mundo.leer(con)["entidades_vivas"]["per-ana"] == "vivo"
