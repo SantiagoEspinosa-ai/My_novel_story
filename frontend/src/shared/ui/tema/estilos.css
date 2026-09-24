@@ -144,3 +144,51 @@ h1, h2, h3 { font-family: var(--fuente-titulos); font-weight: 600; letter-spacin
 .progreso__barra { margin-top: var(--espacio-s); height: 8px; border-radius: var(--radio-pildora); background: var(--color-linea); overflow: hidden; }
 .progreso__relleno { height: 100%; background: var(--color-acento); transition: width 0.4s ease; }
 .portada .progreso { max-width: 640px; width: 100%; margin: var(--espacio-l) auto 0; text-align: left; }
+
+/* --- Pedir un cambio (SPEC-22 RF-47..RF-51, RF-55) ------------------------------------- */
+.con-peticion__barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espacio-s) var(--espacio-m); margin-top: var(--espacio-m); padding-top: var(--espacio-m); border-top: 1px dashed var(--color-linea); }
+.con-peticion__fragmento { font-family: var(--fuente-lectura); font-style: italic; color: var(--color-textoSuave); font-size: 0.9rem; max-width: 36em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+.pedir-cambio { margin-top: var(--espacio-l); border-left: 4px solid var(--color-acento); box-shadow: var(--sombra-media); }
+.pedir-cambio__cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-m); }
+.pedir-cambio h2 { margin: 0; font-size: 1.35rem; }
+.pedir-cambio h3 { font-size: 1.05rem; margin: var(--espacio-l) 0 var(--espacio-s); }
+.pedir-cambio h4 { font-family: var(--fuente-interfaz); font-size: 0.85rem; font-weight: 600; color: var(--color-textoSuave); margin: var(--espacio-m) 0 var(--espacio-xs); }
+.pedir-cambio__nota { font-size: 0.85rem; color: var(--color-textoSuave); }
+.pedir-cambio__fragmento { margin: var(--espacio-m) 0; padding: var(--espacio-m) var(--espacio-l); background: var(--color-fondo); border-radius: var(--radio-s); border-left: 3px solid var(--color-detalle); }
+.pedir-cambio__fragmento p { margin: var(--espacio-xs) 0 0; font-family: var(--fuente-lectura); font-style: italic; }
+.pedir-cambio__rotulo { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-textoSuave); }
+
+.pedir-cambio__pestanas { display: inline-flex; gap: var(--espacio-xs); padding: var(--espacio-xs); background: var(--color-fondo); border-radius: var(--radio-pildora); margin-bottom: var(--espacio-m); }
+.pestana { font: inherit; font-size: 0.9rem; font-weight: 600; border: 0; cursor: pointer; padding: var(--espacio-s) var(--espacio-l); border-radius: var(--radio-pildora); background: transparent; color: var(--color-textoSuave); }
+.pestana--activa { background: var(--color-superficie); color: var(--color-acento); box-shadow: var(--sombra-suave); }
+
+.pedir-cambio__opciones { border: 0; padding: 0; margin: 0 0 var(--espacio-m); display: flex; flex-direction: column; gap: var(--espacio-s); }
+.pedir-cambio__opciones legend { font-size: 0.85rem; font-weight: 600; color: var(--color-textoSuave); margin-bottom: var(--espacio-s); }
+.opcion { display: flex; gap: var(--espacio-s); align-items: flex-start; padding: var(--espacio-s) var(--espacio-m); border: 1px solid var(--color-linea); border-radius: var(--radio-s); cursor: pointer; background: var(--color-superficie); }
+.opcion:hover { border-color: var(--color-acento); }
+.opcion--elegida { border-color: var(--color-acento); background: var(--color-acentoSuave); }
+.opcion input { accent-color: var(--color-acento); margin-top: 4px; }
+
+.campo { display: flex; flex-direction: column; gap: var(--espacio-xs); margin: var(--espacio-s) 0 var(--espacio-m); font-size: 0.9rem; font-weight: 600; }
+.campo input, .campo textarea { font: inherit; font-weight: 400; padding: var(--espacio-s) var(--espacio-m); border: 1px solid var(--color-linea); border-radius: var(--radio-s); background: var(--color-superficie); color: var(--color-texto); }
+.campo input:focus, .campo textarea:focus { outline: 2px solid var(--color-acento); outline-offset: 1px; border-color: var(--color-acento); }
+.pedir-cambio__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espacio-m); margin-top: var(--espacio-m); }
+
+.propuesta { margin-top: var(--espacio-l); padding-top: var(--espacio-m); border-top: 1px solid var(--color-linea); }
+.pedir-cambio__capitulos { display: flex; flex-wrap: wrap; gap: var(--espacio-s); list-style: none; padding: 0; margin: 0; }
+.pedir-cambio__capitulos li { padding: 6px 14px; border-radius: var(--radio-pildora); background: var(--color-acentoSuave); color: var(--color-acento); font-weight: 600; font-size: 0.85rem; }
+.promesa { margin: var(--espacio-l) 0 0; padding: var(--espacio-m) var(--espacio-l); border-radius: var(--radio-s); background: var(--color-fondo); border: 1px solid var(--color-linea); }
+.promesa p { margin: 0 0 var(--espacio-xs); }
+.promesa [data-testid="punto-ciego"] { color: var(--color-textoSuave); }
+.seguimiento { margin-top: var(--espacio-m); }
+.seguimiento .progreso { margin-top: var(--espacio-m); }
+
+/* --- Versiones (SPEC-22 RF-52..RF-54) --------------------------------------------------- */
+.versiones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espacio-s); margin-bottom: var(--espacio-l); }
+.versiones__rotulo { font-size: 0.85rem; color: var(--color-textoSuave); margin-right: var(--espacio-s); }
+.version { padding: 6px 14px; border-radius: var(--radio-pildora); border: 1px solid var(--color-linea); background: var(--color-superficie); color: var(--color-texto); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+.version--actual { border-color: var(--color-acento); background: var(--color-acento); color: var(--color-sobreAcento); }
+.aviso-de-version { margin-bottom: var(--espacio-l); }
+.capitulo-del-indice--cambiado { border-left: 4px solid var(--color-acento); }

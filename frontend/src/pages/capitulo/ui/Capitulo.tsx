@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { EscenaConEstado } from "@/entities/escena";
+import { ConPeticion } from "@/features/pedir-cambio";
 import { useLectura, type CapituloLeido } from "@/shared/api";
 import { ESTADO_DE_CAPITULO, Esperando, EtiquetaDeEstado } from "@/shared/ui";
 
@@ -26,7 +27,7 @@ function VistaCapitulo({ obra, capitulo }: { obra: string; capitulo: CapituloLei
       {capitulo.escenas.map((e) => (
         <section key={e.id} data-testid="bloque-de-escena" data-escena={e.id}
           className="tarjeta bloque-de-escena">
-          <EscenaConEstado escena={e} />
+          <ConPeticion obra={obra} escena={e}><EscenaConEstado escena={e} /></ConPeticion>
         </section>
       ))}
     </main>

@@ -32,7 +32,10 @@ describe("fixtures", () => {
 
   it("toda fixture con capitulos tiene al menos dos en una obra", () => {
     const conCapitulos = Object.entries(FIXTURES).filter(
-      ([, f]) => typeof f.datos === "object" && f.datos !== null && "capitulos" in f.datos,
+      // Solo las listas de capitulos: la propuesta lleva `capitulos` como las listas de
+      // cada salida, que no son capitulos de una obra.
+      ([, f]) => typeof f.datos === "object" && f.datos !== null && "capitulos" in f.datos
+        && Array.isArray((f.datos as { capitulos: unknown }).capitulos),
     );
     expect(conCapitulos.length).toBeGreaterThan(0);
     for (const [nombre, { datos }] of conCapitulos) {

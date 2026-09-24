@@ -6,3 +6,6 @@ export const UMBRAL_SIN_ACTIVIDAD_SEGUNDOS = 5 * 60;
 
 /** Cada cuanto se vuelve a pedir el progreso de una generacion. */
 export const INTERVALO_DE_PROGRESO_MS = 5000;
+
+/** Cada cuanto se vuelve a pedir el estado de un trabajo encolado (SPEC-22 RF-48). */
+export const INTERVALO_DE_TRABAJO_MS = 3000;

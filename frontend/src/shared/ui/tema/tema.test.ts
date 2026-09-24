@@ -5,7 +5,8 @@ import { join, relative, sep } from "node:path";
 import contrato from "../../../../../contrato/openapi.json";
 import { contraste } from "./contraste";
 import {
-  COLORES, ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, FASE_DE_GENERACION, SEVERIDAD,
+  COLORES, ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, ESTADO_DE_TRABAJO, ESTADO_DE_VERIFICACION,
+  FASE_DE_GENERACION, MARCA_DE_CAMBIO, SEVERIDAD,
 } from "./tokens";
 
 const SRC = join(process.cwd(), "src");
@@ -41,6 +42,7 @@ describe("tema", () => {
     for (const [vocabulario, mapa] of [
       ["EstadoDeEscena", ESTADO_DE_ESCENA], ["EstadoDeHallazgo", ESTADO_DE_HALLAZGO],
       ["Severidad", SEVERIDAD], ["FaseDeGeneracion", FASE_DE_GENERACION],
+      ["EstadoDeTrabajo", ESTADO_DE_TRABAJO], ["EstadoDeVerificacion", ESTADO_DE_VERIFICACION],
     ] as const) {
       const literales = enumDe(vocabulario);
       expect(Object.keys(mapa).sort(), vocabulario).toEqual([...literales].sort());
@@ -54,6 +56,9 @@ describe("tema", () => {
     // Una rendida no se confunde con una aceptada ni por el color ni por el texto.
     expect(ESTADO_DE_ESCENA.aceptada_por_rendicion.fondo).not.toBe(ESTADO_DE_ESCENA.aceptada.fondo);
     expect(ESTADO_DE_ESCENA.aceptada_por_rendicion.etiqueta).not.toBe(ESTADO_DE_ESCENA.aceptada.etiqueta);
+    // Un verde heredado no se pinta como verificado (RF-54), ni por color ni por texto.
+    expect(ESTADO_DE_VERIFICACION.sin_reverificar.fondo).not.toBe(ESTADO_DE_VERIFICACION.verificada.fondo);
+    expect(ESTADO_DE_VERIFICACION.sin_reverificar.etiqueta).not.toMatch(/^verificada/);
   });
 
   it("los tokens tienen contraste suficiente entre texto y fondo", () => {
@@ -63,7 +68,8 @@ describe("tema", () => {
       ["texto suave sobre superficie", COLORES.textoSuave, COLORES.superficie],
       ["texto sobre acento", COLORES.sobreAcento, COLORES.acento],
       ["enlace sobre fondo", COLORES.enlace, COLORES.fondo],
-      ...[ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD, FASE_DE_GENERACION].flatMap((m) =>
+      ...[ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD, FASE_DE_GENERACION, ESTADO_DE_TRABAJO,
+        ESTADO_DE_VERIFICACION, MARCA_DE_CAMBIO].flatMap((m) =>
         Object.entries(m).map(([k, v]) => [k, v.texto, v.fondo] as [string, string, string])),
     ];
     for (const [nombre, texto, fondo] of pares) {
