@@ -150,6 +150,13 @@ _LISTA = [
     _r("INV-27", "El juicio de obra no encuentra un arco roto ni un final abrupto",
        "obra", "mayor", "juez_llm",
        "resumenes de capitulo, Borrador.texto del ultimo capitulo"),
+    # `SPEC-30` v4, numeradas en `PLAN-30`. Las dos, de la puerta de publicacion.
+    _r("INV-28", "La verificacion formal de la cronologia de la obra devuelve 0: ninguna "
+       "violacion de L-1..L-4, y con dato bastante para mirar (2 no es 0)",
+       "obra", "bloqueante", "regla",
+       "EventoCronologico, fechas de nacimiento, specs/lean/"),
+    _r("INV-29", "Ningun capitulo de una version publicada esta en aceptada_por_rendicion",
+       "obra", "bloqueante", "regla", "estado_de_escena de las escenas de cada capitulo"),
 ]
 
 TODAS = {i.id: i for i in _LISTA}

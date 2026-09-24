@@ -168,6 +168,7 @@ La novela se escribe **para alguien** (`SPEC-25`). Estas clases recogen quién e
 | AntiPatron | Fallo recurrente que se vigila explícitamente. | **id**, **sintoma**, senal\_detectable, correccion |
 | Rubrica | Criterios y escala que usa un juez LLM. | **dimension**, niveles\[\], ejemplos\_ancla\[\] |
 | ValoracionDelEditor | La nota del Editor a un criterio de un capítulo (`SPEC-26` `RF-09`). No reescribe: juzga y da una instrucción. | **criterio** → `criterio_de_edicion`, **nota** (1 a 5), **justificacion**, instruccion |
+| VeredictoDePublicacion | El resultado de una ronda de la puerta de publicación (`SPEC-30`): si la versión se publica y por qué no. Lo lee la exportación a PDF (`SPEC-27`) | **obra**, **ronda**, **publica**, condiciones\[\] (cada una: la condición de `RF-01` que falla, su invariante, su capítulo, el detalle y si es reintentable), codigo\_lean, no\_ejecutadas\[\] (hoy `INV-06`: `SPEC-30` `RF-12`) |
 
 **`Invariante` y `Hallazgo` guardan cosas distintas.** `invariante` dice **qué regla se violó** y `verificador` **quién lo detectó**: la misma `INV-03` puede marcarla un juez o una regla de continuidad, y saber cuál de los dos fue es lo que permite resolver el desempate. Por eso `Hallazgo` lleva los dos y ninguno sustituye al otro.
 
@@ -368,6 +369,8 @@ Cada invariante es un assert que el harness ejecuta contra el estado y el texto 
 | INV-25 | La prosa no se repite: el nombre del destinatario no supera su umbral por capítulo y ninguna frase larga se repite entre capítulos | obra | menor | regla | `Borrador.texto`, `FraseRecurrente` |
 | INV-26 | El Editor da a cada criterio de un capítulo al menos la nota umbral | escena | mayor | juez\_llm | `Borrador.texto`, `ValoracionDelEditor` |
 | INV-27 | El juicio de obra no encuentra un arco roto ni un final abrupto | obra | mayor | juez\_llm | resúmenes de capítulo, `Borrador.texto` del último capítulo |
+| INV-28 | La verificación formal de la cronología de la obra devuelve `0`: ninguna violación de `L-1`…`L-4`, y con dato bastante para mirar (`2` no es `0`) | obra | bloqueante | regla | `EventoCronologico`, fechas de nacimiento, `specs/lean/` |
+| INV-29 | Ningún capítulo de una versión publicada está en `aceptada_por_rendicion` | obra | bloqueante | regla | `estado_de_escena` de las escenas de cada capítulo |
 
 **La columna «Qué lee» existe para hacer verificable una regla del recorte.** `SPEC-12`
 fija que la forma reducida de un bloque de contexto **nunca puede llevarse lo que lee una

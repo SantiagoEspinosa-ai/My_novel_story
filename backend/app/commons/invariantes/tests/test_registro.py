@@ -29,7 +29,7 @@ def test_estan_las_dieciocho_y_sin_huecos():
     # la ubicuidad sin decidirlos todavia. Por eso `SPEC-25` tomo `INV-21` y no
     # reutilizo un numero apartado. Cualquier otro hueco sigue fallando aqui.
     reservadas = {19, 20}
-    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 28)
+    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 30)
                    if i not in reservadas]
 
 
@@ -116,3 +116,14 @@ def test_inv14_es_general():
     for genero in ("terror", "aventura", "romance"):
         assert registro.aplica("INV-14", genero)
         assert registro.aplica("INV-13", genero) and registro.aplica("INV-15", genero)
+
+
+def test_las_de_la_puerta_de_publicacion_son_de_obra_y_bloqueantes():
+    """`SPEC-30` v4, numeradas en `PLAN-30`: `INV-28` (Lean devuelve `0`) e `INV-29`
+    (ningun capitulo publicado esta rendido). Las dos son reglas: Lean es
+    determinista, aunque sea un demostrador y no una consulta."""
+    for i in ("INV-28", "INV-29"):
+        inv = registro.TODAS[i]
+        assert inv.nivel is enums.NivelDeEvaluacion.OBRA
+        assert inv.severidad is enums.Severidad.BLOQUEANTE
+        assert inv.tipo is enums.TipoDeVerificador.REGLA
