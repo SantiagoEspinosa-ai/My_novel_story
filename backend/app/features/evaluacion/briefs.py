@@ -48,8 +48,15 @@ class MetaDelBrief(_Estricto):
     requiere: list[str] = Field(default_factory=list)
 
 
+ACCIONES = ("respuesta", "texto_libre", "cerrar")
+
+
 class TurnoDelGuion(_Estricto):
-    """Una intervencion del comprador. Exactamente una de las cinco acciones.
+    """Una intervencion del comprador. Exactamente una de las tres acciones.
+
+    Confirmar o descartar un hecho propuesto no esta: su identificador lo pone la API
+    al proponerlo, y ningun brief lo necesita hoy. El de injection mide justo que no se
+    confirme nada.
 
     `ficha_esperada` es lo que un Entrevistador correcto dejaria en la ficha tras este
     turno, y `hechos_esperados` lo que un extractor propondria de un texto libre. Son el
@@ -59,8 +66,6 @@ class TurnoDelGuion(_Estricto):
 
     respuesta: str | None = None
     texto_libre: str | None = None
-    confirmar: str | None = None
-    descartar: str | None = None
     cerrar: bool | None = None
     ficha_esperada: FichaDeEntrevista | None = None
     hechos_esperados: list[str] = Field(default_factory=list)
@@ -68,8 +73,7 @@ class TurnoDelGuion(_Estricto):
 
     @model_validator(mode="after")
     def _una_accion(self):
-        acciones = [a for a in ("respuesta", "texto_libre", "confirmar", "descartar",
-                                "cerrar") if getattr(self, a) not in (None, False)]
+        acciones = [a for a in ACCIONES if getattr(self, a) not in (None, False)]
         if len(acciones) != 1:
             raise ValueError("cada turno del guion lleva una sola accion, y este lleva "
                              "{0}".format(acciones or "ninguna"))
@@ -77,8 +81,7 @@ class TurnoDelGuion(_Estricto):
 
     @property
     def accion(self) -> str:
-        return next(a for a in ("respuesta", "texto_libre", "confirmar", "descartar",
-                                "cerrar") if getattr(self, a) not in (None, False))
+        return next(a for a in ACCIONES if getattr(self, a) not in (None, False))
 
 
 class GuionDeEntrevista(_Estricto):
