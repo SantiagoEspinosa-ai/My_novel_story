@@ -2,9 +2,9 @@
 id: PLAN-33
 spec: SPEC-33
 titulo: Implementación de la novela regalo en la web — entrevista, generación en vivo, coste, lanzamiento y estantería
-estado: en_revision
-aprobada_por: ""
-fecha_aprobacion: ""
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión («Aprobado PLAN-33. Empieza y realiza todo»)"
+fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
 ---
