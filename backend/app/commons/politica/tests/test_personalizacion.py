@@ -79,3 +79,19 @@ def test_una_frase_larga_repetida_entre_capitulos_se_encuentra():
 def test_una_frase_corta_comun_no_cuenta_como_repeticion():
     textos = {"cap-1": "Y entonces se fue.", "cap-2": "Y entonces se fue."}
     assert p.frases_repetidas(textos, longitud=8) == []
+
+
+def test_una_palabra_comun_de_la_lista_no_es_errata_aunque_solo_abra_frases():
+    """`F-71` (a): «Nadie» solo a principio de frase, sin «nadie» en minuscula en el
+    texto, era el caso que la regla de la minuscula no cubria (tercer borrador real)."""
+    # «Nadia» y no «Nala»: «Nadie» esta a distancia 3 de «Nala» y la prueba pasaria sin
+    # ejercer nada (Regla 11). A «Nadia» esta a distancia 1, como en el borrador real.
+    assert p.nombres_mal_escritos("Nadie vino. Llego Nadia.", ["Nadia"]) == []
+    [m] = p.nombres_mal_escritos("Nadie vino. Llego Nadja.", ["Nadia"])
+    assert m.escrito == "Nadja", "una errata real junto a la palabra comun sigue saliendo"
+
+
+def test_la_lista_de_palabras_comunes_es_cerrada_y_esta_escrita():
+    """El punto ciego de (a) es la propia lista: se lee, no se deduce."""
+    assert "Nadie" in p.PALABRAS_COMUNES and "Nada" in p.PALABRAS_COMUNES
+    assert all(w[0].isupper() for w in p.PALABRAS_COMUNES)

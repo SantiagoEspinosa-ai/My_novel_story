@@ -25,6 +25,20 @@ from app.commons.politica.vetadas import coincidencias
 
 PALABRA = re.compile(r"\w+", re.UNICODE)
 
+# `F-71` (a), decision del autor: palabras comunes que **nunca** son la errata de un nombre,
+# aunque abran frase y el texto no las use en minuscula («Nadie» junto a «Nadia»). Es una
+# lista cerrada y a la vista, y **su punto ciego es ella misma**: una errata real que
+# coincida con una de estas palabras pasa. Se amplia a mano, no se deduce.
+PALABRAS_COMUNES = frozenset("""
+Nada Nadie Nunca Ninguno Ninguna Ningún Ni No Nos Nosotros Nosotras Nuestro Nuestra
+Nuestros Nuestras Un Una Uno Unos Unas El La Las Los Lo Le Les Él Ella Ellas Ellos Eso Esa
+Ese Esos Esas Esto Esta Este Estos Estas Era Eran Fue Fueron Es Son Hay Había Hace Y O Pero
+Porque Pues Que Qué Quien Quién Cuando Cuándo Como Cómo Donde Dónde Luego Después Antes
+Ahora Ahí Allí Aquí Así Ya Yo Tú Te Me Mi Mis Su Sus Se Si Sí Sin Con Para Por Tal Tan
+Todo Toda Todos Todas Otro Otra Otros Otras Algo Alguien Mucho Mucha Poco Poca Casi Siempre
+Tampoco También Entonces Mientras Hasta Desde Sobre Tras Bien Mal Más Menos Muy
+""".split())
+
 
 @dataclass(frozen=True)
 class NombreMalEscrito:
@@ -72,7 +86,7 @@ def nombres_mal_escritos(texto: str, nombres) -> list:
         palabra = m.group()
         if not palabra[0].isupper() or palabra in exactas:
             continue
-        if palabra.lower() in en_minuscula:
+        if palabra.lower() in en_minuscula or palabra in PALABRAS_COMUNES:
             continue
         candidatas = [(_distancia(palabra.casefold(), c.casefold()), c) for c in conocidas]
         candidatas = [(d, c) for d, c in candidatas if 0 < d <= _tolerancia(c)
