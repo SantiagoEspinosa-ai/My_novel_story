@@ -43,7 +43,9 @@ def _ruta(request: Request):
 
 
 def conexion(request: Request):
-    con = sqlite3.connect(_ruta(request))
+    # F-133: FastAPI la crea, la usa y la cierra en hilos distintos del pool. Se usa en
+    # serie, nunca a la vez: no comprobar el hilo es seguro.
+    con = sqlite3.connect(_ruta(request), check_same_thread=False)
     repo.asegurar_tablas(con)
     try:
         yield con

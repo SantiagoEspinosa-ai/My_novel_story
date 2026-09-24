@@ -6,13 +6,33 @@ aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
-version: 4
+version: 5
 ---
 
 > **v4 (2026-09-24), la medida (`PLAN-23` B1):** arrastre medio **2,33 capítulos** (7/3) sobre la novela
 > de ejemplo `brief-base-antes-1`, generada con `f986cf5` (`harness/evals/arrastre-SPEC-23.json`), **con sesgo a la
 > baja, hacia `S-1`**, y con solo 3 hechos con usos, los tres imprescindibles. Con la regla de v2 (≤ 3), la
 > salida es **`S-1`, cascada**. La regla ya estaba escrita antes de ver el número: el número decide.
+>
+> **v5 (2026-09-24), la rama construida (`PLAN-23` B2, B-S1.1, B-S1.2, B3): corrección documental,
+> sin decisión nueva** —conserva su estado y su aprobación—. Las cuatro cosas que «Qué decide esta
+> spec» pedía dejar escritas, con la salida ya elegida:
+> 1. **Salida**: `S-1` combinada con `S-4` (`D-2`): una versión nueva que comparte por referencia
+>    los capítulos anteriores al primero que toca la petición y reescribe desde ahí hasta el final.
+> 2. **Qué se promete**: *«reescribimos lo que dependía de esto: el capítulo k y todos los
+>    siguientes»*, donde **k es el primer capítulo que usa el hecho** (`establece` o `depende`, la
+>    constante de `SPEC-21` C-2) o, en un renombrado, el primero cuyo texto aceptado contiene el
+>    nombre viejo o donde el personaje está presente. Se dice antes de aceptar.
+> 3. **Punto ciego**: *«si la prosa contradice sin que el delta lo declare, no se toca»* (`D-3`),
+>    que con `S-1` alcanza solo a los capítulos compartidos `1..k-1`; y la cronología y Lean leen
+>    por obra (`F-93`).
+> 4. **Las escenas posteriores** se reescriben todas en la versión nueva, que queda reverificada
+>    entera; un capítulo `cerrado` no se reabre (`RF-30`): se escribe otro.
+>
+> Dos defectos del diseño de `PLAN-23`, encontrados por TLC y cerrados con la rama: la vigente es la
+> **última publicada** (`F-121`, `CE-14`) y las rondas de la puerta son **por versión** (`F-122`,
+> `CE-15`). **Sigue `aprobada` y no `aplicada`**: pasa a `aplicada` con B4, el primer cambio real
+> sobre la novela de ejemplo, que gasta dinero y no está hecho.
 >
 > **Historial.** v1: en revisión, con `D-1`, `D-2` y `D-3` respondidas y la salida pendiente
 > del arrastre medido. v2 (2026-09-24): el autor fija el umbral en **3 capítulos** y aprueba la spec

@@ -4,14 +4,21 @@ tablas y no importa ninguna feature."""
 import json
 import sqlite3
 
+from app.commons.obra import vigente as obra_vigente
+
 
 def ultimo_veredicto(con, obra):
-    """El ultimo veredicto de la puerta de publicacion (`SPEC-30`), o `None` si la puerta
-    no ha corrido nunca sobre la obra."""
+    """El ultimo veredicto de la puerta de publicacion (`SPEC-30`) **de la version que se
+    exporta**, que es la vigente (`PLAN-23` `F-121`), o `None` si la puerta no ha corrido
+    nunca sobre ella. Las rondas son por version (`F-122`): mezclarlas compararia la ronda
+    1 de una con la 3 de otra."""
+    numero = obra_vigente.version_vigente(con, obra)
+    filtro, args = ("AND version = ?", (obra, numero)) if numero is not None else ("", (obra,))
     try:
         f = con.execute("SELECT ronda, publica, condiciones, codigo_lean "
-                        "FROM veredicto_de_publicacion WHERE obra = ? "
-                        "ORDER BY ronda DESC LIMIT 1", (obra,)).fetchone()
+                        "FROM veredicto_de_publicacion WHERE obra = ? {0} "
+                        "ORDER BY version DESC, ronda DESC LIMIT 1".format(filtro),
+                        args).fetchone()
     except sqlite3.OperationalError:
         return None
     if f is None:

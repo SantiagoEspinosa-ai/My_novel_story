@@ -42,7 +42,7 @@ class CosteDeLaGeneracion(_DelDominio):
 
 
 class Gastado(_DelDominio):
-    """Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 17
+    """Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 18
     no tiene coste guardado, y `por_que_es_suelo` lo dice (decision del autor, `SPEC-33`)."""
 
     usd: float | None

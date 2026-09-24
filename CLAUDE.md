@@ -127,6 +127,12 @@ Una ejecución parada se **reanuda** desde el último capítulo completado, en s
 cd backend && python -X utf8 evaluar.py ../harness/evals/brief-base.json --pasada antes --confirmo-el-gasto --reanudar brief-base-antes-1
 ```
 
+Un cambio del lector sobre una novela ya escrita (`SPEC-23`, `PLAN-23` B-S1.1), sin la web. Sin `--confirmo-el-gasto` solo imprime la propuesta —los capítulos que se tocarían, la promesa y su punto ciego— y sale con 2; **con él gasta dinero** (la cascada reescribe desde el capítulo `k` hasta el final) y necesita los modelos del Escritor, el Editor y el Resumidor, y `lake` para la puerta. La ficha sale de la base o de `--ficha` (se borra al entregar: `F-91`):
+
+```
+cd backend && python -X utf8 pedir_cambio.py --base BASE --obra OBRA --personaje ID --nombre NOMBRE --texto "el perro se llama Nala"
+```
+
 **La puerta de publicación ejecuta Lean** (`SPEC-30`): necesita `lake` (Lean 4.34.0). Se busca en `HARNESS_LAKE`, `ELAN_HOME`, el `PATH` y `~/.elan/bin`; sin él, la versión no se publica y el informe lo dice.
 
 **Los guiones de ejecución real gastan dinero** y por eso no están aquí como comando suelto: `backend/f6_seis_escenas.py` delega en sesiones de verdad. Necesitan `HARNESS_MODELO_ESCRITOR`, `HARNESS_MODELO_JUEZ` y `HARNESS_MODELO_RESUMIDOR`, y se lanzan con `python -X utf8` porque la consola de Windows no es UTF-8 por defecto.

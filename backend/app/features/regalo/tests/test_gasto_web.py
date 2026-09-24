@@ -2,7 +2,7 @@
 
 Tres cifras, cada una con su procedencia: lo gastado en la base frente al techo, la ultima
 generacion medida y la referencia de la novela de ejemplo. Lo gastado es siempre un
-**suelo**: lo anterior a la migracion 17 no tiene coste guardado, y sumar como si lo
+**suelo**: lo anterior a la migracion 18 no tiene coste guardado, y sumar como si lo
 tuviera seria el sesgo hacia lo barato (decision del autor).
 """
 
@@ -22,7 +22,7 @@ def test_lo_gastado_es_suelo_y_lo_dice(cliente, con):
     gasto.anotador(con, OTRA)("entrevistador", 0.5)
     g = _leer(cliente)["gastado"]
     assert (g["usd"], g["delegaciones"], g["es_suelo"]) == (2.5, 2, True)
-    assert "migracion 17" in g["por_que_es_suelo"]
+    assert "migracion 18" in g["por_que_es_suelo"]
 
 
 def test_sin_generaciones_la_ultima_viene_ausente_y_no_a_cero(cliente):

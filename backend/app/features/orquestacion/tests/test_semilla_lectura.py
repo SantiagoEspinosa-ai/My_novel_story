@@ -70,3 +70,38 @@ def test_la_semilla_no_escribe_sql_a_mano():
     import re
     fuente = pathlib.Path(semilla_lectura.__file__).read_text(encoding="utf-8")
     assert not re.search(r"(UPDATE\s+\w+\s+SET|INSERT\s+INTO|DELETE\s+FROM)", fuente, re.I)
+
+
+# --- `PLAN-22` E18: una segunda version, sembrada sin modelo ---------------------------
+
+def test_la_semilla_deja_dos_versiones_y_la_segunda_sustituye_el_capitulo_1(api_sobre_la_semilla):
+    """La 2 sale de una peticion de hecho inventada, con el repositorio de `PLAN-23`: el
+    capitulo 1 es nuevo y los demas se comparten, asi que la vigente sigue teniendo una
+    escena de cada estado (la prueba de arriba). Es lo que la inspeccion de E18
+    recorre: la seleccion, los capitulos, las marcas y la version anterior."""
+    cliente, _ = api_sobre_la_semilla
+    obra = semilla_lectura.OBRA
+    versiones = cliente.get("/obras/{0}/versiones".format(obra)).json()["versiones"]
+    assert [(v["numero"], v["anterior"]) for v in versiones] == [(1, None), (2, 1)]
+    assert versiones[1]["peticion"] is not None
+    v2 = cliente.get("/obras/{0}/versiones/2/indice".format(obra)).json()
+    assert [c["compartido"] for c in v2["capitulos"]] == [False, True, True, True]
+    assert [c["id"] for c in v2["capitulos"]] == ["cap-01-v2", "cap-02", "cap-03", "cap-04"]
+    # La 1 se sigue leyendo entera, con su texto de antes.
+    v1 = cliente.get("/obras/{0}/versiones/1/indice".format(obra)).json()
+    assert [c["id"] for c in v1["capitulos"]] == ["cap-01", "cap-02", "cap-03", "cap-04"]
+    viejo = cliente.get("/obras/{0}/versiones/1/capitulos/cap-01".format(obra)).json()
+    assert viejo["escenas"][0]["borrador"]["texto"] == semilla_lectura.TEXTOS["cap-01-e1"]
+    # La escena nueva ofrece el hecho, y proponer cambiarlo contesta sin modelo.
+    hechos = cliente.get("/escenas/cap-01-v2-e1/hechos").json()["hechos_que_usa"]
+    assert [h["id"] for h in hechos] == ["hec-faro"]
+    r = cliente.post("/obras/{0}/cambios/propuesta".format(obra), json={
+        "clase": "hecho", "hecho": "hec-faro", "enunciado_nuevo": "Otro (inventado).",
+        "texto": "Palabras inventadas."})
+    assert r.status_code == 200, r.text
+    assert r.json()["capitulos"]["selectiva"] == ["cap-01-v2"]
+    # La 2 no se ha reverificado y la 1 si: las dos caras de `RF-54` en la web.
+    assert {e["estado_de_verificacion"] for c in v2["capitulos"] for e in c["escenas"]}         == {"sin_reverificar"}
+    # En la 1, el capitulo 1 -el unico con delta- se reverifico: su estado es el de las
+    # puertas, no el heredado.
+    assert v1["capitulos"][0]["escenas"][0]["estado_de_verificacion"] != "sin_reverificar"

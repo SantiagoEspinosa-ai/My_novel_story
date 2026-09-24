@@ -127,7 +127,11 @@ def planificar(con, obra, ficha, planificador, revisor,
                            else config.TOPE_REINTENTOS_TRANSPORTE)
     ficha_json = ficha.model_dump_json(indent=2)
     anteriores = []
-    rondas = fallos_de_formato = version = 0
+    rondas = fallos_de_formato = 0
+    # `F-111`, TLC `CE-8`: al relanzar se sigue numerando desde la ultima version de la obra;
+    # empezar en 0 pisaba, con `INSERT OR REPLACE`, las rondas de la ejecucion anterior.
+    version = con.execute("SELECT COALESCE(MAX(version), 0) FROM plan_de_obra WHERE obra = ?",
+                          (obra,)).fetchone()[0]
     while rondas < tope:
         version += 1
         bruto = planificador.llamar(PROMPT_PLANIFICADOR.format(

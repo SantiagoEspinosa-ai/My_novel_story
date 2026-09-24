@@ -139,3 +139,38 @@ Sobre la misma web y la misma semilla, después de los arreglos de E13:
   cómodo: este verde es compatible con un validador que no mira.
 - ❌ **No vuelve al Escritor.** Si hubiera fallado, el hallazgo habría quedado abierto para
   una persona; que el fallo vuelva solo al rol que toca está fuera de `RF-58` y sin hacer.
+
+### La inspección de la petición de cambio (`PLAN-22` E18, 2026-09-24)
+
+**Sobre qué.** La misma semilla inventada, que desde E18 tiene **dos versiones**: la 2 sale de
+una petición de hecho inventada sobre `hec-faro` y sustituye el capítulo 1; los otros tres se
+comparten. Sembrada con el repositorio de `PLAN-23` y **sin modelo** (`semilla_lectura.py`); la
+1 se reverifica y la 2 no. `uvicorn` en el puerto 8791 sobre una base del scratchpad y Vite en
+el 5291: con varias sesiones a la vez, el 8765 ya lo usaba otra y sus peticiones llegaban al
+backend equivocado.
+
+**Cómo.** `claude -p --model sonnet --mcp-config .mcp.json --strict-mcp-config --tools ""
+--allowedTools mcp__playwright --output-format json --max-budget-usd 2`, con un prompt que pedía
+recorrer el índice de la vigente, seleccionar un fragmento, abrir la petición, elegir el hecho,
+ver los capítulos, confirmar si se podía, navegar la versión 1 entera y pedir la consola.
+**Coste leído del sobre: 1,07275 USD** (`total_cost_usd`), 58 turnos, 188,5 s.
+
+**Qué vio el agente.** Los cinco pasos «pasa»: selector de versiones, capítulo 1 «cambió» y los
+demás «igual», el verde heredado en ámbar y no en verde, el fragmento citado en el panel, el
+hecho ofrecido, «no declara quién está presente» en la pestaña de nombre, las dos listas de
+capítulos con la promesa y su punto ciego juntos, **ningún botón de confirmar** con el motivo
+*«salida sin elegir: falta la medida»*, y la versión 1 leída entera sin ofrecer cambios. La
+confirmación no se pudo ejercer: el backend no tiene salida elegida hasta la Parte B de
+`PLAN-23`, y la interfaz no ofrece confirmar sin ella.
+
+**Qué detectó, y qué cambió.**
+
+| Hallazgo | Qué se veía | A quién | Cambio |
+| --- | --- | --- | --- |
+| `F-133` | `500` intermitentes en `/versiones`, `/versiones/1/capitulos/…`, `/indice` y `/fichas` (12 en el registro del backend), y la pantalla de error en vez del capítulo. Causa: `sqlite3.ProgrammingError`, la conexión creada en un hilo del pool y usada en otro | Backend | `check_same_thread=False` en las cuatro dependencias `conexion`. Prueba roja: `test_la_conexion_de_una_peticion_se_puede_usar_desde_otro_hilo`. Tras el arreglo, 90 peticiones concurrentes con `curl`, 90 `200` y ningún `500` en el registro |
+| `F-134` | `404` en `/progreso` en cada página, en la consola | — | **Sin cambio**: es el contrato de E13c (sin generación, `404` y no una fase inventada). Queda registrado |
+| `F-135` | La pantalla de error sale sin el margen de la página, pegada a los bordes | Frontend | **Sin cambio en E18**: se vio en la captura, no lo señaló el agente |
+
+**Lo que no prueba.** Una sola pasada, con un agente que ya dio por buena una web con defectos
+(`F-84`); esta vez sí vio los `500`, que estaban en la consola. La confirmación y el seguimiento
+de un trabajo real siguen sin ejercer fuera de las pruebas con dobles (`VER-111`).

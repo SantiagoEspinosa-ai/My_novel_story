@@ -35,6 +35,7 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from app.commons.obra import texto as texto_elegido
+from app.commons.obra import vigente as obra_vigente
 
 MARCA_DE_HUECO = "[[ FALTA EL TEXTO DE {0} ]]"
 
@@ -115,19 +116,17 @@ def _de_la_version_vigente(con, obra):
 
     Lee las tablas de versiones por SQL, como ya leia `capitulo`: es el acoplamiento
     que esta feature ya tenia (`F-28`), dicho aqui en vez de callado."""
-    try:
-        fila = con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
-                           (obra,)).fetchone()
-    except sqlite3.OperationalError:
-        return None
-    if fila is None or fila[0] is None:
+    # `F-121` (TLC `CE-14`): la ultima **publicada**, no la ultima creada. La regla vive en
+    # `commons/obra/vigente.py`, y la usa tambien `brief/`.
+    numero = obra_vigente.version_vigente(con, obra)
+    if numero is None:
         return None
     return con.execute(
         "SELECT e.id, e.capitulo, e.orden, e.borrador_aceptado, v.orden AS orden_cap "
         "FROM capitulo_de_version v JOIN escena e "
         "  ON e.capitulo = v.capitulo AND e.obra = v.obra "
         "WHERE v.obra = ? AND v.numero = ? ORDER BY v.orden, e.orden, e.id",
-        (obra, fila[0])).fetchall()
+        (obra, numero)).fetchall()
 
 
 def manuscrito(con, obra, con_titulos=True) -> Manuscrito:

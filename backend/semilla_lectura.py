@@ -17,6 +17,18 @@ de un destinatario de verdad (`PLAN-22` hallazgo 16).
 
 Si la base ya tiene esta obra, **no escribe nada** y lo dice: volver a sembrar no puede
 duplicar borradores ni hallazgos.
+
+DOS VERSIONES (`PLAN-22` E18)
+-----------------------------
+Ademas deja una **version 2**, sembrada con el repositorio de `PLAN-23` y sin modelo: una
+peticion de hecho inventada sobre `hec-faro` (que establece el capitulo 1), la version con
+ese capitulo nuevo y el 2, el 3 y el 4 compartidos -asi la vigente sigue teniendo una escena
+de cada estado-, y el texto nuevo inventado.
+**No es una regeneracion**: la Parte B de `PLAN-23`, que escribe con el modelo, no existe
+en esta rama. La version 1 se reverifica y la 2 no, para que la web enseñe las dos caras
+de `RF-54`: el capitulo 1 viejo sale verificado (o fallido, lo que digan las puertas) y en la
+2 todo sale sin reverificar. Solo se reverifica lo que tiene delta guardado: los dos
+capitulos 1 se consolidan con un delta vacio, por `aplicar.consolidar`.
 """
 
 import sys
@@ -24,9 +36,16 @@ import sys
 from app.commons.configuracion.esquemas import PlanDeLaObra
 from app.commons.dominio.destinatario import FichaDeEntrevista
 from app.commons.dominio.enumeraciones import EstadoDeHallazgo as EH
-from app.commons.dominio.enumeraciones import Severidad
+from app.commons.dominio.enumeraciones import OrigenDeUso, Severidad, TipoDeUsoDeHecho
+from app.features.auditoria import repository as publicacion_repo
+from app.features.auditoria.publicacion import Decision, NoEjecutada
+from app.features.brief import repository as brief
+from app.features.consolidacion import aplicar
+from app.features.cronologia import repository as cronologia
 from app.features.escaleta import repository as escaleta
-from app.features.orquestacion import novela
+from app.features.orquestacion import novela, regeneracion
+from app.features.planificacion import repository as planes
+from app.features.revision import repository as peticiones
 from app.features.planificacion.service import PlanAprobado
 from app.main import preparar_base
 
@@ -92,6 +111,7 @@ def sembrar(ruta):
         # cap-01: generada -> aceptada -> consolidada.
         v = escaleta.guardar_borrador(con, "cap-01-e1", TEXTOS["cap-01-e1"], "semilla", "s1")
         escaleta.aceptar_borrador(con, "cap-01-e1", version=v, rindiendose=False)
+        aplicar.consolidar(con, "cap-01-e1", {}, version=v)  # su delta, vacio (E18)
         escaleta.marcar_consolidada(con, "cap-01-e1")
         # cap-02: dos intentos, un mayor abierto y rendida en el primero.
         v1 = escaleta.guardar_borrador(con, "cap-02-e1", TEXTOS["cap-02-e1"][0], "semilla", "s2")
@@ -107,9 +127,58 @@ def sembrar(ruta):
         escaleta.guardar_hallazgo(con, "INV-15", "regla", "cap-03-e1", Severidad.MENOR,
                                   EH.ABIERTO, "La voz se aleja de las anclas (inventado).")
         # cap-04: planificada, sin ningun borrador.
+        _segunda_version(con)
         return True
     finally:
         con.close()
+
+
+PETICION = {"clase": "hecho", "hecho": "hec-faro",
+            "enunciado_nuevo": "El faro es de piedra (inventado).",
+            "texto": "Quiero que el faro sea de piedra (peticion inventada)."}
+
+TEXTOS_V2 = {
+    "cap-01-v2-e1": ("Texto inventado de la version 2. La persona inventada llega a un faro\n"
+                     "de piedra y lo dibuja en una servilleta."),
+}
+
+_USOS = (("cap-01-e1", "cap-01", TipoDeUsoDeHecho.ESTABLECE),)
+
+
+def _usar(con, usos):
+    cronologia.registrar_usos(con, [
+        {"hecho": "hec-faro", "escena": e, "capitulo": c, "tipo": t, "origen": OrigenDeUso.REGLA}
+        for e, c, t in usos])
+
+
+def _segunda_version(con):
+    """La version 2, por las funciones de `PLAN-23` y sin modelo (ver el docstring).
+
+    Guarda antes el plan inventado como aprobado: sin plan aprobado no hay semilla del
+    mundo, y ni la reverificacion ni un renombrado tienen de donde partir. El origen dice
+    que lo aprobo la semilla, no el Revisor."""
+    planes.asegurar_tablas(con)
+    planes.guardar(con, OBRA, 1, PlanDeLaObra.model_validate(PLAN), True, "semilla", [])
+    _usar(con, _USOS)
+    id_p = peticiones.guardar(con, OBRA, dict(
+        PETICION, version_de_partida=1, salida="selectiva",
+        capitulos_propuestos=["cap-01"]))
+    brief.crear_version(con, OBRA, ["cap-01-v2", "cap-02", "cap-03", "cap-04"],
+                        anterior=1, peticion=id_p)
+    escaleta.guardar_escaleta(con, OBRA, [regeneracion.escena_para_regenerar(con, OBRA, 2, 1)])
+    for escena, texto in TEXTOS_V2.items():
+        v = escaleta.guardar_borrador(con, escena, texto, "semilla", "v2")
+        escaleta.aceptar_borrador(con, escena, version=v, rindiendose=False)
+        aplicar.consolidar(con, escena, {}, version=v)
+        escaleta.marcar_consolidada(con, escena)
+    _usar(con, [(e.replace("-e1", "-v2-e1"), c + "-v2", t) for e, c, t in _USOS])
+    regeneracion.reverificar(con, OBRA, 1)
+    # `F-121`: la vigente es la ultima **publicada**. Sin esta fila la web leeria la 1 y la
+    # inspeccion de E18 no tendria «version anterior» que recorrer. El veredicto dice que
+    # la puerta no se ejecuto: es una semilla, y un verde sin Lean no se disfraza de otro.
+    publicacion_repo.guardar(con, OBRA, Decision(True, [], [NoEjecutada(
+        "INV-28", "semilla de datos inventados: la puerta de SPEC-30 no se ejecuto")]),
+        None, version=2)
 
 
 if __name__ == "__main__":

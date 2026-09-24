@@ -331,6 +331,17 @@ TODAS = [
     ),
     Migracion(
         16,
+        "cada veredicto de la puerta es de una version, y las rondas se cuentan por version",
+        # `PLAN-23` B-S1.1, `F-122` (TLC `CE-15`): con la clave `(obra, ronda)` la version
+        # 2 heredaba las rondas que la 1 gasto para publicarse, y se detenia por tope sin
+        # haber gastado las suyas. Se recrea la tabla con clave `(obra, version, ronda)`.
+        # Las filas de antes son **de la version 1**, y no es un supuesto: hasta esta
+        # migracion `regeneracion.RAMAS` estaba vacio, asi que ninguna version 2 pudo
+        # escribirse ni pasar por la puerta.
+        lambda con: _migrar_veredictos_a_version(con),
+    ),
+    Migracion(
+        17,
         "cada turno de la entrevista guarda lo que el codigo dijo en el",
         # `SPEC-33` `RF-10`, `PLAN-33` E1: `TurnoDeEntrevista`. La web reconstruye la
         # conversacion con esto al recargar. Las filas de antes se quedan a `NULL`:
@@ -340,7 +351,7 @@ TODAS = [
             "contradicciones_abiertas": "TEXT", "cuando": "TEXT"}),
     ),
     Migracion(
-        17,
+        18,
         "cada delegacion deja su coste en la base",
         # `SPEC-33` `RF-18`, `PLAN-33` E4: `GastoDeDelegacion`. Hasta aqui el coste solo
         # llegaba a Langfuse y a `Contador`, en memoria (`F-144`). Tabla nueva, sin filas
@@ -434,6 +445,40 @@ CREATE TABLE IF NOT EXISTS peticion_de_cambio (
     creada_en            TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 """
+
+
+# `PLAN-23` B-S1.1, `F-122`. Aqui por lo mismo que `VERSIONES_SQL`: una sola copia para
+# la migracion 16 y para `features/auditoria/`.
+VEREDICTO_SQL = """
+CREATE TABLE IF NOT EXISTS veredicto_de_publicacion (
+    obra          TEXT    NOT NULL,
+    version       INTEGER NOT NULL DEFAULT 1,
+    ronda         INTEGER NOT NULL,
+    publica       INTEGER NOT NULL,
+    condiciones   TEXT    NOT NULL,
+    codigo_lean   INTEGER,
+    no_ejecutadas TEXT    NOT NULL,
+    cuando        TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (obra, version, ronda)
+);
+"""
+
+
+def _migrar_veredictos_a_version(con):
+    if not tiene_tabla(con, "veredicto_de_publicacion"):
+        return 0
+    columnas = {f[1] for f in con.execute("PRAGMA table_info(veredicto_de_publicacion)")}
+    if "version" in columnas:
+        return 0
+    con.execute("ALTER TABLE veredicto_de_publicacion RENAME TO veredicto_sin_version")
+    for sentencia in sentencias(VEREDICTO_SQL):
+        con.execute(sentencia)
+    con.execute("INSERT INTO veredicto_de_publicacion (obra, version, ronda, publica, "
+                "condiciones, codigo_lean, no_ejecutadas, cuando) "
+                "SELECT obra, 1, ronda, publica, condiciones, codigo_lean, no_ejecutadas, "
+                "cuando FROM veredicto_sin_version")
+    con.execute("DROP TABLE veredicto_sin_version")
+    return 1
 
 
 def sentencias(script):

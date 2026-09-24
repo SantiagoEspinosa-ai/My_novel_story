@@ -463,6 +463,10 @@ propósito** y cita `PCF-7`.
 **B-S2.3 · La promesa**: *«reescribimos lo que dependía de esto: los capítulos X e Y; los demás se
 vuelven a comprobar con reglas, no se reescriben»*, con el punto ciego.
 
+> **Hecho (2026-09-24), sin B4:** B2 (`SALIDA = cascada`), B-S1.1 (`orquestacion/cascada.py`,
+> con `F-121`…`F-124`), B-S1.2 (la promesa) y `backend/pedir_cambio.py`, todo con dobles. Quedan
+> abiertos `F-125` y `F-126`. B4 no está hecho.
+
 ### B3 · `docs/` y spec
 
 La rama elegida en `docs/architecture.md` y en `SPEC-23`. `VER-118` con el punto ciego de la rama.
@@ -508,7 +512,12 @@ final.
 
 ## Lo que este plan no hace
 
-- No hace la puerta de publicación **por versión** ni el PDF por versión.
+- ~~No hace la puerta de publicación **por versión** ni el PDF por versión.~~ **Corregido en
+  B-S1.1**: TLC encontró que sin ella la versión 2 heredaba las rondas gastadas por la 1 (`CE-15`)
+  y que la vigente era una versión sin escribir (`CE-14`). La puerta cuenta las rondas por versión
+  (`F-122`) y la vigente es la última publicada (`F-121`), que es la que exporta el PDF. No es una
+  decisión nueva de la spec: es lo que hacía falta para que `D-2` («se conserva la versión
+  anterior») fuera cierta durante la cascada.
 - No hace el contrato congelado ni ninguna página (`PLAN-22`).
 - No da versión a la story bible: un renombrado cambia el nombre de una versión, no la story bible (`C-4`). No renombra al destinatario.
 - No implementa `S-5`, ni pone `obra` al mundo vivo para varias obras en una base (hallazgo 8).

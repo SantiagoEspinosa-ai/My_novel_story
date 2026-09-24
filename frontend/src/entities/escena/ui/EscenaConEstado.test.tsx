@@ -49,4 +49,23 @@ describe("EscenaConEstado", () => {
     expect(screen.getByTestId("texto-de-escena")).toHaveTextContent("sin texto todavía");
     expect(container.textContent).toContain("sin hallazgos abiertos");
   });
+
+  it("un verde heredado no se pinta como verificado", () => {
+    // PLAN-22 E17 (SPEC-22 RF-54): consolidada, y en esta version sin reverificar.
+    const { unmount } = render(
+      <EscenaConEstado escena={escenaConsolidada} verificacion="sin_reverificar" />);
+    const v = screen.getByTestId("verificacion");
+    expect(v).toHaveAttribute("data-verificacion", "sin_reverificar");
+    expect(v).toHaveTextContent(/sin reverificar/);
+    expect(v).not.toHaveTextContent(/^verificada/);
+    unmount();
+    render(<EscenaConEstado escena={escenaConsolidada} verificacion="verificada" />);
+    expect(screen.getByTestId("verificacion")).toHaveTextContent(/^verificada/);
+  });
+
+  it("fuera de una version no se inventa un estado de verificacion", () => {
+    render(<EscenaConEstado escena={escenaConsolidada} />);
+    expect(screen.queryByTestId("verificacion")).toBeNull();
+  });
 });
+

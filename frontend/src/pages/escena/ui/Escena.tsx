@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { EscenaConEstado } from "@/entities/escena";
+import { ConPeticion } from "@/features/pedir-cambio";
 import { useLectura, type EscenaLeida } from "@/shared/api";
 import { Esperando } from "@/shared/ui";
 
@@ -19,7 +20,9 @@ export function PaginaEscena() {
               </Link></>}
           </nav>
           <h1>{e.id}</h1>
-          <div className="tarjeta"><EscenaConEstado escena={e} /></div>
+          <div className="tarjeta">
+            <ConPeticion obra={obra} escena={e}><EscenaConEstado escena={e} /></ConPeticion>
+          </div>
         </main>
       )}
     </Esperando>

@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from app.commons.db import migraciones
 from app.features.manuscrito import service
 from app.features.manuscrito.tests.test_libro import base_de_prueba
 
@@ -16,10 +17,8 @@ def con():
 
 
 def _veredicto(con, publica, condiciones=(), codigo_lean=0):
-    con.execute("""CREATE TABLE IF NOT EXISTS veredicto_de_publicacion (
-        obra TEXT NOT NULL, ronda INTEGER NOT NULL, publica INTEGER NOT NULL,
-        condiciones TEXT NOT NULL, codigo_lean INTEGER, no_ejecutadas TEXT NOT NULL,
-        cuando TEXT NOT NULL DEFAULT (datetime('now')))""")
+    # La tabla de hoy, de su unica copia (`F-122`: con `version`), no una a mano.
+    con.executescript(migraciones.VEREDICTO_SQL)
     n = con.execute("SELECT COUNT(*) FROM veredicto_de_publicacion").fetchone()[0]
     con.execute("INSERT INTO veredicto_de_publicacion (obra, ronda, publica, condiciones, "
                 "codigo_lean, no_ejecutadas) VALUES ('o1', ?, ?, ?, ?, '[]')",

@@ -261,11 +261,16 @@ def _configuracion_mcp(agente, herramientas):
     """`SPEC-28`: el servidor de la story bible, **en un fichero** y no como cadena. La
     orden pasa por un `.CMD`, y un JSON con comillas como argumento corre el riesgo de
     pasar por `cmd.exe` (hallazgo 13)."""
+    entorno = {"HARNESS_DB": os.path.abspath(herramientas["db"]),
+               "HARNESS_OBRA": herramientas["obra"], "HARNESS_AGENTE": agente or "",
+               "HARNESS_DELEGACION": herramientas["delegacion"]}
+    # `PLAN-23` B-S1.1: la version que se escribe. Sin ella el servidor lee la vigente, que
+    # desde `F-121` es la ultima publicada y no la que la cascada esta escribiendo.
+    if herramientas.get("version") is not None:
+        entorno["HARNESS_VERSION"] = str(herramientas["version"])
     datos = {"mcpServers": {SERVIDOR: {
         "command": sys.executable, "args": [str(SERVIDOR_DE_LA_STORY_BIBLE)],
-        "env": {"HARNESS_DB": os.path.abspath(herramientas["db"]),
-                "HARNESS_OBRA": herramientas["obra"], "HARNESS_AGENTE": agente or "",
-                "HARNESS_DELEGACION": herramientas["delegacion"]}}}}
+        "env": entorno}}}
     fd, ruta = tempfile.mkstemp(prefix="mcp-", suffix=".json")
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False)

@@ -98,6 +98,32 @@ export const FASE_DE_GENERACION: Record<string, Distintivo> = {
   esperando_revision: { etiqueta: "esperando revisión", fondo: "#fbefd6", texto: "#7a4d00" },
 };
 
+// La peticion de cambio (SPEC-22 RF-48): el estado del trabajo que la atiende. `fallido`
+// y `abandonado` no son lo mismo (se sabe que paso / no se sabe si llego a pasar).
+export const ESTADO_DE_TRABAJO: Record<string, Distintivo> = {
+  en_cola: { etiqueta: "en cola", fondo: "#eceae4", texto: "#45474f" },
+  esperando_presupuesto: { etiqueta: "esperando presupuesto", fondo: "#fbefd6", texto: "#7a4d00" },
+  en_curso: { etiqueta: "en curso", fondo: "#e1ebf7", texto: "#1d4f8a" },
+  terminado: { etiqueta: "terminado", fondo: "#dff1e4", texto: "#1d6b37" },
+  fallido: { etiqueta: "fallido", fondo: "#f8e0de", texto: "#9a1f15" },
+  abandonado: { etiqueta: "abandonado: no se sabe si llegó a pasar", fondo: "#fde4cc", texto: "#8a3b00" },
+  detenido_por_presupuesto: { etiqueta: "detenido por presupuesto", fondo: "#fbefd6", texto: "#7a4d00" },
+};
+
+// SPEC-22 RF-54: una escena en una version. `sin_reverificar` es un verde heredado y
+// **no se pinta verde**: se pinta como aviso, con su texto.
+export const ESTADO_DE_VERIFICACION: Record<string, Distintivo> = {
+  verificada: { etiqueta: "verificada en esta versión", fondo: "#dff1e4", texto: "#1d6b37" },
+  sin_reverificar: { etiqueta: "sin reverificar: su verde es de otra versión", fondo: "#fbefd6", texto: "#7a4d00" },
+  fallida: { etiqueta: "falló al reverificar", fondo: "#f8e0de", texto: "#9a1f15" },
+};
+
+// SPEC-22 RF-52: la marca de «cambió», tal como la da el backend capitulo a capitulo.
+export const MARCA_DE_CAMBIO: Record<"cambio" | "compartido", Distintivo> = {
+  cambio: { etiqueta: "cambió en esta versión", fondo: PALETA.acentoSuave, texto: PALETA.acento },
+  compartido: { etiqueta: "igual que en la versión anterior", fondo: "#eceae4", texto: "#45474f" },
+};
+
 /** Las variables CSS que usa `estilos.css`. Se inyectan una vez, en `Tema`. */
 export function variablesCss(): string {
   const v: Record<string, string> = {};

@@ -10,6 +10,15 @@ export type EscenaLeida = Esquemas["EscenaLeida"];
 export type Fichas = Esquemas["Fichas"];
 export type Hallazgo = Esquemas["HallazgoAbierto"];
 export type ProgresoDeGeneracion = Esquemas["ProgresoDeGeneracion"];
+export type HechosDeEscena = Esquemas["HechosDeEscena"];
+export type PeticionEntrada = Esquemas["PeticionEntrada"];
+export type CambioEntrada = Esquemas["CambioEntrada"];
+export type Propuesta = Esquemas["PropuestaSalida"];
+export type Trabajo = Esquemas["TrabajoSalida"];
+export type Versiones = Esquemas["VersionesSalida"];
+export type IndiceDeVersion = Esquemas["IndiceDeVersion"];
+export type CapituloLeidoDeVersion = Esquemas["CapituloLeidoDeVersion"];
+export type TrabajoEncolado = { id_trabajo: string };
 // SPEC-33: la novela regalo en la web.
 export type TurnoDeEntrevista = Esquemas["TurnoDeEntrevistaSalida"];
 export type Historial = Esquemas["HistorialSalida"];
@@ -19,15 +28,6 @@ export type CosteDeLaGeneracion = Esquemas["CosteDeLaGeneracion"];
 export type ConfirmacionDeGasto = Esquemas["ConfirmacionDeGasto"];
 export type Estanteria = Esquemas["Estanteria"];
 export type ObraEnLaEstanteria = Esquemas["ObraEnLaEstanteria"];
-/**
- * Lo que la pagina lee de `GET /trabajos/{id}`. En esta rama el congelado no lo tipa; lo tipa
- * `PLAN-22` E14 (`TrabajoSalida`), y al fusionarlo este tipo pasa a salir de alli.
- */
-export type Trabajo = {
-  estado: "en_cola" | "esperando_presupuesto" | "en_curso" | "terminado" | "fallido"
-    | "abandonado" | "detenido_por_presupuesto";
-  motivo: string | null;
-};
 
 export const PREFIJO = "/api";
 
@@ -41,12 +41,24 @@ export class ErrorDeLaApi extends Error {
   }
 }
 
+/** El motivo que da la API al negarse (el `detail` de un 409), o el mensaje del error. */
+export function motivoDelError(e: unknown): string {
+  if (e instanceof ErrorDeLaApi) {
+    const d = e.detalle as { detail?: unknown } | null;
+    if (d && typeof d.detail === "string") return d.detail;
+    if (d && d.detail !== undefined) return JSON.stringify(d.detail);
+  }
+  return e instanceof Error ? e.message : String(e);
+}
+
 export type Fetch = (entrada: string, init?: RequestInit) => Promise<Response>;
 
 export function crearCliente(fetchInyectado: Fetch) {
-  async function leer<T>(ruta: string): Promise<T> {
+  async function leer<T>(ruta: string, init?: RequestInit): Promise<T> {
     const url = PREFIJO + ruta;
-    const r = await fetchInyectado(url, { headers: { Accept: "application/json" } });
+    const r = await fetchInyectado(url, {
+      ...init, headers: { Accept: "application/json", ...(init?.headers ?? {}) },
+    });
     if (!r.ok) {
       let detalle: unknown = null;
       try {
@@ -58,22 +70,10 @@ export function crearCliente(fetchInyectado: Fetch) {
     }
     return (await r.json()) as T;
   }
-  async function enviar<T>(ruta: string, cuerpo?: unknown): Promise<T> {
-    const url = PREFIJO + ruta;
-    const r = await fetchInyectado(url, {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
-    });
-    let datos: unknown = null;
-    try {
-      datos = await r.json();
-    } catch {
-      datos = null;
-    }
-    if (!r.ok) throw new ErrorDeLaApi(r.status, url, datos);
-    return datos as T;
-  }
+  const enviar = <T>(ruta: string, cuerpo?: unknown) => leer<T>(ruta, {
+    method: "POST", body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    headers: { "Content-Type": "application/json" },
+  });
   const e = encodeURIComponent;
   return {
     indice: (obra: string) => leer<Indice>(`/obras/${e(obra)}/indice`),
@@ -81,6 +81,19 @@ export function crearCliente(fetchInyectado: Fetch) {
     escena: (escena: string) => leer<EscenaLeida>(`/escenas/${e(escena)}`),
     fichas: (obra: string) => leer<Fichas>(`/obras/${e(obra)}/fichas`),
     progreso: (obra: string) => leer<ProgresoDeGeneracion>(`/obras/${e(obra)}/progreso`),
+    hechosDeEscena: (escena: string) => leer<HechosDeEscena>(`/escenas/${e(escena)}/hechos`),
+    versiones: (obra: string) => leer<Versiones>(`/obras/${e(obra)}/versiones`),
+    indiceDeVersion: (obra: string, numero: number) =>
+      leer<IndiceDeVersion>(`/obras/${e(obra)}/versiones/${numero}/indice`),
+    capituloDeVersion: (obra: string, numero: number, capitulo: string) =>
+      leer<CapituloLeidoDeVersion>(
+        `/obras/${e(obra)}/versiones/${numero}/capitulos/${e(capitulo)}`),
+    trabajo: (id: string) => leer<Trabajo>(`/trabajos/${e(id)}`),
+    // La peticion de cambio (SPEC-23, PLAN-23 A7). Proponer no toca nada; pedir encola.
+    proponerCambio: (obra: string, peticion: PeticionEntrada) =>
+      enviar<Propuesta>(`/obras/${e(obra)}/cambios/propuesta`, peticion),
+    pedirCambio: (obra: string, cambio: CambioEntrada) =>
+      enviar<TrabajoEncolado>(`/obras/${e(obra)}/cambios`, cambio),
     // SPEC-33: la entrevista en la web. Las respuestas de PLAN-25 no estan tipadas en el
     // congelado (RF-57 no deja pasar su campo `contradicciones`): la pagina lee el historial.
     crearEntrevista: () => enviar<{ id: string; obra: string }>("/entrevistas"),
@@ -94,7 +107,6 @@ export function crearCliente(fetchInyectado: Fetch) {
       enviar<unknown>(`/entrevistas/${e(entrevista)}/hechos/${e(hecho)}/descartar`),
     cerrarEntrevista: (entrevista: string) =>
       enviar<unknown>(`/entrevistas/${e(entrevista)}/cerrar`),
-    trabajo: (id: string) => leer<Trabajo>(`/trabajos/${e(id)}`),
     generacion: (obra: string) => leer<GeneracionEnVivo>(`/obras/${e(obra)}/generacion`),
     estanteria: () => leer<Estanteria>("/obras"),
     gasto: () => leer<ConfirmacionDeGasto>("/generaciones/gasto"),

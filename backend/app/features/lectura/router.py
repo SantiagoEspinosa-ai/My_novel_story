@@ -10,13 +10,16 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.features.lectura import service
 from app.features.lectura.schemas import CapituloLeido, EscenaLeida, Fichas, Indice
-from app.features.lectura.schemas import ProgresoDeGeneracion
+from app.features.lectura.schemas import HechosDeEscena, ProgresoDeGeneracion
 
 router = APIRouter(tags=["lectura"])
 
 
 def conexion(request: Request):
-    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"))
+    # F-133: FastAPI la crea, la usa y la cierra en hilos distintos del pool. Se usa en
+    # serie, nunca a la vez: no comprobar el hilo es seguro.
+    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"),
+                          check_same_thread=False)
     try:
         yield con
     finally:
@@ -45,6 +48,16 @@ def capitulo(id_capitulo: str, con: sqlite3.Connection = Depends(conexion)):
 def escena(id_escena: str, con: sqlite3.Connection = Depends(conexion)):
     """Una escena con su estado, sus hallazgos abiertos y su texto elegido (`RF-39`)."""
     resultado = service.escena(con, id_escena)
+    if resultado is None:
+        raise HTTPException(404, "no existe la escena {0}".format(id_escena))
+    return resultado
+
+
+@router.get("/escenas/{id_escena}/hechos", response_model=HechosDeEscena)
+def hechos_de_escena(id_escena: str, con: sqlite3.Connection = Depends(conexion)):
+    """Los hechos que usa una escena, con su enunciado: lo que la pagina ofrece al lector
+    cuando selecciona un fragmento para pedir un cambio (`PLAN-22` E14)."""
+    resultado = service.hechos_de_escena(con, id_escena)
     if resultado is None:
         raise HTTPException(404, "no existe la escena {0}".format(id_escena))
     return resultado

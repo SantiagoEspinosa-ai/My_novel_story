@@ -2,11 +2,12 @@
 id: PLAN-27
 spec: SPEC-27
 titulo: Implementación de la exportación a PDF
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
 version: 1
+fecha_aplicacion: 2026-09-24
 ---
 
 # PLAN-27 — Exportar la novela a PDF

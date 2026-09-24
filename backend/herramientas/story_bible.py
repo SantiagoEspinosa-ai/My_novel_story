@@ -7,6 +7,8 @@ variables de entorno:
     HARNESS_OBRA         la obra de la delegacion: **la unica que se puede leer**
     HARNESS_AGENTE       quien llama (escritor o editor)
     HARNESS_DELEGACION   para enlazar cada llamada con su traza
+    HARNESS_VERSION      la version de la obra que se escribe (`PLAN-23` B-S1.1); sin
+                         ella, la vigente
 
 Sin `HARNESS_DB` o sin `HARNESS_OBRA` no arranca: sin obra no hay lectura por defecto
 (`RF-06`). Abre **dos conexiones**: la de la story bible es de solo lectura, y asi `RF-04`
@@ -36,6 +38,12 @@ def abrir_conexiones(base):
     return lectura, traza
 
 
+def version_del_entorno(entorno):
+    """`HARNESS_VERSION` como numero, o `None` si no esta: entonces, la vigente."""
+    valor = entorno.get("HARNESS_VERSION")
+    return int(valor) if valor else None
+
+
 def catalogo():
     return [{"name": nombre, "description": descripcion,
              "inputSchema": entrada.model_json_schema()}
@@ -50,10 +58,11 @@ def main():
         return 2
     agente = os.environ.get("HARNESS_AGENTE", "desconocido")
     delegacion = os.environ.get("HARNESS_DELEGACION", "sin-delegacion")
+    version = version_del_entorno(os.environ)
     lectura, traza = abrir_conexiones(base)
     servir(sys.stdin, sys.stdout, catalogo(),
            lambda nombre, argumentos: tools.atender(lectura, traza, obra, agente, delegacion,
-                                                    nombre, argumentos))
+                                                    nombre, argumentos, version=version))
     return 0
 
 

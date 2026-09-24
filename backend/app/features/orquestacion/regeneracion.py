@@ -215,9 +215,12 @@ def vista_de_version(con, obra, numero):
 
 # --- A7 · la peticion, el hecho y el nombre de una version (`C-4`) -----------------
 
-# `SPEC-23` v2: la elige la medida (B1, B2), no una opinion. Mientras sea `None`,
-# pedir un cambio responde `409` y no encola nada.
-SALIDA = None
+# `SPEC-23` v2: la elige la medida (B1, B2), no una opinion. Con `None`, pedir un
+# cambio responde `409` y no encola nada. **Fijada por el numero guardado** en
+# `harness/evals/arrastre-SPEC-23.json` (v4: 2,33 capitulos <= 3, con sesgo a la baja,
+# hacia `S-1`); `test_la_salida_fijada_es_la_que_da_la_regla_con_el_numero_guardado`
+# falla si se cambia esto sin cambiar la medida.
+SALIDA = S.CASCADA.value
 
 # `SPEC-23` `D-3`, literales: la promesa y su punto ciego, dichos al lector.
 PROMESA = "reescribimos lo que dependía de esto"
@@ -309,6 +312,15 @@ def _con_nombres(texto, pares):
     return texto
 
 
+def en_la_version(con, obra, numero, textos):
+    """Los `textos` con los nombres nuevos de los renombrados de la version (`C-4`, punto
+    4). Para lo que el plan fija con un nombre dentro -las palabras clave de un
+    imprescindible-: si no, la version nueva pediria el nombre que ella misma veta
+    (`F-124`)."""
+    pares = _renombrados(con, obra, numero)[0]
+    return [_con_nombres(t, pares) for t in textos]
+
+
 def hechos_de_version(con, obra, numero=None):
     """Los hechos de la obra **en la version**: el enunciado nuevo de cada peticion de
     hecho de su cadena y los nombres nuevos de sus renombrados, en orden. En la forma
@@ -345,14 +357,19 @@ def vetadas_de_version(con, obra, numero, base=()):
     return resultado
 
 
-def _destinatarios(con, obra, plan):
+def _destinatarios(con, obra, plan, ficha=None):
     """Los personajes que son el destinatario, segun la ficha. `None` si no hay ficha:
-    se borra al entregar (`SPEC-25` `RF-21`), y entonces **no consta**."""
+    se borra al entregar (`SPEC-25` `RF-21`), y entonces **no consta**. Quien la tenga
+    fuera de la base -la terminal, con `--ficha`- la da, y se usa esa (`F-147`)."""
     from app.features.entrevista import repository as entrevistas
-    try:
-        fichas = [entrevistas.leer(con, i).ficha for i in entrevistas.de_la_obra(con, obra)]
-    except sqlite3.OperationalError:
-        return None
+    if ficha is not None:
+        fichas = [ficha]
+    else:
+        try:
+            fichas = [entrevistas.leer(con, i).ficha
+                      for i in entrevistas.de_la_obra(con, obra)]
+        except sqlite3.OperationalError:
+            return None
     nombres = {f.destinatario.nombre for f in fichas
                if f.destinatario is not None and f.destinatario.nombre}
     if not nombres:
@@ -360,7 +377,7 @@ def _destinatarios(con, obra, plan):
     return {p.id for p in plan.mundo.personajes if p.nombre in nombres}
 
 
-def _validar(con, obra, numero, peticion):
+def _validar(con, obra, numero, peticion, ficha=None):
     try:
         clase = CP(peticion.get("clase"))
     except ValueError:
@@ -381,7 +398,7 @@ def _validar(con, obra, numero, peticion):
     nombres = nombres_de_version(con, obra, numero)
     if plan is None or personaje not in nombres:
         raise PeticionNoAdmitida("`{0}` no es un personaje de esta obra".format(personaje))
-    destinatarios = _destinatarios(con, obra, plan)
+    destinatarios = _destinatarios(con, obra, plan, ficha)
     if destinatarios is None:
         raise PeticionNoAdmitida(
             "no consta quien es el destinatario -no hay ficha de la obra-, asi que no se "
@@ -422,13 +439,13 @@ def capitulos_afectados(con, obra, numero, peticion):
     return [c for c in brief.capitulos_de_version(con, obra, numero) if c in tocados]
 
 
-def proponer(con, obra, peticion):
+def proponer(con, obra, peticion, ficha=None):
     """Lo que se haria, **sin modelo y sin tocar nada** (`RF-51`, `RF-55`): los
     capitulos de cada salida, la elegida si la hay, la promesa y su punto ciego."""
     numero = peticion.get("version_de_partida") or brief.version_vigente(con, obra)
     if numero is None:
         raise PeticionNoAdmitida("la obra {0} no tiene versiones".format(obra))
-    clase = _validar(con, obra, numero, peticion)
+    clase = _validar(con, obra, numero, peticion, ficha)
     afectados = capitulos_afectados(con, obra, numero, peticion)
     if not afectados:
         raise PeticionNoAdmitida(
@@ -442,15 +459,25 @@ def proponer(con, obra, peticion):
             "capitulos": por_salida, "salida": salida,
             "capitulos_propuestos": por_salida[salida] if salida else None,
             "motivo": None if salida else SIN_SALIDA,
-            "promesa": PROMESA, "punto_ciego": PUNTO_CIEGO}
+            "promesa": promesa(salida, capitulos.index(afectados[0]) + 1),
+            "punto_ciego": PUNTO_CIEGO}
 
 
-def pedir(con, obra, peticion):
+def promesa(salida, k):
+    """La promesa de `D-3` dicha con su alcance (`PLAN-23` B-S1.2): con `S-1`, desde el
+    capitulo `k` -su posicion en la version- hasta el final. Sin salida elegida, la de
+    `D-3` sola: no se promete un alcance que nadie ha elegido."""
+    if salida == S.CASCADA.value:
+        return "{0}: el capítulo {1} y todos los siguientes".format(PROMESA, k)
+    return PROMESA
+
+
+def pedir(con, obra, peticion, ficha=None):
     """Guarda la peticion y encola su trabajo. Devuelve `(id_trabajo, id_peticion)`.
 
     Sin salida elegida **no guarda ni encola nada**. Si la lista aceptada no es la que
     la propuesta da hoy, tampoco: el lector acepto otra cosa."""
-    propuesta = proponer(con, obra, peticion)
+    propuesta = proponer(con, obra, peticion, ficha)
     if propuesta["salida"] is None:
         raise SalidaSinElegir(SIN_SALIDA)
     aceptada = list(peticion.get("capitulos_propuestos") or [])
@@ -493,14 +520,24 @@ def escena_para_regenerar(con, obra, numero, posicion):
 
 # --- El worker del trabajo de regeneracion -------------------------------------------
 
-# Las ramas de la Parte B (`B-S1.1`, `B-S2.1`), por salida. **Vacio hasta la medida**:
-# el worker no escribe nada que la medida no haya elegido.
-RAMAS = {}
+def _cascada(con, peticion, **contexto):
+    from app.features.orquestacion import cascada
+    return cascada.regenerar(con, peticion, **contexto)
 
 
-def atender(con, id_trabajo):
+# Las ramas de la Parte B, por salida: **solo la que eligio la medida** (B2: `cascada`,
+# `B-S1.1`). `selectiva` no tiene rama: el worker no escribe nada que la medida no haya
+# elegido.
+RAMAS = {S.CASCADA.value: _cascada}
+
+
+def atender(con, id_trabajo, **contexto):
     """Toma un trabajo `regenerar_obra` y lo ejecuta con la rama de su salida. Sin
-    rama, lo da por fallido con el motivo: **no se escribe nada**."""
+    rama, lo da por fallido con el motivo: **no se escribe nada**.
+
+    `contexto` pasa a la rama lo que el trabajo no guarda: los agentes -que gastan dinero
+    y el worker de la API no tiene-, y opcionalmente la ficha, el sistema y Lean. Sin
+    agentes la cascada falla antes de escribir, con su motivo."""
     t = cola.leer(con, id_trabajo)
     if t is None or t.tipo != TIPO_DE_TRABAJO:
         return False
@@ -514,7 +551,7 @@ def atender(con, id_trabajo):
             "se ha escrito nada".format(salida or "(ninguna)")))
         return False
     try:
-        resultado = rama(con, peticion)
+        resultado = rama(con, peticion, **contexto)
     except Exception as e:  # el motivo tiene que llegar al cliente, sea cual sea
         cola.registrar_fallo(con, id_trabajo, "{0}: {1}".format(type(e).__name__, e))
         return False

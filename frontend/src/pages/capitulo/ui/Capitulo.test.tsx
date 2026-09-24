@@ -1,14 +1,17 @@
 // PLAN-22 E9: la lectura continua de un capitulo, una escena por bloque y cada una con su
 // estado y sus hallazgos (SPEC-22 RF-39, RF-41).
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
-import { capituloA, capituloB, escenaConsolidada, fetchDeFixtures } from "@/shared/testing";
+import {
+  capituloA, capituloB, escenaConsolidada, fetchDeFixtures, hechosDeB1,
+} from "@/shared/testing";
 import { PaginaCapitulo } from "./Capitulo";
 
 function montar(id: string) {
   const cliente = crearCliente(fetchDeFixtures({
     "/api/capitulos/cap-b": capituloB, "/api/capitulos/cap-a": capituloA,
+    "/api/escenas/esc-b1/hechos": hechosDeB1,
   }));
   return render(
     <ClienteProvider cliente={cliente}>
@@ -54,5 +57,24 @@ describe("Capitulo", () => {
     expect(await screen.findByRole("heading", { name: "Capítulo 2" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Índice" })).toHaveAttribute(
       "href", "/obras/obra-inventada/indice");
+  });
+
+  it("cada escena con texto ofrece pedir un cambio, y la seleccion llega como fragmento", async () => {
+    // PLAN-22 E16: se pide desde la pagina del capitulo, escena a escena.
+    montar("cap-b");
+    const [b1] = await screen.findAllByTestId("bloque-de-escena");
+    const texto = within(b1).getByTestId("texto-de-escena");
+    const nodo = texto.querySelector("p")!.firstChild!;
+    const rango = document.createRange();
+    rango.setStart(nodo, 0);
+    rango.setEnd(nodo, 13);
+    const seleccion = window.getSelection()!;
+    seleccion.removeAllRanges();
+    seleccion.addRange(rango);
+    fireEvent.mouseUp(texto);
+    fireEvent.click(within(b1).getByRole("button", { name: /Pedir un cambio/ }));
+    const panel = await within(b1).findByTestId("pedir-cambio");
+    expect(panel).toHaveTextContent("Primer texto");
+    expect(await within(panel).findByLabelText(/El faro existe/)).toBeInTheDocument();
   });
 });

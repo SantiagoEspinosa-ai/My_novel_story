@@ -1,11 +1,13 @@
 ---
 id: SPEC-27
 titulo: Exportar la novela a PDF
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
 version: 2
+fecha_aplicacion: 2026-09-24
+commit_de_aplicacion: bd13e36
 ---
 
 > **Historial.** v1: redactada con la respuesta del autor sobre el PDF por versión

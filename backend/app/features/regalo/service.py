@@ -4,7 +4,7 @@ interfaz (`CLAUDE.md`: la interfaz muestra estado, no lo calcula)."""
 from app.commons import config
 from app.features.regalo import repository as repo
 
-POR_QUE_ES_SUELO = ("lo gastado antes de la migracion 17 no tiene coste guardado en la base, "
+POR_QUE_ES_SUELO = ("lo gastado antes de la migracion 18 no tiene coste guardado en la base, "
                     "y una delegacion sin coste medido no suma")
 
 

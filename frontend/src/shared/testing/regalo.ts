@@ -86,7 +86,7 @@ const REFERENCIA = {
   usd: 16.8905, delegaciones: 36,
   fuente: "R1, la novela de ejemplo: libro de gasto y Langfuse (harness/evals/medidas.md)",
 };
-const POR_QUE = "lo gastado antes de la migracion 17 no tiene coste guardado en la base";
+const POR_QUE = "lo gastado antes de la migracion 18 no tiene coste guardado en la base";
 
 export const confirmacionConUltima: ConfirmacionDeGasto = {
   gastado: { usd: 17.4, delegaciones: 40, sin_coste: 0, es_suelo: true, por_que_es_suelo: POR_QUE },

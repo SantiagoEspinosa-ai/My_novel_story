@@ -124,7 +124,7 @@ def _de_json(texto):
 
 
 def turnos(con, id_e) -> list:
-    """Los turnos en orden. En una fila anterior a la migracion 16 `falta`,
+    """Los turnos en orden. En una fila anterior a la migracion 17 `falta`,
     `avisos` y `contradicciones_abiertas` vienen a `None`: no se guardaron, que no es
     que no los hubiera."""
     filas = con.execute("SELECT orden, respuesta, pregunta, tema, falta, avisos, "
