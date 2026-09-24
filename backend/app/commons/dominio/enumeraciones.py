@@ -274,6 +274,15 @@ class TonoDeLaHistoria(_Vocabulario):
     OTRO = "otro"
 
 
+class ExtensionDeCapitulo(_Vocabulario):
+    """`SPEC-32`: la extension se pregunta. El rango de palabras de cada opcion no
+    es vocabulario sino configuracion (`config/sistema.json`), validada dentro de
+    1.000-1.500."""
+    CORTA = "corta"
+    MEDIA = "media"
+    LARGA = "larga"
+
+
 class PapelDelDestinatario(_Vocabulario):
     PROTAGONISTA = "protagonista"
     PERSONAJE_SECUNDARIO = "personaje_secundario"

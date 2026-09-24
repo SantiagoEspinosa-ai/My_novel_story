@@ -44,7 +44,7 @@ La **Escena** es la unidad atómica: la unidad que se genera, se verifica y se r
 
 | Clase | Definición | Atributos clave |
 | --- | --- | --- |
-| Obra | La novela completa como unidad publicable. | **id**, **titulo**, **premisa**, genero, subgenero, extension\_objetivo, guia\_de\_estilo, contrato\_con\_el\_lector |
+| Obra | La novela completa como unidad publicable. | **id**, **titulo**, **premisa**, genero, subgenero, extension\_objetivo, guia\_de\_estilo, contrato\_con\_el\_lector, dedicatoria (texto de la obra: se copia de la ficha al montar y sobrevive al borrado de la ficha, `SPEC-32`) |
 | Parte | Agrupación de capítulos con unidad dramática (acto). | **id**, **orden**, funcion\_estructural, valor\_inicial, valor\_final |
 | Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, **estado** → `estado_de_capitulo`, gancho\_de\_cierre, escenas\[\] |
 | Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **capitulo** → Capitulo (`SPEC-21` C-1), **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo, intentos, borrador\_aceptado → Borrador |
@@ -143,7 +143,7 @@ La novela se escribe **para alguien** (`SPEC-25`). Estas clases recogen quién e
 
 | Clase | Definición | Atributos clave |
 | --- | --- | --- |
-| FichaDeEntrevista | Lo acordado con el comprador: el único canal entre él y el Escritor. | **destinatario** → Destinatario, **ocasion** → `ocasion`, **genero** → `genero_de_la_historia`, **tono** → `tono_de_la_historia`, **papel** → `papel_del_destinatario`, **titulo**, **premisa** (los propone el entrevistador a partir de los recuerdos y rasgos: `SPEC-25` v3), literales\_de\_otro, regalado\_por, vetadas\[\] (cadenas), nombres\_vetados\[\] (cadenas: se vetan completos y por su nombre de pila), dedicatoria, hechos\_propuestos\[\] → HechoPropuesto, contradicciones\_resueltas\[\] |
+| FichaDeEntrevista | Lo acordado con el comprador: el único canal entre él y el Escritor. | **destinatario** → Destinatario, **ocasion** → `ocasion`, **genero** → `genero_de_la_historia`, **tono** → `tono_de_la_historia`, **extension** → `extension_de_capitulo` (se pregunta: `SPEC-32`), **papel** → `papel_del_destinatario`, **titulo**, **premisa** (los propone el entrevistador a partir de los recuerdos y rasgos: `SPEC-25` v3), literales\_de\_otro, regalado\_por, vetadas\[\] (cadenas), nombres\_vetados\[\] (cadenas: se vetan completos y por su nombre de pila), dedicatoria, hechos\_propuestos\[\] → HechoPropuesto, contradicciones\_resueltas\[\] |
 | Destinatario | La persona que recibe la novela. | **nombre**, **edad**, elementos\[\] → ElementoPersonal |
 | ElementoPersonal | Un rasgo, recuerdo, persona o mascota del destinatario. | **tipo** → `tipo_de_elemento_personal`, **descripcion**, nombre, relacion, momento (`{anio, edad}`: cuándo pasó un recuerdo), imprescindible |
 | HechoPropuesto | Hecho extraído del texto libre, pendiente de que el comprador lo confirme. | **id**, **texto**, **estado** → `estado_de_hecho_propuesto` |
@@ -252,6 +252,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `ocasion` | FichaDeEntrevista.ocasion | cumpleanos, boda, aniversario, jubilacion, nacimiento, otro |
 | `genero_de_la_historia` | FichaDeEntrevista.genero | aventura, romance, comedia, fantasia, misterio, drama\_cotidiano, otro |
 | `tono_de_la_historia` | FichaDeEntrevista.tono | tierno, divertido, emotivo, epico, nostalgico, otro |
+| `extension_de_capitulo` | FichaDeEntrevista.extension | corta, media, larga (el rango de palabras de cada una es configuración, siempre dentro de 1.000–1.500: `SPEC-32`) |
 | `papel_del_destinatario` | FichaDeEntrevista.papel | protagonista, personaje\_secundario, otro |
 | `tipo_de_elemento_personal` | ElementoPersonal.tipo | rasgo, recuerdo, persona, mascota |
 | `estado_de_hecho_propuesto` | HechoPropuesto.estado | propuesto, confirmado, descartado |

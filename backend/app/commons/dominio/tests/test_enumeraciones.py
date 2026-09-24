@@ -134,3 +134,9 @@ def test_los_criterios_del_editor_son_los_de_definitions():
     assert [c.value for c in enums.CriterioDeEdicion] == [
         "continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
         "personalizacion"]
+
+
+def test_extension_de_capitulo_tiene_los_literales_de_definitions():
+    """`SPEC-32` `RF-06`..`RF-08`: la extension se pregunta, con opciones cerradas.
+    Los nombres son vocabulario; el rango de palabras de cada una, configuracion."""
+    assert [e.value for e in enums.ExtensionDeCapitulo] == ["corta", "media", "larga"]
