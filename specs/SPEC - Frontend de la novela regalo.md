@@ -5,17 +5,23 @@ estado: en_revision
 aprobada_por: ""
 fecha_aprobacion: ""
 fecha: 2026-09-24
-version: 1
+version: 2
 ---
+
+> **v2 (2026-09-24):** el autor decide la confirmación de `RF-12` (la última generación, la
+> referencia de 16,89 USD y lo gastado del techo) y descarta la imagen de portada. La cuestión 1
+> pasa a ser qué techo aplica: hoy solo existe el de la evaluación. Las cuestiones 2 a 5 no
+> cambian.
 
 # SPEC-33 — La novela regalo en la web
 
 > **Lo que el autor ya decidió en sesión, el 2026-09-24**, y esta spec recoge:
 >
-> - *«Sí, la web puede lanzar una generación.»*
-> - Sobre la portada: *«Si puedes hacer que se genere una imagen estaría genial, pero si no, la
->   portada es el título y la dedicatoria, como en el dominio. En la estantería, una tarjeta con
->   tipografía cuidada y el color del tema vale igual y no abre un campo nuevo.»*
+> - *«Sí, la web puede lanzar una generación. Con confirmación explícita que muestre lo que costó
+>   la última —16,89 USD la novela de ejemplo— y lo gastado del techo. Sin ese paso, un clic
+>   accidental cuesta el precio de una novela.»*
+> - *«Sin imagen. La portada es el título y la dedicatoria, como en el dominio. En la estantería,
+>   una tarjeta con tipografía cuidada y el color del tema vale igual y no abre un campo nuevo.»*
 > - Sobre la paleta: *«Sigue con la provisional marcada como tal; con los tokens en un solo sitio
 >   es cambiar un fichero.»*
 >
@@ -82,7 +88,18 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
 - **RF-11** — Una entrevista cerrada ofrece **lanzar la generación** de su obra. Lanzarla arranca
   un trabajo y devuelve su identificador; no bloquea (`CLAUDE.md`, llamadas asíncronas). Es el
   mismo pipeline de `SPEC-26` que corre `novela_regalo.py`, no una segunda copia.
-- **RF-12** — **Lanzar gasta dinero, y la web lo dice antes** (cuestión 1).
+- **RF-12** — **Lanzar gasta dinero, y la web pide una confirmación explícita antes.** Sin ese
+  paso, un clic accidental cuesta el precio de una novela (decisión del autor, arriba). La
+  confirmación enseña tres cifras, cada una con su procedencia a la vista:
+  - **Lo que costó la última generación medida en esta base**, marcada como suelo si le falta
+    alguna delegación, o **«sin medir»** si no hay ninguna.
+  - **La referencia de la novela de ejemplo: 16,8905 USD en 36 delegaciones, todas con coste
+    medido** (`R1`, `harness/evals/medidas.md`). Hoy esa cifra no está en la base: la web la
+    enseña **como referencia con su fuente**, no como un coste de esta base.
+  - **Lo gastado frente al techo** (cuestión 1).
+
+  Una confirmación que no se puede leer sin haberla aceptado no cuenta: el botón que gasta no
+  está disponible hasta que las cifras han cargado.
 - **RF-13** — No puede haber dos generaciones de la misma obra en curso a la vez. La segunda
   petición recibe `409` con el motivo.
 
@@ -129,7 +146,7 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
 
 | Fuera | Por qué |
 | --- | --- |
-| **Una imagen de portada generada** | Hay una tensión que conviene nombrar: los modelos de este proyecto escriben texto, no generan imágenes. Hay dos salidas y ninguna es gratis. Una es una **portada SVG dibujada por un modelo**: un campo nuevo en `Obra`, un coste por portada sin medir y un SVG que hay que sanear antes de pintarlo. La otra es un **proveedor externo de imágenes**: un servicio y unas credenciales fuera de la delegación en Claude Code (`SPEC-14`). El autor aceptó la tarjeta tipográfica; cualquiera de las dos sería una spec propia |
+| **Una imagen de portada** | **Decisión del autor: sin imagen.** Para constancia, la tensión que había: los modelos de este proyecto escriben texto, no generan imágenes. Una portada SVG dibujada por un modelo abría un campo nuevo en `Obra` y un coste sin medir; un proveedor externo de imágenes salía de la delegación en Claude Code (`SPEC-14`) |
 | La lectura de la obra y la petición de cambio | Son de `SPEC-22` / `PLAN-22`, y de `PLAN-23` |
 | El texto libre de la entrevista | Sus endpoints existen. Queda fuera salvo que la cuestión 4 lo meta |
 | Cerrar puertas desde la web | `A-04`, como en `PLAN-22` |
@@ -153,10 +170,19 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
 
 Cada una lleva una propuesta. Aprobar la spec sin comentarios es aprobar las propuestas.
 
-1. **Qué dice la web antes de gastar.** *Propuesta:* un paso de confirmación que enseña **el coste
-   total de la última generación medida en esta base**, marcado como suelo si lo es, o **«sin
-   medir»** si no hay ninguna. Nunca una estimación inventada. Como referencia, la novela de
-   ejemplo costó 16,89 USD según su commit, pero esa cifra vive en otra base y no se enseña.
+1. **Qué techo, y qué hace al tocarlo.** Hoy **el único techo de gasto que existe es el de la
+   evaluación**: `evaluacion.techo_de_gasto_usd = 150` en `backend/config/sistema.json`
+   (`SPEC-31`). Ninguno gobierna una generación lanzada desde la web. *Propuesta:*
+   - **Un techo propio de las generaciones**, en `sistema.json` junto al de la evaluación y
+     validado igual. Mezclar el gasto de la web con el de la evaluación haría que el uno se
+     comiera el presupuesto del otro sin que nadie lo decidiera.
+   - **Su valor lo pones tú.** No lo relleno: un techo es una decisión de presupuesto, no una
+     medida. Hasta que lo pongas, la confirmación dice **«techo sin definir»** y no bloquea.
+   - **«Lo gastado»** es la suma de los costes guardados en esta base (`RF-18`). Lo generado antes
+     de `RF-18` no tiene coste guardado, así que la suma **sesga hacia abajo** y se enseña como
+     suelo.
+   - **Al tocar el techo**, si lo gastado ya lo alcanza, el botón que gasta **no está
+     disponible** y se dice por qué.
 2. **Dónde vive el historial de la entrevista.** *Propuesta:* una clase nueva en
    `docs/definitions.md` para el turno de entrevista (pregunta, tema, respuesta, avisos,
    contradicciones, cuándo), guardada con la entrevista y **borrada con la ficha**. El historial
