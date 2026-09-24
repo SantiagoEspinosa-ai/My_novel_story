@@ -1,0 +1,33 @@
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 6 and seed 4103120825425582575 with 4 workers on 4 cores with 3641MB heap and 64MB offheap memory [pid: 7404] (Windows 11 10.0 amd64, Eclipse Adoptium 21.0.12.1 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file C:\Users\student\Desktop\My_novel_story-tla\specs\tla\HarnessBackend.tla
+Parsing file C:\Users\student\AppData\Local\Temp\Naturals.tla
+Parsing file C:\Users\student\AppData\Local\Temp\FiniteSets.tla
+Parsing file C:\Users\student\AppData\Local\Temp\Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module HarnessBackend
+Starting... (2026-09-24 17:54:22)
+Implied-temporal checking--satisfiability problem has 1 branches.
+Computing initial states...
+Finished computing initial states: 2 distinct states generated at 2026-09-24 17:54:22.
+Checking temporal properties for the current state space with 48351 total distinct states at (2026-09-24 17:54:25)
+Finished checking temporal properties in 01s at 2026-09-24 17:54:26
+Progress(21) at 2026-09-24 17:54:26: 92,411 states generated (92,411 s/min), 63,724 distinct states found (63,724 ds/min), 15,373 states left on queue.
+Progress(37) at 2026-09-24 17:55:26: 4,009,886 states generated (3,917,475 s/min), 2,609,508 distinct states found (2,545,784 ds/min), 290,011 states left on queue.
+Checking temporal properties for the current state space with 4792921 total distinct states at (2026-09-24 17:56:26)
+Finished checking temporal properties in 01min 52s at 2026-09-24 17:58:19
+Progress(47) at 2026-09-24 17:58:19: 7,919,940 states generated (3,910,054 s/min), 4,940,770 distinct states found (2,331,262 ds/min), 145,583 states left on queue.
+Progress(63) at 2026-09-24 17:58:32: 8,921,820 states generated, 5,482,194 distinct states found, 0 states left on queue.
+Checking temporal properties for the complete state space with 5482194 total distinct states at (2026-09-24 17:58:32)
+Finished checking temporal properties in 02min 13s at 2026-09-24 18:00:46
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 1.0E-6
+  based on the actual fingerprints:  val = 9.1E-7
+8921820 states generated, 5482194 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 63.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 7 and the 95th percentile is 4).
+Finished in 06min 25s at (2026-09-24 18:00:46)
