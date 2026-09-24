@@ -115,3 +115,126 @@ def test_un_inv27_que_sigue_no_se_cierra_ni_se_duplica(con):
     e = _evaluar(con, LeanFijo(), JuezDeObra(ABRUPTO))
     assert not e.decision.publica
     assert [h["id"] for h in _abiertos(con, "INV-27")] == [viejo["id"]]
+
+
+# --- E10: el bucle de la puerta ---------------------------------------------------
+
+class Secuencia:
+    """Un juez de obra que dice, ronda a ronda, lo que le toca."""
+
+    nombre = "doble-obra"
+
+    def __init__(self, *respuestas):
+        self.respuestas, self.llamadas = list(respuestas), []
+
+    def llamar(self, prompt):
+        self.llamadas.append(prompt)
+        return self.respuestas[min(len(self.llamadas) - 1, len(self.respuestas) - 1)]
+
+
+class Editor:
+    nombre = "doble-editor"
+
+    def __init__(self, respuesta):
+        self.respuesta, self.llamadas = respuesta, []
+
+    def llamar(self, prompt):
+        self.llamadas.append(prompt)
+        return self.respuesta
+
+
+class Reescritor:
+    def __init__(self):
+        self.llamadas = []
+
+    def __call__(self, con, escena_id, instrucciones):
+        self.llamadas.append((escena_id, instrucciones))
+        return {"aceptada": True, "motivo": ""}
+
+
+INSTRUYE_CAP10 = {"instrucciones": [{"capitulo": "cap-10", "instruccion": "cierra el viaje"}]}
+
+
+def _publicar(con, lean, juez, editor, reescribir, **kw):
+    return publicacion.publicar(con, "obra-x", ficha(), lean, juez, editor, reescribir, **kw)
+
+
+def test_el_fallo_de_lean_llega_al_editor_con_la_violacion_y_los_eventos(con):
+    """`RF-03`: el Editor recibe la violacion concreta y los eventos implicados."""
+    _escrita(con)
+    editor = Editor({"diagnostico": "el plan pone el capitulo 3 antes del 2"})
+    p = _publicar(con, LeanFijo(1, [{"invariante": "L-1", "eventos": ["ev-1", "ev-2"],
+                                     "detalle": "ev-2 va antes"}]),
+                  Secuencia(BIEN), editor, Reescritor())
+    assert "L-1" in editor.llamadas[0] and "ev-1,ev-2" in editor.llamadas[0]
+    assert not p.publicada and p.parada["motivo"] == "lean"
+    assert "el capitulo 3 antes del 2" in p.parada["diagnostico"]
+
+
+def test_un_fallo_de_l1_va_al_editor_y_detiene_sin_reescribir(con):
+    """`C-2`: lo que Lean mira lo fija el plan; reescribir la prosa seria gasto sin
+    efecto. El diagnostico va al informe y la generacion se detiene."""
+    _escrita(con)
+    reescribir = Reescritor()
+    p = _publicar(con, LeanFijo(1, [{"invariante": "L-1", "eventos": ["ev-1", "ev-2"],
+                                     "detalle": "x"}]),
+                  Secuencia(BIEN), Editor({"diagnostico": "d"}), reescribir)
+    assert reescribir.llamadas == [] and p.rondas == 1
+
+
+def test_un_final_abrupto_arreglado_en_la_segunda_ronda_publica(con):
+    _escrita(con)
+    reescribir = Reescritor()
+    p = _publicar(con, LeanFijo(), Secuencia(ABRUPTO, BIEN), Editor(INSTRUYE_CAP10),
+                  reescribir)
+    assert p.publicada and p.rondas == 2
+    assert reescribir.llamadas == [("cap-10-e1", ["cierra el viaje"])]
+
+
+def test_nunca_hay_un_tercer_reintento(con):
+    """Tope 2 (`RF-07`): tres evaluaciones como mucho —la primera y dos reintentos—.
+    No son las 3 reescrituras del Editor: es otro contador."""
+    _escrita(con)
+    reescribir = Reescritor()
+    p = _publicar(con, LeanFijo(), Secuencia(ABRUPTO), Editor(INSTRUYE_CAP10), reescribir)
+    assert not p.publicada and p.parada["motivo"] == "tope"
+    assert len(reescribir.llamadas) == 2 and p.rondas == 3
+
+
+def test_relanzar_no_reinicia_el_contador(con):
+    """La leccion de `CE-4`: el tope se lee de la base, no de la memoria de un proceso."""
+    _escrita(con)
+    _publicar(con, LeanFijo(), Secuencia(ABRUPTO), Editor(INSTRUYE_CAP10), Reescritor())
+    reescribir = Reescritor()
+    p = _publicar(con, LeanFijo(), Secuencia(ABRUPTO), Editor(INSTRUYE_CAP10), reescribir)
+    assert reescribir.llamadas == [] and p.parada["motivo"] == "tope"
+
+
+def test_una_instruccion_para_un_capitulo_no_implicado_se_ignora_y_se_informa(con):
+    _escrita(con)
+    reescribir = Reescritor()
+    p = _publicar(con, LeanFijo(), Secuencia(ABRUPTO, BIEN), Editor({"instrucciones": [
+        {"capitulo": "cap-02", "instruccion": "cambia todo"},
+        {"capitulo": "cap-10", "instruccion": "cierra el viaje"}]}), reescribir)
+    assert [e for e, _ in reescribir.llamadas] == ["cap-10-e1"]
+    assert p.ignoradas == [("cap-02", "cambia todo")]
+
+
+def test_una_respuesta_ilegible_del_editor_gasta_la_ronda_sin_reescribir(con):
+    _escrita(con)
+    reescribir = Reescritor()
+    p = _publicar(con, LeanFijo(), Secuencia(ABRUPTO), Editor("no es json"), reescribir)
+    assert reescribir.llamadas == [] and p.parada["motivo"] == "tope"
+
+
+def test_toda_secuencia_de_veredictos_termina_publicada_o_detenida(con):
+    """La propiedad de terminacion que el enunciado pide a TLA+, sobre el codigo."""
+    for juez in (Secuencia(BIEN), Secuencia(ABRUPTO), Secuencia(ABRUPTO, BIEN),
+                 Secuencia(ABRUPTO, ABRUPTO, BIEN)):
+        c = sqlite3.connect(":memory:")
+        c.row_factory = sqlite3.Row
+        migraciones.migrar(c)
+        _escrita(c)
+        p = publicacion.publicar(c, "obra-x", ficha(), LeanFijo(), juez,
+                                 Editor(INSTRUYE_CAP10), Reescritor())
+        assert p.publicada != (p.parada is not None)

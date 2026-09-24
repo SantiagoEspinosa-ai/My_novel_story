@@ -111,3 +111,116 @@ def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=()) -> Evaluacion:
         [h for h in hallazgos if h["invariante"] == "INV-27"])
     veredictos.guardar(con, obra, decision, resultado.codigo)
     return Evaluacion(decision, ronda, implicados, resultado)
+
+
+PROMPT_FEEDBACK_LEAN = """Eres el editor de una novela para regalar. La verificacion formal de
+la cronologia (Lean) ha encontrado incoherencias temporales. No reescribes nada: lo que
+Lean mira lo fija el plan antes de escribir, y la generacion se va a detener. Explica en
+una o dos frases que falla en el plan, para el informe.
+
+VIOLACIONES (invariante, eventos implicados, detalle)
+{violaciones}
+
+CAPITULOS IMPLICADOS
+{capitulos}
+
+Devuelve un unico objeto JSON: "diagnostico": una o dos frases.
+"""
+
+PROMPT_INSTRUCCIONES = """Eres el editor de una novela para regalar. El juicio de la obra
+entera ha encontrado problemas. No reescribes: das una instruccion concreta al escritor
+por cada capitulo que haya que tocar, y solo de los capitulos implicados.
+
+PROBLEMAS DE OBRA
+{problemas}
+
+CAPITULOS IMPLICADOS
+{capitulos}
+
+RESUMENES DE LA NOVELA (no el texto entero)
+{resumenes}
+
+Devuelve un unico objeto JSON: "instrucciones": lista de {{"capitulo", "instruccion"}}.
+"""
+
+
+@dataclass
+class Publicacion:
+    publicada: bool
+    rondas: int
+    parada: dict | None = None
+    ignoradas: list = None
+    evaluaciones: list = None
+
+
+def _lista(filas):
+    return "\n".join("- " + f for f in filas) or "(ninguno)"
+
+
+def publicar(con, obra, ficha, lean, juez_de_obra, editor, reescribir,
+             tope=None, vetadas=()) -> Publicacion:
+    """El bucle de la puerta (`SPEC-30` v4 `RF-04`, `RF-06`, `RF-07`).
+
+    - Si se abre, la version se publica.
+    - **Si Lean falla, el fallo vuelve al Editor como feedback y la generacion se
+      detiene sin reescribir** (`RF-06`, `C-2`): lo que Lean mira lo fija el plan.
+    - Si queda un `INV-27`, el Editor da instrucciones para los capitulos implicados,
+      que se reescriben a delta fijo (`RF-10`), y se vuelve a evaluar.
+    - Si falla algo que no se arregla reescribiendo, o se agota el tope, se detiene.
+
+    **El tope se lee de la base** (`veredicto_de_publicacion`), asi que relanzar no
+    lo reinicia: la leccion de `CE-4`. Cada vuelta guarda una ronda, asi que el bucle
+    termina siempre, publicando o detenido.
+    """
+    from app.commons import config
+    from app.features.consolidacion import memoria
+
+    tope = config.TOPE_REINTENTOS_DE_PUBLICACION if tope is None else tope
+    ignoradas, evaluaciones = [], []
+    while True:
+        previas = veredictos.rondas(con, obra)
+        if previas > tope:
+            return Publicacion(False, previas, {"motivo": "tope", "rondas": previas},
+                               ignoradas, evaluaciones)
+        e = evaluar(con, obra, ficha, lean, juez_de_obra, vetadas)
+        evaluaciones.append(e)
+        if e.decision.publica:
+            return Publicacion(True, e.ronda, None, ignoradas, evaluaciones)
+        condiciones = [c.__dict__ for c in e.decision.condiciones]
+        if any(c.invariante == "INV-28" for c in e.decision.condiciones):
+            bruto = editor.llamar(PROMPT_FEEDBACK_LEAN.format(
+                violaciones=_lista("{0} {1}: {2}".format(
+                    v["invariante"], ",".join(v.get("eventos", [])), v.get("detalle", ""))
+                    for v in e.lean.violaciones) if e.lean.violaciones
+                    else "- " + (e.lean.detalle or "sin detalle"),
+                capitulos=_lista("{0}: {1}".format(c, "; ".join(m))
+                                 for c, m in e.implicados.por_capitulo.items())))
+            diagnostico = bruto.get("diagnostico") if isinstance(bruto, dict) else None
+            return Publicacion(False, e.ronda, {
+                "motivo": "lean", "condiciones": condiciones,
+                "diagnostico": diagnostico or "el editor no devolvio un diagnostico legible",
+                "sin_capitulo": e.implicados.sin_capitulo}, ignoradas, evaluaciones)
+        if any(not c.reintentable for c in e.decision.condiciones):
+            return Publicacion(False, e.ronda, {"motivo": "no_reintentable",
+                                                "condiciones": condiciones},
+                               ignoradas, evaluaciones)
+        if e.ronda > tope:
+            return Publicacion(False, e.ronda, {"motivo": "tope", "rondas": e.ronda,
+                                                "condiciones": condiciones},
+                               ignoradas, evaluaciones)
+        implicados = e.implicados.por_capitulo
+        bruto = editor.llamar(PROMPT_INSTRUCCIONES.format(
+            problemas=_lista(c["detalle"] for c in condiciones),
+            capitulos=_lista("{0}: {1}".format(c, "; ".join(m)) for c, m in implicados.items()),
+            resumenes=_lista("{0}: {1}".format(r["escena"], r["texto"])
+                             for r in memoria.resumenes_hasta(con, 10 ** 9, obra=obra))))
+        instrucciones = (bruto.get("instrucciones") if isinstance(bruto, dict) else None) or []
+        for i in instrucciones:
+            if not isinstance(i, dict):
+                continue
+            capitulo, texto = i.get("capitulo"), i.get("instruccion")
+            if capitulo not in implicados or not texto:
+                ignoradas.append((capitulo, texto))
+                continue
+            for escena in escaleta.escenas_de_capitulo(con, capitulo):
+                reescribir(con, escena["id"], [texto])
