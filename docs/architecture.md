@@ -110,7 +110,7 @@ backend/
       contexto/              # ensamblado del contexto de una escena dentro del presupuesto
       generacion/            # producir borrador + delta propuesto
       verificacion/          # puertas: reglas deterministas y jueces
-      revision/              # pases dirigidos sobre texto ya generado
+      revision/              # pases dirigidos sobre texto ya generado; la peticion de cambio del lector (PLAN-23)
       consolidacion/         # aplicar el delta y resumir
       auditoria/             # invariantes de nivel obra y capitulo
       entrevista/            # la ficha del destinatario, por turnos, y el texto libre (SPEC-25)
@@ -455,6 +455,44 @@ La decisión es una función pura (`auditoria/publicacion.py`) y cada ronda deja
 
 `INV-27` sigue siendo `mayor`: que bloquee la publicación es regla de esta puerta, no un cambio
 de severidad.
+
+### Regenerar en una obra acumulativa (`SPEC-23` v2, `PLAN-23` Parte A)
+
+Lo común a las dos salidas está construido; **qué se escribe** espera a la medida del arrastre
+(`S-1` si la media es ≤ 3 capítulos, `S-2` si es > 3). Hasta entonces `regeneracion.SALIDA` es
+`None` y pedir un cambio responde `409` sin encolar nada.
+
+- **La medida** es `orquestacion/arrastre.py` (y `backend/medir_arrastre.py`): lee tablas, no
+  escribe, se niega sin obra completa, sin usos o sin procedencia, y lleva en el mismo objeto la
+  dirección de su sesgo, **a la baja, hacia `S-1`**.
+- **Versiones con identidad** (`D-2`): `version_de_obra` y `capitulo_de_version` en
+  `features/brief/`, con disparadores que impiden cambiar una versión creada. Un capítulo que no
+  cambió **se comparte por referencia**; uno nuevo en la misma posición es otro capítulo, y
+  `capitulo` ya no tiene `UNIQUE (obra, orden)`, que lo borraba.
+- **El estado se reconstruye desde los deltas guardados**: `consolidacion/mundo.acumular` es
+  puro; `rebobinar` escribe un mundo en las tablas vivas, que son **las de la versión que se
+  escribe** (`C-2`). La semilla sale del plan aprobado y del conocimiento anterior al relato.
+- **La reverificación** (`D-1`) vuelve a pasar las puertas deterministas de cada escena de una
+  versión contra el estado que esa versión reconstruye, sin modelo y sin escribir en `hallazgo`
+  (`features/verificacion/repository.py`). Un verde solo cuenta con la **huella** del estado
+  vigente (`C-3`); si no, la escena está `sin_reverificar`. `INV-06` e `INV-04` salen como no
+  ejecutadas, cada una con su motivo.
+- **Cada lector ve solo su versión**: `regeneracion.escenas_de_version` (la vigente si no se
+  dice) la usan el bucle de escenas, la memoria del Escritor, el cierre, la puerta de
+  publicación, la story bible, el manuscrito y la medida. Los imprescindibles se asignan por
+  posición del capítulo en la versión, no por un identificador construido.
+- **La petición** (`C-4`) es de un hecho o de un nombre y vive en `features/revision/`. No edita
+  nada: los hechos, los nombres y las vetadas **de una versión** se componen desde su cadena de
+  peticiones (`hechos_de_version`, `nombres_de_version`, `vetadas_de_version`), y la versión
+  anterior sigue leyendo lo suyo. Lo afectado por un renombrado lo decide el texto aceptado y
+  la presencia, no el modelo.
+- **Endpoints**: `GET /obras/{id}/versiones`, `GET /obras/{id}/versiones/{numero}`,
+  `POST /obras/{id}/cambios/propuesta` y `POST /obras/{id}/cambios`. El trabajo
+  `regenerar_obra` tiene su worker (`regeneracion.atender`), que **no escribe nada** mientras
+  no haya rama: las ramas son de la Parte B.
+
+Lo que no hace: la puerta de publicación y el PDF **por versión**, ni la cronología y el
+generador de Lean por versión (`F-93`).
 
 ### Severidad: bloqueante frente a mayor y menor
 

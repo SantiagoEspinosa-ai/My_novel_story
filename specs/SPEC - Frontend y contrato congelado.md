@@ -349,7 +349,8 @@ De `CLAUDE.md` y `docs/architecture.md`, no negociables desde aquí:
 
 ### 3.2.2 La superficie de API que el frontend consume, y su estado de hoy
 
-Comprobado contra `app/main.py` y los routers el 2026-09-23. **Seis rutas montadas en total.**
+Comprobado contra `app/main.py` y los routers el 2026-09-23. **Seis rutas montadas en total.** Desde
+`PLAN-23` A5 y A7 hay cuatro más, las de versiones y cambios: están en la tabla con su paso.
 
 | Método | Ruta | Para qué la necesita el frontend | Hoy |
 | --- | --- | --- | --- |
@@ -365,7 +366,11 @@ Comprobado contra `app/main.py` y los routers el 2026-09-23. **Seis rutas montad
 | `POST` | `/obras/{id}/escaleta` | — | **Falta** (`G-12`) |
 | — | Lectura de un capítulo de corrido | `RF-41` | **No existe nada** (`G-13`) |
 | — | Fichas de entidad | `RF-43`, `RF-44` | **No existe nada** (`G-03`, `G-04`) |
-| — | Petición de cambio | `RF-47` | **No existe nada**; `features/revision/` está vacía (`G-10`) |
+| — | Petición de cambio | `RF-47` | **No existe nada** que ancle una selección (`G-10`, `DA-6`). La petición **por hecho o por nombre** sí existe desde `PLAN-23` A7, abajo |
+| `POST` | `/obras/{id}/cambios/propuesta` | Los capítulos que se van a tocar, antes de tocarlos, con la promesa y su punto ciego (`RF-51`, `RF-55`) | **Montada** (`PLAN-23` A7). Síncrona y sin modelo; `409` si `PLAN-23` `C-4` no la admite |
+| `POST` | `/obras/{id}/cambios` | Pedir el cambio con la lista aceptada (`RF-48`, `RF-50`) | **Montada, cerrada**: responde `409` *«salida sin elegir: falta la medida»* y no encola nada hasta la Parte B de `PLAN-23` (`DA-1`) |
+| `GET` | `/obras/{id}/versiones` | Las versiones con su número, su anterior, su commit y su petición (`RF-53`) | **Montada** (`PLAN-23` A5) |
+| `GET` | `/obras/{id}/versiones/{numero}` | Capítulos en orden, si son compartidos, y por escena su estado y su `estado_de_verificacion` (`RF-52`…`RF-54`) | **Montada** (`PLAN-23` A5) |
 
 ### 3.2.3 Los dos ficheros de configuración
 
@@ -473,8 +478,8 @@ quince filas; seis se han cerrado y una se ha disuelto mientras la spec estaba e
 | **G-04** | `participa_en` y `ocurre_en` no estaban persistidas | **Parcial.** `escena.personajes_presentes` **ya se persiste** como columna, así que `participa_en` es respondible. **`ocurre_en` no**: `escena.lugar` sigue siendo texto sin clave foránea, y `lugar` no tiene `nombre`, de modo que "en qué capítulos ocurre algo en la casa" depende de que dos cadenas coincidan — **Regla 11 en el esquema**. Ver abajo por qué la asimetría importa más que la ficha | `RF-44` | Esquema |
 | **G-05** | El `DeltaDeEscena` no se guardaba: el código lo aplicaba y lo tiraba | **Cerrado.** `delta_de_escena(orden, escena, version, contenido)` con su índice, escrito al consolidar | `RF-50`, `VER-09` | Esquema |
 | **G-06** | No existía la relación hecho → capítulos, y antes faltaba su definición | **Cerrado.** `SPEC-21` `C-2` define `tipo_de_uso_de_hecho` con cuatro valores y deja a cada consumidor declarar cuáles cuenta; `uso_de_hecho(hecho, escena, capitulo, tipo, origen)` los guarda, con **el origen dentro de la clave** para no perder la diferencia entre observado y declarado | `RF-45`, `RF-50` | Decisión + esquema |
-| **G-07** | La obra no tiene versión | **Decidido, no implementado.** `SPEC-23` `D-2` fija qué es una versión y que **necesita identidad propia** —`CE-5` demostró que sin ella `VersionesSoloCrecen` pasaba por no poder distinguir nada (`F-43`)—. No hay tabla | `RF-53` | Esquema |
-| **G-08** | Una escena `consolidada` no tiene transición de salida, y regenerar una del medio invalida el estado sobre el que se escribieron las siguientes | **Decidido, no implementado.** `SPEC-23` `D-1`: no hay verde heredado, así que el mínimo es reverificar. **La reverificación no existe** y es más que un apaño: es lo que permitiría revalidar una obra entera después de cualquier cambio | `RF-54` | Decisión + código |
+| **G-07** | La obra no tiene versión | **Cerrado** (`PLAN-23` A3). `SPEC-23` `D-2` fija qué es una versión y que **necesita identidad propia** —`CE-5` demostró que sin ella `VersionesSoloCrecen` pasaba por no poder distinguir nada (`F-43`)—. Tablas `version_de_obra` y `capitulo_de_version`, con disparadores que impiden modificar una versión creada | `RF-53` | Esquema |
+| **G-08** | Una escena `consolidada` no tiene transición de salida, y regenerar una del medio invalida el estado sobre el que se escribieron las siguientes | **Cerrado en su mitad común** (`PLAN-23` A4). `SPEC-23` `D-1`: no hay verde heredado, así que el mínimo es reverificar. La reverificación existe —`regeneracion.reverificar`, sin modelo, con la huella del estado—; **qué salida la usa y cómo** espera a la medida (`DA-1`) | `RF-54` | Decisión + código |
 | **G-09** | Un capítulo `cerrado` no se reabre (`RF-30`) y el alcance pedía regenerar capítulos cerrados | **Disuelto.** `SPEC-23` `D-2` elimina la contradicción en vez de gestionarla: el capítulo cerrado **no se toca**, se escribe otro en la versión nueva. `estado_de_capitulo` se queda con sus dos valores | `RF-53` | — |
 | **G-10** | No hay lector, ni ancla de una selección | **Parcialmente decidido.** `D-1` responde quién es el lector. **El ancla sigue sin existir**: `PaseDeRevision` tiene `tipo`, `ambito` y `hallazgos[]`, ninguno ancla un rango a un `Borrador` y su `version`, y `features/revision/` está vacía | `RF-47` | Decisión + esquema |
 | **G-11** | `Obra` no tiene dedicatoria ni nada de portada | **Decidido, no implementado.** `D-2`: una por obra, atributo de `Obra`. La tabla `obra` no tiene la columna | `RF-46` | Esquema |
@@ -572,8 +577,9 @@ que el frontend se construya sobre una API que se mueve. Después las páginas, 
 | Al regenerar, ¿qué pasa con **lo posterior**? | `SPEC-23` `D-1` | No hay verde heredado; hay que reverificar. Da `RF-54` |
 | ¿Qué se le **promete** al lector? | `SPEC-23` `D-3` | «Reescribimos lo que dependía de esto», con el punto ciego dicho. Da `RF-55` y `PCF-7` |
 
-**Aviso sobre las tres últimas:** salen de `SPEC-23`, que está **`en_revision`**. Si al
-aprobarse cambiaran, `RF-53`, `RF-54` y `RF-55` cambian con ellas.
+**Aviso sobre las tres últimas:** salen de `SPEC-23`, **aprobada en su v2** (2026-09-24) con
+`D-1`…`D-3` tal como están aquí. Si una versión posterior las cambiara, `RF-53`, `RF-54` y `RF-55`
+cambian con ellas.
 
 ## 7.3 Las que siguen abiertas, con lo que cada una asume
 
@@ -582,7 +588,7 @@ asumido no se lea como acordado.
 
 | ID | Decisión abierta | Quién la tiene | Qué se asume mientras tanto |
 | --- | --- | --- | --- |
-| **DA-1** | **Qué salida toma la regeneración**: `S-1` (cascada hasta el final) o `S-2` (regenerar lo que usa el hecho y reverificar el resto) | `SPEC-23`, pregunta 1. Espera al **arrastre medido**, con el umbral ya fijado de antemano: ~2 capítulos → `S-1`; ~8 → `S-2` | Que **`RF-50`…`RF-55` no se implementan**, y que la interfaz **no promete la función** hasta que esté decidida. Lo demás de esta spec no depende de ello |
+| **DA-1** | **Qué salida toma la regeneración**: `S-1` (cascada hasta el final) o `S-2` (regenerar lo que usa el hecho y reverificar el resto) | `SPEC-23` v2, pregunta 1. Espera al **arrastre medido**, con la regla ya cerrada por el autor: **≤ 3 capítulos → `S-1`; > 3 → `S-2`** | Que **lo común a las dos salidas está construido** (`PLAN-23` Parte A: versiones, reverificación, qué cambió, la propuesta y las lecturas por versión) y que **pedir el cambio responde `409`** hasta que la medida elija; la interfaz **no promete la función** hasta entonces. Lo demás de esta spec no depende de ello |
 | **DA-2** | **Si existe CI** y con qué | Fuera de esta spec | Que `RF-32` corre en local, y por tanto **no protege la integración** (`PCF-6`). No se cuenta como cobertura en ninguna tabla |
 | **DA-3** | **Desde dónde se sirve el frontend** y qué declara el backend sobre su origen (`G-15`) | El plan, o una spec menor | Que las pruebas de `NF-01` **no hacen llamadas reales desde un navegador**, así que la decisión no las bloquea. Bloquea la primera ejecución real |
 | **DA-4** | **Qué herramienta cierra `VER-17`** (comprobador de FSD) | Abierta en `docs/verification.md` | Que `NF-07` se declara y **no se comprueba** todavía |
@@ -597,3 +603,4 @@ asumido no se lea como acordado.
 | --- | --- | --- |
 | 1 | 2026-09-23 | Primera versión, escrita como **spec de cambio**: `C-1`…`C-9`, la lista `G-01`…`G-15` de lo que falta en backend y siete preguntas al final. Las cuatro que le tocaban se respondieron en `D-1`…`D-4`; las otras tres se contestaron en `SPEC-21` y `SPEC-23` |
 | 2 | 2026-09-23 | **Reescrita como SRS** para poder implementarla: requisitos funcionales `RF-31`…`RF-57` con su origen `C-x`, no funcionales `NF-01`…`NF-07` aparte, restricciones `DF-1`…`DF-3`, criterios de aceptación `CA-1`…`CA-9` y **matriz de trazabilidad** de cada requisito a su fila `VER`. Los puntos ciegos pasan a tabla propia `PCF-1`…`PCF-7` y las decisiones abiertas a `DA-1`…`DA-6`, **cada una con lo que asume mientras tanto**. La lista `G-xx` gana **columna de estado comprobada contra el código**: seis cerradas, una disuelta. Entran dos cambios del mismo día: **una obra con diez capítulos en vez de diez obras** —de donde sale `RF-37`, que obra y capítulo no se sustituyan en el contrato, y `NF-05`, que un dato de prueba tenga más de un capítulo— y **la separación entre la configuración del sistema y el brief de la obra**, de donde salen `RF-56`, `RF-57` y `RF-42`. No se renumera ni se retira ningún `C-x`, `D-x` ni `G-xx`. **Conserva el `estado` y la `fecha_aprobacion` de la versión 1**: es la misma spec reformateada, no una decisión nueva, así que no vuelve a pasar la puerta |
+| 3 (sin cambio de versión) | 2026-09-24 | `PLAN-23` A8 pone al día lo que la Parte A de `PLAN-23` construyó: `G-07` cerrado, `G-08` cerrado en su mitad común, `DA-1` con la regla ≤ 3 / > 3 de `SPEC-23` v2 y lo que asume ahora, las cuatro rutas nuevas en §3.2.2 y el aviso de que `SPEC-23` ya está aprobada. **No decide nada**: conserva su estado y su aprobación |

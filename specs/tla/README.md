@@ -223,6 +223,11 @@ razonable y bloquea el sistema).
 
 ### CE-5 · La propiedad estaba en verde por no poder distinguir nada
 
+> **En el código desde `PLAN-23` A3.** La `ronda` es `VersionDeObra.numero`: la clave de
+> `version_de_obra` es `(obra, numero)` y un disparador aborta cualquier `UPDATE` o `DELETE`
+> de una versión creada. Dos versiones con los mismos capítulos se distinguen por su número
+> (`VER-114`, `test_dos_versiones_con_los_mismos_capitulos_se_distinguen_por_su_numero`).
+
 **Propiedad:** `VersionesSoloCrecen`. Este no es un defecto del harness sino
 **de la propia especificación**, y se documenta porque es el error más fácil de
 no ver.
@@ -252,7 +257,7 @@ Se documentan y se resuelve a favor del documento, que es lo normativo.
 | | Discrepancia | Resolución |
 | --- | --- | --- |
 | **D-1** | `docs/architecture.md` modela **escenas** con ocho estados y dos puertas humanas (`A-04`: la aceptación la dispara una persona). `main` trabaja por **capítulos** y sin ninguna puerta humana | La especificación modela capítulos, porque es lo que pide el enunciado y lo que existe. **La ausencia de puerta humana es un hueco real**, no una simplificación del modelo |
-| **D-2** | La regeneración por cambio del lector **no existía en ningún documento** cuando se escribió esta especificación. No había transición, ni estado, ni versión. **Desde entonces la describen `SPEC-22` `RF-50`..`RF-55` (`aprobada`) y `SPEC-23` `D-2` (`en_revision`), que adopta versiones con identidad propia por `CE-5`**; en `docs/` sigue sin estar | La acción `Regenerar` es nueva. Antes de implementarla hace falta spec: es un cambio que decide algo nuevo |
+| **D-2** | La regeneración por cambio del lector **no existía en ningún documento** cuando se escribió esta especificación. No había transición, ni estado, ni versión. **Desde entonces la describen `SPEC-22` `RF-50`..`RF-55` (`aprobada`) y `SPEC-23` `D-2` (`aprobada` en su v2), que adopta versiones con identidad propia por `CE-5`**; en `docs/definitions.md` están `VersionDeObra`, `PeticionDeCambio` y la relación `incluye` desde `PLAN-23` A0, y el código las tiene desde A3 | La acción `Regenerar` es nueva. Antes de implementarla hace falta spec: es un cambio que decide algo nuevo |
 | **D-3** | `EJECUCION.md` §3.5 describe un bucle "en orden"; el código usa lista de pendientes | Gana el código, y el documento debe corregirse. Ver CE-3 |
 | **D-4** | Rendición incondicional (`EJECUCION.md` regla 1) frente a rendición condicionada a que no quede ninguna invariante `bloqueante` (`docs/architecture.md`) | Gana `docs/architecture.md`. Ver CE-2 |
 

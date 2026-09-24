@@ -6,7 +6,7 @@ aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-24
 autor: "@Santiago Espinosa Domínguez"
 fecha: 2026-09-23
-version: 2
+version: 3
 ---
 
 > **Historial.** v1: en revisión, con `D-1`, `D-2` y `D-3` respondidas y la salida pendiente
@@ -14,7 +14,12 @@ version: 2
 > antes de la medida, porque las versiones con identidad (`D-2`), guardar el delta (`G-05`) y la
 > reverificación (`D-1`) hacen falta con cualquiera de las dos salidas. La medida sigue decidiendo
 > la salida; lo que ya no espera a ella es la aprobación. La interfaz de la petición es la lectura
-> web (`SPEC-22`).
+> web (`SPEC-22`). v3 (2026-09-24, `PLAN-23` A8): **corrección documental, sin decisión nueva**
+> —conserva su estado y su aprobación—. Quita los restos de v1 que contradecían a la v2 (*«Nada
+> del reparto»*, *«elegir ya una de las cinco salidas»* como fuera de alcance, la tabla de
+> preguntas repetida y la fila 5 que decía que hoy no se puede medir) y corrige *«el delta se
+> aplica y se tira»*: `G-05` ya estaba cerrado en el código (hallazgos 1 y 13 de `PLAN-23`). La
+> medida de B1 entrará como v4.
 
 # SPEC-23 — Regenerar en una obra acumulativa
 
@@ -60,9 +65,11 @@ cada una admite una respuesta razonable que contradice a las otras tres.
 
 Comprobado, no supuesto:
 
-- **El delta se aplica y se tira.** `SPEC-01` §3.2.2 lo declara *fuente de verdad del estado*
-  y no hay ninguna tabla que lo guarde. Lo que se conserva es su **efecto** —entidades, sus
-  ubicaciones, el registro de conocimiento—, no lo que cada escena aportó.
+- **El delta se guarda** (corregido en v3: la v2 decía que se aplicaba y se tiraba, y ya no era
+  cierto). `SPEC-01` §3.2.2 lo declara *fuente de verdad del estado*, y la tabla
+  `delta_de_escena` lo guarda entero, por escena y versión, dentro de la transacción de la
+  consolidación (`SPEC-22` `G-05`, **cerrado**). Lo que faltaba era **reconstruir el estado desde
+  él**, y lo hace `PLAN-23` A2.
 - **De `consolidada` no sale ninguna transición.** `rechazada` vuelve a `generada`; una escena
   consolidada no tiene camino de vuelta en `docs/architecture.md`.
 - **`RF-19` e `INV-05`** prohíben generar la escena siguiente mientras la anterior no esté
@@ -142,8 +149,8 @@ identifica un estado, y qué se hace con un verde caducado—. Es la única form
 **El delta hay que guardarlo se elija lo que se elija** (`G-05`). Las cinco salidas de abajo lo
 necesitan: sin él no se puede saber qué aportó la escena 7, ni comparar el delta viejo con el
 nuevo, ni recalcular el estado desde un punto. Además `SPEC-01` §3.2.2 ya lo declaraba y
-`VER-09` lo da por hecho. No abre ninguna pregunta: es trabajo pendiente, y es el único de los
-cuatro que se puede empezar sin haber decidido nada.
+`VER-09` lo da por hecho. No abría ninguna pregunta, y **ya está hecho**: se guarda en
+`delta_de_escena`, y el estado se reconstruye desde él (`PLAN-23` A2, que cierra `VER-09`).
 
 ---
 
@@ -285,8 +292,9 @@ delegación por escena— y de dónde sale cada coste.
 
 ## Qué decide esta spec
 
-Nada del reparto. **Decide que la decisión existe, que es previa a `SPEC-22` `C-9` y que se
-toma con estas cinco salidas delante.** Al aprobarla tiene que quedar escrito:
+**Decide que la decisión existe, que es previa a `SPEC-22` `C-9` y que se toma con estas cinco
+salidas delante**, y la v2 la deja tomada como regla: `D-1`…`D-3` y la salida por el arrastre
+medido (abajo). Al aprobarla tenía que quedar escrito:
 
 1. Cuál de las salidas se toma, y con qué combinación (`S-4` se combina con cualquiera).
 2. **Qué se promete exactamente al lector** cuando pide un cambio, dicho en una frase que no
@@ -388,8 +396,8 @@ antemano, el número decide; sin él, el número se interpreta.
   decida aquí, no al revés.
 - **`G-01`** —que ninguna escena sepa a qué capítulo pertenece—. Es un defecto activo del
   cierre de capítulo, va por su cuenta y va antes.
-- **Elegir ya una de las cinco salidas.** Esta spec se aprueba eligiendo; si trajera la
-  elección hecha, no habría nada que aprobar.
+- ~~**Elegir ya una de las cinco salidas.**~~ Resto de v1, retirado en v3: la v2 elige `S-4`
+  (`D-2`) y deja `S-1` frente a `S-2` a una regla cerrada de antemano.
 - **Reescribir `RF-19`, `RF-30` o `INV-05`.** Varias salidas los tocan y ninguna los cambia
   aquí: el cambio va en la spec que aplique lo elegido.
 - **La regeneración dirigida por calidad** —`en_revision` → `generada`, que ya existe—. Aquí se
@@ -414,12 +422,12 @@ proyecto ya ha elegido tres veces.
 | 4 | ¿Dos versiones vivas o sustitución? | **Respondida: dos vivas** (`D-2`). Elimina la contradicción con `RF-30` en vez de gestionarla |
 | 2 | ¿Qué se le promete al lector? | **Respondida** (`D-3`): «reescribimos lo que dependía de esto», con el punto ciego dicho |
 | 1 | **¿Qué salida se toma?** | **Respondida como regla** (v2): ≤ 3 capítulos, `S-1`; > 3, `S-2`. La aplica la medida, no una opinión |
-| 2 | **¿Qué se le promete al lector?** ¿«Reescribimos lo que dependía de esto» o «reescribimos de aquí al final»? | `S-1` y `S-3` prometen cosas distintas y las dos son defendibles. La promesa se escribe antes de construirla |
-| 3 | **¿Se acepta un verde heredado?** Una escena posterior cuyas puertas pasaron contra el estado viejo, ¿sigue valiendo? | Si la respuesta es que no, la salida tiene que **invalidar o rehacer** los verdes posteriores: `S-1` los rehace y `S-2` los reverifica, así que el mínimo es `S-2`. `S-3` no hereda ninguno —el estado no se mueve— pero **no cubre la función**: en cuanto una petición mueva el estado hay que escalarla, así que no vale como salida única |
-| 4 | **¿Una obra puede quedar en dos versiones vivas, o la nueva sustituye a la vieja?** | Es `S-4`, y también decide qué significa «se conserva la versión anterior» |
-| 5 | **¿Cuánto arrastra un cambio medio?** No está medido, y **hoy no se puede medir aunque haya obra**: ver la nota de abajo | Es el número que hace barata o ruinosa a `S-1`, y hoy se está eligiendo a ciegas |
+| 5 | **¿Cuánto arrastra un cambio medio?** No está medido. **Se puede medir** sobre `menciona`, en cuanto exista la novela de ejemplo completa, con `backend/medir_arrastre.py` (`PLAN-23` A1, B1): ver «Dónde sí está la medida», abajo | Es el número que aplica la regla de la pregunta 1 |
 
-### Por qué la pregunta 5 todavía no se puede contestar
+Las filas 2, 3 y 4 de la v1 se repetían aquí con su texto de entonces y se quitaron en v3: sus
+respuestas son las de arriba.
+
+### Por qué la pregunta 5 no se podía contestar por el conjunto observado
 
 Esta spec dijo antes que bastaba con una obra ya generada. **Es falso**, y el motivo es de
 construcción y no de calidad de la obra. Son dos cosas que se suman:

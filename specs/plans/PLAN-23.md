@@ -410,7 +410,7 @@ no empieza, y el corte A0–A5 sigue siendo coherente.
 
 **Precondición:** la novela de ejemplo completa (`SPEC-27` `RF-03`). Se ejecuta
 `medir_arrastre.py`. Si se niega, **se para aquí y se vuelve al autor**: la salida no se elige. Si
-mide, su salida se commitea en `harness/evals/arrastre-SPEC-23.json` y se escribe en `SPEC-23` (v3,
+mide, su salida se commitea en `harness/evals/arrastre-SPEC-23.json` y se escribe en `SPEC-23` (v4 —la v3 fue la corrección documental de A8—,
 con número, obra, commit y **la dirección del sesgo en la misma línea**), en `SPEC-22` `DA-1` y en
 el mensaje del commit.
 
