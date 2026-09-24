@@ -7,22 +7,26 @@ preste credibilidad a otra que no lo es.
 
 ## Primera obra de diez capítulos
 
-Medido en solo lectura sobre `backend/obra10.db` el 2026-09-23, con la
-generación aún en curso.
+Medido en solo lectura sobre `backend/obra10.db` el 2026-09-23, **con la
+generación aún en curso**, tras el capítulo 8.
 
-| Cifra | Valor | ¿Qué mide? |
-| --- | --- | --- |
-| Escenas consolidadas | 54 de 60 | **Válida.** Producción real |
-| Borradores | 54 | **Válida** |
-| Coste | **21,6 USD** | **Válida.** Lo que cuesta generar |
-| Paradas | 0 | **Válida.** El pipeline no se atascó |
-| Hallazgos | **0** | **NO vale como medida de calidad** |
+> **Corrección (2026-09-24).** La primera columna se presentaba como la medida de la obra y era una lectura a mitad de generación. La columna *Al terminar* sale de `salida/novela-1/obra10.log` (no versionado) y de `obra10.db`.
+
+| Cifra | Tras el capítulo 8 | Al terminar | ¿Qué mide? |
+| --- | --- | --- | --- |
+| Escenas | 54 consolidadas | **55 de 60**; se paró en `cap-10-e2` por `INV-03` | **Válida.** Producción real, de una obra **sin terminar** |
+| Borradores | 54 | 57 | **Válida** |
+| Coste | 21,6 USD | **26,0372 USD, un suelo**: 10 de 169 delegaciones sin coste | **Suelo** de lo que costó llegar hasta ahí |
+| Paradas | 0 | 2 por `INV-03`, una desatascada con instrucción | **Válida** |
+| Hallazgos | **0** | 2, los dos `INV-03` `bloqueante` | **NO vale como medida de calidad** |
 
 ### Por qué el coste sí y el cero de hallazgos no
 
-**21,6 USD es una medida.** Mide lo que cuesta generar una novela de este
-tamaño con esta escalera de modelos, se obtuvo sumando el coste real por
-delegación, y sirve para decidir. Es un dato del informe.
+**El coste es una medida, pero es un suelo y de una obra sin terminar.**
+26,0372 USD se obtuvo sumando el coste real por delegación, y a 10 de las 169
+no se les leyó coste, así que el real es mayor. Mide lo que costó escribir 55
+escenas de 60 con esta escalera de modelos, no lo que cuesta una novela, y
+menos la novela regalo, que tiene otros agentes (`SPEC-31`).
 
 **Cero hallazgos no mide la calidad de la obra: mide que las puertas no
 tuvieron nada que rechazar.** Son dos afirmaciones distintas y solo la segunda
@@ -54,15 +58,16 @@ No era un problema de tablas ausentes: **era el modelado**.
 
 Las dos cifras juntas y con la distinción dicha en una línea. Algo así:
 
-> La primera obra de diez capítulos costó **21,6 USD** y produjo 54 escenas
-> consolidadas sin una sola parada. Cerró con **cero hallazgos**, y ese cero
+> La primera obra de diez capítulos costó **al menos 26,04 USD** y escribió 55
+> escenas de 60 antes de pararse en el último capítulo por `INV-03`. Hasta el
+> capítulo 8 llevaba **cero hallazgos**, y ese cero
 > **no es una medida de calidad**: los hechos del canon quedaron todos bajo el
 > último capítulo y la novela solo tiene dos personajes, los dos vivos, así
 > que ni `INV-03` ni la mitad de `INV-02` llegaron a tener nada que comprobar.
 > La repetición, con una sola obra de diez capítulos, es la primera en la que
 > ese cero significará algo.
 
-Presentar el 21,6 USD solo sería quedarse corto; presentar el cero de
+Presentar el coste solo sería quedarse corto; presentar el cero de
 hallazgos como calidad sería falso. **Presentarlos juntos con la distinción es
 lo que los hace creíbles a los dos**, y es el mismo criterio que este
 proyecto aplica en `F-30`, `F-52` y la Regla 8.

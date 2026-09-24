@@ -50,12 +50,12 @@ Reservados el 2026-09-23 antes de escribir, según `docs/sesiones-concurrentes.m
 
 | Spec | Para | Estado |
 | --- | --- | --- |
-| `SPEC-27` | Exportar a PDF, y corregir la fila de `SPEC-22` §1.2 (`EX-09`) | `aprobada` el 2026-09-23; su plan, `PLAN-27`, en revisión |
+| `SPEC-27` | Exportar a PDF, y corregir la fila de `SPEC-22` §1.2 (`EX-09`) | `aprobada` el 2026-09-23; `PLAN-27` `aprobada`, **sin código** |
 | `SPEC-28` | Las tools de los agentes, con schema (`EX-01`) | `aplicada`; `PLAN-28` aplicado salvo E10, la ejecución real |
-| `SPEC-29` | Observabilidad en Langfuse (`EX-02`) | `aprobada` el 2026-09-23; su plan, `PLAN-29`, en revisión |
-| `SPEC-30` | La puerta de publicación, con Lean (`EX-03`) | `aprobada` el 2026-09-23; su plan, `PLAN-30`, en revisión |
-| `SPEC-31` | Evaluación: cinco briefs, tabla, tuning, revisión humana y red-team (`EX-05`, `EX-06`) | `aprobada` el 2026-09-23; su plan, `PLAN-31`, en revisión |
-| `SPEC-32` | La dedicatoria en `Obra` y la extensión preguntada (`EX-16`, `EX-17`) | `aprobada` el 2026-09-24 con la decisión literal del autor; su plan, `PLAN-32`, en revisión |
+| `SPEC-29` | Observabilidad en Langfuse (`EX-02`) | `aprobada` el 2026-09-23; `PLAN-29` `aprobada`, con E1–E11 commiteados y E12–E14 sin cerrar. **Nada ha llegado nunca a una instancia real** |
+| `SPEC-30` | La puerta de publicación, con Lean (`EX-03`) | `aplicada`; `PLAN-30` `aplicada`. La puerta **no se ha alcanzado nunca** en una generación real |
+| `SPEC-31` | Evaluación: cinco briefs, tabla, tuning, revisión humana y red-team (`EX-05`, `EX-06`) | `aprobada` el 2026-09-23; `PLAN-31` `aprobada`, **sin código ni ejecuciones** |
+| `SPEC-32` | La dedicatoria en `Obra` y la extensión preguntada (`EX-16`, `EX-17`) | `aplicada`; `PLAN-32` `aplicada` |
 
 ## Huecos de documentación
 

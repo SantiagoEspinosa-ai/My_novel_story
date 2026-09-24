@@ -10,9 +10,11 @@ código y documentos, no de una ejecución, y viven en su tabla.
 
 ## Tras ejecuciones reales
 
-### La primera obra de diez capítulos (21,6 USD, 54 escenas consolidadas de 60)
+### La primera obra de diez capítulos (26,04 USD como suelo, 55 escenas escritas de 60)
 
-Era la novela de terror anterior, con la forma vieja: seis escenas por capítulo.
+Era la novela de terror anterior, con la forma vieja: seis escenas por capítulo. Se paró en `cap-10-e2` por `INV-03`, así que **no llegó a terminarse**. El coste, 26,0372 USD, es un **suelo**: 10 de las 169 delegaciones no dieron coste (`salida/novela-1/obra10.log`, que no se versiona).
+
+> **Corrección (2026-09-24).** Este encabezado decía *21,6 USD, 54 escenas consolidadas*. Era una lectura de `obra10.db` hecha con la generación en curso —21,6247 USD es la suma de los capítulos 1 a 8 del log— y se presentó como el total de la obra.
 
 | Hallazgo | Qué se vio | Qué cambió | Efecto |
 | --- | --- | --- | --- |
@@ -33,7 +35,7 @@ No pasó del capítulo 1. Cuatro hallazgos:
 | --- | --- | --- | --- |
 | `F-59` | Una vetada global con «ñ» se normalizaba perdiendo la «ñ» y **vetaba una preposición común**: ningún capítulo podía pasar `INV-21` | La normalización conserva la «ñ», que no es una tilde sino otra letra; y una prueba recorre la lista real buscando vetadas que coincidan con palabras comunes | Cerrado (`b18b286`) |
 | `F-60` | `INV-03` bloqueaba al destinatario **por usar sus propios recuerdos**: nadie declaraba lo que ya sabía al empezar | Montar la obra siembra el conocimiento inicial de los imprescindibles | Cerrado (`7b4aff2`) |
-| `F-61` | Los hooks **no dejaron constancia** | Diagnóstico (`6c175a5`): Claude Code solo los carga desde la raíz del repositorio. Arreglo: las delegaciones arrancan en la raíz | Cerrado (`1ad5691`); en la segunda ejecución real los hooks ya se ejecutan |
+| `F-61` | Los hooks **no dejaron constancia** | Diagnóstico (`6c175a5`): Claude Code solo los carga desde la raíz del repositorio. Arreglo: las delegaciones arrancan en la raíz | Cerrado (`1ad5691`) en lo diagnosticado: desde la raíz, Claude Code carga los hooks. **Ninguno ha validado todavía un capítulo ni interceptado una herramienta**: en la segunda ejecución real `validar_capitulo.py` dejó 4 filas en el registro de hooks, las 4 con el Planificador o el Revisor y en la rama que sale sin comprobar nada (solo actúa con el Escritor, `validar_capitulo.py:76`); `policy.py` no dejó ninguna. El Escritor no llegó a ejecutarse (`F-68`) |
 | `F-62` | El Planificador devolvió **dos planes fuera de esquema** antes del bueno | Su prompt y su definición dicen que un campo de más hace rechazar el plan entero | Cerrado (`3dbc2d1`) |
 
 ## Tras Lean

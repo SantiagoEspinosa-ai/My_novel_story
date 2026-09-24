@@ -55,8 +55,8 @@ Dos, declarados en `.claude/settings.json` y con el código en `backend/hooks/`
 
 Solo actúan sobre las delegaciones del pipeline, nunca sobre una sesión interactiva. En la
 primera ejecución real no dejaron constancia, porque Claude Code solo los carga desde la raíz
-del repositorio; **`F-61` está cerrado** (`1ad5691`): las delegaciones arrancan en la raíz, y en
-la segunda ejecución real los hooks ya se ejecutan, según la sesión que la lanzó.
+del repositorio; **`F-61` está cerrado** (`1ad5691`): las delegaciones arrancan en la raíz y los hooks se
+cargan. En la segunda ejecución real `validar_capitulo.py` dejó 4 filas en el registro de hooks, las 4 con el Planificador o el Revisor y en la rama que sale sin comprobar nada (solo actúa con el Escritor, `validar_capitulo.py:76`); `policy.py` no dejó ninguna. **Ninguno de los dos ha validado todavía un capítulo ni interceptado una herramienta**, porque el Escritor no llegó a ejecutarse (`F-68`).
 
 ## Comandos propios
 

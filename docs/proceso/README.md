@@ -19,5 +19,7 @@ la fuente en vez de copiarla, para que no haya dos versiones que diverjan.
 *sin ejecutar*. Ninguna fila se rellena para que la tabla parezca completa.
 
 Estado al 2026-09-24: la novela regalo **no ha completado todavía una generación** —la
-primera ejecución real no pasó del capítulo 1 (`F-59`…`F-62`)—, así que los resultados de
+primera ejecución real no pasó del capítulo 1 (`F-59`…`F-62`) y la segunda no aprobó el plan (`F-68`)—, así que los resultados de
 evaluación, el tuning y el red-team contra el modelo real están pendientes de `SPEC-31`.
+
+**Construido no es ejercido.** Casi todo lo que va detrás del Escritor —el Editor, `INV-23`, `INV-24`, la cronología, la puerta con Lean, los hooks sobre un capítulo, las tools y Langfuse— existe y pasa sus pruebas con dobles, pero **nunca ha corrido con datos reales**. [`diagramas.md`](diagramas.md) § "Validadores y su punto de ejecución" lo dice validador por validador.

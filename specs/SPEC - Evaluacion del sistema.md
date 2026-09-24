@@ -5,7 +5,7 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 4
+version: 5
 ---
 
 > **Historial.** v1: redactada con la decisión del autor sobre el presupuesto
@@ -15,6 +15,9 @@ version: 4
 > que la spec citaba, está obsoleta desde `SPEC-26` v3; y la cifra de 21,6 USD no era la
 > única medida. Lo encontró `PLAN-31`. v4 (2026-09-24): `RF-02` distingue «no ejecutado»,
 > por la condición del autor al aceptar la excepción de `INV-06` (`SPEC-30` `RF-12`).
+> v5 (2026-09-24), corrección documental que conserva la aprobación: los 21,6 USD de la obra
+> anterior eran una lectura a mitad de generación; el total leído es 26,0372 USD, un suelo,
+> con 55 escenas escritas de 60.
 
 # SPEC-31 — Evaluación del sistema
 
@@ -37,8 +40,8 @@ red-teaming que había, `VER-30`, está obsoleta: trataba de las reglas de terro
 **decisión de presupuesto**; el enunciado no pone ninguno.
 
 Lo que hay que saber para leerlo: **el coste de una novela con el pipeline actual
-está sin medir**. Hay dos cifras y ninguna lo es: 21,6 USD (`harness/evals/medidas.md`)
-es de la obra anterior —54 escenas, una escalera de modelos y sin Editor ni
+está sin medir**. Hay dos cifras y ninguna lo es: 26,0372 USD, un suelo (`harness/evals/medidas.md`),
+es de la obra anterior —55 escenas de 60, sin terminar, una escalera de modelos y sin Editor ni
 Planificador—, y 3,7715 USD en 7 delegaciones (`bf42074`) es un solo capítulo de la
 novela regalo que no se aceptó.
 No se sabe en qué dirección sesga: había más texto por capítulo, pero ahora hay

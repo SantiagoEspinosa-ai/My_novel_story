@@ -87,8 +87,8 @@ solo produce hechos que el comprador confirma, y nunca llega al Escritor (`SPEC-
 de validación del capítulo al terminar el Escritor, y otro de policy antes de cada
 herramienta, solo sobre las delegaciones del pipeline (`SPEC-26` `RF-17`..`RF-19`).
 **Estado.** Construidos. En la primera ejecución real no dejaron constancia, porque Claude
-Code solo los carga desde la raíz del repositorio (`F-61`); cerrado en `1ad5691`, y en la
-segunda ejecución real ya se ejecutan. El de policy es desde `SPEC-28` una allowlist por agente.
+Code solo los carga desde la raíz del repositorio (`F-61`); cerrado en `1ad5691`: ya se cargan.
+**Sin ejercer sobre un capítulo**: en la segunda ejecución real el de capítulo corrió 4 veces, todas con el Planificador o el Revisor y sin comprobar nada, y el de policy ninguna. El de policy es desde `SPEC-28` una allowlist por agente.
 
 ## Skills y subagentes
 
@@ -115,7 +115,7 @@ guardar la decisión que provocaron los intentos, no solo el contador (`CE-4`).
 **Qué es.** Poder ver qué hizo cada llamada, cuánto costó y qué versión de prompt la
 produjo. **Aquí.** Una traza propia por delegación, con dos campos de tokens de fuentes
 independientes (`VER-41`); Langfuse con un límite de qué sube (`SPEC-29`). **Estado.** La
-traza propia existe; **Langfuse está aprobado y sin construir**.
+traza propia existe y se ha medido en ejecuciones reales; **el envío a Langfuse está construido y sin ejercer** (`PLAN-29` E1–E11): nada ha llegado nunca a una instancia real.
 
 ## Verificación formal de la historia: Lean 4
 

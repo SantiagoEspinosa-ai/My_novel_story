@@ -67,8 +67,8 @@ Cómo se construye `SPEC-31`. Dos mitades que no se mezclan:
 **La única medida del pipeline actual, y lo que no dice**: la ejecución real de `PLAN-26` E13
 gastó **3,7715 USD en 7 delegaciones, todas con coste medido** (mensaje de `bf42074`). Fue un
 capítulo que **no se aceptó** (`F-59`) y no incluye el juicio de obra ni una novela entera.
-**No es una estimación de nada.** Los 21,6 USD de `harness/evals/medidas.md` son de la obra
-anterior.
+**No es una estimación de nada.** Los 26,0372 USD —un suelo, de 55 escenas de 60— de `harness/evals/medidas.md`
+son de la obra anterior.
 
 ## Lo que se aprueba al aprobar este plan
 
