@@ -1,0 +1,888 @@
+{
+  "components": {
+    "schemas": {
+      "BriefEntrada": {
+        "additionalProperties": false,
+        "description": "Lo que hace falta para dar de alta una `Obra`.\n\nSolo `titulo` y `premisa` son obligatorios, que es lo que dice la ficha de\n`Obra`. `persona` y `tiempo_verbal` son de `GuiaDeEstilo` y entran aqui\nporque sin ellos el Escaletador no puede empezar; el resto de la guia llega\ncon su propia feature.",
+        "properties": {
+          "extension_objetivo": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension Objetivo"
+          },
+          "genero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genero"
+          },
+          "persona": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonaNarrativa"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premisa": {
+            "minLength": 1,
+            "title": "Premisa",
+            "type": "string"
+          },
+          "subgenero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subgenero"
+          },
+          "tiempo_verbal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TiempoVerbal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "titulo": {
+            "minLength": 1,
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "titulo",
+          "premisa"
+        ],
+        "title": "BriefEntrada",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ObraSalida": {
+        "additionalProperties": false,
+        "description": "Una obra nunca se devuelve sin su estructura.\n\n`RF-23` lo dice para la escena -texto, estado y hallazgos abiertos, nunca el\ntexto solo- y el motivo vale igual aqui: un dato suelto induce a darlo por\nbueno. Una obra recien creada devuelve `capitulos: []`, que es informacion,\nno un hueco.",
+        "properties": {
+          "capitulos": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capitulos",
+            "type": "array"
+          },
+          "genero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genero"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "premisa": {
+            "title": "Premisa",
+            "type": "string"
+          },
+          "titulo": {
+            "title": "Titulo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "premisa"
+        ],
+        "title": "ObraSalida",
+        "type": "object"
+      },
+      "PersonaNarrativa": {
+        "enum": [
+          "primera",
+          "segunda",
+          "tercera_limitada",
+          "tercera_omnisciente"
+        ],
+        "title": "PersonaNarrativa",
+        "type": "string"
+      },
+      "RespuestaEntrada": {
+        "additionalProperties": false,
+        "properties": {
+          "respuesta": {
+            "minLength": 1,
+            "title": "Respuesta",
+            "type": "string"
+          }
+        },
+        "required": [
+          "respuesta"
+        ],
+        "title": "RespuestaEntrada",
+        "type": "object"
+      },
+      "TextoLibreEntrada": {
+        "additionalProperties": false,
+        "description": "Sin `max_length`: el limite de `RF-11` lo comprueba `texto_libre`, que\ndevuelve el motivo con las dos cifras. Un 422 generico de Pydantic diria que\nesta mal pero no cuanto sobra.",
+        "properties": {
+          "texto": {
+            "minLength": 1,
+            "title": "Texto",
+            "type": "string"
+          }
+        },
+        "required": [
+          "texto"
+        ],
+        "title": "TextoLibreEntrada",
+        "type": "object"
+      },
+      "TiempoVerbal": {
+        "enum": [
+          "presente",
+          "pasado"
+        ],
+        "title": "TiempoVerbal",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Harness de novelas",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/capitulos/{id_capitulo}/cerrar": {
+      "post": {
+        "description": "La segunda puerta con firma humana.\n\nDevuelve los `menor` que se dejan pasar: si no se enseñaran, `mayor` y\n`menor` volverian a producir el mismo comportamiento.",
+        "operationId": "cerrar_capitulo_capitulos__id_capitulo__cerrar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_capitulo",
+            "required": true,
+            "schema": {
+              "title": "Id Capitulo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cerrar Capitulo",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/entrevistas": {
+      "post": {
+        "operationId": "crear_entrevistas_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Crear",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}": {
+      "get": {
+        "operationId": "consultar_entrevistas__id_e__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/cerrar": {
+      "post": {
+        "description": "El comprador confirma la ficha. `409` dice que lo impide, no solo que no.",
+        "operationId": "cerrar_entrevistas__id_e__cerrar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cerrar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/hechos/{id_h}/confirmar": {
+      "post": {
+        "operationId": "confirmar_entrevistas__id_e__hechos__id_h__confirmar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id_h",
+            "required": true,
+            "schema": {
+              "title": "Id H",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirmar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/hechos/{id_h}/descartar": {
+      "post": {
+        "operationId": "descartar_entrevistas__id_e__hechos__id_h__descartar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id_h",
+            "required": true,
+            "schema": {
+              "title": "Id H",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Descartar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/texto-libre": {
+      "post": {
+        "operationId": "texto_libre_entrevistas__id_e__texto_libre_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextoLibreEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Texto Libre",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/turnos": {
+      "post": {
+        "operationId": "turno_entrevistas__id_e__turnos_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespuestaEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Turno",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/escenas/{id_escena}/aceptar": {
+      "post": {
+        "description": "La dispara una persona. El worker no tiene ninguna ruta que llegue aqui.\n\n`rindiendose` deja la escena en `aceptada_por_rendicion`, que **no es el\nmismo hecho** que `aceptada`: su delta entra igual al canon y quien lea el\nmanuscrito despues necesita saber cuales fueron.",
+        "operationId": "aceptar_escenas__id_escena__aceptar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rindiendose",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Rindiendose",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Aceptar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/escenas/{id_escena}/generar": {
+      "post": {
+        "description": "`202` y un identificador. Nunca el texto, y nunca sincrono.",
+        "operationId": "generar_escenas__id_escena__generar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/escenas/{id_escena}/rechazar": {
+      "post": {
+        "operationId": "rechazar_escenas__id_escena__rechazar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_escena",
+            "required": true,
+            "schema": {
+              "title": "Id Escena",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "motivo",
+            "required": true,
+            "schema": {
+              "title": "Motivo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rechazar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/obras": {
+      "post": {
+        "operationId": "alta_de_obra_obras_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BriefEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObraSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Alta De Obra",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/{id_obra}": {
+      "get": {
+        "operationId": "consultar_obra_obras__id_obra__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObraSalida"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar Obra",
+        "tags": [
+          "obras"
+        ]
+      }
+    },
+    "/obras/{id_obra}/entregar": {
+      "post": {
+        "description": "`SPEC-25` `RF-21`: borra la entrevista y conserva la novela, sus vetadas y\nsus hechos. Devuelve cuantas filas se borraron, nunca que contenian.",
+        "operationId": "entregar_obras__id_obra__entregar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Entregar",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    },
+    "/trabajos/{id_trabajo}": {
+      "get": {
+        "description": "El estado de un trabajo encolado: su resultado, o el motivo si fallo.\n\nEs la otra mitad de todos los `202`: sin esto el cliente sabe que se encolo\nalgo y no tiene forma de saber que paso.",
+        "operationId": "consultar_trabajo_trabajos__id_trabajo__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_trabajo",
+            "required": true,
+            "schema": {
+              "title": "Id Trabajo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consultar Trabajo",
+        "tags": [
+          "ciclo"
+        ]
+      }
+    }
+  }
+}
