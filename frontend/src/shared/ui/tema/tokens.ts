@@ -85,6 +85,19 @@ export const ESTADO_DE_CAPITULO: Record<string, Distintivo> = {
   cerrado: { etiqueta: "capítulo cerrado", fondo: "#d6efec", texto: "#0f5f58" },
 };
 
+// SPEC-22 RF-60: en que punto va una generacion. `parada` y `esperando_revision` avisan.
+export const FASE_DE_GENERACION: Record<string, Distintivo> = {
+  planificando: { etiqueta: "planificando", fondo: "#ebe4f6", texto: "#553089" },
+  revisando_plan: { etiqueta: "revisando el plan", fondo: "#ebe4f6", texto: "#553089" },
+  escribiendo: { etiqueta: "escribiendo", fondo: "#e1ebf7", texto: "#1d4f8a" },
+  editando: { etiqueta: "editando", fondo: "#e1ebf7", texto: "#1d4f8a" },
+  resumiendo: { etiqueta: "resumiendo", fondo: "#e1ebf7", texto: "#1d4f8a" },
+  en_la_puerta: { etiqueta: "en la puerta de publicación", fondo: "#fbefd6", texto: "#7a4d00" },
+  publicada: { etiqueta: "publicada", fondo: "#dff1e4", texto: "#1d6b37" },
+  parada: { etiqueta: "parada", fondo: "#f8e0de", texto: "#9a1f15" },
+  esperando_revision: { etiqueta: "esperando revisión", fondo: "#fbefd6", texto: "#7a4d00" },
+};
+
 /** Las variables CSS que usa `estilos.css`. Se inyectan una vez, en `Tema`. */
 export function variablesCss(): string {
   const v: Record<string, string> = {};

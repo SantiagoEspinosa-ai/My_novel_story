@@ -2,7 +2,9 @@
 // de contrato.ts, generado de contrato/openapi.json, y fixtures.test.ts los valida en
 // ejecucion contra el mismo esquema. Toda fixture con capitulos trae al menos dos (NF-05),
 // y los ids de capitulo ordenan al reves que su orden de lectura (Regla 11).
-import type { CapituloLeido, EscenaLeida, Fichas, Indice } from "@/shared/api";
+import type {
+  CapituloLeido, EscenaLeida, Fichas, Indice, ProgresoDeGeneracion,
+} from "@/shared/api";
 
 const TEXTO = "Primer texto  inventado,\ncon dos espacios y un salto.\n";
 
@@ -87,6 +89,12 @@ export const fichas: Fichas = {
   ],
 };
 
+export const progresoEscribiendo: ProgresoDeGeneracion = {
+  obra: "obra-inventada", fase: "escribiendo", capitulo: 3, total_de_capitulos: 10,
+  motivo: null, desde: "2026-09-24 10:00:00", ultima_actividad: "2026-09-24 10:02:00",
+  segundos_desde_la_ultima_actividad: 40,
+};
+
 export const FIXTURES: Record<string, { esquema: string; datos: unknown }> = {
   indice: { esquema: "Indice", datos: indice },
   indiceSinDedicatoria: { esquema: "Indice", datos: indiceSinDedicatoria },
@@ -97,6 +105,7 @@ export const FIXTURES: Record<string, { esquema: string; datos: unknown }> = {
   escenaSinVeredicto: { esquema: "EscenaLeida", datos: escenaSinVeredicto },
   escenaPlanificada: { esquema: "EscenaLeida", datos: escenaPlanificada },
   fichas: { esquema: "Fichas", datos: fichas },
+  progresoEscribiendo: { esquema: "ProgresoDeGeneracion", datos: progresoEscribiendo },
 };
 
 /** Un `fetch` que contesta con fixtures por ruta, para inyectarlo al cliente. */

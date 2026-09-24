@@ -327,6 +327,22 @@
         "title": "EstadoVital",
         "type": "string"
       },
+      "FaseDeGeneracion": {
+        "description": "En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es\nque el pipeline termino sin publicar y ahora le toca a una persona.",
+        "enum": [
+          "planificando",
+          "revisando_plan",
+          "escribiendo",
+          "editando",
+          "resumiendo",
+          "en_la_puerta",
+          "publicada",
+          "parada",
+          "esperando_revision"
+        ],
+        "title": "FaseDeGeneracion",
+        "type": "string"
+      },
       "FichaDeLugar": {
         "description": "`Lugar` (`RF-43`).",
         "properties": {
@@ -624,6 +640,81 @@
         ],
         "title": "PersonaNarrativa",
         "type": "string"
+      },
+      "ProgresoDeGeneracion": {
+        "description": "En que punto va la generacion de una obra (`SPEC-22` `RF-60`). Lo resuelve el\nservidor: la interfaz lo pinta y no resta fechas.",
+        "properties": {
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Numero de capitulo (1-based), nulo fuera de uno",
+            "title": "Capitulo"
+          },
+          "desde": {
+            "description": "Cuando entro en la fase (UTC, AAAA-MM-DD HH:MM:SS)",
+            "title": "Desde",
+            "type": "string"
+          },
+          "fase": {
+            "$ref": "#/components/schemas/FaseDeGeneracion"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en parada: por que",
+            "title": "Motivo"
+          },
+          "obra": {
+            "description": "El id de la Obra",
+            "title": "Obra",
+            "type": "string"
+          },
+          "segundos_desde_la_ultima_actividad": {
+            "description": "Calculados por el servidor al responder, con su reloj",
+            "title": "Segundos Desde La Ultima Actividad",
+            "type": "integer"
+          },
+          "total_de_capitulos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total De Capitulos"
+          },
+          "ultima_actividad": {
+            "description": "Lo mas reciente entre la fase, las trazas y las llamadas a tool de la obra (UTC)",
+            "title": "Ultima Actividad",
+            "type": "string"
+          }
+        },
+        "required": [
+          "obra",
+          "fase",
+          "capitulo",
+          "total_de_capitulos",
+          "motivo",
+          "desde",
+          "ultima_actividad",
+          "segundos_desde_la_ultima_actividad"
+        ],
+        "title": "ProgresoDeGeneracion",
+        "type": "object"
       },
       "RespuestaEntrada": {
         "additionalProperties": false,
@@ -1513,6 +1604,49 @@
           }
         },
         "summary": "Indice",
+        "tags": [
+          "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/progreso": {
+      "get": {
+        "description": "En que punto va la generacion, con los segundos desde la ultima actividad. `404` si\nla obra no se ha empezado a generar: no se inventa una fase.",
+        "operationId": "progreso_obras__id_obra__progreso_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgresoDeGeneracion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Progreso",
         "tags": [
           "lectura"
         ]

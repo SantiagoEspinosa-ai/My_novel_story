@@ -122,6 +122,7 @@ Una ontología narrativa genérica se queda corta aquí. Estas clases son las qu
 | AnclaDeEstilo | Pasaje ejemplar que fija la voz. | **texto**, que\_ejemplifica |
 | FraseRecurrente | Frase que el sistema ha visto repetirse y que puede acabar siendo una muletilla. | **texto**, **desde\_capitulo**, **apariciones**, ultima\_aparicion |
 | PaseDeRevision | Pasada específica sobre el texto ya generado. | **tipo** → `tipo_de_pase`, ambito, hallazgos\[\] |
+| ProgresoDeGeneracion | En qué punto va la generación de una obra, para enseñarlo mientras corre (`SPEC-22` `RF-60`). Cada cambio de fase añade una fila; la última es el progreso de hoy. | **obra** → Obra, **fase** → `fase_de_generacion`, capitulo (el número de capítulo en que está, 1-based; no el id), total\_de\_capitulos, **desde** (ISO-8601: cuándo entró en la fase), motivo (solo en `parada`: por qué), **ultima\_actividad** (derivada, no se persiste: lo más reciente entre `desde`, la última traza de delegación de una escena de la obra y la última llamada a tool de la obra), **segundos\_desde\_la\_ultima\_actividad** (derivada, la calcula el servidor con su reloj al responder) |
 
 ### Jerarquía de memoria
 
@@ -271,6 +272,7 @@ Todo atributo con valores cerrados usa exactamente estos literales. Un valor fue
 | `tipo_de_contradiccion` | FichaDeEntrevista.contradicciones\_resueltas | edad\_frente\_a\_genero, edad\_frente\_a\_ocasion, recuerdo\_frente\_a\_edad, juicio\_del\_modelo |
 | `tipo_de_decision_de_politica` | DecisionDePolitica.tipo | coincidencia\_vetada, reescritura\_pedida, parada\_por\_vetada, instruccion\_en\_texto\_libre, contradiccion\_detectada, contradiccion\_resuelta, borrado\_al\_entregar, herramienta\_denegada, nombre\_mal\_escrito, parada\_por\_nombre |
 | `criterio_de_edicion` | ValoracionDelEditor.criterio | continuidad, tono, arco, coherencia\_de\_personajes, ritmo, personalizacion |
+| `fase_de_generacion` | ProgresoDeGeneracion.fase | planificando, revisando\_plan, escribiendo, editando, resumiendo, en\_la\_puerta, publicada, parada, esperando\_revision |
 
 **«Usar un hecho» son cuatro relaciones y no una** (`SPEC-21` C-2). Tienen condiciones de verdad distintas, consumidores distintos y distinto origen, y colapsarlas rompe las dos puntas a la vez: *«este elemento aparece en algún capítulo»* se satisface con `menciona` —exigir `depende` lo daría por incumplido—, y la regeneración selectiva necesita `depende` —contar también los `menciona` reescribe media novela por una alusión de paso—. `contradice` **no es un uso**: no cuenta como aparición y no arrastra regeneración hacia adelante, sino corrección hacia atrás. Vive en la misma relación porque es la misma arista con otro signo.
 

@@ -112,3 +112,36 @@ def canon_de_lugar(con, id_lugar):
         return {"nombre": None}
     f = con.execute("SELECT nombre FROM lugar WHERE id = ?", (id_lugar,)).fetchone()
     return {"nombre": f[0] if f else None}
+
+
+def progreso(con, id_obra):
+    """El ultimo `ProgresoDeGeneracion` de la obra, con su ultima actividad y los segundos
+    desde ella **calculados aqui, con el reloj de la base** (`SPEC-22` `RF-60`).
+
+    La ultima actividad es lo mas reciente entre la entrada en la fase, la ultima traza de
+    delegacion de una escena **de esta obra** y la ultima llamada a tool de la obra. Una
+    tabla que no existe no aporta nada: no se inventa actividad.
+    """
+    if "fase" not in _columnas(con, "progreso_de_generacion"):
+        return None
+    f = con.execute(
+        "SELECT fase, capitulo, total_de_capitulos, motivo, desde FROM progreso_de_generacion "
+        "WHERE obra = ? ORDER BY id DESC LIMIT 1", (id_obra,)).fetchone()
+    if f is None:
+        return None
+    marcas = [f[4]]
+    if "cuando" in _columnas(con, "traza_de_delegacion"):
+        marcas.append(con.execute(
+            "SELECT MAX(t.cuando) FROM traza_de_delegacion t JOIN escena e ON e.id = t.escena "
+            "WHERE e.obra = ?", (id_obra,)).fetchone()[0])
+    if "cuando" in _columnas(con, "llamada_a_herramienta"):
+        marcas.append(con.execute(
+            "SELECT MAX(cuando) FROM llamada_a_herramienta WHERE obra = ?",
+            (id_obra,)).fetchone()[0])
+    ultima = max(m for m in marcas if m)
+    segundos = con.execute(
+        "SELECT CAST(ROUND((julianday('now') - julianday(?)) * 86400) AS INTEGER)",
+        (ultima,)).fetchone()[0]
+    return {"obra": id_obra, "fase": f[0], "capitulo": f[1], "total_de_capitulos": f[2],
+            "motivo": f[3], "desde": f[4], "ultima_actividad": ultima,
+            "segundos_desde_la_ultima_actividad": max(0, segundos)}

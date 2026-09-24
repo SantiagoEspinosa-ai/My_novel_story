@@ -4,7 +4,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import contrato from "../../../../../contrato/openapi.json";
 import { contraste } from "./contraste";
-import { COLORES, ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD } from "./tokens";
+import {
+  COLORES, ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, FASE_DE_GENERACION, SEVERIDAD,
+} from "./tokens";
 
 const SRC = join(process.cwd(), "src");
 const TEMA = join("shared", "ui", "tema");
@@ -38,7 +40,7 @@ describe("tema", () => {
   it("cada estado de escena tiene su color y su etiqueta de texto", () => {
     for (const [vocabulario, mapa] of [
       ["EstadoDeEscena", ESTADO_DE_ESCENA], ["EstadoDeHallazgo", ESTADO_DE_HALLAZGO],
-      ["Severidad", SEVERIDAD],
+      ["Severidad", SEVERIDAD], ["FaseDeGeneracion", FASE_DE_GENERACION],
     ] as const) {
       const literales = enumDe(vocabulario);
       expect(Object.keys(mapa).sort(), vocabulario).toEqual([...literales].sort());
@@ -61,7 +63,7 @@ describe("tema", () => {
       ["texto suave sobre superficie", COLORES.textoSuave, COLORES.superficie],
       ["texto sobre acento", COLORES.sobreAcento, COLORES.acento],
       ["enlace sobre fondo", COLORES.enlace, COLORES.fondo],
-      ...[ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD].flatMap((m) =>
+      ...[ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD, FASE_DE_GENERACION].flatMap((m) =>
         Object.entries(m).map(([k, v]) => [k, v.texto, v.fondo] as [string, string, string])),
     ];
     for (const [nombre, texto, fondo] of pares) {

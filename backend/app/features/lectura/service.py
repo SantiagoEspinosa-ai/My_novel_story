@@ -70,3 +70,8 @@ def fichas(con, id_obra):
                     capitulos_donde_aparece=de_lugares.get(id_l, []))
                for id_l in repo.lugares_de_la_obra(con, id_obra)]
     return {"personajes": personajes, "lugares": lugares}
+
+
+def progreso(con, id_obra):
+    """`None` si la obra no tiene ninguna fila de progreso: no se esta generando."""
+    return repo.progreso(con, id_obra)

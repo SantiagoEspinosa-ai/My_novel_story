@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.commons.dominio.enumeraciones import EstadoDeCapitulo, EstadoDeEscena
 from app.commons.dominio.enumeraciones import EstadoDeHallazgo, EstadoVital, RolDramatico
-from app.commons.dominio.enumeraciones import Severidad
+from app.commons.dominio.enumeraciones import FaseDeGeneracion, Severidad
 
 
 class HallazgoAbierto(BaseModel):
@@ -117,3 +117,19 @@ class FichaDeLugar(BaseModel):
 class Fichas(BaseModel):
     personajes: list[FichaDePersonaje]
     lugares: list[FichaDeLugar]
+
+
+class ProgresoDeGeneracion(BaseModel):
+    """En que punto va la generacion de una obra (`SPEC-22` `RF-60`). Lo resuelve el
+    servidor: la interfaz lo pinta y no resta fechas."""
+
+    obra: str = Field(description="El id de la Obra")
+    fase: FaseDeGeneracion
+    capitulo: int | None = Field(description="Numero de capitulo (1-based), nulo fuera de uno")
+    total_de_capitulos: int | None
+    motivo: str | None = Field(description="Solo en parada: por que")
+    desde: str = Field(description="Cuando entro en la fase (UTC, AAAA-MM-DD HH:MM:SS)")
+    ultima_actividad: str = Field(description="Lo mas reciente entre la fase, las trazas "
+                                              "y las llamadas a tool de la obra (UTC)")
+    segundos_desde_la_ultima_actividad: int = Field(
+        description="Calculados por el servidor al responder, con su reloj")

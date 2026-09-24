@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.features.lectura import service
 from app.features.lectura.schemas import CapituloLeido, EscenaLeida, Fichas, Indice
+from app.features.lectura.schemas import ProgresoDeGeneracion
 
 router = APIRouter(tags=["lectura"])
 
@@ -55,4 +56,14 @@ def fichas(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
     resultado = service.fichas(con, id_obra)
     if resultado is None:
         raise HTTPException(404, "no existe la obra {0}".format(id_obra))
+    return resultado
+
+
+@router.get("/obras/{id_obra}/progreso", response_model=ProgresoDeGeneracion)
+def progreso(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
+    """En que punto va la generacion, con los segundos desde la ultima actividad. `404` si
+    la obra no se ha empezado a generar: no se inventa una fase."""
+    resultado = service.progreso(con, id_obra)
+    if resultado is None:
+        raise HTTPException(404, "la obra {0} no tiene progreso de generacion".format(id_obra))
     return resultado

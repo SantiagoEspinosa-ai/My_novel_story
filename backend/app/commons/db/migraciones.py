@@ -278,6 +278,25 @@ TODAS = [
         # presupuestarlo. Opcional: una delegacion sin tools no tiene identificador.
         lambda con: anadir_columnas(con, "traza_de_delegacion", {"delegacion": "TEXT"}),
     ),
+    Migracion(
+        11,
+        "el progreso de una generacion, una fila por cambio de fase",
+        # `SPEC-22` `RF-60`, `PLAN-22` E13c: `ProgresoDeGeneracion`. Solo se anade: la
+        # ultima fila de una obra es su progreso de hoy, y las anteriores dicen por donde
+        # paso. Tabla nueva, asi que no hay filas viejas que rellenar.
+        """
+        CREATE TABLE IF NOT EXISTS progreso_de_generacion (
+            id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+            obra               TEXT NOT NULL,
+            fase               TEXT NOT NULL,
+            capitulo           INTEGER,
+            total_de_capitulos INTEGER,
+            motivo             TEXT,
+            desde              TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_progreso_por_obra ON progreso_de_generacion (obra, id);
+        """,
+    ),
 ]
 
 

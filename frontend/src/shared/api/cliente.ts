@@ -9,6 +9,7 @@ export type CapituloLeido = Esquemas["CapituloLeido"];
 export type EscenaLeida = Esquemas["EscenaLeida"];
 export type Fichas = Esquemas["Fichas"];
 export type Hallazgo = Esquemas["HallazgoAbierto"];
+export type ProgresoDeGeneracion = Esquemas["ProgresoDeGeneracion"];
 
 export const PREFIJO = "/api";
 
@@ -45,6 +46,7 @@ export function crearCliente(fetchInyectado: Fetch) {
     capitulo: (capitulo: string) => leer<CapituloLeido>(`/capitulos/${e(capitulo)}`),
     escena: (escena: string) => leer<EscenaLeida>(`/escenas/${e(escena)}`),
     fichas: (obra: string) => leer<Fichas>(`/obras/${e(obra)}/fichas`),
+    progreso: (obra: string) => leer<ProgresoDeGeneracion>(`/obras/${e(obra)}/progreso`),
   };
 }
 

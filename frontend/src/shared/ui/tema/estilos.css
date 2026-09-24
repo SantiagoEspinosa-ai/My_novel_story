@@ -135,3 +135,12 @@ h1, h2, h3 { font-family: var(--fuente-titulos); font-weight: 600; letter-spacin
 
 .cargando { color: var(--color-textoSuave); font-style: italic; }
 .aviso { padding: var(--espacio-m); border-radius: var(--radio-s); background: var(--color-acentoSuave); }
+
+/* --- Progreso de una generacion (SPEC-22 RF-60) ---------------------------------------- */
+.progreso { padding: var(--espacio-m) var(--espacio-l); }
+.progreso__cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espacio-s) var(--espacio-m); font-size: 0.9rem; }
+.progreso__motivo { color: var(--color-textoSuave); }
+.progreso__quieta { font-weight: 700; color: var(--color-acento); }
+.progreso__barra { margin-top: var(--espacio-s); height: 8px; border-radius: var(--radio-pildora); background: var(--color-linea); overflow: hidden; }
+.progreso__relleno { height: 100%; background: var(--color-acento); transition: width 0.4s ease; }
+.portada .progreso { max-width: 640px; width: 100%; margin: var(--espacio-l) auto 0; text-align: left; }

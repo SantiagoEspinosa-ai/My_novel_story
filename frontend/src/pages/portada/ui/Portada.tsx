@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { Progreso } from "@/entities/progreso";
 import { useLectura, type Indice } from "@/shared/api";
 import { BotonEnlace, Esperando } from "@/shared/ui";
 
@@ -27,6 +28,7 @@ function Portada({ indice }: { indice: Indice }) {
         </BotonEnlace>
       </nav>
       </div>
+      <Progreso obra={indice.id} />
     </main>
   );
 }

@@ -345,6 +345,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/progreso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Progreso
+         * @description En que punto va la generacion, con los segundos desde la ultima actividad. `404` si
+         *     la obra no se ha empezado a generar: no se inventa una fase.
+         */
+        get: operations["progreso_obras__id_obra__progreso_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/trabajos/{id_trabajo}": {
         parameters: {
             query?: never;
@@ -530,6 +551,13 @@ export interface components {
          */
         EstadoVital: "vivo" | "muerto" | "desaparecido";
         /**
+         * FaseDeGeneracion
+         * @description En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es
+         *     que el pipeline termino sin publicar y ahora le toca a una persona.
+         * @enum {string}
+         */
+        FaseDeGeneracion: "planificando" | "revisando_plan" | "escribiendo" | "editando" | "resumiendo" | "en_la_puerta" | "publicada" | "parada" | "esperando_revision";
+        /**
          * FichaDeLugar
          * @description `Lugar` (`RF-43`).
          */
@@ -663,6 +691,46 @@ export interface components {
          * @enum {string}
          */
         PersonaNarrativa: "primera" | "segunda" | "tercera_limitada" | "tercera_omnisciente";
+        /**
+         * ProgresoDeGeneracion
+         * @description En que punto va la generacion de una obra (`SPEC-22` `RF-60`). Lo resuelve el
+         *     servidor: la interfaz lo pinta y no resta fechas.
+         */
+        ProgresoDeGeneracion: {
+            /**
+             * Capitulo
+             * @description Numero de capitulo (1-based), nulo fuera de uno
+             */
+            capitulo: number | null;
+            /**
+             * Desde
+             * @description Cuando entro en la fase (UTC, AAAA-MM-DD HH:MM:SS)
+             */
+            desde: string;
+            fase: components["schemas"]["FaseDeGeneracion"];
+            /**
+             * Motivo
+             * @description Solo en parada: por que
+             */
+            motivo: string | null;
+            /**
+             * Obra
+             * @description El id de la Obra
+             */
+            obra: string;
+            /**
+             * Segundos Desde La Ultima Actividad
+             * @description Calculados por el servidor al responder, con su reloj
+             */
+            segundos_desde_la_ultima_actividad: number;
+            /** Total De Capitulos */
+            total_de_capitulos: number | null;
+            /**
+             * Ultima Actividad
+             * @description Lo mas reciente entre la fase, las trazas y las llamadas a tool de la obra (UTC)
+             */
+            ultima_actividad: string;
+        };
         /** RespuestaEntrada */
         RespuestaEntrada: {
             /** Respuesta */
@@ -1266,6 +1334,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Indice"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    progreso_obras__id_obra__progreso_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgresoDeGeneracion"];
                 };
             };
             /** @description Validation Error */

@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { EscenaConEstado } from "@/entities/escena";
+import { Progreso } from "@/entities/progreso";
 import { useLectura, type Indice } from "@/shared/api";
 import { ESTADO_DE_CAPITULO, Esperando, EtiquetaDeEstado } from "@/shared/ui";
 
@@ -18,6 +19,7 @@ function VistaIndice({ indice }: { indice: Indice }) {
     <main className="contenido indice">
       <p className="migas"><Link to={`/obras/${obra}`}>{indice.titulo}</Link></p>
       <h1>Índice</h1>
+      <Progreso obra={indice.id} />
       <ol className="capitulos">
         {indice.capitulos.map((c) => (
           <li key={c.id} data-testid="capitulo-del-indice" data-capitulo={c.id}
