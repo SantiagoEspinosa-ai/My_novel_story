@@ -211,7 +211,10 @@ def _acta_de(acta, texto, c):
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
              techo=100_000, trabajo="ciclo", hechos=None, problemas=None,
              instrucciones=None, acta=None, vetadas=None, nombres=None,
-             imprescindibles=None, es_editor=False, umbral=None, textos=None):
+             imprescindibles=None, es_editor=False, umbral=None, textos=None,
+             consolidar=True):
+    """`consolidar=False` (`SPEC-30` `RF-10`): pasa las puertas y para antes de tocar
+    el canon. Es lo que usa una reescritura a delta fijo, que decide ella si acepta."""
     c = Ciclo(escena=escena_id)
 
     # 1. Generar y pasar las puertas deterministas.
@@ -288,7 +291,7 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
     # un intento que todavia puede descartarse **y el canon no se deshace**.
     # Se descubrio al conectar los reintentos: el segundo intento moria con
     # `YaConsolidada` porque el primero ya habia escrito.
-    if c.generacion.hallazgos:
+    if c.generacion.hallazgos or not consolidar:
         return c
     return consolidar_y_resumir(c, con, escena_id, texto, resumidor, trabajo,
                                 al_consolidar=_acta_de(acta, texto, c))

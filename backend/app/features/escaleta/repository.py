@@ -255,15 +255,21 @@ def escena(con, id_escena):
 
 
 def guardar_borrador(con, escena, texto, modelo, prompt_hash):
-    """Devuelve la version, que crece por escena."""
+    """Devuelve la version, que crece por escena.
+
+    **Una escena consolidada o rendida no se degrada a `generada`** (`SPEC-30`
+    `RF-10`): su canon ya esta aplicado y no se deshace. Un borrador nuevo sobre ella
+    es una reescritura a delta fijo, que decide ella si lo acepta.
+    """
     with con:
         fila = con.execute("SELECT MAX(version) FROM borrador WHERE escena = ?",
                            (escena,)).fetchone()
         version = (fila[0] or 0) + 1
         con.execute("INSERT INTO borrador VALUES (?, ?, ?, ?, ?)",
                     (escena, version, texto, modelo, prompt_hash))
-        con.execute("UPDATE escena SET estado = ? WHERE id = ?",
-                    (EE.GENERADA.value, escena))
+        con.execute("UPDATE escena SET estado = ? WHERE id = ? AND estado NOT IN (?, ?)",
+                    (EE.GENERADA.value, escena, EE.CONSOLIDADA.value,
+                     EE.ACEPTADA_POR_RENDICION.value))
     return version
 
 
@@ -284,6 +290,14 @@ def marcar_consolidada(con, escena):
     with con:
         con.execute("UPDATE escena SET estado = ? WHERE id = ? AND estado <> ?",
                     (EE.CONSOLIDADA.value, escena, EE.ACEPTADA_POR_RENDICION.value))
+
+
+def aceptar_reescritura(con, escena, version):
+    """`SPEC-30` `RF-10`: una reescritura a delta fijo cambia **el texto aceptado** y
+    nada mas. El estado no se toca —una escena consolidada sigue consolidada y una
+    rendida sigue rendida— porque el canon no se ha movido."""
+    with con:
+        con.execute("UPDATE escena SET borrador_aceptado = ? WHERE id = ?", (version, escena))
 
 
 def rendir_escena(con, escena, version):

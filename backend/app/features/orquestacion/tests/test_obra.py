@@ -771,3 +771,88 @@ def test_relanzar_salta_una_escena_rendida_y_consolidada(con):
                       techo=1_000_000, hasta=1, tope_intentos=3)
     assert escritor.llamadas == [], "no se reescribe lo que ya esta hecho"
     assert repo.escena(con, "e1")["estado"] == "aceptada_por_rendicion"
+
+
+# --- `SPEC-30` v4 `RF-10` (`C-1`): reescribir a delta fijo ------------------------
+
+from app.features.consolidacion import deltas as deltas_de_escena  # noqa: E402
+
+EDITOR_BIEN = Devuelve({"valoraciones": [
+    {"criterio": c, "nota": 4, "justificacion": "bien"} for c in
+    ("continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo", "personalizacion")]})
+
+
+class Reescribe:
+    """Devuelve otro texto con el delta que se le diga."""
+
+    nombre = "doble-reescritura"
+
+    def __init__(self, texto, delta):
+        self.texto, self.delta, self.llamadas = texto, delta, []
+
+    def llamar(self, prompt):
+        self.llamadas.append(prompt)
+        return {"texto": self.texto, "pov_usado": "per-marta", "delta": self.delta,
+                "usage": {"total_tokens": 100}}
+
+
+def _consolidada_e1(con):
+    obra.generar_obra(con, "cap-1", DobleDelModelo(), *_agentes()[1:],
+                      techo=1_000_000, hasta=1)
+    assert repo.escena(con, "e1")["estado"] == "consolidada"
+    return deltas_de_escena.ultimo(con, "e1")["delta"]
+
+
+def _reescribir(con, escritor, **kw):
+    return obra.reescribir_capitulo(con, "cap-1", "e1", escritor, EDITOR_BIEN,
+                                    _agentes()[2], instrucciones=["cierra la puerta"],
+                                    techo=1_000_000, **kw)
+
+
+def test_reescribir_no_aplica_el_delta_otra_vez(con):
+    delta = _consolidada_e1(con)
+    r = _reescribir(con, Reescribe("Marta cierra la puerta del salon despacio y escucha la casa entera respirar.", delta))
+    assert r["aceptada"], r
+    assert len(deltas_de_escena.leer(con, "e1")) == 1, "el canon no se mueve"
+    assert con.execute("SELECT COUNT(*) FROM escena_consolidada WHERE escena='e1'"
+                       ).fetchone()[0] == 1
+
+
+def test_una_reescritura_con_el_mismo_delta_cambia_el_texto_aceptado(con):
+    delta = _consolidada_e1(con)
+    r = _reescribir(con, Reescribe("Marta cierra la puerta del salon despacio y escucha la casa entera respirar.", delta))
+    e = repo.escena(con, "e1")
+    assert e["borrador_aceptado"] == r["version"] and e["estado"] == "consolidada"
+    assert obra._texto_elegido(con, e) == "Marta cierra la puerta del salon despacio y escucha la casa entera respirar."
+
+
+def test_la_instruccion_del_editor_llega_al_escritor(con):
+    delta = _consolidada_e1(con)
+    escritor = Reescribe("Marta cierra la puerta del salon despacio y escucha la casa entera respirar.", delta)
+    _reescribir(con, escritor)
+    assert "cierra la puerta" in escritor.llamadas[0]
+
+
+def test_una_reescritura_que_cambia_el_delta_se_rechaza(con):
+    """`C-1`: solo se acepta si los hechos no cambian. Un delta distinto no es una
+    correccion local, y aceptarlo moveria el canon debajo de lo ya escrito."""
+    delta = _consolidada_e1(con)
+    texto_antes = obra._texto_elegido(con, repo.escena(con, "e1"))
+    otro = dict(delta, cambio_de_valor={"eje": "cordura", "signo": "positivo"})
+    r = _reescribir(con, Reescribe("Marta sale del salon aliviada y deja atras el sotano y su silencio.", otro))
+    assert not r["aceptada"] and "el delta cambio" in r["motivo"]
+    e = repo.escena(con, "e1")
+    # Si la escena no tenia `borrador_aceptado`, el texto elegido es el ultimo: el
+    # borrador rechazado se habria convertido en el texto de la novela sin que nadie
+    # lo aceptara. Tambien el estado: guardar un borrador degradaba a `generada`.
+    assert obra._texto_elegido(con, e) == texto_antes
+    assert e["estado"] == "consolidada"
+
+
+def test_una_reescritura_con_una_vetada_no_se_acepta(con):
+    delta = _consolidada_e1(con)
+    texto_antes = obra._texto_elegido(con, repo.escena(con, "e1"))
+    r = _reescribir(con, Reescribe("Marta cierra la puerta del hospital y se queda quieta en el pasillo largo.", delta),
+                    vetadas=["hospital"])
+    assert not r["aceptada"]
+    assert obra._texto_elegido(con, repo.escena(con, "e1")) == texto_antes

@@ -44,7 +44,7 @@ from app.features.cronologia import consultas
 # texto elegido. Son los mismos que `auditoria/` llama `COMPLETAS` para decidir
 # si un capitulo puede cerrarse, y por el mismo motivo.
 YA_HECHAS = {EE.CONSOLIDADA, EE.ACEPTADA_POR_RENDICION}
-from app.features.consolidacion import memoria, mundo as modulo_mundo
+from app.features.consolidacion import deltas, memoria, mundo as modulo_mundo
 from app.features.cronologia import extraccion
 from app.features.cronologia import repository as cronologia
 from app.features.contexto import ensamblado, recorte
@@ -652,3 +652,67 @@ def informe(g: Generacion) -> str:
         for inv, desc in g.parada.get("hallazgos", []):
             lineas.append("   [{0}] {1}".format(inv, desc))
     return "\n".join(lineas)
+
+
+def _mismo_delta(a, b):
+    return (json.dumps(a or {}, sort_keys=True, ensure_ascii=False)
+            == json.dumps(b or {}, sort_keys=True, ensure_ascii=False))
+
+
+def reescribir_capitulo(con, obra, escena_id, escritor, editor, resumidor,
+                        instrucciones=None, inmutable="", techo=100_000, vetadas=None,
+                        nombres=None, imprescindibles=None, anterior_cruza_capitulo=False):
+    """Reescribe **solo el texto** de una escena ya consolidada, y lo acepta solo si
+    los hechos no cambian (`SPEC-30` v4 `RF-10`, `C-1`; `SPEC-23` `S-3`).
+
+    El borrador nuevo pasa por las puertas de texto —longitud, vetadas, nombres,
+    palabras clave, el Editor— y su delta tiene que ser **el mismo** que ya se aplico.
+    Si lo es, cambia el texto aceptado y el resumen, y el canon no se mueve: nada
+    posterior queda evaluado contra otra obra. Si no, se rechaza con motivo: un delta
+    distinto no es una correccion local.
+    """
+    escena = repo.escena(con, escena_id)
+    # Sin `borrador_aceptado`, el texto elegido es el ultimo: un borrador rechazado se
+    # convertiria en el texto de la novela sin que nadie lo aceptara. Se fija antes el
+    # que se audito.
+    if escena.get("borrador_aceptado") is None:
+        repo.aceptar_reescritura(con, escena_id, repo.intentos_de(con, escena_id))
+        escena = repo.escena(con, escena_id)
+    material = reunir_material(con, escena, obra, inmutable,
+                               anterior_cruza_capitulo=anterior_cruza_capitulo)
+    bloques = ensamblado.montar(material)
+    tamanos = ensamblado.tamanos(bloques)
+    try:
+        plan = recorte.planificar(tamanos, techo=techo)
+    except recorte.NoCabe:
+        return {"aceptada": False, "motivo": "RF-26: no cabe en el presupuesto"}
+    c = ciclo.ejecutar(con, escena_id, tamanos, escritor, editor, resumidor,
+                       material["mundo"], techo=techo,
+                       trabajo="reescritura-{0}".format(escena_id),
+                       hechos=material["hechos"], instrucciones=instrucciones,
+                       vetadas=vetadas, nombres=nombres,
+                       imprescindibles=(imprescindibles or {}).get(escena_id),
+                       es_editor=True, textos=ensamblado.aplicar_recorte(bloques, plan),
+                       consolidar=False)
+    ciclo.guardar_trazas(con, c)
+    if c.fallo:
+        return {"aceptada": False, "motivo": c.fallo}
+    if c.generacion.hallazgos:
+        return {"aceptada": False, "motivo": "no pasa sus puertas: {0}".format(
+            ", ".join(sorted({h.invariante for h in c.generacion.hallazgos})))}
+    aplicado = deltas.ultimo(con, escena_id)
+    if aplicado is None or not _mismo_delta(aplicado["delta"], c.generacion.leida_delta):
+        return {"aceptada": False,
+                "motivo": "el delta cambio: no es una correccion local, y aceptarlo "
+                          "moveria el canon debajo de lo ya escrito"}
+    repo.aceptar_reescritura(con, escena_id, c.generacion.version)
+    texto = ciclo.texto_de(con, escena_id, c.generacion.version)
+    bruto, _ = ciclo._delegar(resumidor, "Condensa esta escena.\n\nESCENA\n" + texto,
+                              "resumidor", escena_id, "reescritura", c.trazas)
+    if bruto:
+        memoria.guardar_resumen(
+            con, escena_id, escena["t_discurso"], str(bruto.get("texto") or ""),
+            [h for h in (bruto.get("hechos_clave") or []) if memoria.IDENTIFICADOR.match(str(h))],
+            obra=obra)
+    _registrar_imprescindibles(con, escena, (imprescindibles or {}).get(escena_id))
+    return {"aceptada": True, "version": c.generacion.version, "motivo": ""}
