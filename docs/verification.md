@@ -6,7 +6,7 @@ Cómo se prueba que **el sistema** hace lo que dice que hace. Este documento no
 evalúa la novela que el sistema escribe: de eso se ocupan las invariantes
 `INV-01`…`INV-16`, que aquí son el objeto verificado, no el sujeto.
 
-Generado con la skill `verification-plan` (`.agents/skills/verification-plan/`) y
+Generado con la skill `verification-plan` (`myFactory/skills/verification-plan/`) y
 reorganizado según `docs/revisiones/REV-02 - Verification.md`, que añadió el eje
 que faltaba: **el punto ciego de cada validador**.
 

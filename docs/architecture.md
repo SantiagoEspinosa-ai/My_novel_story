@@ -196,7 +196,7 @@ Tres cosas que conviene no perder de vista:
    acotada. La capa `widgets/` está desaconsejada por la metodología y no se usa.
 
 La skill oficial de FSD está instalada en el repositorio
-(`.agents/skills/feature-sliced-design/`) y es la que manda sobre las dudas de colocación.
+(`myFactory/skills/feature-sliced-design/`) y es la que manda sobre las dudas de colocación.
 
 ### Persistencia — SQLite con soporte vectorial
 

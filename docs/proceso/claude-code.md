@@ -12,8 +12,8 @@ con `EXAMEN.md` por encima de todo en lo que se entrega.
 
 ## Skills
 
-El contenido real está versionado en `.agents/skills/`, con su tabla de uso y procedencia en
-`.agents/skills/README.md`. Ocho:
+El contenido real está versionado en `myFactory/skills/`, con su tabla de uso y procedencia en
+`myFactory/skills/README.md`. Ocho:
 
 | Skill | Para qué | Procedencia |
 | --- | --- | --- |

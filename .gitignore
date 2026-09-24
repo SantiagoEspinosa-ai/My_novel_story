@@ -1,15 +1,16 @@
 # Enlaces a las skills, no su contenido.
 #
-# El contenido real de las skills se versiona en `.agents/skills/`, y Claude Code
-# lee esa carpeta directamente. `npx skills add` crea además enlaces aquí, que no
-# hacen falta y que git en Windows no guarda como enlaces: los convierte en
+# El contenido real de las skills se versiona en `myFactory/skills/`. Ojo: Claude
+# Code NO lee esa carpeta, solo `.claude/skills/` (comprobado el 2026-09-24), así
+# que ignorar esto deja las skills sin cargar. `npx skills add` crea enlaces aquí
+# que git en Windows no guarda como enlaces: los convierte en
 # ficheros de texto con la ruta dentro. Se ignoran para que no ensucien el repo.
 .claude/skills/
 
 # Lockfile de skills. Se ignora a propósito: el contenido real está versionado en
-# `.agents/skills/`, que es la única garantía de que siga existiendo. `npx skills
+# `myFactory/skills/`, que es la única garantía de que siga existiendo. `npx skills
 # add` regenera este fichero en cada instalación, y no queremos que vuelva al repo.
-# El origen y el hash de las skills de upstream están en AGENTS.md § Skills.
+# El origen de cada skill está en su `PROCEDENCIA.md`.
 skills-lock.json
 
 # Configuración local de Claude Code (por máquina, no por proyecto)
