@@ -96,7 +96,7 @@
         }
       },
       {
-        "respuesta": "Hace ceramica los domingos y regala todo lo que hace.",
+        "respuesta": "Hace ceramica los domingos y regala todo lo que hace, y es imprescindible que aparezca.",
         "ficha_esperada": {
           "destinatario": {
             "elementos": [
@@ -117,7 +117,7 @@
         }
       },
       {
-        "respuesta": "Cuando tenia 25 años se fue de Erasmus a Bolonia y alli conocio a su pareja.",
+        "respuesta": "Cuando tenia 25 años se fue de Erasmus a Bolonia y alli conocio a su pareja; tambien es imprescindible.",
         "ficha_esperada": {
           "destinatario": {
             "elementos": [
@@ -178,6 +178,36 @@
           "papel": "protagonista"
         },
         "nota": "Resuelve las tres corrigiendo el dato, que es como se resuelven de verdad."
+      },
+      {
+        "respuesta": "Con eso tienes todo lo que te puedo contar: propon tu el titulo y la premisa.",
+        "nota": "Un Entrevistador real pregunta en su orden; el guion se escribio para el doble (F-140).",
+        "ficha_esperada": {
+          "destinatario": {
+            "elementos": [
+              {
+                "tipo": "rasgo",
+                "descripcion": "hace ceramica los domingos y regala todo lo que hace",
+                "imprescindible": true
+              },
+              {
+                "tipo": "recuerdo",
+                "descripcion": "el Erasmus en Bolonia donde conocio a su pareja",
+                "momento": {
+                  "edad": 25
+                },
+                "imprescindible": true
+              }
+            ],
+            "nombre": "Hugo Salcedo",
+            "edad": 30
+          },
+          "ocasion": "boda",
+          "genero": "romance",
+          "tono": "tierno",
+          "extension": "media",
+          "papel": "protagonista"
+        }
       },
       {
         "respuesta": "Me gustan el titulo y la premisa que propones.",

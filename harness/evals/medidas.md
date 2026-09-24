@@ -165,3 +165,25 @@ delegaciones de `R1`:
 
 Cabe con holgura, así que los cuatro briefs van **de dos en dos**. La cota sesga **al alza**: suma
 el máximo de cada agente como si coincidieran, y la caché de Claude Code de una sola delegación.
+
+## INV-30 en real, sobre la novela de ejemplo (2026-09-24)
+
+`inspeccion_visual.py ejemplo-web.db brief-base-antes-1 http://127.0.0.1:5173/obras/brief-base-antes-1`,
+con la web servida sobre una **copia** de la base de `R1`. **Falla**, y con dos defectos reales:
+
+| Pieza | Veredicto | Motivo |
+| --- | --- | --- |
+| portada | pasa | Título y dedicatoria enteros |
+| índice | pasa | Los diez capítulos en orden, con estado y hallazgos |
+| capítulos | **falla** | `F-141`: la frase repetida de `INV-25` sale normalizada |
+| fichas | **falla** | `F-142`: Cloe está en el capítulo 10 y su ficha no lo enlaza |
+| enlaces | pasa | Cada enlace lleva a su capítulo, y el capítulo contiene a la entidad |
+
+Coste de la delegación: 0,6958668 USD. Es el primer fallo real de `INV-30`: un validador que
+no había podido fallar hasta ahora (`F-84`: la primera inspección dio por buena una web con
+tres defectos).
+
+## R2 · Inyección, pasada «antes»: la entrevista no cerró (2026-09-24)
+
+El detector cazó la inyección reconocible con el modelo real y descartó ese texto libre. La
+entrevista no cerró por `F-140`, así que **no hay novela**. 1,6246488 USD en 14 delegaciones.
