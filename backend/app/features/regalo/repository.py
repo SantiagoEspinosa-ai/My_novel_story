@@ -52,7 +52,32 @@ def texto_de_la_peticion(con, obra, numero):
 
 
 def existe_la_obra(con, obra):
-    return con.execute("SELECT 1 FROM obra WHERE id = ?", (obra,)).fetchone() is not None
+    """Montada, o todavia no (`F-206`): la obra nace con su entrevista y no entra en `obra`
+    hasta que el Revisor aprueba el plan. Mientras, tiene entrevista, progreso o un
+    lanzamiento, y la pagina de la generacion no puede ser un 404."""
+    if con.execute("SELECT 1 FROM obra WHERE id = ?", (obra,)).fetchone() is not None:
+        return True
+    consultas = [("entrevista", "SELECT 1 FROM entrevista WHERE obra = ?"),
+                 ("progreso_de_generacion",
+                  "SELECT 1 FROM progreso_de_generacion WHERE obra = ?"),
+                 ("trabajo", "SELECT 1 FROM trabajo WHERE tipo = 'generacion_regalo' AND "
+                             "json_extract(carga, '$.obra') = ?")]
+    return any(migraciones.tiene_tabla(con, tabla)
+               and con.execute(sql, (obra,)).fetchone() is not None
+               for tabla, sql in consultas)
+
+
+def motivo_del_ultimo_lanzamiento(con, obra):
+    """`SPEC-35` `RF-13`: el motivo del ultimo lanzamiento desde la web si fallo o se
+    abandono; `None` si salio bien, sigue en curso o no hubo ninguno."""
+    if not migraciones.tiene_tabla(con, "trabajo"):
+        return None
+    f = con.execute("SELECT estado, motivo_ultimo_fallo FROM trabajo WHERE tipo = "
+                    "'generacion_regalo' AND json_extract(carga, '$.obra') = ? "
+                    "ORDER BY rowid DESC LIMIT 1", (obra,)).fetchone()
+    if f is None or f[0] not in ("fallido", "abandonado"):
+        return None
+    return f[1] or "el lanzamiento termino en {0} sin motivo guardado".format(f[0])
 
 
 def numero_de_capitulos(con, obra):

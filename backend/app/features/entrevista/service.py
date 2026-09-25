@@ -31,6 +31,7 @@ from app.commons.dominio.enumeraciones import TipoDeElementoPersonal as TE
 from app.commons.politica import auditoria, pseudonimos
 from app.commons.politica.normalizar import raiz
 from app.commons.politica.vetadas import formas_de_nombre
+from app.features.entrevista import cuaderno as modulo_cuaderno
 from app.features.entrevista import ficha as modulo_ficha
 from app.features.entrevista import repository as repo
 from app.features.entrevista import texto_libre
@@ -471,7 +472,7 @@ def estado(con, id_e, reglas, anio_actual) -> Turno:
     return Turno(e, pregunta, _estado(e, reglas, anio_actual))
 
 
-def historial(con, id_e, reglas=None, anio_actual=None) -> dict:
+def historial(con, id_e, reglas=None, anio_actual=None, extensiones=None) -> dict:
     """`SPEC-33` `RF-10`: la conversacion entera, para reconstruirla al recargar.
     La primera pregunta no es de ningun turno: la hace el sistema al crear.
 
@@ -486,7 +487,8 @@ def historial(con, id_e, reglas=None, anio_actual=None) -> dict:
             "hechos_propuestos": [h.model_dump(mode="json")
                                   for h in e.ficha.hechos_propuestos],
             "primera_pregunta": PRIMERA_PREGUNTA, "turnos": repo.turnos(con, id_e),
-            "nombres": nombres_de(e)}
+            "nombres": nombres_de(e),
+            "cuaderno": modulo_cuaderno.cuaderno(e.ficha, extensiones)}
 
 
 def cerrar(con, id_e, reglas=None, anio_actual=None):

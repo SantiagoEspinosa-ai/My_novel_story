@@ -63,4 +63,7 @@ def generacion(con, obra, umbral):
     ultima = repo.ultima_generacion(con, obra)
     return {"obra": obra, "total_de_capitulos": total, "capitulos": capitulos,
             "coste": None if ultima is None
-            else coste(*repo.gasto_de(con, obra, ultima), ultima)}
+            else coste(*repo.gasto_de(con, obra, ultima), ultima),
+            # `SPEC-35` `RF-13`: lo que la pagina dice aunque no haya capitulos.
+            "fase_de_la_obra": repo.ultima_fase(con, obra),
+            "motivo_del_fallo": repo.motivo_del_ultimo_lanzamiento(con, obra)}

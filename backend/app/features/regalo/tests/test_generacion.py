@@ -122,3 +122,53 @@ def test_publicada_ningun_capitulo_es_el_actual(cliente, con):
     fijar_fase(con, OBRA, "en_la_puerta")
     fijar_fase(con, OBRA, "publicada")
     assert not any(c["es_el_actual"] for c in _leer(cliente)["capitulos"])
+
+
+# --- `PLAN-35` F2: mientras se planifica, y si el lanzamiento falla (`SPEC-35` `RF-13`) ---
+
+def _entrevista_sin_montar(con, obra):
+    """La obra nace con su entrevista y no entra en `obra` hasta que se monta."""
+    with con:
+        con.execute("CREATE TABLE IF NOT EXISTS entrevista (id TEXT PRIMARY KEY, obra TEXT "
+                    "NOT NULL, ficha TEXT NOT NULL, cerrada INTEGER NOT NULL DEFAULT 0, "
+                    "juicios TEXT NOT NULL DEFAULT '[]', avisos_confirmados TEXT NOT NULL "
+                    "DEFAULT '[]', vistas TEXT NOT NULL DEFAULT '{}')")
+        con.execute("INSERT INTO entrevista (id, obra, ficha, cerrada) VALUES (?, ?, '{}', 1)",
+                    ("ent-1", obra))
+
+
+def test_una_obra_que_se_esta_planificando_no_es_404(cliente, con):
+    """`F-206`: durante los minutos del Planificador la obra no esta en `obra`."""
+    _entrevista_sin_montar(con, "obra-nueva")
+    fijar_fase(con, "obra-nueva", "planificando", total=None)
+    g = _leer(cliente, "obra-nueva")
+    assert g["capitulos"] == [] and g["total_de_capitulos"] == 0
+    assert g["fase_de_la_obra"] == "planificando"
+    assert g["motivo_del_fallo"] is None
+
+
+def test_un_lanzamiento_fallido_trae_su_motivo(cliente, con):
+    """Sin `claude` el trabajo falla antes de la primera fila de progreso: sin esto la pagina
+    diria «no empezado» para siempre."""
+    from app.commons.trabajos import cola
+    _entrevista_sin_montar(con, "obra-nueva")
+    id_t = cola.encolar(con, "generacion_regalo", {"obra": "obra-nueva", "generacion": "g1"})
+    cola.tomar(con, id_t)
+    cola.registrar_fallo(con, id_t, "FaltaEntorno: no se encuentra el ejecutable de Claude Code")
+    g = _leer(cliente, "obra-nueva")
+    assert g["motivo_del_fallo"].startswith("FaltaEntorno")
+    assert g["fase_de_la_obra"] is None
+
+
+def test_un_lanzamiento_que_salio_bien_no_trae_motivo(cliente, con):
+    from app.commons.trabajos import cola
+    id_t = cola.encolar(con, "generacion_regalo", {"obra": OBRA, "generacion": "g1"})
+    cola.tomar(con, id_t)
+    cola.registrar_resultado(con, id_t, {"publicada": True})
+    assert _leer(cliente)["motivo_del_fallo"] is None
+
+
+def test_la_generacion_trae_la_fase_de_la_obra(cliente, con):
+    fijar_fase(con, OBRA, "escribiendo", 10)
+    fijar_fase(con, OBRA, "esperando_revision")
+    assert _leer(cliente)["fase_de_la_obra"] == "esperando_revision"

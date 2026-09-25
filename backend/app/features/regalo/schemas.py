@@ -107,7 +107,13 @@ class PeticionDeLaVersion(_DelDominio):
 
 
 class GeneracionEnVivo(_DelDominio):
+    """`SPEC-33` `RF-14`..`RF-17`. Desde `SPEC-35` `RF-13` (`PLAN-35` F2), tambien la fase
+    de la obra -la ultima de su progreso- y el motivo del ultimo lanzamiento si fallo: es lo
+    que la pagina dice mientras se planifica, sin capitulos, o si nada llego a empezar."""
+
     obra: str
     total_de_capitulos: int
     capitulos: list[CapituloEnGeneracion]
     coste: CosteDeLaGeneracion | None
+    fase_de_la_obra: enums.FaseDeGeneracion | None = None
+    motivo_del_fallo: str | None = None

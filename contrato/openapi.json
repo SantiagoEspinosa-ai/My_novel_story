@@ -214,6 +214,33 @@
         "title": "CambioEntrada",
         "type": "object"
       },
+      "CampoDelCuaderno": {
+        "description": "Un campo de la ficha que ya se sabe, con su etiqueta y sus valores en palabras de\npersona (`SPEC-35` `RF-02`, `RF-05`).",
+        "properties": {
+          "campo": {
+            "title": "Campo",
+            "type": "string"
+          },
+          "etiqueta": {
+            "title": "Etiqueta",
+            "type": "string"
+          },
+          "valores": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Valores",
+            "type": "array"
+          }
+        },
+        "required": [
+          "campo",
+          "etiqueta",
+          "valores"
+        ],
+        "title": "CampoDelCuaderno",
+        "type": "object"
+      },
       "CapituloDeVersionSalida": {
         "additionalProperties": false,
         "properties": {
@@ -660,6 +687,45 @@
         ],
         "title": "CriterioDeEdicion",
         "type": "string"
+      },
+      "CuadernoSalida": {
+        "description": "`SPEC-35` `RF-05`: lo que la ficha sabe, lo que falta y cuanto, tal como lo resuelve\nel backend; la web no cuenta campos.",
+        "properties": {
+          "falta": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Falta",
+            "type": "array"
+          },
+          "faltan": {
+            "title": "Faltan",
+            "type": "integer"
+          },
+          "propuesta": {
+            "$ref": "#/components/schemas/PropuestaDelCuaderno"
+          },
+          "sabido": {
+            "items": {
+              "$ref": "#/components/schemas/CampoDelCuaderno"
+            },
+            "title": "Sabido",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sabido",
+          "falta",
+          "total",
+          "faltan",
+          "propuesta"
+        ],
+        "title": "CuadernoSalida",
+        "type": "object"
       },
       "EscenaDeVersionSalida": {
         "additionalProperties": false,
@@ -1249,6 +1315,7 @@
       },
       "GeneracionEnVivo": {
         "additionalProperties": false,
+        "description": "`SPEC-33` `RF-14`..`RF-17`. Desde `SPEC-35` `RF-13` (`PLAN-35` F2), tambien la fase\nde la obra -la ultima de su progreso- y el motivo del ultimo lanzamiento si fallo: es lo\nque la pagina dice mientras se planifica, sin capitulos, o si nada llego a empezar.",
         "properties": {
           "capitulos": {
             "items": {
@@ -1266,6 +1333,27 @@
                 "type": "null"
               }
             ]
+          },
+          "fase_de_la_obra": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FaseDeGeneracion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motivo_del_fallo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Del Fallo"
           },
           "obra": {
             "title": "Obra",
@@ -1408,6 +1496,9 @@
             "title": "Cerrada",
             "type": "boolean"
           },
+          "cuaderno": {
+            "$ref": "#/components/schemas/CuadernoSalida"
+          },
           "hechos_propuestos": {
             "items": {
               "$ref": "#/components/schemas/HechoPropuesto"
@@ -1445,7 +1536,8 @@
           "hechos_propuestos",
           "primera_pregunta",
           "turnos",
-          "nombres"
+          "nombres",
+          "cuaderno"
         ],
         "title": "HistorialSalida",
         "type": "object"
@@ -2092,6 +2184,51 @@
           "segundos_desde_la_ultima_actividad"
         ],
         "title": "ProgresoDeGeneracion",
+        "type": "object"
+      },
+      "PropuestaDelCuaderno": {
+        "description": "Lo que el cuaderno completo enseña antes de cerrar (`SPEC-35` `RF-07`).",
+        "properties": {
+          "dedicatoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dedicatoria"
+          },
+          "premisa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Premisa"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          }
+        },
+        "required": [
+          "titulo",
+          "premisa",
+          "dedicatoria"
+        ],
+        "title": "PropuestaDelCuaderno",
         "type": "object"
       },
       "PropuestaSalida": {

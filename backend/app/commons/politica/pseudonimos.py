@@ -40,30 +40,33 @@ from app.commons.politica.normalizar import sin_acentos
 
 # Listas fijas de nombres inventados. Ninguno es una palabra comun del castellano, porque la
 # restitucion cambia toda aparicion con mayuscula: «Nube» al principio de una frase se
-# convertiria en el nombre del perro.
+# convertiria en el nombre del perro. **Y ninguno lleva tilde ni eñe**: el modelo forma los
+# identificadores del plan con el nombre que ve, y un «per-fátima» rompe el contrato de
+# identificadores (`SPEC-03`). Lo cazo `test_ningun_nombre_real_sale`, de forma intermitente,
+# el dia que la obra le dio «Fátima».
 PILA_FEMENINA = (
-    "Elena", "Marta", "Irene", "Julia", "Nuria", "Silvia", "Teresa", "Begoña", "Celia",
-    "Esther", "Fátima", "Inés", "Lidia", "Maite", "Noelia", "Olga", "Raquel", "Susana",
+    "Elena", "Marta", "Irene", "Julia", "Nuria", "Silvia", "Teresa", "Laura", "Celia",
+    "Esther", "Paula", "Sara", "Lidia", "Maite", "Noelia", "Olga", "Raquel", "Susana",
     "Yolanda", "Ainhoa", "Luisa", "Nerea", "Sonia", "Tamara", "Adela", "Beatriz", "Claudia",
-    "Diana", "Lorena", "Mónica", "Patricia", "Sandra", "Verónica", "Alicia", "Cristina",
+    "Diana", "Lorena", "Natalia", "Patricia", "Sandra", "Carolina", "Alicia", "Cristina",
     "Rebeca", "Miriam", "Judit", "Carlota", "Ana")
 PILA_MASCULINA = (
-    "Bruno", "Tomás", "Rodrigo", "Gonzalo", "Ernesto", "Fermín", "Germán", "Héctor",
-    "Ignacio", "Jacinto", "Leandro", "Marcelo", "Nicolás", "Octavio", "Patricio", "Ramiro",
-    "Samuel", "Teodoro", "Ulises", "Valentín", "Adrián", "Camilo", "Damián", "Eusebio",
-    "Félix", "Gregorio", "Hugo", "Isidro", "Joaquín", "Lorenzo", "Matías", "Norberto",
-    "Óscar", "Rafael", "Tobías", "Vicente", "Julián", "Aurelio", "Emilio", "Gerardo")
+    "Bruno", "Pablo", "Rodrigo", "Gonzalo", "Ernesto", "Mario", "Javier", "Diego",
+    "Ignacio", "Jacinto", "Leandro", "Marcelo", "Daniel", "Octavio", "Patricio", "Ramiro",
+    "Samuel", "Teodoro", "Ulises", "Alberto", "Sergio", "Camilo", "Manuel", "Eusebio",
+    "Enrique", "Gregorio", "Hugo", "Isidro", "Alfredo", "Lorenzo", "Gabriel", "Norberto",
+    "Ricardo", "Rafael", "Arturo", "Vicente", "Roberto", "Aurelio", "Emilio", "Gerardo")
 APELLIDOS = (
-    "Galindo", "Iturbe", "Jiménez", "Lozano", "Medina", "Navarro", "Olmedo", "Quintana",
+    "Galindo", "Iturbe", "Serrano", "Lozano", "Medina", "Navarro", "Olmedo", "Quintana",
     "Salcedo", "Toledo", "Urrutia", "Valverde", "Zamora", "Bermejo", "Duarte", "Espinar",
-    "Gallardo", "Hidalgo", "Montero", "Ortega", "Roldán", "Tejada", "Vidal", "Aguado",
-    "Carrasco", "Delgado", "Ferrer", "Mendoza", "Sandoval", "Villalba", "Echeverría",
+    "Gallardo", "Hidalgo", "Montero", "Ortega", "Vallejo", "Tejada", "Vidal", "Aguado",
+    "Carrasco", "Delgado", "Ferrer", "Mendoza", "Sandoval", "Villalba", "Aranda",
     "Cifuentes", "Elizondo", "Garrido", "Maldonado", "Pacheco", "Rebollo", "Solano",
-    "Arriaga", "Beltrán")
+    "Arriaga", "Pineda")
 MASCOTAS = (
     "Bartolo", "Toby", "Kiwi", "Frodo", "Gofio", "Kira", "Lolo", "Otto", "Simba", "Zape",
     "Pipo", "Rulo", "Moka", "Tofe", "Dante", "Nilo", "Coco", "Bimba", "Chusco", "Greta",
-    "Lupo", "Milo", "Olfo", "Pancho", "Rocky", "Sultán", "Thor", "Yako", "Lua", "Nuka",
+    "Lupo", "Milo", "Olfo", "Pancho", "Rocky", "Brando", "Thor", "Yako", "Lua", "Nuka",
     "Balto", "Draco", "Fosca", "Gumer", "Hachi", "Iker", "Jara", "Kuki", "Laika", "Mambo")
 
 # El genero del pseudonimo (hallazgo 5 de `PLAN-34`). Antes que la terminacion, los nombres

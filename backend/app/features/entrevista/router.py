@@ -117,7 +117,8 @@ def consultar(id_e: str, con: sqlite3.Connection = Depends(conexion)):
 def historial(id_e: str, con: sqlite3.Connection = Depends(conexion)):
     """`SPEC-33` `RF-10`: la conversacion entera, en orden."""
     _existe(con, id_e)
-    return service.historial(con, id_e, _reglas(), date.today().year)
+    return service.historial(con, id_e, _reglas(), date.today().year,
+                             extensiones=_extensiones())
 
 
 @router.post("/entrevistas/{id_e}/turnos", status_code=status.HTTP_202_ACCEPTED)

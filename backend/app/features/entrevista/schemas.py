@@ -81,6 +81,34 @@ class NombresSalida(BaseModel):
     avisos: list[AvisoDeNombre]
 
 
+class CampoDelCuaderno(BaseModel):
+    """Un campo de la ficha que ya se sabe, con su etiqueta y sus valores en palabras de
+    persona (`SPEC-35` `RF-02`, `RF-05`)."""
+
+    campo: str
+    etiqueta: str
+    valores: list[str]
+
+
+class PropuestaDelCuaderno(BaseModel):
+    """Lo que el cuaderno completo enseña antes de cerrar (`SPEC-35` `RF-07`)."""
+
+    titulo: str | None
+    premisa: str | None
+    dedicatoria: str | None
+
+
+class CuadernoSalida(BaseModel):
+    """`SPEC-35` `RF-05`: lo que la ficha sabe, lo que falta y cuanto, tal como lo resuelve
+    el backend; la web no cuenta campos."""
+
+    sabido: list[CampoDelCuaderno]
+    falta: list[str]
+    total: int
+    faltan: int
+    propuesta: PropuestaDelCuaderno
+
+
 class ContradiccionSalida(BaseModel):
     tipo: str
     descripcion: str
@@ -115,6 +143,7 @@ class HistorialSalida(BaseModel):
     primera_pregunta: str
     turnos: list[TurnoDeEntrevistaSalida]
     nombres: NombresSalida
+    cuaderno: CuadernoSalida
 
 
 def turno_a_dict(t) -> dict:

@@ -86,6 +86,12 @@ def test_un_nombre_femenino_que_no_acaba_en_a_sigue_siendo_femenino(con):
     assert all(n == ps._plano(n) for n in ps.FEMENINOS_SIN_A | ps.MASCULINOS_CON_A)
 
 
+def test_ningun_pseudonimo_lleva_tilde_ni_enye():
+    """Un identificador del plan formado con el pseudonimo tiene que ser ASCII."""
+    for n in ps.PILA_FEMENINA + ps.PILA_MASCULINA + ps.APELLIDOS + ps.MASCOTAS:
+        assert n.isascii(), n
+
+
 def test_una_obra_sin_tabla_no_sustituye_nada(con):
     t = ps.de_la_obra(con, "sin-nombres")
     assert t.pseudonimizar("Olivia") == "Olivia"
