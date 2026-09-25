@@ -30,6 +30,10 @@ export type Estanteria = Esquemas["Estanteria"];
 export type ObraEnLaEstanteria = Esquemas["ObraEnLaEstanteria"];
 export type PdfDisponible = Esquemas["PdfDisponible"];
 export type PeticionDeLaVersion = Esquemas["PeticionDeLaVersion"];
+// SPEC-34, SPEC-35 RF-05..RF-07: los nombres fuera del modelo y el cuaderno.
+export type NombresEntrada = Esquemas["NombresEntrada"];
+export type Nombres = Esquemas["NombresSalida"];
+export type Cuaderno = Esquemas["CuadernoSalida"];
 
 export const PREFIJO = "/api";
 
@@ -76,6 +80,9 @@ export function crearCliente(fetchInyectado: Fetch) {
     method: "POST", body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
     headers: { "Content-Type": "application/json" },
   });
+  const poner = <T>(ruta: string, cuerpo: unknown) => leer<T>(ruta, {
+    method: "PUT", body: JSON.stringify(cuerpo), headers: { "Content-Type": "application/json" },
+  });
   const e = encodeURIComponent;
   return {
     indice: (obra: string) => leer<Indice>(`/obras/${e(obra)}/indice`),
@@ -109,6 +116,11 @@ export function crearCliente(fetchInyectado: Fetch) {
       enviar<unknown>(`/entrevistas/${e(entrevista)}/hechos/${e(hecho)}/descartar`),
     cerrarEntrevista: (entrevista: string) =>
       enviar<unknown>(`/entrevistas/${e(entrevista)}/cerrar`),
+    // SPEC-34 RF-01: los nombres, en su campo. No llama a ningun agente: responde al momento.
+    declararNombres: (entrevista: string, nombres: NombresEntrada) =>
+      poner<unknown>(`/entrevistas/${e(entrevista)}/nombres`, nombres),
+    confirmarAviso: (entrevista: string, vetado: string) =>
+      enviar<unknown>(`/entrevistas/${e(entrevista)}/avisos/confirmar`, { vetado }),
     generacion: (obra: string) => leer<GeneracionEnVivo>(`/obras/${e(obra)}/generacion`),
     estanteria: () => leer<Estanteria>("/obras"),
     // SPEC-35 RF-12: si hay PDF, sin generarlo. La descarga es un enlace: `urlDelPdf`.

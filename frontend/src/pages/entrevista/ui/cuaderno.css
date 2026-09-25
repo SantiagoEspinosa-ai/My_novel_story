@@ -1,0 +1,31 @@
+/* SPEC-35 RF-05, RF-06: el cuaderno de la entrevista. Solo variables del tema (SPEC-22 RF-59). */
+.cuaderno {
+  position: sticky; top: var(--espacio-m);
+  background: var(--color-pared); border: 1px solid var(--color-linea);
+  border-left: 6px solid var(--color-madera); border-radius: var(--radio-m);
+  padding: var(--espacio-l); display: grid; gap: var(--espacio-m);
+  font-family: var(--fuente-interfaz); font-size: 0.9rem;
+  max-height: calc(100vh - 2 * var(--espacio-m)); overflow-y: auto;
+}
+.cuaderno__titulo { margin: 0; font-size: 1.2rem; }
+.cuaderno__cuenta { margin: 0; color: var(--color-detalle); font-weight: 600; }
+.cuaderno__seccion h3 { margin: 0 0 var(--espacio-s); font-size: 1rem; }
+.cuaderno__sabido { margin: 0; display: grid; gap: var(--espacio-s); }
+.cuaderno__campo dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-textoSuave); }
+.cuaderno__campo dd { margin: 0; font-family: var(--fuente-lectura); }
+.cuaderno__falta { margin: 0; padding-left: var(--espacio-l); color: var(--color-textoSuave); }
+.cuaderno__vacio, .cuaderno__nota { margin: 0; color: var(--color-textoSuave); }
+.cuaderno__nombres { border-top: 1px dashed var(--color-linea); padding-top: var(--espacio-m); display: grid; gap: var(--espacio-s); }
+.cuaderno__lista { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--espacio-xs); }
+.cuaderno__quitar { margin-left: var(--espacio-s); background: none; border: none; color: var(--color-enlace); cursor: pointer; font: inherit; text-decoration: underline; }
+.cuaderno__vetados { margin: 0; }
+.cuaderno__aviso { display: grid; gap: var(--espacio-s); }
+.cuaderno__aviso p { margin: 0; }
+.cuaderno__formulario { display: grid; gap: var(--espacio-xs); }
+.cuaderno__formulario label { display: grid; gap: 2px; font-size: 0.8rem; color: var(--color-textoSuave); }
+.cuaderno__formulario input, .cuaderno__formulario select {
+  font: inherit; padding: var(--espacio-xs) var(--espacio-s); border-radius: var(--radio-s);
+  border: 1px solid var(--color-linea); background: var(--color-superficie); color: var(--color-texto);
+}
+.cuaderno__formulario .boton { justify-self: start; }
+.cuaderno__subtitulo { margin: 0; font-weight: 600; }

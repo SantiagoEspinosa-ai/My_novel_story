@@ -3,13 +3,16 @@
 import { act, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
-import { fetchConMetodo, generacionEnCurso, generacionParada } from "@/shared/testing";
+import {
+  fetchConMetodo, generacionEnCurso, generacionFallida, generacionParada, generacionPlanificando,
+  generacionPublicada, generacionSinPublicar,
+} from "@/shared/testing";
 import { PaginaGeneracion } from "./Generacion";
 
 const G = "/api/obras/obra-regalo-inventada/generacion";
 
-function montar(respuestas: unknown[]) {
-  const doble = fetchConMetodo({ [`GET ${G}`]: respuestas.map((cuerpo) => ({ cuerpo })) });
+function montar(respuestas: unknown[], otras: Parameters<typeof fetchConMetodo>[0] = {}) {
+  const doble = fetchConMetodo({ [`GET ${G}`]: respuestas.map((cuerpo) => ({ cuerpo })), ...otras });
   render(
     <ClienteProvider cliente={crearCliente(doble.fetch)}>
       <MemoryRouter initialEntries={["/obras/obra-regalo-inventada/generacion"]}>
@@ -82,5 +85,41 @@ describe("Generacion", () => {
     await screen.findByTestId("capitulos");
     expect(pedidas.map((p) => p.clave))
       .toContain("GET /api/obras/obra-regalo-inventada/progreso");
+  });
+
+  // PLAN-35 F6 (SPEC-35 RF-13): de noche, y lo que la pagina dice al empezar y al acabar.
+  it("un lanzamiento fallido enseña su motivo", async () => {
+    montar([generacionFallida]);
+    const alerta = await screen.findByRole("alert");
+    expect(alerta).toHaveTextContent("no se pudo empezar");
+    expect(alerta).toHaveTextContent("no se encuentra el ejecutable de Claude Code");
+  });
+
+  it("planificando, sin capítulos, lo dice", async () => {
+    montar([generacionPlanificando]);
+    expect(await screen.findByTestId("sin-capitulos")).toHaveTextContent("plan");
+    expect(screen.queryByTestId("capitulos")).toBeNull();
+  });
+
+  it("publicada lleva a leer la novela", async () => {
+    montar([generacionPublicada]);
+    expect(await screen.findByRole("link", { name: "Leer la novela" }))
+      .toHaveAttribute("href", "/obras/obra-regalo-inventada");
+  });
+
+  it("sin publicar lleva a leer lo escrito y dice por qué", async () => {
+    montar([generacionSinPublicar], {
+      "GET /api/obras/obra-regalo-inventada/pdf/disponible": [{ cuerpo: {
+        disponible: false, motivo: "la ronda 1 de la puerta no publico la obra: Lean no disponible" } }],
+    });
+    expect(await screen.findByRole("link", { name: "Leer lo escrito" }))
+      .toHaveAttribute("href", "/obras/obra-regalo-inventada");
+    expect(await screen.findByTestId("sin-publicar")).toHaveTextContent("Lean no disponible");
+  });
+
+  it("en curso no ofrece leer todavía", async () => {
+    montar([generacionEnCurso]);
+    await screen.findByTestId("capitulos");
+    expect(screen.queryByRole("link", { name: /Leer/ })).toBeNull();
   });
 });

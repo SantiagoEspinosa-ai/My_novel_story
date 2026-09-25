@@ -2,8 +2,8 @@
 // congelado: el tipo sale de contrato.ts y tests/regalo.test.ts los valida contra el mismo
 // esquema. Viven aparte de fixtures.ts, que es de PLAN-22.
 import type {
-  CapituloEnGeneracion, ConfirmacionDeGasto, Estanteria, GeneracionEnVivo, Historial,
-  TurnoDeEntrevista,
+  CapituloEnGeneracion, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
+  Nombres, TurnoDeEntrevista,
 } from "@/shared/api";
 
 export const turnoConAviso: TurnoDeEntrevista = {
@@ -17,16 +17,77 @@ export const turnoConAviso: TurnoDeEntrevista = {
     { tipo: "edad_y_genero", descripcion: "el romance pide al menos 12 años" },
   ],
   cuando: "2026-09-24 10:00:00",
+  fuera_del_modelo: false,
 };
 
 export const turnoSinNada: TurnoDeEntrevista = {
   orden: 2, respuesta: "Es su cumpleaños", pregunta: "¿Algo más?", tema: null,
   falta: [], avisos: [], contradicciones_abiertas: [], cuando: "2026-09-24 10:01:00",
+  fuera_del_modelo: false,
+};
+
+/** SPEC-34 RF-01: la respuesta a la primera pregunta, escrita en el campo de nombres. */
+export const turnoDelNombre: TurnoDeEntrevista = {
+  orden: 1, respuesta: "Nerea Salgado",
+  pregunta: "Gracias. ¿Cuántos años tiene Nerea? Y si hay más personas o mascotas con nombre que deban salir en la novela, apúntalas en el cuaderno.",
+  tema: "edad", falta: ["edad", "ocasion"], avisos: [], contradicciones_abiertas: [],
+  cuando: "2026-09-24 09:59:00", fuera_del_modelo: true,
 };
 
 export const turnoViejo: TurnoDeEntrevista = {
   orden: 1, respuesta: "Hola", pregunta: "¿Y después?", tema: null,
   falta: null, avisos: null, contradicciones_abiertas: null, cuando: null,
+};
+
+// SPEC-35 RF-05, RF-06: lo que el cuaderno sabe y los nombres, siempre los reales.
+export const nombresConMascota: Nombres = {
+  destinatario: "Nerea Salgado", regalado_por: "Tomás",
+  otros: [{ nombre: "Nora", tipo: "mascota", relacion: "su perra", declarado: true }],
+  vetados: ["Nora Quintana"],
+  avisos: [{ vetado: "Nora Quintana",
+    texto: "el nombre vetado «Nora Quintana» comparte nombre de pila con «Nora» (mascota): vetarlo tambien lo quita de la novela" }],
+};
+
+export const nombresVacios: Nombres = {
+  destinatario: null, regalado_por: null, otros: [], vetados: [], avisos: [],
+};
+
+export const cuadernoAMedias: Cuaderno = {
+  sabido: [
+    { campo: "nombre", etiqueta: "Nombre", valores: ["Nerea Salgado"] },
+    { campo: "edad", etiqueta: "Edad", valores: ["41 años"] },
+    { campo: "ocasion", etiqueta: "Ocasión", valores: ["cumpleaños"] },
+  ],
+  falta: ["Género", "Tono", "Extensión de cada capítulo", "Papel en la historia", "Rasgos",
+    "Recuerdos", "Premisa", "Título"],
+  total: 11, faltan: 8,
+  propuesta: { titulo: null, premisa: null, dedicatoria: null },
+};
+
+export const cuadernoVacio: Cuaderno = {
+  sabido: [], falta: ["Nombre", "Edad", "Ocasión", "Género", "Tono",
+    "Extensión de cada capítulo", "Papel en la historia", "Rasgos", "Recuerdos", "Premisa",
+    "Título"], total: 11, faltan: 11,
+  propuesta: { titulo: null, premisa: null, dedicatoria: null },
+};
+
+export const cuadernoCompleto: Cuaderno = {
+  sabido: [
+    ...cuadernoAMedias.sabido,
+    { campo: "genero", etiqueta: "Género", valores: ["aventura"] },
+    { campo: "tono", etiqueta: "Tono", valores: ["tierno"] },
+    { campo: "extension", etiqueta: "Extensión de cada capítulo",
+      valores: ["media: de 1150 a 1350 palabras por capítulo"] },
+    { campo: "papel", etiqueta: "Papel en la historia", valores: ["protagonista"] },
+    { campo: "rasgo", etiqueta: "Rasgos", valores: ["colecciona faros (imprescindible)"] },
+    { campo: "recuerdo", etiqueta: "Recuerdos",
+      valores: ["la tarde en que aprendió a nadar (a los 30 años) (imprescindible)"] },
+    { campo: "premisa", etiqueta: "Premisa", valores: ["Un faro de papel devuelve a Nerea al mar."] },
+    { campo: "titulo", etiqueta: "Título", valores: ["El faro de Nerea"] },
+  ],
+  falta: [], total: 11, faltan: 0,
+  propuesta: { titulo: "El faro de Nerea", premisa: "Un faro de papel devuelve a Nerea al mar.",
+    dedicatoria: "Para Nerea, que siempre vuelve." },
 };
 
 export const historialAbierto: Historial = {
@@ -36,6 +97,22 @@ export const historialAbierto: Historial = {
   hechos_propuestos: [{ id: "hp-1", texto: "aprendió a nadar a los 30", estado: "propuesto" }],
   primera_pregunta: "Vamos a preparar una novela de 10 capitulos. ¿Cómo se llama?",
   turnos: [turnoConAviso, turnoSinNada],
+  nombres: nombresConMascota,
+  cuaderno: cuadernoAMedias,
+};
+
+/** Recién creada: sin nombre y sin turnos. La primera respuesta va al campo del nombre. */
+export const historialNuevo: Historial = {
+  ...historialAbierto, hechos_propuestos: [], turnos: [], nombres: nombresVacios,
+  cuaderno: cuadernoVacio,
+};
+
+/** Con el nombre ya declarado, fuera del modelo, y la pregunta fija que viene despues. */
+export const historialConNombre: Historial = {
+  ...historialAbierto, hechos_propuestos: [], turnos: [turnoDelNombre],
+  nombres: { ...nombresVacios, destinatario: "Nerea Salgado" },
+  cuaderno: { ...cuadernoVacio, sabido: [{ campo: "nombre", etiqueta: "Nombre",
+    valores: ["Nerea Salgado"] }], falta: cuadernoVacio.falta.slice(1), faltan: 10 },
 };
 
 export const historialListo: Historial = {
@@ -45,7 +122,10 @@ export const historialListo: Historial = {
   turnos: [...historialAbierto.turnos, {
     orden: 3, respuesta: "Nada más", pregunta: "Perfecto, ¿cerramos la ficha?", tema: null,
     falta: [], avisos: [], contradicciones_abiertas: [], cuando: "2026-09-24 10:02:00",
+    fuera_del_modelo: false,
   }],
+  nombres: { ...nombresConMascota, avisos: [] },
+  cuaderno: cuadernoCompleto,
 };
 
 export const historialCerrado: Historial = { ...historialListo, cerrada: true, puede_cerrar: false };
@@ -75,6 +155,20 @@ export const generacionEnCurso: GeneracionEnVivo = {
     ...Array.from({ length: 8 }, (_, i) => capitulo(i + 3)),
   ],
   coste: { generacion: "gen-inventada", usd: 1.25, delegaciones: 7, sin_coste: 0, es_suelo: false },
+  fase_de_la_obra: "editando",
+  motivo_del_fallo: null,
+};
+
+/** F-206: planificando, la obra todavia no esta montada y no tiene capitulos. */
+export const generacionPlanificando: GeneracionEnVivo = {
+  obra: "obra-regalo-inventada", total_de_capitulos: 0, capitulos: [], coste: null,
+  fase_de_la_obra: "planificando", motivo_del_fallo: null,
+};
+
+/** SPEC-35 RF-13: el lanzamiento fallo antes de la primera fila de progreso. */
+export const generacionFallida: GeneracionEnVivo = {
+  ...generacionPlanificando, fase_de_la_obra: null,
+  motivo_del_fallo: "FaltaEntorno: no se encuentra el ejecutable de Claude Code",
 };
 
 /** Parada en el capitulo 3, que es el actual. */
@@ -86,6 +180,17 @@ export const generacionParada: GeneracionEnVivo = {
       ? { ...c, es_el_actual: true, fase: "parada" as const, motivo: "FalloDeTransporte",
           desde: "2026-09-24 10:05:00", escenas: [{ id: "esc-3", estado: "generada" as const }] }
       : c),
+};
+
+export const generacionPublicada: GeneracionEnVivo = {
+  ...generacionEnCurso,
+  capitulos: generacionEnCurso.capitulos.map((c) => ({ ...c, es_el_actual: false,
+    fase: "resumiendo" as const, escenas: c.escenas.map((e) => ({ ...e, estado: "consolidada" as const })) })),
+  fase_de_la_obra: "publicada",
+};
+
+export const generacionSinPublicar: GeneracionEnVivo = {
+  ...generacionPublicada, fase_de_la_obra: "esperando_revision",
 };
 
 export const generacionConSuelo: GeneracionEnVivo = {
@@ -139,11 +244,18 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   turnoConAviso: { esquema: "TurnoDeEntrevistaSalida", datos: turnoConAviso },
   turnoSinNada: { esquema: "TurnoDeEntrevistaSalida", datos: turnoSinNada },
   turnoViejo: { esquema: "TurnoDeEntrevistaSalida", datos: turnoViejo },
+  turnoDelNombre: { esquema: "TurnoDeEntrevistaSalida", datos: turnoDelNombre },
   historialAbierto: { esquema: "HistorialSalida", datos: historialAbierto },
+  historialNuevo: { esquema: "HistorialSalida", datos: historialNuevo },
+  historialConNombre: { esquema: "HistorialSalida", datos: historialConNombre },
   historialListo: { esquema: "HistorialSalida", datos: historialListo },
   historialCerrado: { esquema: "HistorialSalida", datos: historialCerrado },
   generacionEnCurso: { esquema: "GeneracionEnVivo", datos: generacionEnCurso },
   generacionParada: { esquema: "GeneracionEnVivo", datos: generacionParada },
+  generacionPlanificando: { esquema: "GeneracionEnVivo", datos: generacionPlanificando },
+  generacionFallida: { esquema: "GeneracionEnVivo", datos: generacionFallida },
+  generacionPublicada: { esquema: "GeneracionEnVivo", datos: generacionPublicada },
+  generacionSinPublicar: { esquema: "GeneracionEnVivo", datos: generacionSinPublicar },
   generacionConSuelo: { esquema: "GeneracionEnVivo", datos: generacionConSuelo },
   generacionSinMedir: { esquema: "GeneracionEnVivo", datos: generacionSinMedir },
   confirmacionConUltima: { esquema: "ConfirmacionDeGasto", datos: confirmacionConUltima },

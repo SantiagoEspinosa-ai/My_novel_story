@@ -15,3 +15,9 @@ export const INTERVALO_DE_TRABAJO_MS = 3000;
  * de una generacion en las paginas de la novela regalo. La barra de PLAN-22 sigue con el suyo.
  */
 export const INTERVALO_DE_REGALO_MS = 2000;
+
+/**
+ * SPEC-35 RF-04 (cuestion 1, v3): la entrevistadora tiene nombre y cara. Es presentacion: el
+ * Entrevistador (el agente) no cambia, y el modelo no finge ser nadie. Se cambia aqui.
+ */
+export const ENTREVISTADORA = { nombre: "Xime" };

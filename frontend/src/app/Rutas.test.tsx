@@ -36,6 +36,13 @@ describe("App · la novela regalo", () => {
       .toBeInTheDocument();
   });
 
+  it("la cabecera dice qué es la web: novelas para regalar, no solo su lectura", async () => {
+    abrir("/obras/obra-regalo-inventada/generacion");
+    const cabecera = (await screen.findAllByRole("banner"))[0];
+    expect(cabecera).toHaveTextContent("Novelas para regalar");
+    expect(cabecera).not.toHaveTextContent("lectura");
+  });
+
   it("la cabecera lleva a la estantería desde cualquier página", async () => {
     abrir("/obras/obra-regalo-inventada/generacion");
     expect(await screen.findByRole("link", { name: "Estantería" })).toHaveAttribute("href", "/");

@@ -81,6 +81,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/entrevistas/{id_e}/avisos/confirmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar Aviso
+         * @description `SPEC-25` `RF-10`, fuera del modelo (`PLAN-34` E3).
+         */
+        post: operations["confirmar_aviso_entrevistas__id_e__avisos_confirmar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/entrevistas/{id_e}/cerrar": {
         parameters: {
             query?: never;
@@ -129,6 +149,27 @@ export interface paths {
         put?: never;
         /** Descartar */
         post: operations["descartar_entrevistas__id_e__hechos__id_h__descartar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entrevistas/{id_e}/nombres": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Nombres
+         * @description `SPEC-34` `RF-01`: los nombres, escritos en su campo. **No llama a ningun agente**,
+         *     asi que responde en el momento, sin trabajo.
+         */
+        put: operations["nombres_entrevistas__id_e__nombres_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -671,6 +712,21 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AvisoDeNombre */
+        AvisoDeNombre: {
+            /** Texto */
+            texto: string;
+            /** Vetado */
+            vetado: string;
+        };
+        /**
+         * AvisoEntrada
+         * @description Confirmar un aviso de nombre (`SPEC-25` `RF-10`) fuera del modelo.
+         */
+        AvisoEntrada: {
+            /** Vetado */
+            vetado: string;
+        };
         /**
          * BorradorElegido
          * @description El `Borrador` elegido de la escena: el aceptado o, si no consta, el ultimo.
@@ -731,6 +787,19 @@ export interface components {
             texto: string;
             /** Version De Partida */
             version_de_partida?: number | null;
+        };
+        /**
+         * CampoDelCuaderno
+         * @description Un campo de la ficha que ya se sabe, con su etiqueta y sus valores en palabras de
+         *     persona (`SPEC-35` `RF-02`, `RF-05`).
+         */
+        CampoDelCuaderno: {
+            /** Campo */
+            campo: string;
+            /** Etiqueta */
+            etiqueta: string;
+            /** Valores */
+            valores: string[];
         };
         /** CapituloDeVersionSalida */
         CapituloDeVersionSalida: {
@@ -921,6 +990,22 @@ export interface components {
          * @enum {string}
          */
         CriterioDeEdicion: "continuidad" | "tono" | "arco" | "coherencia_de_personajes" | "ritmo" | "personalizacion";
+        /**
+         * CuadernoSalida
+         * @description `SPEC-35` `RF-05`: lo que la ficha sabe, lo que falta y cuanto, tal como lo resuelve
+         *     el backend; la web no cuenta campos.
+         */
+        CuadernoSalida: {
+            /** Falta */
+            falta: string[];
+            /** Faltan */
+            faltan: number;
+            propuesta: components["schemas"]["PropuestaDelCuaderno"];
+            /** Sabido */
+            sabido: components["schemas"]["CampoDelCuaderno"][];
+            /** Total */
+            total: number;
+        };
         /** EscenaDeVersionSalida */
         EscenaDeVersionSalida: {
             estado: components["schemas"]["EstadoDeEscena"];
@@ -1153,11 +1238,19 @@ export interface components {
             /** Usd */
             usd: number | null;
         };
-        /** GeneracionEnVivo */
+        /**
+         * GeneracionEnVivo
+         * @description `SPEC-33` `RF-14`..`RF-17`. Desde `SPEC-35` `RF-13` (`PLAN-35` F2), tambien la fase
+         *     de la obra -la ultima de su progreso- y el motivo del ultimo lanzamiento si fallo: es lo
+         *     que la pagina dice mientras se planifica, sin capitulos, o si nada llego a empezar.
+         */
         GeneracionEnVivo: {
             /** Capitulos */
             capitulos: components["schemas"]["CapituloEnGeneracion"][];
             coste: components["schemas"]["CosteDeLaGeneracion"] | null;
+            fase_de_la_obra?: components["schemas"]["FaseDeGeneracion"] | null;
+            /** Motivo Del Fallo */
+            motivo_del_fallo?: string | null;
             /** Obra */
             obra: string;
             /** Total De Capitulos */
@@ -1234,8 +1327,10 @@ export interface components {
         HistorialSalida: {
             /** Cerrada */
             cerrada: boolean;
+            cuaderno: components["schemas"]["CuadernoSalida"];
             /** Hechos Propuestos */
             hechos_propuestos: components["schemas"]["HechoPropuesto"][];
+            nombres: components["schemas"]["NombresSalida"];
             /** Obra */
             obra: string;
             /** Primera Pregunta */
@@ -1299,6 +1394,40 @@ export interface components {
             titulo: string;
         };
         /**
+         * NombresEntrada
+         * @description `SPEC-34` `RF-01`, `PLAN-34` E3: los nombres, escritos por el comprador en su campo y
+         *     guardados sin pasar por ningun agente. Es **el estado completo** de lo declarado: una
+         *     persona que ya no viene es una persona que se quita.
+         */
+        NombresEntrada: {
+            /** Destinatario */
+            destinatario?: string | null;
+            /** Otros */
+            otros?: components["schemas"]["OtroNombre"][];
+            /** Regalado Por */
+            regalado_por?: string | null;
+            /** Vetados */
+            vetados?: string[];
+        };
+        /**
+         * NombresSalida
+         * @description Lo que la ficha sabe de los nombres, **siempre con el nombre real** (`SPEC-35`
+         *     `RF-06`). `declarado` dice si lo escribio el comprador en su campo o lo saco el
+         *     Entrevistador de una respuesta.
+         */
+        NombresSalida: {
+            /** Avisos */
+            avisos: components["schemas"]["AvisoDeNombre"][];
+            /** Destinatario */
+            destinatario: string | null;
+            /** Otros */
+            otros: components["schemas"]["OtroNombreSalida"][];
+            /** Regalado Por */
+            regalado_por: string | null;
+            /** Vetados */
+            vetados: string[];
+        };
+        /**
          * NotaDelEditor
          * @description Una `ValoracionDelEditor` del borrador aceptado. `bajo_el_umbral` es `INV-26`
          *     (`nota < umbral`), resuelto en el backend.
@@ -1354,6 +1483,30 @@ export interface components {
             premisa: string;
             /** Titulo */
             titulo: string;
+        };
+        /**
+         * OtroNombre
+         * @description Una persona o una mascota con nombre. El tipo es `tipo_de_elemento_personal`, pero
+         *     solo los dos que llevan nombre de alguien (`SPEC-34` `RF-01`): un rasgo con nombre es
+         *     un error de validacion.
+         */
+        OtroNombre: {
+            /** Nombre */
+            nombre: string;
+            /** Relacion */
+            relacion?: string | null;
+            tipo: components["schemas"]["TipoDeElementoPersonal"];
+        };
+        /** OtroNombreSalida */
+        OtroNombreSalida: {
+            /** Declarado */
+            declarado: boolean;
+            /** Nombre */
+            nombre: string;
+            /** Relacion */
+            relacion: string | null;
+            /** Tipo */
+            tipo: string;
         };
         /** PdfDisponible */
         PdfDisponible: {
@@ -1437,6 +1590,18 @@ export interface components {
              */
             ultima_actividad: string;
         };
+        /**
+         * PropuestaDelCuaderno
+         * @description Lo que el cuaderno completo enseña antes de cerrar (`SPEC-35` `RF-07`).
+         */
+        PropuestaDelCuaderno: {
+            /** Dedicatoria */
+            dedicatoria: string | null;
+            /** Premisa */
+            premisa: string | null;
+            /** Titulo */
+            titulo: string | null;
+        };
         /** PropuestaSalida */
         PropuestaSalida: {
             capitulos: components["schemas"]["CapitulosPorSalida"];
@@ -1504,6 +1669,11 @@ export interface components {
          */
         TiempoVerbal: "presente" | "pasado";
         /**
+         * TipoDeElementoPersonal
+         * @enum {string}
+         */
+        TipoDeElementoPersonal: "rasgo" | "recuerdo" | "persona" | "mascota";
+        /**
          * TrabajoSalida
          * @description Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su
          *     vocabulario lo declara `docs/architecture.md` § "Los estados de un trabajo".
@@ -1539,6 +1709,11 @@ export interface components {
             cuando: string | null;
             /** Falta */
             falta: string[] | null;
+            /**
+             * Fuera Del Modelo
+             * @description Se contesto en el campo de nombres, sin agente (SPEC-34 RF-01). None en los turnos anteriores a la migracion 19
+             */
+            fuera_del_modelo?: boolean | null;
             /** Orden */
             orden: number;
             /** Pregunta */
@@ -1725,6 +1900,41 @@ export interface operations {
             };
         };
     };
+    confirmar_aviso_entrevistas__id_e__avisos_confirmar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_e: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvisoEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     cerrar_entrevistas__id_e__cerrar_post: {
         parameters: {
             query?: never;
@@ -1799,6 +2009,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nombres_entrevistas__id_e__nombres_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_e: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NombresEntrada"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

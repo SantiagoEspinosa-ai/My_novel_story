@@ -75,6 +75,9 @@ describe("tema", () => {
       ["texto sobre papel de libro", COLORES.texto, COLORES.papelDeLibro],
       ["texto suave sobre papel de libro", COLORES.textoSuave, COLORES.papelDeLibro],
       ["sobre madera", COLORES.sobreMadera, COLORES.maderaOscura],
+      // PLAN-35 F4..F6: la cara de Xime, el aviso de que cerrar no tiene vuelta atras y la noche.
+      ["cara de la entrevistadora", COLORES.sobreMadera, COLORES.madera],
+      ["texto sobre acento suave", COLORES.texto, COLORES.acentoSuave],
       ["sobre noche", COLORES.sobreNoche, COLORES.noche],
       ["oro sobre noche", COLORES.oro, COLORES.noche],
       ...[ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD, FASE_DE_GENERACION, ESTADO_DE_TRABAJO,

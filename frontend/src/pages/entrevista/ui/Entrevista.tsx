@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ConfirmarGeneracion } from "./ConfirmarGeneracion";
+import { Cuaderno } from "./Cuaderno";
+import { CuadernoCompleto } from "./CuadernoCompleto";
+import { Entrevistadora } from "./Entrevistadora";
 import { Turno } from "./Turno";
-import { ErrorDeLaApi, useCliente, type Historial } from "@/shared/api";
-import { INTERVALO_DE_REGALO_MS } from "@/shared/config";
+import { ErrorDeLaApi, useCliente, type Historial, type NombresEntrada } from "@/shared/api";
+import { ENTREVISTADORA, INTERVALO_DE_REGALO_MS } from "@/shared/config";
 import { EtiquetaDeEstado, SEVERIDAD } from "@/shared/ui";
 import "./entrevista.css";
 
-// La entrevista como conversacion (SPEC-33 RF-05..RF-10). Una pregunta cada vez y las
-// anteriores encima. La conversacion es el historial del backend, asi que sobrevive a
-// recargar; la pagina no calcula nada: si se puede cerrar lo dice `puede_cerrar`.
+// La entrevista como conversacion (SPEC-33 RF-05..RF-10) con Xime y su cuaderno (SPEC-35
+// RF-04..RF-07). Una pregunta cada vez y las anteriores encima. La conversacion es el historial
+// del backend, asi que sobrevive a recargar; la pagina no calcula nada: si se puede cerrar lo
+// dice `puede_cerrar`, y lo que sabe el cuaderno llega resuelto.
 export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
   intervaloMs?: number;
 }) {
@@ -22,6 +26,7 @@ export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
   const [pensando, setPensando] = useState(false);
   const [fallo, setFallo] = useState<string | null>(null);
   const [rechazo, setRechazo] = useState<Rechazo | null>(null);
+  const [quiereCambiar, setQuiereCambiar] = useState(false);
 
   const leer = useCallback(() => cliente.historial(entrevista).then(
     (h) => { setHistorial(h); setErrorDeCarga(null); },
@@ -44,6 +49,7 @@ export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
         await new Promise((r) => setTimeout(r, intervaloMs));
       }
       setRespuesta("");
+      setQuiereCambiar(false);
       await leer();
     } catch (e) {
       // RF-07: se ensena el motivo y la respuesta escrita no se pierde.
@@ -55,6 +61,16 @@ export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
 
   async function hecho(id: string, confirmar: boolean) {
     await (confirmar ? cliente.confirmarHecho : cliente.descartarHecho)(entrevista, id);
+    await leer();
+  }
+
+  async function guardarNombres(n: NombresEntrada) {
+    await cliente.declararNombres(entrevista, n);
+    await leer();
+  }
+
+  async function confirmarAviso(vetado: string) {
+    await cliente.confirmarAviso(entrevista, vetado);
     await leer();
   }
 
@@ -71,67 +87,125 @@ export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
   if (errorDeCarga) return <main className="contenido"><p role="alert">{errorDeCarga}</p></main>;
   if (!historial) return <main className="contenido"><p aria-busy="true">cargando…</p></main>;
 
+  // SPEC-34 RF-01: mientras no hay destinatario ni turnos, la primera respuesta es el nombre y
+  // se escribe en su campo, fuera del modelo.
+  const pideElNombre = !historial.cerrada && historial.nombres.destinatario === null
+    && historial.turnos.length === 0;
+  const completo = historial.puede_cerrar && !historial.cerrada && !quiereCambiar;
+
   return (
     <main className="contenido entrevista">
-      <h1>La entrevista</h1>
-      <ol className="entrevista__conversacion">
-        <li className="turno">
-          <p className="turno__burbuja turno__burbuja--entrevistador">
-            {historial.primera_pregunta}
-          </p>
-        </li>
-        {historial.turnos.map((t) => <Turno key={t.orden} turno={t} />)}
-      </ol>
+      <div className="entrevista__conversacion-y-cuaderno">
+        <section className="entrevista__lado">
+          <h1>La entrevista</h1>
+          <ol className="entrevista__conversacion">
+            <li className="turno">
+              <div className="turno__burbuja turno__burbuja--entrevistador">
+                <Entrevistadora />
+                <p>{historial.primera_pregunta}</p>
+              </div>
+            </li>
+            {historial.turnos.map((t) => <Turno key={t.orden} turno={t} />)}
+          </ol>
 
-      {historial.hechos_propuestos.length > 0 && (
-        <section className="tarjeta entrevista__hechos">
-          <h2>Lo que se sacó de tu texto</h2>
-          <ul>
-            {historial.hechos_propuestos.map((h) => (
-              <li key={h.id} data-testid={`hecho-${h.id}`}>
-                <span>{h.texto}</span> <span className="entrevista__estado">{h.estado}</span>
-                {h.estado === "propuesto" && !historial.cerrada && (
-                  <>
-                    <button type="button" className="boton boton--secundario"
-                      onClick={() => void hecho(h.id, true)}>Confirmar</button>
-                    <button type="button" className="boton boton--secundario"
-                      onClick={() => void hecho(h.id, false)}>Descartar</button>
-                  </>
+          {historial.hechos_propuestos.length > 0 && (
+            <section className="tarjeta entrevista__hechos">
+              <h2>Lo que se sacó de tu texto</h2>
+              <ul>
+                {historial.hechos_propuestos.map((h) => (
+                  <li key={h.id} data-testid={`hecho-${h.id}`}>
+                    <span>{h.texto}</span> <span className="entrevista__estado">{h.estado}</span>
+                    {h.estado === "propuesto" && !historial.cerrada && (
+                      <>
+                        <button type="button" className="boton boton--secundario"
+                          onClick={() => void hecho(h.id, true)}>Confirmar</button>
+                        <button type="button" className="boton boton--secundario"
+                          onClick={() => void hecho(h.id, false)}>Descartar</button>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {historial.cerrada ? (
+            <section className="tarjeta entrevista__cerrada">
+              <p>La ficha está cerrada.</p>
+              {/* SPEC-33 RF-11: con la ficha cerrada se puede escribir la novela, tras confirmar
+                  (RF-12). SPEC-35 RF-07: sin quitarle nada a la confirmacion. */}
+              <ConfirmarGeneracion obra={historial.obra}
+                alLanzar={() => navegar(`/obras/${encodeURIComponent(historial.obra)}/generacion`)} />
+            </section>
+          ) : pideElNombre ? (
+            <CampoDelNombre alGuardar={(nombre) => guardarNombres({
+              destinatario: nombre, regalado_por: null, otros: [], vetados: [] })} />
+          ) : completo ? (
+            <CuadernoCompleto cuaderno={historial.cuaderno} nombres={historial.nombres}
+              alCambiar={() => setQuiereCambiar(true)} alCerrar={() => void cerrar()}
+              rechazo={rechazo && <Rechazado rechazo={rechazo} />} />
+          ) : (
+            <form className="entrevista__responder"
+              onSubmit={(ev) => { ev.preventDefault(); void enviar(); }}>
+              <label htmlFor="respuesta">Tu respuesta</label>
+              <textarea id="respuesta" value={respuesta} rows={3}
+                onChange={(ev) => setRespuesta(ev.target.value)} />
+              <div className="entrevista__acciones">
+                <button type="submit" className="boton boton--principal"
+                  disabled={pensando || respuesta.trim() === ""}>Responder</button>
+                {historial.puede_cerrar && (
+                  <button type="button" className="boton boton--secundario"
+                    disabled={pensando} onClick={() => setQuiereCambiar(false)}>
+                    Volver al cuaderno completo
+                  </button>
                 )}
-              </li>
-            ))}
-          </ul>
+              </div>
+              {pensando && <p role="status" className="entrevista__pensando">
+                {ENTREVISTADORA.nombre} está pensando…</p>}
+              {fallo && <p role="alert" className="aviso">El turno no salió: {fallo}</p>}
+              {rechazo && <Rechazado rechazo={rechazo} />}
+            </form>
+          )}
         </section>
-      )}
 
-      {historial.cerrada ? (
-        <section className="tarjeta entrevista__cerrada">
-          <p>La ficha está cerrada.</p>
-          {/* RF-11: con la ficha cerrada se puede escribir la novela, tras confirmar (RF-12). */}
-          <ConfirmarGeneracion obra={historial.obra}
-            alLanzar={() => navegar(`/obras/${encodeURIComponent(historial.obra)}/generacion`)} />
-        </section>
-      ) : (
-        <form className="entrevista__responder"
-          onSubmit={(ev) => { ev.preventDefault(); void enviar(); }}>
-          <label htmlFor="respuesta">Tu respuesta</label>
-          <textarea id="respuesta" value={respuesta} rows={3}
-            onChange={(ev) => setRespuesta(ev.target.value)} />
-          <div className="entrevista__acciones">
-            <button type="submit" className="boton boton--principal"
-              disabled={pensando || respuesta.trim() === ""}>Responder</button>
-            {historial.puede_cerrar && (
-              <button type="button" className="boton boton--secundario"
-                disabled={pensando} onClick={() => void cerrar()}>Cerrar la ficha</button>
-            )}
-          </div>
-          {pensando && <p role="status" className="entrevista__pensando">
-            El entrevistador está pensando…</p>}
-          {fallo && <p role="alert" className="aviso">El turno no salió: {fallo}</p>}
-          {rechazo && <Rechazado rechazo={rechazo} />}
-        </form>
-      )}
+        <Cuaderno cuaderno={historial.cuaderno} nombres={historial.nombres}
+          cerrada={historial.cerrada} alGuardarNombres={guardarNombres}
+          alConfirmarAviso={confirmarAviso} />
+      </div>
     </main>
+  );
+}
+
+// SPEC-34 RF-01: el nombre del destinatario, en su campo. No llama a ningun agente.
+function CampoDelNombre({ alGuardar }: { alGuardar: (nombre: string) => Promise<void> }) {
+  const [nombre, setNombre] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <form className="entrevista__responder" onSubmit={(ev) => {
+      ev.preventDefault();
+      setGuardando(true);
+      setError(null);
+      alGuardar(nombre.trim()).catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : String(e));
+        setGuardando(false);
+      });
+    }}>
+      <label htmlFor="nombre-del-destinatario">
+        Su nombre, tal como quieres que aparezca escrito
+      </label>
+      <input id="nombre-del-destinatario" value={nombre} autoComplete="off"
+        onChange={(ev) => setNombre(ev.target.value)} />
+      <p className="entrevista__nota">
+        Los nombres se guardan tal cual y no los lee ningún modelo: el que escribe la novela
+        trabaja con uno inventado y el libro sale con el de verdad.
+      </p>
+      <div className="entrevista__acciones">
+        <button type="submit" className="boton boton--principal"
+          disabled={guardando || nombre.trim() === ""}>Guardar el nombre</button>
+      </div>
+      {error && <p role="alert" className="aviso">No se guardó el nombre: {error}</p>}
+    </form>
   );
 }
 

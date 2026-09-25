@@ -21,3 +21,19 @@
 .coste__suelo { color: var(--color-acento); }
 @keyframes aparecer { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .generacion__nota { animation: none; } }
+
+/* SPEC-35 RF-13: de noche, que es cuando se escribe. Las tarjetas siguen siendo papel. */
+.generacion-noche { background: var(--color-noche); color: var(--color-sobreNoche); min-height: calc(100vh - 64px); }
+.generacion-noche h1 { color: var(--color-sobreNoche); }
+.generacion-noche .coste, .generacion-noche .coste__cifra { color: var(--color-sobreNoche); }
+.generacion-noche .coste__suelo { color: var(--color-oro); }
+.generacion-noche .tarjeta, .generacion-noche .aviso { color: var(--color-texto); }
+.generacion-noche a:not(.boton) { color: var(--color-oro); }
+.generacion__fallo { margin: var(--espacio-m) 0; }
+.generacion__sin-capitulos { font-family: var(--fuente-lectura); font-style: italic; color: var(--color-oro); margin: var(--espacio-l) 0; }
+.generacion__terminada {
+  display: flex; flex-wrap: wrap; gap: var(--espacio-m); align-items: center;
+  margin: var(--espacio-m) 0; padding: var(--espacio-m) var(--espacio-l);
+  border: 1px solid var(--color-oro); border-radius: var(--radio-m);
+}
+.generacion__terminada p { margin: 0; }

@@ -20,3 +20,4 @@
 }
 .turno__observaciones li { display: flex; gap: var(--espacio-s); align-items: baseline; }
 .turno__no-guardado { font-size: 0.8rem; margin-top: var(--espacio-s); }
+.turno__cuaderno { margin-top: var(--espacio-xs) !important; font-family: var(--fuente-interfaz); font-size: 0.75rem; opacity: 0.85; }

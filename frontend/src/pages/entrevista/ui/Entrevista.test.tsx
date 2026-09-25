@@ -6,6 +6,7 @@ import { ClienteProvider, crearCliente } from "@/shared/api";
 import {
   confirmacionConUltima, fetchConMetodo, historialAbierto, historialCerrado, historialListo,
 } from "@/shared/testing";
+import { ENTREVISTADORA } from "@/shared/config";
 import { PaginaEntrevista } from "./Entrevista";
 
 const E = "/api/entrevistas/ent-inventada";
@@ -64,7 +65,9 @@ describe("Entrevista", () => {
       [`GET ${T}`]: [{ cuerpo: { estado: "en_curso", motivo: null } }],
     });
     await responder("Se llama Nerea");
-    expect(await screen.findByRole("status")).toHaveTextContent("El entrevistador está pensando");
+    // SPEC-35 RF-04: lo dice con el nombre de la entrevistadora, que pone la web.
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      `${ENTREVISTADORA.nombre} está pensando`);
     expect(screen.getByRole("button", { name: "Responder" })).toBeDisabled();
   });
 
