@@ -189,3 +189,15 @@ def test_el_catalogo_del_servidor_y_la_allowlist_nombran_las_mismas_tools():
     from app.features.orquestacion.story_bible import HERRAMIENTAS
     esperadas = {"mcp__{0}__{1}".format(SERVIDOR, t) for t in HERRAMIENTAS}
     assert set(PERMITIDAS["escritor"]) == set(PERMITIDAS["editor"]) == esperadas
+
+
+def test_los_comandos_de_los_hooks_no_dependen_de_la_shell():
+    """`F-212`: en Windows Claude Code lanza los hooks con PowerShell, que lee
+    `$CLAUDE_PROJECT_DIR` como una variable suya, vacia: la ruta quedaba en
+    `C:\backend\hooks\...`, el hook fallaba sin bloquear y el Escritor entregaba
+    capitulos cortos sin que nadie se los devolviera. Nada de variables de shell."""
+    ajustes = json.loads((RAIZ / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    for evento in ajustes["hooks"].values():
+        for grupo in evento:
+            for h in grupo["hooks"]:
+                assert "$" not in h["command"], h["command"]

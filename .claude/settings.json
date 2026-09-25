@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/backend/hooks/validar_capitulo.py\""
+            "command": "python -c \"import os,runpy;runpy.run_path(os.path.join(os.environ['CLAUDE_PROJECT_DIR'],'backend','hooks','validar_capitulo.py'),run_name='__main__')\""
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/backend/hooks/policy.py\""
+            "command": "python -c \"import os,runpy;runpy.run_path(os.path.join(os.environ['CLAUDE_PROJECT_DIR'],'backend','hooks','policy.py'),run_name='__main__')\""
           }
         ]
       }
