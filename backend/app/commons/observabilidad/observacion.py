@@ -36,6 +36,9 @@ class Observacion:
         # `RF-05`: la version de prompt de cada rol, `{rol: huella}`. La fija quien crea
         # la observacion: una feature que no puede importar el registro de prompts.
         self.versiones = {}
+        # `RF-02`: `delegacion -> [span de tool]`, lo que cada delegacion llamo. Lo fija
+        # quien sabe leer `llamada_a_herramienta`; commons no importa esa feature.
+        self.herramientas_de = None
         self.emitir("traza", TrazaEnviada(id=self.traza, nombre=nombre, sesion=self.sesion))
 
     def emitir(self, tipo, objeto):
@@ -174,3 +177,11 @@ class SesionObservada:
             modelos=m.get("modelos") or None, version_de_prompt=self.version_de_prompt,
             resultado=resultado, clase_de_fallo=clase)
         object.__setattr__(self, "ultimo_span", id_)
+        # `SPEC-29` `RF-02`: cada llamada a una tool, un span colgado de su rol. Tambien si
+        # la respuesta fue ilegible: las tools se llamaron igual.
+        if m.get("delegacion") and self._obs.herramientas_de is not None:
+            for h in self._obs.herramientas_de(m["delegacion"]):
+                self._obs.span(nombre=h["nombre"], tipo="tool", padre=id_,
+                               latencia_ms=h.get("latencia_ms"),
+                               validacion=h.get("validacion"),
+                               tokens_estimados=h.get("tokens_estimados"))

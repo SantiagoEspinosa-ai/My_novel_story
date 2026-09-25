@@ -41,3 +41,5 @@ build/
 *.sqlite3
 backend/e5.db
 backend/f6.db
+
+backend/.env
