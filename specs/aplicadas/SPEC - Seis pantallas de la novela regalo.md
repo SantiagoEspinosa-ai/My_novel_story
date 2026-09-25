@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 5
 fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: 8666d03
 ---
 
 > **v5 (2026-09-24), la página de la generación; decidido por la sesión autónoma por
