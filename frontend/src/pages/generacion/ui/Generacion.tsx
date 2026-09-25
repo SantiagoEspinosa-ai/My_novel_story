@@ -48,7 +48,8 @@ export function PaginaGeneracion({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
       <div className="contenido generacion">
         <header className="generacion__cabecera">
           <h1>{g.fase_de_la_obra === "publicada" ? "La novela está escrita"
-            : "La novela se está escribiendo"}</h1>
+            : g.fase_de_la_obra === "parada" ? "La novela está parada"
+              : "La novela se está escribiendo"}</h1>
           <CosteEnVivo coste={g.coste} />
         </header>
         <MesaDelEscritor g={g} />
@@ -82,8 +83,9 @@ export function PaginaGeneracion({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
 // capitulo que es el actual, la fase de la obra y, por capitulo, si ya paso (como en la tarjeta).
 function MesaDelEscritor({ g }: { g: GeneracionEnVivo }) {
   const actual = g.capitulos.find((c) => c.es_el_actual);
-  const dice = actual
-    ? `Escribiendo el capítulo ${actual.numero} de ${g.total_de_capitulos}…`
+  const dice = actual && actual.fase === "parada"
+    ? `Parada en el capítulo ${actual.numero} de ${g.total_de_capitulos}.`
+    : actual ? `Escribiendo el capítulo ${actual.numero} de ${g.total_de_capitulos}…`
     : g.fase_de_la_obra === "publicada" ? "La novela está terminada."
       : g.fase_de_la_obra ? `${FASE_DE_GENERACION[g.fase_de_la_obra].etiqueta}…`
         : "Esperando a empezar…";

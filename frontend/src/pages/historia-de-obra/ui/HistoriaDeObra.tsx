@@ -27,7 +27,7 @@ export function PaginaHistoriaDeObra() {
           className={linea ? "historia__pestana historia__pestana--elegida" : "historia__pestana"}>
           Línea de tiempo</Link>
       </nav>
-      <AccionesDeObra obra={obra} />
+      {linea && <AccionesDeObra obra={obra} />}
       {linea ? <LineaDeTiempo obra={obra} />
         : <PorCapitulo obra={obra} version={version === null ? undefined : Number(version)} />}
     </main>

@@ -280,3 +280,11 @@ El autor cambió la página de cada novela a la propuesta B, con la línea de ti
 pestaña (`SPEC-38`). La inspección en Edge sin cabeza **encontró que, con el panel al lado, la
 tabla no cabía a 1280 px** y las columnas de hallazgos y «cambió» quedaban tras la barra de
 desplazamiento; el panel del coste por agente y los abiertos pasó debajo.
+
+### Publicar y reanudar (`PLAN-39` P5, 2026-09-25)
+
+Recorrido en Edge sin cabeza sobre `backend/web.db`, en esta máquina **sin Lean**: la página de
+una novela terminada sin publicar enseña «Publicar» con el aviso de que falta Lean y sin botón;
+la de una novela parada, «Reanudar» con el capítulo, lo que falta, la estimación y lo gastado.
+**Encontró** que una novela parada seguía diciendo «se está escribiendo el capítulo 3»; ahora
+dice que está parada y dónde. Nada se pulsó: los dos botones gastan.

@@ -146,4 +146,11 @@ describe("Generacion", () => {
     montar([generacionPlanificando]);
     expect(await screen.findByTestId("mesa-del-escritor")).toHaveTextContent("sin título todavía");
   });
+
+  // PLAN-39 P5: una novela parada no dice que se esta escribiendo.
+  it("parada, la mesa y el título lo dicen", async () => {
+    montar([{ ...generacionParada, fase_de_la_obra: "parada" }]);
+    expect(await screen.findByRole("heading", { name: "La novela está parada" })).toBeInTheDocument();
+    expect(screen.getByTestId("mesa-del-escritor")).toHaveTextContent("Parada en el capítulo 3");
+  });
 });

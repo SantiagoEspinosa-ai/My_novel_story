@@ -482,6 +482,8 @@ en GitHub**: publicarla es decisión del autor.
   `/admin/obras/<id>`, como línea de tiempo (la propuesta C).
 - **`SPEC-38` aplicada**: esa página se abre en la matriz por capítulo (la propuesta B), y la
   línea de tiempo es su segunda pestaña (`?vista=linea`).
+- **`SPEC-39` aplicada**: «Publicar» (una ronda de la puerta, Lean incluido) y «Reanudar»
+  (desde el checkpoint), con su aviso de gasto; y `F-208`, las generaciones huérfanas.
 
 **Levantar:** `powershell -ExecutionPolicy Bypass -File .\arrancar-web.ps1` y abrir
 http://127.0.0.1:5173/.

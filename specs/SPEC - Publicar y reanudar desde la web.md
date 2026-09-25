@@ -1,11 +1,12 @@
 ---
 id: SPEC-39
 titulo: Publicar y reanudar una novela desde la web
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: «Añade un botón de Publicar […] Añade un botón de Reanudar […]»"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
 ---
 
 # SPEC-39 — Publicar y reanudar desde la web

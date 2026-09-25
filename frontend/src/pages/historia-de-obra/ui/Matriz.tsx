@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { AccionesDeObra } from "@/features/acciones-de-obra";
 import type { FilaDeLaMatriz, MatrizDeObra } from "@/shared/api";
 import { ESTADO_DE_ESCENA, EtiquetaDeEstado, NOTA_DEL_EDITOR, SEVERIDAD, SinDato } from "@/shared/ui";
 import { euros, usd } from "./formato";
@@ -32,6 +33,9 @@ export function Matriz({ m, vista }: { m: MatrizDeObra; vista: (v: number) => st
           <small>como mínimo</small></div>
         <div className="tarjeta"><span>Hallazgos abiertos</span><strong>{m.cifras.abiertos}</strong></div>
       </div>
+
+      {/* SPEC-39: publicar o reanudar, debajo de las cifras. */}
+      <AccionesDeObra obra={m.obra} />
 
       <nav className="matriz__versiones" aria-label="versiones">
         <span>Versión:</span>

@@ -120,7 +120,8 @@ def _coste_por_capitulo(con, obra):
                     medidos.append(sum(usd))
     if medidos:
         return (sum(medidos) / len(medidos),
-                "la media de los {0} capítulos medidos de esta novela".format(len(medidos)))
+                "el coste del único capítulo medido de esta novela" if len(medidos) == 1
+                else "la media de los {0} capítulos medidos de esta novela".format(len(medidos)))
     ref = config.REFERENCIA_NOVELA_DE_EJEMPLO
     return (ref["usd"] / 10, "la referencia de la novela de ejemplo ({0:.2f} USD en 10 "
                              "capítulos): esta novela no tiene capítulos medidos".format(ref["usd"]))
