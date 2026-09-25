@@ -158,7 +158,6 @@ class ObraEnLaAdministracion(_DelDominio):
     coste: CosteDeUnaObra | None
     hallazgos: HallazgosPorSeveridad
     codigo_lean: int | None
-    retirada: RetiradaDeLaEstanteria | None = None
 
 
 class Administracion(_DelDominio):

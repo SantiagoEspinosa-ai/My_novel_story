@@ -45,14 +45,12 @@ describe("Administracion", () => {
     expect(screen.getByRole("note")).toHaveTextContent("sin login");
   });
 
-  it("una novela retirada lo dice con su motivo (SPEC-41)", async () => {
-    const con = { ...administracion, obras: [{ ...administracion.obras[2],
-      retirada: { motivo: "datos de la semilla: no se puede terminar", quien: "sistema",
-        cuando: "2026-09-25 09:00:00" } }] };
-    const doble = fetchConMetodo({ "GET /api/admin/obras": [{ cuerpo: con }] });
+  it("la tabla sigue el orden que llega, que es el de la estanteria (SPEC-42)", async () => {
+    const al_reves = { ...administracion, obras: [...administracion.obras].reverse() };
+    const doble = fetchConMetodo({ "GET /api/admin/obras": [{ cuerpo: al_reves }] });
     render(<ClienteProvider cliente={crearCliente(doble.fetch)}><MemoryRouter><PaginaAdministracion /></MemoryRouter></ClienteProvider>);
-    const f = await screen.findByTestId("admin-obra-a-medias");
-    expect(f).toHaveTextContent("retirada de la estantería");
-    expect(f).toHaveTextContent("datos de la semilla: no se puede terminar");
+    await screen.findByTestId(`admin-${al_reves.obras[0].id}`);
+    const filas = screen.getAllByTestId(/^admin-obra/).map((f) => f.dataset.testid);
+    expect(filas).toEqual(al_reves.obras.map((o) => `admin-${o.id}`));
   });
 });

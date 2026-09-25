@@ -1784,7 +1784,6 @@ export interface components {
             hallazgos: components["schemas"]["HallazgosPorSeveridad"];
             /** Id */
             id: string;
-            retirada?: components["schemas"]["RetiradaDeLaEstanteria"] | null;
             /** Titulo */
             titulo: string | null;
         };
@@ -2015,18 +2014,6 @@ export interface components {
         RespuestaEntrada: {
             /** Respuesta */
             respuesta: string;
-        };
-        /**
-         * RetiradaDeLaEstanteria
-         * @description `SPEC-41` `RF-01`: por que una novela no sale en la estanteria.
-         */
-        RetiradaDeLaEstanteria: {
-            /** Cuando */
-            cuando: string;
-            /** Motivo */
-            motivo: string;
-            /** Quien */
-            quien: string;
         };
         /** RetiradaEntrada */
         RetiradaEntrada: {

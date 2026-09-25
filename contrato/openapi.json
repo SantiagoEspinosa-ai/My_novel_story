@@ -2549,16 +2549,6 @@
             "title": "Id",
             "type": "string"
           },
-          "retirada": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RetiradaDeLaEstanteria"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "titulo": {
             "anyOf": [
               {
@@ -3283,31 +3273,6 @@
           "respuesta"
         ],
         "title": "RespuestaEntrada",
-        "type": "object"
-      },
-      "RetiradaDeLaEstanteria": {
-        "additionalProperties": false,
-        "description": "`SPEC-41` `RF-01`: por que una novela no sale en la estanteria.",
-        "properties": {
-          "cuando": {
-            "title": "Cuando",
-            "type": "string"
-          },
-          "motivo": {
-            "title": "Motivo",
-            "type": "string"
-          },
-          "quien": {
-            "title": "Quien",
-            "type": "string"
-          }
-        },
-        "required": [
-          "motivo",
-          "quien",
-          "cuando"
-        ],
-        "title": "RetiradaDeLaEstanteria",
         "type": "object"
       },
       "RetiradaEntrada": {

@@ -77,15 +77,14 @@ def administracion(con, techo):
     hallazgos abiertos y el ultimo codigo de Lean. Solo lee."""
     usd, n, nulos = repo.gasto_de(con)
     obras = []
-    fuera = repo.retiradas(con)
-    for o in repo.obras_de_la_estanteria(con):
+    # `SPEC-42` `RF-01`: las mismas que la estanteria y en su orden; las retiradas no.
+    for o in estanteria(con)["obras"]:
         c_usd, c_n, c_nulos = repo.gasto_de(con, o["id"])
         obras.append({
             "id": o["id"], "titulo": o["titulo"], "fase": repo.ultima_fase(con, o["id"]),
             "coste": None if c_n == 0 else coste(c_usd, c_n, c_nulos, None),
             "hallazgos": repo.hallazgos_abiertos_por_severidad(con, o["id"]),
-            "codigo_lean": repo.codigo_lean_de(con, o["id"]),
-            "retirada": fuera.get(o["id"])})
+            "codigo_lean": repo.codigo_lean_de(con, o["id"])})
     return {"gastado": {"usd": usd, "delegaciones": n, "sin_coste": nulos, "es_suelo": True,
                         "por_que_es_suelo": POR_QUE_ES_SUELO},
             "techo_usd": techo, "obras": obras}

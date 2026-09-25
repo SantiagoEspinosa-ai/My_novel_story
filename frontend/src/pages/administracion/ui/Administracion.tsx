@@ -59,13 +59,7 @@ function Fila({ o }: { o: ObraEnLaAdministracion }) {
       <td><Link to={`/admin/obras/${encodeURIComponent(o.id)}`}>
         <SinDato valor={o.titulo} ausente="sin título todavía">{(t) => t}</SinDato></Link></td>
       <td>{o.fase ? <EtiquetaDeEstado distintivo={FASE_DE_GENERACION[o.fase]} />
-        : <span className="sin-dato">sin generación</span>}
-        {o.retirada && (
-          // SPEC-41 RF-01: no sale en la estanteria, y aqui se dice por que.
-          <p className="administracion__retirada">
-            <strong>retirada de la estantería</strong>: {o.retirada.motivo}
-          </p>
-        )}</td>
+        : <span className="sin-dato">sin generación</span>}</td>
       <td>{o.coste === null || o.coste.usd === null ? "—"
         : <>{usd(o.coste.usd)}{o.coste.es_suelo && <small> (como mínimo)</small>}</>}</td>
       <td>{o.coste === null ? "—" : o.coste.delegaciones}</td>
