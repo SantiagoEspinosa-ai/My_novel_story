@@ -150,3 +150,12 @@ def test_un_hecho_sin_establecer_se_distingue_de_uno_establecido():
 def test_sin_hechos_declarados_el_bloque_4_sigue_montando():
     """El caso de la obra que aun no tiene plan: no revienta, sale vacio."""
     assert "hechos declarados" in ensamblado.montar(MATERIAL)["estado_y_conocimiento"]
+
+
+def test_el_bloque_4_dice_donde_ocurre_la_escena_siguiente():
+    """`F-149`: sin esto el Escritor podia dejar a los presentes donde la escena siguiente
+    no llega, y `INV-02` solo lo veia un capitulo tarde."""
+    texto = ensamblado.montar(dict(MATERIAL, lugar_siguiente="lug-sotano"))[
+        "estado_y_conocimiento"]
+    assert "escena siguiente: lug-sotano" in texto
+    assert "escena siguiente" not in ensamblado.montar(MATERIAL)["estado_y_conocimiento"]

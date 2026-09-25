@@ -292,3 +292,22 @@ def test_con_una_sola_version_la_obra_se_genera_igual_que_antes(con):
     nuevo = novela.imprescindibles_por_escena(con, OBRA, plan())
     assert {k: [i["elemento"] for i in v] for k, v in nuevo.items()} == \
         {k: v for k, v in viejo.items() if v}
+
+
+def test_el_material_lleva_el_lugar_de_la_escena_siguiente_de_su_version(con):
+    """`F-149`: la accesibilidad de `INV-02` compara donde deja a los presentes la escena
+    anterior con el `lugar` de la siguiente, y el Escritor no sabia cual era. La demo de
+    B4 paro en el capitulo 9 por eso. La siguiente es **la de la version que se escribe**:
+    el capitulo 2 sustituido y el nuevo ocurren en sitios distintos a proposito, para que
+    la prueba no pase por coincidencia (Regla 11)."""
+    _novela_con_dos_versiones(con)
+    con.execute("UPDATE escena SET lugar = 'lug-vieja' WHERE id = 'cap-02-e1'")
+    con.execute("UPDATE escena SET lugar = 'lug-nueva' WHERE id = 'cap-02-v2-e1'")
+    uno = escaleta.escena(con, "cap-01-e1")
+    en_la_2 = modulo_obra.reunir_material(con, uno, OBRA, version=2)
+    en_la_1 = modulo_obra.reunir_material(con, uno, OBRA, version=1)
+    assert en_la_2["lugar_siguiente"] == "lug-nueva"
+    assert en_la_1["lugar_siguiente"] == "lug-vieja"
+    ultima = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-10-e1"), OBRA,
+                                         version=2)
+    assert ultima["lugar_siguiente"] is None

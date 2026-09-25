@@ -50,7 +50,17 @@ def _texto_estado(material):
         "donde: " + json.dumps(mundo.get("ubicaciones") or {}, sort_keys=True),
         "accesos: " + json.dumps(mundo.get("accesos") or {}, sort_keys=True),
         "conocimiento:",
-    ] + conocimiento + ["hechos declarados:", _texto_hechos(material)])
+    ] + conocimiento + ["hechos declarados:", _texto_hechos(material)] + _siguiente(material))
+
+
+def _siguiente(material):
+    """`F-149`: donde ocurre la escena siguiente, para que el Escritor deje a los presentes
+    donde puedan llegar a ella por los accesos. Es lo que `INV-02` mirara al escribirla."""
+    lugar = material.get("lugar_siguiente")
+    if not lugar:
+        return []
+    return ["escena siguiente: {0} -deja a los presentes donde se pueda llegar a ella por "
+            "los accesos (INV-02)-".format(lugar)]
 
 
 def _texto_hechos(material):

@@ -112,7 +112,8 @@ def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=
     escena anterior son **de esa version** (`PLAN-23` A6): con dos, el capitulo
     sustituido y el nuevo comparten `t_discurso` (`C-6`)."""
     from app.features.orquestacion import regeneracion
-    de_la_version = [e["id"] for e in regeneracion.escenas_de_version(con, obra_id, version)]
+    escenas_de_la_version = regeneracion.escenas_de_version(con, obra_id, version)
+    de_la_version = [e["id"] for e in escenas_de_la_version]
     orden = escena["orden"]
     t_discurso = escena.get("t_discurso")
     if t_discurso is None:
@@ -180,7 +181,19 @@ def reunir_material(con, escena, obra_id, inmutable="", anterior_cruza_capitulo=
         # nombres nuevos de sus renombrados. `menciona` se calcula contra estos.
         "hechos": regeneracion.hechos_de_version(con, obra_id, version),
         "inmutable": inmutable,
+        # `F-149`: la accesibilidad de `INV-02` compara donde deja esta escena a los
+        # presentes con el `lugar` de la siguiente, que fija el plan. Sin decirlo, el
+        # Escritor acertaba por azar, y el fallo se veia un capitulo tarde, cuando ya no se
+        # arregla reintentando. La siguiente es la de la version que se escribe.
+        "lugar_siguiente": _lugar_siguiente(escenas_de_la_version, escena["id"]),
     }
+
+
+def _lugar_siguiente(escenas, id_escena):
+    ids = [e["id"] for e in escenas]
+    if id_escena not in ids or ids.index(id_escena) + 1 >= len(ids):
+        return None
+    return escenas[ids.index(id_escena) + 1].get("lugar")
 
 
 def generar_obra(con, obra, escritor, juez, resumidor, inmutable="",
