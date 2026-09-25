@@ -83,8 +83,9 @@ describe("Generacion", () => {
   it("reutiliza la barra de progreso de la obra", async () => {
     const { pedidas } = montar([generacionEnCurso]);
     await screen.findByTestId("capitulos");
-    expect(pedidas.map((p) => p.clave))
-      .toContain("GET /api/obras/obra-regalo-inventada/progreso");
+    // La barra pide su progreso por su cuenta: con la suite entera puede llegar despues.
+    await waitFor(() => expect(pedidas.map((p) => p.clave))
+      .toContain("GET /api/obras/obra-regalo-inventada/progreso"));
   });
 
   // PLAN-35 F6 (SPEC-35 RF-13): de noche, y lo que la pagina dice al empezar y al acabar.
