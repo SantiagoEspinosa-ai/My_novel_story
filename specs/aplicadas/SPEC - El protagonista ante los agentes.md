@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
 fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: c5c7120
 ---
 
 # SPEC-40 — El protagonista ante los agentes
