@@ -1,0 +1,29 @@
+/* SPEC-37: la historia de una novela, como linea de tiempo. Solo variables del tema. */
+.historia { max-width: 1180px; }
+.historia__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: var(--espacio-xl); align-items: start; }
+@media (max-width: 900px) { .historia__cuerpo { grid-template-columns: 1fr; } }
+.historia__sub { color: var(--color-textoSuave); margin-top: 0; }
+.historia__linea { list-style: none; margin: var(--espacio-l) 0; padding: 0 0 0 34px; position: relative; }
+.historia__linea::before { content: ""; position: absolute; left: 11px; top: 6px; bottom: 6px; width: 2px; background: var(--color-linea); }
+.historia__evento { position: relative; margin-bottom: var(--espacio-m); }
+.historia__evento::before { content: ""; position: absolute; left: -29px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--color-superficie); border: 3px solid var(--color-textoSuave); }
+.historia__evento--bien::before { border-color: var(--color-detalle); }
+.historia__evento--mal::before { border-color: var(--color-acento); background: var(--color-acentoSuave); }
+.historia__evento--version::before { border-color: var(--color-acento); background: var(--color-acento); }
+.historia__cuando { font-size: 0.75rem; color: var(--color-textoSuave); font-variant-numeric: tabular-nums; }
+.historia__tarjeta { margin-top: var(--espacio-xs); display: grid; gap: var(--espacio-xs); }
+.historia__tarjeta h3 { margin: 0; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: var(--espacio-s); align-items: center; }
+.historia__tarjeta p { margin: 0; }
+.historia__intentos { font-family: var(--fuente-interfaz); font-size: 0.8rem; font-weight: 400; color: var(--color-textoSuave); }
+.historia__notas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--espacio-xs); }
+.historia__nota { font-size: 0.8rem; padding: 2px 8px; border-radius: var(--radio-s); background: var(--color-pared); }
+.historia__nota--baja { background: var(--color-acentoSuave); color: var(--color-acento); font-weight: 600; }
+.historia__lista { margin: 0; padding-left: var(--espacio-l); color: var(--color-textoSuave); font-size: 0.9rem; }
+.historia__atribucion { font-size: 0.8rem; color: var(--color-textoSuave); font-style: italic; }
+.historia__lado { position: sticky; top: var(--espacio-m); display: grid; gap: var(--espacio-m); }
+.historia__lado h2 { margin: 0 0 var(--espacio-s); font-size: 1.05rem; }
+.historia__lado dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: var(--espacio-xs) var(--espacio-m); font-size: 0.9rem; }
+.historia__lado dd { margin: 0; text-align: right; }
+.historia__par { display: contents; }
+.historia__abiertos { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--espacio-s); font-size: 0.9rem; }
+.historia__desc { display: block; color: var(--color-textoSuave); font-size: 0.8rem; }

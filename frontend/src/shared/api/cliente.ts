@@ -37,6 +37,9 @@ export type Cuaderno = Esquemas["CuadernoSalida"];
 // SPEC-36 RF-03: la administracion.
 export type Administracion = Esquemas["Administracion"];
 export type ObraEnLaAdministracion = Esquemas["ObraEnLaAdministracion"];
+// SPEC-37: la historia de cada novela.
+export type HistoriaDeObra = Esquemas["HistoriaDeObra"];
+export type EventoDeLaHistoria = Esquemas["EventoDeLaHistoria"];
 
 export const PREFIJO = "/api";
 
@@ -133,6 +136,7 @@ export function crearCliente(fetchInyectado: Fetch) {
       leer<PeticionDeLaVersion>(`/obras/${e(obra)}/versiones/${numero}/peticion`),
     gasto: () => leer<ConfirmacionDeGasto>("/generaciones/gasto"),
     administracion: () => leer<Administracion>("/admin/obras"),
+    historia: (obra: string) => leer<HistoriaDeObra>(`/admin/obras/${e(obra)}/historia`),
     // SPEC-33 RF-11: gasta dinero. Solo lo llama la confirmacion, despues de ensenar las cifras.
     lanzar: (obra: string) =>
       enviar<{ id_trabajo: string; generacion: string }>(`/obras/${e(obra)}/generaciones`),

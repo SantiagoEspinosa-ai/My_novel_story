@@ -25,6 +25,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/obras/{id_obra}/historia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Historia
+         * @description `SPEC-37`: la historia de una novela, en orden, con sus totales. Sin login (`SPEC-36`).
+         */
+        get: operations["historia_admin_obras__id_obra__historia_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/capitulos/{id_capitulo}": {
         parameters: {
             query?: never;
@@ -1015,6 +1035,21 @@ export interface components {
             /** Usd */
             usd: number | null;
         };
+        /** CosteDeUnAgente */
+        CosteDeUnAgente: {
+            /** Agente */
+            agente: string;
+            /** Delegaciones */
+            delegaciones: number;
+            /** Es Suelo */
+            es_suelo: boolean;
+            /** Generacion */
+            generacion: string | null;
+            /** Sin Coste */
+            sin_coste: number;
+            /** Usd */
+            usd: number | null;
+        };
         /**
          * CosteDeUnaObra
          * @description Lo anotado de todas las generaciones de una obra. `generacion` va nula: es la suma.
@@ -1207,6 +1242,47 @@ export interface components {
             obras: components["schemas"]["ObraEnLaEstanteria"][];
         };
         /**
+         * EventoDeLaHistoria
+         * @description `SPEC-37` `RF-02`: un momento de la historia de una novela. `tipo` es entrevista,
+         *     ronda_del_plan, capitulo, parada, ronda_de_la_puerta o version; cada uno rellena lo suyo y
+         *     deja lo demas vacio. `cuando` es nulo en lo que no tiene hora (las rondas del plan).
+         */
+        EventoDeLaHistoria: {
+            /** Aprobado */
+            aprobado: boolean | null;
+            /** Capitulo */
+            capitulo: number | null;
+            /** Capitulos Cambiados */
+            capitulos_cambiados: number[];
+            /** Codigo Lean */
+            codigo_lean: number | null;
+            /** Condiciones */
+            condiciones: string[];
+            coste: components["schemas"]["CosteDeUnaObra"] | null;
+            /** Cuando */
+            cuando: string | null;
+            /** Escenas */
+            escenas: components["schemas"]["EscenaEnGeneracion"][];
+            /** Intentos */
+            intentos: number | null;
+            /** Motivo */
+            motivo: string | null;
+            /** Notas */
+            notas: components["schemas"]["NotaDelEditor"][];
+            /** Objeciones */
+            objeciones: string[];
+            /** Origen */
+            origen: string | null;
+            /** Peticion */
+            peticion: string | null;
+            /** Ronda */
+            ronda: number | null;
+            /** Tipo */
+            tipo: string;
+            /** Version */
+            version: number | null;
+        };
+        /**
          * FaseDeGeneracion
          * @description En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es
          *     que el pipeline termino sin publicar y ahora le toca a una persona.
@@ -1332,6 +1408,16 @@ export interface components {
              */
             verificador: string;
         };
+        /** HallazgoAbiertoDeLaObra */
+        HallazgoAbiertoDeLaObra: {
+            /** Capitulo */
+            capitulo: number | null;
+            /** Descripcion */
+            descripcion: string;
+            /** Invariante */
+            invariante: string;
+            severidad: components["schemas"]["Severidad"];
+        };
         /** HallazgosPorSeveridad */
         HallazgosPorSeveridad: {
             /** Bloqueante */
@@ -1377,6 +1463,26 @@ export interface components {
              * @description Por id de hecho
              */
             hechos_que_usa: components["schemas"]["HechoUsado"][];
+        };
+        /**
+         * HistoriaDeObra
+         * @description `SPEC-37`: la historia de una novela, con sus totales al lado. `atribucion` dice como
+         *     se reparte el coste por capitulo (`RF-04`).
+         */
+        HistoriaDeObra: {
+            /** Abiertos */
+            abiertos: components["schemas"]["HallazgoAbiertoDeLaObra"][];
+            /** Atribucion */
+            atribucion: string;
+            /** Eventos */
+            eventos: components["schemas"]["EventoDeLaHistoria"][];
+            /** Obra */
+            obra: string;
+            /** Por Agente */
+            por_agente: components["schemas"]["CosteDeUnAgente"][];
+            /** Titulo */
+            titulo: string | null;
+            totales: components["schemas"]["TotalesDeLaHistoria"];
         };
         /**
          * HistorialSalida
@@ -1744,6 +1850,16 @@ export interface components {
          * @enum {string}
          */
         TipoDeElementoPersonal: "rasgo" | "recuerdo" | "persona" | "mascota";
+        /** TotalesDeLaHistoria */
+        TotalesDeLaHistoria: {
+            coste: components["schemas"]["CosteDeUnaObra"] | null;
+            /** Nota Media */
+            nota_media: number | null;
+            /** Paradas */
+            paradas: number;
+            /** Version Vigente */
+            version_vigente: number | null;
+        };
         /**
          * TrabajoSalida
          * @description Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su
@@ -1874,6 +1990,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Administracion"];
+                };
+            };
+        };
+    };
+    historia_admin_obras__id_obra__historia_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoriaDeObra"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

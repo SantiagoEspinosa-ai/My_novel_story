@@ -2,7 +2,7 @@
 // congelado: el tipo sale de contrato.ts y tests/regalo.test.ts los valida contra el mismo
 // esquema. Viven aparte de fixtures.ts, que es de PLAN-22.
 import type {
-  Administracion, CapituloEnGeneracion, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
+  Administracion, CapituloEnGeneracion, EventoDeLaHistoria, HistoriaDeObra, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
   Nombres, TurnoDeEntrevista,
 } from "@/shared/api";
 
@@ -257,6 +257,45 @@ export const administracion: Administracion = {
   ],
 };
 
+// SPEC-37: la historia de una novela. Un evento vacio con lo de cada tipo encima.
+function evento(tipo: string, cambios: Partial<EventoDeLaHistoria>): EventoDeLaHistoria {
+  return { tipo, cuando: null, version: null, capitulo: null, coste: null, notas: [], escenas: [],
+    intentos: null, motivo: null, aprobado: null, origen: null, objeciones: [], ronda: null,
+    codigo_lean: null, condiciones: [], peticion: null, capitulos_cambiados: [], ...cambios };
+}
+const costeDe = (usd: number | null, delegaciones: number, sin_coste = 0) => (
+  { generacion: null, usd, delegaciones, sin_coste, es_suelo: sin_coste > 0 });
+const seisNotas = (notas: number[]) => CRITERIOS.map((criterio, i) => ({
+  criterio, nota: notas[i], justificacion: `sobre ${criterio}`,
+  instruccion: notas[i] < 3 ? "acelera el final" : null, bajo_el_umbral: notas[i] < 3 }));
+
+export const historiaDeObra: HistoriaDeObra = {
+  obra: "obra-publicada", titulo: "El mapa de Nerea",
+  totales: { coste: costeDe(16.89, 36, 1), nota_media: 4.4, paradas: 1, version_vigente: 2 },
+  por_agente: [{ agente: "escritor", ...costeDe(9.4, 20) }, { agente: "editor", ...costeDe(4.9, 12, 1) }],
+  abiertos: [{ invariante: "INV-26", severidad: "mayor", capitulo: 4, descripcion: "ritmo bajo" }],
+  eventos: [
+    evento("entrevista", { cuando: "2026-09-24 10:02:00", aprobado: true, coste: costeDe(0.3, 6) }),
+    evento("ronda_del_plan", { ronda: 1, aprobado: false, origen: "revisor",
+      objeciones: ["el recuerdo de Lisboa no aparece en ningún capítulo"] }),
+    evento("ronda_del_plan", { ronda: 2, aprobado: true, origen: "revisor", coste: costeDe(2.1, 4) }),
+    evento("capitulo", { cuando: "2026-09-24 10:14:00", version: 1, capitulo: 1, intentos: 1,
+      coste: costeDe(1.32, 3), notas: seisNotas([4, 5, 3, 4, 3, 4]),
+      escenas: [{ id: "esc-1", estado: "consolidada" }] }),
+    evento("capitulo", { cuando: "2026-09-24 10:30:00", version: 1, capitulo: 3, intentos: 3,
+      coste: costeDe(1.9, 5), notas: [], escenas: [{ id: "esc-3", estado: "generada" }] }),
+    evento("parada", { cuando: "2026-09-24 10:41:00", version: 1, capitulo: 3, intentos: 3,
+      motivo: "bloqueante", coste: costeDe(1.9, 5) }),
+    evento("ronda_de_la_puerta", { cuando: "2026-09-24 12:40:00", version: 1, ronda: 1,
+      aprobado: false, codigo_lean: 2, condiciones: ["INV-28 (obra): sin veredicto"], coste: costeDe(0.4, 1) }),
+    evento("ronda_de_la_puerta", { cuando: "2026-09-24 12:52:00", version: 1, ronda: 2,
+      aprobado: true, codigo_lean: 0 }),
+    evento("version", { cuando: "2026-09-25 09:10:00", version: 2, peticion: "el perro se llama Nala",
+      capitulos_cambiados: [4, 5, 6] }),
+  ],
+  atribucion: "El coste de cada capitulo es una atribucion por el progreso de la obra.",
+};
+
 export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }> = {
   turnoConAviso: { esquema: "TurnoDeEntrevistaSalida", datos: turnoConAviso },
   turnoSinNada: { esquema: "TurnoDeEntrevistaSalida", datos: turnoSinNada },
@@ -280,6 +319,7 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   confirmacionEnElTecho: { esquema: "ConfirmacionDeGasto", datos: confirmacionEnElTecho },
   estanteria: { esquema: "Estanteria", datos: estanteria },
   administracion: { esquema: "Administracion", datos: administracion },
+  historiaDeObra: { esquema: "HistoriaDeObra", datos: historiaDeObra },
 };
 
 type Respuesta = { estado?: number; cuerpo: unknown };

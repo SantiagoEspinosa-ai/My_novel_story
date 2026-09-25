@@ -5,6 +5,7 @@ import { PaginaEntrevista } from "@/pages/entrevista";
 import { PaginaEscena } from "@/pages/escena";
 import { PaginaEstanteria } from "@/pages/estanteria";
 import { PaginaFichas } from "@/pages/fichas";
+import { PaginaHistoriaDeObra } from "@/pages/historia-de-obra";
 import { PaginaGeneracion } from "@/pages/generacion";
 import { PaginaIndice } from "@/pages/indice";
 import { PaginaPortada } from "@/pages/portada";
@@ -26,6 +27,7 @@ export function App({ cliente }: { cliente: Cliente }) {
           <Route path="/" element={<PaginaEstanteria />} />
           <Route path="/entrevistas/:entrevista" element={<PaginaEntrevista />} />
           <Route path="/admin" element={<PaginaAdministracion />} />
+          <Route path="/admin/obras/:obra" element={<PaginaHistoriaDeObra />} />
           <Route path="/obras/:obra/generacion" element={<PaginaGeneracion />} />
           <Route path="/obras/:obra" element={<PaginaPortada />} />
           <Route path="/obras/:obra/indice" element={<PaginaIndice />} />

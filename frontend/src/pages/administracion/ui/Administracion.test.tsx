@@ -26,6 +26,8 @@ describe("Administracion", () => {
     expect(fila).toHaveTextContent("1 mayor");
     expect(fila).toHaveTextContent("0");
     expect(screen.getAllByTestId(/^admin-obra-/)).toHaveLength(administracion.obras.length);
+    // SPEC-37 RF-01: cada novela lleva a su historia.
+    expect(within(fila).getByRole("link")).toHaveAttribute("href", "/admin/obras/obra-publicada");
   });
 
   it("un coste con suelo lo dice, y lo ausente se dice", async () => {

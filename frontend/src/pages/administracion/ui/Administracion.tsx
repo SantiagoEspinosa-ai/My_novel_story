@@ -56,7 +56,7 @@ function Fila({ o }: { o: ObraEnLaAdministracion }) {
   const texto = partes.filter(([, n]) => n > 0).map(([s, n]) => `${n} ${s}`).join(" · ");
   return (
     <tr data-testid={`admin-${o.id}`}>
-      <td><Link to={`/obras/${encodeURIComponent(o.id)}`}>
+      <td><Link to={`/admin/obras/${encodeURIComponent(o.id)}`}>
         <SinDato valor={o.titulo} ausente="sin título todavía">{(t) => t}</SinDato></Link></td>
       <td>{o.fase ? <EtiquetaDeEstado distintivo={FASE_DE_GENERACION[o.fase]} />
         : <span className="sin-dato">sin generación</span>}</td>
