@@ -29,7 +29,7 @@ def test_estan_las_dieciocho_y_sin_huecos():
     # la ubicuidad sin decidirlos todavia. Por eso `SPEC-25` tomo `INV-21` y no
     # reutilizo un numero apartado. Cualquier otro hueco sigue fallando aqui.
     reservadas = {19, 20}
-    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 31)
+    assert ids == ["INV-{0:02d}".format(i) for i in range(1, 32)
                    if i not in reservadas]
 
 

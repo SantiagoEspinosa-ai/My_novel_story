@@ -1,4 +1,4 @@
-"""El registro de las invariantes `INV-01`..`INV-30` (`INV-19` e `INV-20` reservadas).
+"""El registro de las invariantes `INV-01`..`INV-31` (`INV-19` e `INV-20` reservadas).
 
 Es la copia en codigo de la tabla de `docs/definitions.md`, y `VER-38` existe
 para comprobar que las dos digan lo mismo. Por eso se escribe a mano: si se
@@ -163,6 +163,10 @@ _LISTA = [
        "indice con todos los capitulos en orden y las fichas con enlaces que llevan a su "
        "capitulo, comprobado en el navegador con el browser MCP",
        "obra", "mayor", "juez_llm", "la web servida, por Playwright MCP"),
+    # `SPEC-34` `RF-04`, numerada en `PLAN-34`: un pseudonimo que vuelve con otra forma y
+    # no se puede restituir exactamente. `mayor`, como `INV-23`: el texto se reescribe.
+    _r("INV-31", "Ningun texto restituido contiene un pseudonimo ni una forma derivada de el",
+       "escena", "mayor", "regla", "Borrador.texto, Pseudonimo"),
 ]
 
 TODAS = {i.id: i for i in _LISTA}

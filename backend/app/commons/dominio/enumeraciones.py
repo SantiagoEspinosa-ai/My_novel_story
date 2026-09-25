@@ -296,6 +296,14 @@ class TipoDeElementoPersonal(_Vocabulario):
     MASCOTA = "mascota"
 
 
+class TitularDePseudonimo(_Vocabulario):
+    """`SPEC-34`, `PLAN-34` E1: de quien es el nombre real de una pareja guardada."""
+    DESTINATARIO = "destinatario"
+    QUIEN_REGALA = "quien_regala"
+    PERSONA = "persona"
+    MASCOTA = "mascota"
+
+
 class EstadoDeHechoPropuesto(_Vocabulario):
     PROPUESTO = "propuesto"
     CONFIRMADO = "confirmado"

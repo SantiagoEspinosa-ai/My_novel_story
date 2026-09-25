@@ -52,6 +52,17 @@ class Destinatario(_DelDominio):
     elementos: list[ElementoPersonal] = Field(default_factory=list)
 
 
+class Pseudonimo(_DelDominio):
+    """`SPEC-34` `RF-02`: una palabra de un nombre real y el nombre inventado que la
+    sustituye ante los agentes, por obra. Lo escribe y lo lee
+    `commons/politica/pseudonimos.py`; este modelo es su frontera de validacion."""
+
+    obra: str = Field(min_length=1)
+    palabra_real: str = Field(min_length=1)
+    pseudonimo: str = Field(min_length=1)
+    titular: enums.TitularDePseudonimo
+
+
 class HechoPropuesto(_DelDominio):
     id: str = Field(min_length=1)
     texto: str = Field(min_length=1)

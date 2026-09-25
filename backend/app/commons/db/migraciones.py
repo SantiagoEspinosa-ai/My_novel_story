@@ -369,6 +369,15 @@ TODAS = [
         CREATE INDEX IF NOT EXISTS idx_gasto_por_obra ON gasto_de_delegacion (obra, generacion);
         """,
     ),
+    Migracion(
+        19,
+        "los nombres reales y sus pseudonimos, y que turno se pidio fuera del modelo",
+        # `SPEC-34` `RF-01`, `RF-02`, `PLAN-34` E1: `Pseudonimo` y
+        # `TurnoDeEntrevista.fuera_del_modelo`. Tabla nueva, sin filas que migrar: las
+        # obras anteriores no se migran (fuera de `SPEC-34`). Los turnos de antes quedan
+        # a `NULL`: no se sabe si se pidieron fuera del modelo, y no se inventa.
+        lambda con: _crear_pseudonimos(con),
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la
@@ -462,6 +471,28 @@ CREATE TABLE IF NOT EXISTS veredicto_de_publicacion (
     PRIMARY KEY (obra, version, ronda)
 );
 """
+
+
+# `PLAN-34` E1. Aqui por lo mismo que `VERSIONES_SQL`: una sola copia para la migracion
+# 19 y para `commons/politica/pseudonimos.py`. Una palabra real tiene un solo pseudonimo
+# por obra, y un pseudonimo es de una sola palabra real.
+PSEUDONIMO_SQL = """
+CREATE TABLE IF NOT EXISTS pseudonimo (
+    obra          TEXT NOT NULL,
+    palabra_real  TEXT NOT NULL,
+    pseudonimo    TEXT NOT NULL,
+    titular       TEXT NOT NULL,
+    PRIMARY KEY (obra, palabra_real),
+    UNIQUE (obra, pseudonimo)
+);
+"""
+
+
+def _crear_pseudonimos(con):
+    con.executescript(PSEUDONIMO_SQL)
+    if tiene_tabla(con, "turno_de_entrevista"):
+        anadir_columnas(con, "turno_de_entrevista", {"fuera_del_modelo": "INTEGER"})
+    return 0
 
 
 def _migrar_veredictos_a_version(con):
