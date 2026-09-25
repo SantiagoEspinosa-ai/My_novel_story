@@ -1,0 +1,33 @@
+/* SPEC-35 RF-11: la portada como la cubierta de un libro. Solo variables del tema (SPEC-22
+   RF-59). Los adornos son CSS y no texto: la portada no lleva relleno (SPEC-22 RF-46). */
+.portada--cubierta {
+  background: var(--color-pared); min-height: calc(100vh - 64px); box-sizing: border-box;
+  display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 420px); gap: var(--espacio-xl) 72px;
+  align-content: center; justify-content: center; padding: var(--espacio-xl) var(--espacio-m);
+}
+.portada--cubierta .portada__libro {
+  position: relative; min-height: 640px; display: flex; flex-direction: column; justify-content: center;
+  align-items: center; gap: var(--espacio-l); text-align: center; box-sizing: border-box;
+  padding: 96px 56px; background: var(--color-noche); color: var(--color-sobreMadera);
+  border: none; border-left: 18px solid var(--color-maderaOscura);
+  border-radius: var(--radio-s) var(--radio-m) var(--radio-m) var(--radio-s);
+  box-shadow: var(--sombra-portada);
+}
+.portada--cubierta .portada__libro::before,
+.portada--cubierta .portada__libro::after {
+  content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 2px; background: var(--color-oro);
+}
+.portada--cubierta .portada__libro::before { top: 56px; }
+.portada--cubierta .portada__libro::after { bottom: 56px; }
+.portada--cubierta h1 { margin: 0; font-family: var(--fuente-titulos); font-size: 3.4rem; line-height: 1.05; color: var(--color-sobreMadera); }
+.portada--cubierta .dedicatoria { margin: 0; font-family: var(--fuente-lectura); font-style: italic; font-size: 1.2rem; color: var(--color-sobreMadera); }
+.portada__acciones { display: flex; flex-direction: column; gap: var(--espacio-m); align-self: center; }
+.portada__acciones .boton { justify-content: center; text-align: center; }
+.portada__sin-pdf { margin: 0; font-size: 0.9rem; color: var(--color-textoSuave); }
+.portada--cubierta .progreso { grid-column: 1 / -1; }
+@media (max-width: 900px) {
+  .portada--cubierta { grid-template-columns: minmax(0, 1fr); }
+  .portada--cubierta .portada__libro { min-height: 460px; padding: 72px 28px; }
+  .portada--cubierta h1 { font-size: 2.4rem; }
+}
