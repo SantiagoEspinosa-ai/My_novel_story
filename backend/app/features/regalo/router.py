@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.commons.configuracion import carga
 from app.features.regalo import service
-from app.features.regalo.schemas import ConfirmacionDeGasto, Estanteria, GeneracionEnVivo
+from app.features.regalo.schemas import (ConfirmacionDeGasto, Estanteria, GeneracionEnVivo,
+                                         PeticionDeLaVersion)
 
 router = APIRouter(tags=["regalo"])
 
@@ -34,6 +35,16 @@ def estanteria(con: sqlite3.Connection = Depends(conexion)):
 def confirmacion(con: sqlite3.Connection = Depends(conexion)):
     """`RF-12`: lo que la web ensena antes de gastar, con la procedencia de cada cifra."""
     return service.confirmacion(con, _sistema().generacion_web.techo_de_gasto_usd)
+
+
+@router.get("/obras/{id_obra}/versiones/{numero}/peticion", response_model=PeticionDeLaVersion)
+def peticion_de_la_version(id_obra: str, numero: int,
+                           con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-35` `RF-10`: que peticion cambio esta version, con las palabras del lector."""
+    existe, texto = service.peticion_de_la_version(con, id_obra, numero)
+    if not existe:
+        raise HTTPException(404, "no existe la version {0} de {1}".format(numero, id_obra))
+    return {"texto": texto}
 
 
 @router.get("/obras/{id_obra}/generacion", response_model=GeneracionEnVivo)

@@ -480,6 +480,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Descargar
+         * @description El PDF de la version vigente. `409` con el motivo de la puerta si no esta publicada.
+         */
+        get: operations["descargar_obras__id_obra__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/pdf/disponible": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Disponible
+         * @description Si la obra tiene PDF y, si no, por que. No genera nada.
+         */
+        get: operations["disponible_obras__id_obra__pdf_disponible_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/obras/{id_obra}/progreso": {
         parameters: {
             query?: never;
@@ -576,6 +616,26 @@ export interface paths {
          *     su estado, sus hallazgos y su `estado_de_verificacion` en esa version (`RF-52`..`RF-54`).
          */
         get: operations["indice_de_version_obras__id_obra__versiones__numero__indice_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/obras/{id_obra}/versiones/{numero}/peticion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Peticion De La Version
+         * @description `SPEC-35` `RF-10`: que peticion cambio esta version, con las palabras del lector.
+         */
+        get: operations["peticion_de_la_version_obras__id_obra__versiones__numero__peticion_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1295,11 +1355,27 @@ export interface components {
             /** Titulo */
             titulo: string;
         };
+        /** PdfDisponible */
+        PdfDisponible: {
+            /** Disponible */
+            disponible: boolean;
+            /** Motivo */
+            motivo: string | null;
+        };
         /**
          * PersonaNarrativa
          * @enum {string}
          */
         PersonaNarrativa: "primera" | "segunda" | "tercera_limitada" | "tercera_omnisciente";
+        /**
+         * PeticionDeLaVersion
+         * @description `SPEC-35` `RF-10`: las palabras del lector que originaron la version, o nulo si no
+         *     nacio de una peticion.
+         */
+        PeticionDeLaVersion: {
+            /** Texto */
+            texto: string | null;
+        };
         /**
          * PeticionEntrada
          * @description Los campos de `PeticionDeCambio` que da el lector. Con `hecho`, `hecho` y
@@ -2329,6 +2405,68 @@ export interface operations {
             };
         };
     };
+    descargar_obras__id_obra__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disponible_obras__id_obra__pdf_disponible_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PdfDisponible"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     progreso_obras__id_obra__progreso_get: {
         parameters: {
             query?: never;
@@ -2475,6 +2613,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IndiceDeVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    peticion_de_la_version_obras__id_obra__versiones__numero__peticion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+                numero: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeticionDeLaVersion"];
                 };
             };
             /** @description Validation Error */

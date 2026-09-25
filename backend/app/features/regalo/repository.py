@@ -35,6 +35,22 @@ def obras_de_la_estanteria(con):
     return list(obras.values())
 
 
+def texto_de_la_peticion(con, obra, numero):
+    """`(existe, texto)` de la version: las palabras del lector que la originaron, o `None`
+    si no nacio de una peticion (`SPEC-35` `RF-10`). La peticion se busca **de la obra**."""
+    if not migraciones.tiene_tabla(con, "version_de_obra"):
+        return False, None
+    f = con.execute("SELECT peticion FROM version_de_obra WHERE obra = ? AND numero = ?",
+                    (obra, numero)).fetchone()
+    if f is None:
+        return False, None
+    if f[0] is None or not migraciones.tiene_tabla(con, "peticion_de_cambio"):
+        return True, None
+    t = con.execute("SELECT texto FROM peticion_de_cambio WHERE id = ? AND obra = ?",
+                    (f[0], obra)).fetchone()
+    return True, t[0] if t else None
+
+
 def existe_la_obra(con, obra):
     return con.execute("SELECT 1 FROM obra WHERE id = ?", (obra,)).fetchone() is not None
 

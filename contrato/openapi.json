@@ -1683,6 +1683,31 @@
         "title": "ObraSalida",
         "type": "object"
       },
+      "PdfDisponible": {
+        "properties": {
+          "disponible": {
+            "title": "Disponible",
+            "type": "boolean"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "required": [
+          "disponible",
+          "motivo"
+        ],
+        "title": "PdfDisponible",
+        "type": "object"
+      },
       "PersonaNarrativa": {
         "enum": [
           "primera",
@@ -1692,6 +1717,28 @@
         ],
         "title": "PersonaNarrativa",
         "type": "string"
+      },
+      "PeticionDeLaVersion": {
+        "additionalProperties": false,
+        "description": "`SPEC-35` `RF-10`: las palabras del lector que originaron la version, o nulo si no\nnacio de una peticion.",
+        "properties": {
+          "texto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Texto"
+          }
+        },
+        "required": [
+          "texto"
+        ],
+        "title": "PeticionDeLaVersion",
+        "type": "object"
       },
       "PeticionEntrada": {
         "additionalProperties": false,
@@ -3436,6 +3483,88 @@
         ]
       }
     },
+    "/obras/{id_obra}/pdf": {
+      "get": {
+        "description": "El PDF de la version vigente. `409` con el motivo de la puerta si no esta publicada.",
+        "operationId": "descargar_obras__id_obra__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Descargar",
+        "tags": [
+          "manuscrito"
+        ]
+      }
+    },
+    "/obras/{id_obra}/pdf/disponible": {
+      "get": {
+        "description": "Si la obra tiene PDF y, si no, por que. No genera nada.",
+        "operationId": "disponible_obras__id_obra__pdf_disponible_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PdfDisponible"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disponible",
+        "tags": [
+          "manuscrito"
+        ]
+      }
+    },
     "/obras/{id_obra}/progreso": {
       "get": {
         "description": "En que punto va la generacion, con los segundos desde la ultima actividad. `404` si\nla obra no se ha empezado a generar: no se inventa una fase.",
@@ -3686,6 +3815,58 @@
         "tags": [
           "ciclo",
           "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/versiones/{numero}/peticion": {
+      "get": {
+        "description": "`SPEC-35` `RF-10`: que peticion cambio esta version, con las palabras del lector.",
+        "operationId": "peticion_de_la_version_obras__id_obra__versiones__numero__peticion_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "numero",
+            "required": true,
+            "schema": {
+              "title": "Numero",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeticionDeLaVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Peticion De La Version",
+        "tags": [
+          "regalo"
         ]
       }
     },
