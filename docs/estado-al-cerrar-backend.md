@@ -455,3 +455,26 @@ git -C C:\Users\student\Desktop\My_novel_story-examen log --oneline -6
 git -C C:\Users\student\Desktop\My_novel_story-examen branch --no-merged examen-cierre
 grep "^| F-155 |" docs/verification.md
 ```
+
+---
+
+## 8. La sesión de la máquina nueva (2026-09-25)
+
+Foto, como el resto. Rama **`web-de-principio-a-fin`**, que sale de `examen-cierre` y **no está
+en GitHub**: publicarla es decisión del autor.
+
+- **Se perdió `ejemplo-web.db`** con la máquina anterior: la demo de «La ruta de Pimienta» y su
+  versión 3 ya no existen aquí. En su lugar, `backend/web.db`: las semillas de la novela regalo y
+  de la lectura, **datos inventados**, y una entrevista completa sin cerrar para ver el cuaderno
+  completo.
+- **Hecho:** `F-204`; `PLAN-34` aplicado (`SPEC-34` a `specs/aplicadas/`, `F-146` cerrado en el
+  harness, `F-205`, `F-207`); `PLAN-35` v3 y v4 aplicados (`SPEC-35` v5, `F-206`): la entrevista
+  con Xime y su cuaderno, el cuaderno completo y la generación de noche.
+- **Sin Node en la máquina**, que el autor no puede instalar: la web se sirve con el Node de VS
+  Code. `arrancar-web.ps1` lo hace solo.
+- **Lo que no se ha ejercido aquí**: ninguna llamada al modelo (gasta). Ni un turno de la
+  entrevista con el Entrevistador real ni una generación. Sin Lean (`lake`) una novela generada
+  no se publica: se lee como «lo escrito», sin PDF.
+
+**Levantar:** `powershell -ExecutionPolicy Bypass -File .\arrancar-web.ps1` y abrir
+http://127.0.0.1:5173/.

@@ -2,12 +2,21 @@
 id: PLAN-35
 spec: SPEC-35
 titulo: Implementación de las seis pantallas rediseñadas — primera y segunda tanda
-estado: aprobada
+estado: aplicada
+fecha_aplicacion: 2026-09-25
 aprobada_por: "autor del proyecto, en sesión («si escribe el plan y ejecutalo»); la segunda tanda (v3), la sesión autónoma del 2026-09-24 por delegación escrita del autor («Decide tú todo […] No pares a consultarme»)"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
-version: 3
+version: 4
 ---
+
+> **v4 (2026-09-25), la segunda tanda, hecha.** F0–F8 terminados.
+> - **Sin Node en la máquina** y sin poder instalarlo: el frontend se probó con el Node de VS
+>   Code (`ELECTRON_RUN_AS_NODE=1`) y `npm` descargado como paquete, sin instalar nada. Las
+>   pruebas de F4–F7 se escribieron antes que el código pero **no se pudieron ver en rojo en
+>   ese momento**; se comprobó después que las 17 nuevas fallan contra las páginas de `HEAD`.
+> - **F8 encontró** el título de la generación publicada, corregido con su prueba.
+> - Para levantar la web sin Node queda `arrancar-web.ps1` en la raíz.
 
 > **v3 (2026-09-24), la segunda tanda.** `PLAN-34` ya está aplicado, que era lo que esperaba:
 > los nombres se escriben en su campo (`PUT /entrevistas/{id}/nombres`) y el historial trae

@@ -103,6 +103,7 @@ describe("Generacion", () => {
 
   it("publicada lleva a leer la novela", async () => {
     montar([generacionPublicada]);
+    expect(await screen.findByRole("heading", { name: "La novela está escrita" })).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "Leer la novela" }))
       .toHaveAttribute("href", "/obras/obra-regalo-inventada");
   });

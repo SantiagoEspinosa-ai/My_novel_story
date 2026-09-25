@@ -1,11 +1,12 @@
 ---
 id: SPEC-35
 titulo: Seis pantallas de la novela regalo, rediseñadas — entrevista, cuaderno, cambio, versión y portada
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión («aprovado»)"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 5
+fecha_aplicacion: 2026-09-25
 ---
 
 > **v5 (2026-09-24), la página de la generación; decidido por la sesión autónoma por

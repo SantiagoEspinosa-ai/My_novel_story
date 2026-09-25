@@ -44,7 +44,8 @@ export function PaginaGeneracion({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
     <main className="generacion-noche">
       <div className="contenido generacion">
         <header className="generacion__cabecera">
-          <h1>La novela se está escribiendo</h1>
+          <h1>{g.fase_de_la_obra === "publicada" ? "La novela está escrita"
+            : "La novela se está escribiendo"}</h1>
           <CosteEnVivo coste={g.coste} />
         </header>
         {g.motivo_del_fallo && (

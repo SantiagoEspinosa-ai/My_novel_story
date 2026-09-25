@@ -237,3 +237,21 @@ en Edge sin cabeza, **sin modelo y sin gastar**: proponer un cambio no llama al 
 
 **Lo que no prueba.** Que confirmar un cambio regenere bien: gasta y es la demo `B4`, en
 `harness/evals/medidas.md`. Y no es la inspección con el agente del browser MCP.
+
+### La entrevista con Xime, el cuaderno y la generación, en un navegador real y sin agente (`PLAN-35` F8, 2026-09-25)
+
+En una máquina nueva **sin Node instalado** y con el MCP de Playwright caído (se lanza con
+`npx`). La web se sirvió con el Node que trae VS Code (`ELECTRON_RUN_AS_NODE=1`), sin instalar
+nada, y se recorrió con **Edge sin cabeza por línea de órdenes** (`--screenshot`), sin agente,
+sin modelo y sin gastar, sobre `backend/web.db`: la semilla de la novela regalo más la de la
+lectura, **datos inventados** (`SPEC-34` `RF-09`), en 8000/5173.
+
+Diez capturas, miradas una a una: la estantería; una entrevista nueva, con el campo del nombre
+en lugar de la respuesta; la misma tras guardar el nombre en el servidor real (turno «escrito
+en el cuaderno», la pregunta fija con el nombre, «Faltan 10 de 11»); una entrevista a medias y
+otra completa con el cuaderno completo; una cerrada con la confirmación de gasto; la generación
+en curso y la publicada, de noche; la portada y el índice.
+
+**Encontró un defecto**: la generación publicada seguía titulándose «La novela se está
+escribiendo». Se corrigió con su prueba antes de cerrar. **Nada pulsó «Responder» ni «Sí,
+escribir la novela»**: el camino con el modelo real sigue sin inspeccionar en esta máquina.

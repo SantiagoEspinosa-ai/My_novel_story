@@ -97,6 +97,12 @@ python -m pytest harness/documentos -q            # el validador del contrato
 python -X utf8 harness/documentos/contrato.py     # compara; --escribir regenera el congelado
 ```
 
+La web entera en local, API y frontend, en segundo plano (no necesita Node instalado: usa el de VS Code si no lo hay). Una base con datos inventados se crea con `semilla_regalo.py` y `semilla_lectura.sembrar`:
+
+```
+powershell -ExecutionPolicy Bypass -File .\arrancar-web.ps1 -Base backend\web.db
+```
+
 La entrevista del destinatario (`SPEC-25`) se hace desde la terminal con el backend levantado. **Cada turno llama al modelo**, así que gasta dinero; necesita `modelos.entrevistador` en `backend/config/sistema.json`:
 
 ```
