@@ -49,6 +49,10 @@ Devuelve un unico objeto JSON: {{"plan": {{...}}}}, con el plan de esta forma:
     pov, sinopsis, t_fabula, personajes_presentes}}]}}], con una sola escena.
     personajes_presentes son los id de los personajes que estan en la escena,
     el pov incluido; cada uno tiene que estar declarado en personajes.
+    t_fabula es la fecha y la hora de la escena (AAAA-MM-DDTHH:MM), distinta
+    en cada escena y posterior a la de la anterior: la t_fabula no retrocede
+    ni se repite. Un recuerdo se cuenta desde el presente, con la fecha de la
+    escena en el presente, porque hoy no se puede declarar una analepsis.
   imprescindibles: [{{elemento, capitulo, palabras_clave}}]: elemento es la
     descripcion literal de cada elemento imprescindible de la ficha.
   exclusiones_previstas: [{{personaje, capitulo, estado_vital}}] si alguien

@@ -78,3 +78,36 @@ def test_una_exclusion_prevista_de_un_personaje_que_no_existe_no_se_declara():
     with pytest.raises(ValidationError):
         plan(exclusiones_previstas=[{"personaje": "per-nadie", "capitulo": "cap-09",
                                      "estado_vital": "muerto"}])
+
+
+def test_un_capitulo_que_retrocede_en_la_fabula_es_un_hueco():
+    """`F-213`: el Planificador conto los capitulos 2 a 9 como un recuerdo de 2012 tras un
+    capitulo 1 en 2026. Hoy no hay donde declarar una analepsis (`SPEC-24` sin plan), asi
+    que `INV-08` la cuenta como inversion y Lean (`L-1`) no deja publicar: se escribieron
+    los diez capitulos para nada. Se caza en el plan, antes de escribir."""
+    caps = plan_dict()["capitulos"]
+    caps[1]["escenas"][0]["t_fabula"] = "2012-06-01"
+    hs = huecos(plan(capitulos=caps), ficha())
+    assert any("cap-02" in h and "INV-08" in h and "recuerdo" in h for h in hs), hs
+
+
+def test_una_fecha_que_no_se_lee_no_es_un_hueco_de_orden():
+    caps = plan_dict()["capitulos"]
+    caps[1]["escenas"][0]["t_fabula"] = "un martes"
+    assert not any("INV-08" in h for h in huecos(plan(capitulos=caps), ficha()))
+
+
+def test_dos_escenas_en_el_mismo_instante_son_un_hueco():
+    """`F-213`, la otra mitad: ocho escenas con la misma `t_fabula` y lugares distintos
+    dieron 44 violaciones de `L-3` (un personaje en dos sitios a la vez)."""
+    caps = plan_dict()["capitulos"]
+    caps[2]["escenas"][0]["t_fabula"] = caps[1]["escenas"][0]["t_fabula"]
+    hs = huecos(plan(capitulos=caps), ficha())
+    assert any("cap-03" in h and "mismo instante" in h for h in hs), hs
+
+
+def test_fecha_y_hora_distintas_y_crecientes_no_son_hueco():
+    caps = plan_dict()["capitulos"]
+    for n, c in enumerate(caps):
+        c["escenas"][0]["t_fabula"] = "2026-06-01T{0:02d}:30".format(8 + n)
+    assert not any("INV-08" in h for h in huecos(plan(capitulos=caps), ficha()))

@@ -223,3 +223,10 @@ def test_relanzar_la_planificacion_no_pisa_las_versiones_anteriores(con):
     assert [v["version"] for v in versiones] == [1, 2, 3, 4]
     assert [v["aprobado"] for v in versiones] == [False, False, False, True]
     assert r.version == 4
+
+
+def test_el_prompt_del_planificador_dice_que_la_fabula_no_retrocede():
+    """`F-213`: avisarlo antes cuesta una frase; descubrirlo en la cobertura, una ronda."""
+    from app.features.planificacion.service import PROMPT_PLANIFICADOR
+    assert "t_fabula no retrocede" in PROMPT_PLANIFICADOR
+    assert "AAAA-MM-DDTHH:MM" in PROMPT_PLANIFICADOR and "distinta" in PROMPT_PLANIFICADOR
