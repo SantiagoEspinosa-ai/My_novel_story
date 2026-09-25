@@ -1,11 +1,13 @@
 ---
 id: SPEC-43
 titulo: La lectura es para el lector; el estado y los hallazgos de cada escena, en la administración
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: «La página de un capítulo es para el lector. Quítale todo lo técnico […] no lo quites del sistema: muévelo a /admin […] La lectura es para el lector y la administración para ti. Deja esa distinción escrita. Aplícalo a todos los capítulos»"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: 52a242a
 ---
 
 # SPEC-43 — La lectura es para el lector
