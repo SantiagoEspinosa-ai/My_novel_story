@@ -478,6 +478,8 @@ en GitHub**: publicarla es decisión del autor.
 
 - **`SPEC-36` aplicada**: la estantería de lomos en baldas, el escritor en su mesa y la
   administración en `/admin`, **sin login** por decisión del autor.
+- **`SPEC-37` aplicada**: cada novela de la administración abre su historia en
+  `/admin/obras/<id>`, como línea de tiempo (la propuesta C).
 
 **Levantar:** `powershell -ExecutionPolicy Bypass -File .\arrancar-web.ps1` y abrir
 http://127.0.0.1:5173/.

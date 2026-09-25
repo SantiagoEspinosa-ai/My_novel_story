@@ -219,7 +219,9 @@ def historia(con, obra, umbral):
                                           ronda=ronda, aprobado=bool(publica), codigo_lean=codigo,
                                           condiciones=_condiciones(condiciones) if not publica
                                           else [], coste=_coste(propias)))
-        del_numero.sort(key=lambda e: (e["cuando"] is None, e["cuando"] or "",
+        # Lo que no tiene hora se escribio despues de crear su version: se ordena por ella, y
+        # en pantalla sigue diciendo que no tiene hora.
+        del_numero.sort(key=lambda e: (e["cuando"] or v["creada_en"] or "",
                                        _ORDEN.index(e["tipo"])))
         eventos.extend(del_numero)
 

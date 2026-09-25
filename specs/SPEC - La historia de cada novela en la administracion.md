@@ -1,11 +1,12 @@
 ---
 id: SPEC-37
 titulo: La historia de cada novela en la administración (línea de tiempo)
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: «quiero la c» sobre docs/proceso/propuestas-visuales/administracion.html"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
 ---
 
 # SPEC-37 — La historia de cada novela

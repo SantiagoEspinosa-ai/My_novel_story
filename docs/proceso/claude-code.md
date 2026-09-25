@@ -265,3 +265,11 @@ Recorrido en Edge sin cabeza sobre `backend/web.db`: **encontró que la clase `.
 existía** en `pedir-cambio.css` (la balda de «qué se reescribe») y su fondo oscuro se comía el
 mueble; se renombró. También se recortaron los títulos largos que se salían del lomo. La ficha
 del lomo no se capturó, porque la captura no puede pulsar: la cubren las pruebas.
+
+### La historia de cada novela (`PLAN-37` H3, 2026-09-25)
+
+Tres propuestas para rehacer la administración (`docs/proceso/propuestas-visuales/administracion.html`:
+expediente, matriz por capítulo y línea de tiempo); el autor eligió la línea de tiempo (`SPEC-37`).
+La inspección en Edge sin cabeza sobre `backend/web.db` **encontró que un capítulo sin hora
+salía después de la puerta de su versión**; ahora se ordena por la fecha de la versión, con
+su prueba.

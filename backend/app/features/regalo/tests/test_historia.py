@@ -138,3 +138,19 @@ def test_el_coste_por_agente_y_los_abiertos_con_su_invariante(cliente, historia)
 
 def test_una_obra_que_no_existe_es_404(cliente):
     assert cliente.get("/admin/obras/no-existe/historia").status_code == 404
+
+
+def test_un_capitulo_sin_hora_va_antes_de_la_puerta_de_su_version(cliente, con, historia):
+    """Un capitulo sin progreso (escrito sin fase apuntada) se escribio despues de crear su
+    version y antes de pasar la puerta: se ordena por la fecha de la version."""
+    from app.features.regalo.tests.conftest import id_capitulo as idc
+    with con:
+        con.execute("INSERT INTO escena (id, obra, orden, estado, cambio_de_valor, beats, pov, "
+                    "lugar, capitulo, borrador_aceptado) VALUES (?, ?, 1, 'consolidada', '{}', "
+                    "'[]', 'p', 'l', ?, 1)", ("esc-v2", OBRA, idc(OBRA, 3) + "-v2"))
+        con.execute("INSERT INTO veredicto_de_publicacion (obra, version, ronda, publica, "
+                    "condiciones, codigo_lean, no_ejecutadas, cuando) VALUES (?, 2, 1, 1, '[]', 0, "
+                    "'[]', '2026-09-25 10:00:00')", (OBRA,))
+    eventos = [e for e in _leer(cliente)["eventos"] if e["version"] == 2]
+    assert [e["tipo"] for e in eventos] == ["version", "capitulo", "ronda_de_la_puerta"]
+    assert eventos[1]["cuando"] is None

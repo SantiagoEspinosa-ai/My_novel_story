@@ -2,7 +2,8 @@
 id: PLAN-37
 spec: SPEC-37
 titulo: Implementación de la historia de cada novela en la administración
-estado: aprobada
+estado: aplicada
+fecha_aplicacion: 2026-09-25
 aprobada_por: "sesión del 2026-09-25, por la delegación escrita del autor («Decide tú todo […]»), tras su elección de la propuesta C"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
