@@ -31,8 +31,9 @@ from app.commons.modelo import proveedor
 from app.commons.trabajos import cola
 from app.features.entrevista import repository as repo
 from app.features.entrevista import service
-from app.features.entrevista.schemas import (HistorialSalida, RespuestaEntrada,
-                                             TextoLibreEntrada, turno_a_dict)
+from app.features.entrevista.schemas import (AvisoEntrada, HistorialSalida, NombresEntrada,
+                                             RespuestaEntrada, TextoLibreEntrada,
+                                             turno_a_dict)
 from app.features.entrevista.texto_libre import TextoDemasiadoLargo, validar_longitud
 
 router = APIRouter(tags=["entrevista"])
@@ -149,6 +150,32 @@ def texto_libre(id_e: str, entrada: TextoLibreEntrada, request: Request,
 
     tareas.add_task(_ejecutar, _ruta(request), id_t, _trabajo)
     return {"id_trabajo": id_t}
+
+
+@router.put("/entrevistas/{id_e}/nombres")
+def nombres(id_e: str, entrada: NombresEntrada, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-34` `RF-01`: los nombres, escritos en su campo. **No llama a ningun agente**,
+    asi que responde en el momento, sin trabajo."""
+    _existe(con, id_e)
+    try:
+        return turno_a_dict(service.declarar_nombres(con, id_e, entrada, _reglas(),
+                                                     date.today().year))
+    except service.EntrevistaCerrada:
+        raise HTTPException(409, "la entrevista ya esta cerrada")
+
+
+@router.post("/entrevistas/{id_e}/avisos/confirmar")
+def confirmar_aviso(id_e: str, entrada: AvisoEntrada,
+                    con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-25` `RF-10`, fuera del modelo (`PLAN-34` E3)."""
+    _existe(con, id_e)
+    try:
+        return turno_a_dict(service.confirmar_aviso(con, id_e, entrada.vetado, _reglas(),
+                                                    date.today().year))
+    except KeyError as e:
+        raise HTTPException(404, str(e))
+    except service.EntrevistaCerrada:
+        raise HTTPException(409, "la entrevista ya esta cerrada")
 
 
 @router.post("/entrevistas/{id_e}/hechos/{id_h}/confirmar")

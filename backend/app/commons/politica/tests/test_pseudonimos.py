@@ -25,6 +25,11 @@ def _tabla(con, obra="obra-1", evitar=()):
                       evitar=evitar)
 
 
+
+def _diminutivo(nombre):
+    """«Elena» -> «Elenita», «Inés» -> «Inésita»: sin la ultima vocal, si la tiene."""
+    return (nombre[:-1] if nombre[-1] in "aeiou" else nombre) + "ita"
+
 # --- E1: la pareja guardada ---------------------------------------------------
 
 def test_cada_palabra_del_nombre_tiene_su_pseudonimo(con):
@@ -72,6 +77,15 @@ def test_un_nombre_femenino_recibe_un_pseudonimo_femenino(con):
     assert t.pares["Tino"] in ps.MASCOTAS
 
 
+def test_un_nombre_femenino_que_no_acaba_en_a_sigue_siendo_femenino(con):
+    """«Irene» recibia un pseudonimo masculino, y el Escritor habria escrito «el». Lo cazo
+    la prueba de la entrega."""
+    t = ps.asignar(con, "obra-g", [("Irene", TP.DESTINATARIO), ("Borja", TP.PERSONA)])
+    assert t.pares["Irene"] in ps.PILA_FEMENINA
+    assert t.pares["Borja"] in ps.PILA_MASCULINA
+    assert all(n == ps._plano(n) for n in ps.FEMENINOS_SIN_A | ps.MASCULINOS_CON_A)
+
+
 def test_una_obra_sin_tabla_no_sustituye_nada(con):
     t = ps.de_la_obra(con, "sin-nombres")
     assert t.pseudonimizar("Olivia") == "Olivia"
@@ -100,7 +114,7 @@ def test_una_forma_derivada_del_pseudonimo_es_un_residuo(con):
     """`RF-04`: «Elenita» por «Elena» no se restituye a medias: se ve."""
     t = _tabla(con)
     p = t.pares["Olivia"]
-    derivada = p[:-1] + "ita"
+    derivada = _diminutivo(p)
     assert t.residuos({"texto": "Llego {0} con su perro.".format(derivada)}) == [derivada]
     assert t.residuos({"texto": "Llego Olivia con su perro."}) == []
 
@@ -180,7 +194,7 @@ def test_la_configuracion_llega_a_la_sesion_de_dentro(con):
 
 def test_un_resto_en_la_respuesta_queda_en_residuos(con):
     t = _tabla(con)
-    derivada = t.pares["Olivia"][:-1] + "ita"
+    derivada = _diminutivo(t.pares["Olivia"])
     s = ps.SesionPseudonimizada(_Doble(lambda p: {"texto": derivada + " corre"}), t)
     s.llamar("hola")
     assert s.residuos == [derivada]

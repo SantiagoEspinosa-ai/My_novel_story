@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS turno_de_entrevista (
     avisos          TEXT,
     contradicciones_abiertas TEXT,
     cuando          TEXT,
+    fuera_del_modelo INTEGER,
     PRIMARY KEY (entrevista, orden)
 );
 """
@@ -62,6 +63,10 @@ def asegurar_tablas(con: sqlite3.Connection):
     con una contradiccion."""
     with con:
         con.executescript(SQL)
+    # Una base con la tabla de antes de la migracion 19, sin pasar por las migraciones.
+    from app.commons.db.migraciones import anadir_columnas
+    with con:
+        anadir_columnas(con, "turno_de_entrevista", {"fuera_del_modelo": "INTEGER"})
     auditoria.asegurar_tabla(con)
 
 
@@ -86,7 +91,8 @@ def leer(con, id_e) -> Entrevista | None:
                       avisos_confirmados=json.loads(f[5]), vistas=json.loads(f[6]))
 
 
-def guardar(con, e: Entrevista, respuesta=None, pregunta=None, estado=None):
+def guardar(con, e: Entrevista, respuesta=None, pregunta=None, estado=None,
+            fuera_del_modelo=False):
     """La entrevista y, si lo hay, su turno, en una sola transaccion: un turno
     guardado sin su ficha, o al reves, dejaria la conversacion diciendo algo
     que la ficha no refleja.
@@ -107,10 +113,11 @@ def guardar(con, e: Entrevista, respuesta=None, pregunta=None, estado=None):
             s = estado or {}
             con.execute("INSERT INTO turno_de_entrevista (entrevista, orden, "
                         "respuesta, pregunta, tema, falta, avisos, contradicciones_abiertas, "
-                        "cuando) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                        "cuando, fuera_del_modelo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "
+                        "datetime('now'), ?)",
                         (e.id, orden, respuesta, pregunta or "", s.get("tema"),
                          _json(s.get("falta")), _json(s.get("avisos")),
-                         _json(s.get("contradicciones_abiertas"))))
+                         _json(s.get("contradicciones_abiertas")), int(fuera_del_modelo)))
 
 
 def _json(valor):
@@ -128,11 +135,13 @@ def turnos(con, id_e) -> list:
     `avisos` y `contradicciones_abiertas` vienen a `None`: no se guardaron, que no es
     que no los hubiera."""
     filas = con.execute("SELECT orden, respuesta, pregunta, tema, falta, avisos, "
-                        "contradicciones_abiertas, cuando FROM turno_de_entrevista "
+                        "contradicciones_abiertas, cuando, fuera_del_modelo "
+                        "FROM turno_de_entrevista "
                         "WHERE entrevista = ? ORDER BY orden", (id_e,)).fetchall()
     return [{"orden": f[0], "respuesta": f[1], "pregunta": f[2], "tema": f[3],
              "falta": _de_json(f[4]), "avisos": _de_json(f[5]),
-             "contradicciones_abiertas": _de_json(f[6]), "cuando": f[7]} for f in filas]
+             "contradicciones_abiertas": _de_json(f[6]), "cuando": f[7],
+             "fuera_del_modelo": None if f[8] is None else bool(f[8])} for f in filas]
 
 
 def de_la_obra(con, obra) -> list:

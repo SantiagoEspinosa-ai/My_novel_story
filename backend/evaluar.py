@@ -74,13 +74,29 @@ class _Espia:
     def get(self, url, **kw):
         return self.cliente.get(url, **kw)
 
+    def put(self, url, **kw):
+        return self.cliente.put(url, **kw)
+
+
+def nombre_del_primer_turno(guion):
+    """`SPEC-34` `RF-01`: la primera respuesta es el nombre, y se escribe en su campo, no en
+    una frase. Lo que el comprador teclea ahi es el nombre que el guion espera en la ficha
+    de ese turno. `None` si el guion no lo declara: entonces va la respuesta tal cual."""
+    primero = next((t for t in guion.turnos if t.accion == "respuesta"), None)
+    if primero is None or primero.ficha_esperada is None:
+        return None
+    return primero.ficha_esperada.destinatario.nombre or None
+
 
 def entradas_del_guion(guion) -> list:
     """El guion, en lo que teclearia el comprador en `entrevista_cli`."""
     salida = []
+    nombre = nombre_del_primer_turno(guion)
+    primera = True
     for t in guion.turnos:
         if t.accion == "respuesta":
-            salida.append(t.respuesta)
+            salida.append(nombre if primera and nombre else t.respuesta)
+            primera = False
         elif t.accion == "texto_libre":
             salida.append(":texto")
             salida.extend(t.texto_libre.splitlines() or [""])

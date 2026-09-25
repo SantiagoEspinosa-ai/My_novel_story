@@ -24,11 +24,11 @@ from app.commons import config
 from app.commons.configuracion.esquemas import ReglasDeContradiccion
 from app.commons.configuracion.esquemas import extensiones_por_defecto
 from app.commons.dominio import enumeraciones as enums
-from app.commons.dominio.destinatario import EXTENSION, FichaDeEntrevista
+from app.commons.dominio.destinatario import EXTENSION, ElementoPersonal, FichaDeEntrevista
 from app.commons.dominio.enumeraciones import TipoDeContradiccion as TC
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
 from app.commons.dominio.enumeraciones import TipoDeElementoPersonal as TE
-from app.commons.politica import auditoria
+from app.commons.politica import auditoria, pseudonimos
 from app.commons.politica.normalizar import raiz
 from app.commons.politica.vetadas import formas_de_nombre
 from app.features.entrevista import ficha as modulo_ficha
@@ -40,6 +40,12 @@ PRIMERA_PREGUNTA = (
     "Vamos a preparar una novela de {capitulos} capitulos. Para empezar: ¿como se "
     "llama la persona que la va a recibir, tal como quieres que aparezca "
     "escrito?").format(capitulos=EXTENSION["capitulos"])
+
+# `PLAN-34` E3: el nombre se contesta en el campo de nombres, sin agente, y la pregunta que
+# viene despues es fija. La del Entrevistador llega en el turno siguiente.
+PREGUNTA_TRAS_EL_NOMBRE = (
+    "Gracias. ¿Cuántos años tiene {nombre}? Y si hay más personas o mascotas con nombre que "
+    "deban salir en la novela, apúntalas en el cuaderno.")
 
 PROMPT = """Eres el entrevistador de una novela para regalar. Sigue tus
 instrucciones de agente. Esto es lo que ha calculado el sistema; no lo discutas.
@@ -56,8 +62,10 @@ CONTRADICCIONES ABIERTAS (no se puede cerrar hasta resolverlas)
 CAMPOS EN «otro» QUE TIENES QUE JUZGAR TU
 {juicio}
 
-AVISOS QUE EL COMPRADOR TIENE QUE CONFIRMAR
-{avisos}
+AVISOS DE NOMBRES
+Los confirma el comprador en su cuaderno, fuera de esta conversacion: no preguntes por ellos.
+Los nombres del destinatario, de quien regala y de las personas y mascotas los escribe el
+comprador en su cuaderno; no los cambies.
 
 EXTENSION DE CADA CAPITULO (se pregunta despues del tono; son 10 capitulos)
 {extensiones}
@@ -128,6 +136,12 @@ def _leer(con, id_e):
 def avisos_de_nombres(ficha, confirmados=()) -> list:
     """`RF-10`: un nombre vetado cuyo nombre de pila coincide con el de otra
     persona, mascota, el destinatario o quien regala."""
+    return [texto for _, texto in avisos_de_nombres_con_vetado(ficha, confirmados)]
+
+
+def avisos_de_nombres_con_vetado(ficha, confirmados=()) -> list:
+    """Los mismos avisos, con el nombre vetado al que se refieren: es lo que se confirma
+    en el cuaderno (`PLAN-34` E3)."""
     otros = []
     if ficha.destinatario.nombre:
         otros.append(("el destinatario", ficha.destinatario.nombre))
@@ -143,9 +157,9 @@ def avisos_de_nombres(ficha, confirmados=()) -> list:
         pila = raiz(formas_de_nombre(vetado)[-1].split()[0])
         for quien, nombre in otros:
             if raiz(nombre.split()[0]) == pila:
-                avisos.append("el nombre vetado «{0}» comparte nombre de pila con "
-                              "«{1}» ({2}): vetarlo tambien lo quita de la "
-                              "novela".format(vetado, nombre, quien))
+                avisos.append((vetado, "el nombre vetado «{0}» comparte nombre de pila con "
+                                       "«{1}» ({2}): vetarlo tambien lo quita de la "
+                                       "novela".format(vetado, nombre, quien)))
     return avisos
 
 
@@ -179,15 +193,19 @@ def _opciones_de_extension(extensiones=None):
                      for e in enums.ExtensionDeCapitulo)
 
 
+def ficha_para_agentes(ficha):
+    """`SPEC-34` `RF-07`: la ficha que ve un agente, sin los nombres vetados."""
+    return ficha.model_copy(update={"nombres_vetados": []})
+
+
 def _prompt(e, estado, respuesta, error=None, extensiones=None):
     return PROMPT.format(
         extensiones=_opciones_de_extension(extensiones),
-        ficha=e.ficha.model_dump_json(indent=2),
+        ficha=ficha_para_agentes(e.ficha).model_dump_json(indent=2),
         falta=_lista(estado["falta"]),
         contradicciones=_lista("[{0}] {1}".format(c.tipo.value, c.descripcion)
                                for c in estado["contradicciones"]),
         juicio=_lista(estado["requiere_juicio"]),
-        avisos=_lista(estado["avisos"]),
         error=("\nTU RESPUESTA ANTERIOR NO ERA VALIDA, CORRIGELA\n{0}\n".format(error)
                if error else ""),
         respuesta=respuesta.replace("<<<FIN_DE_LA_RESPUESTA>>>", "[delimitador eliminado]"))
@@ -257,6 +275,39 @@ def _observado(agente, observar, obra, nombre, con):
                            obs.versiones.get("entrevistador")), obs
 
 
+def _declarados(e):
+    return e.vistas.get("nombres_declarados") or {}
+
+
+def _reponer_nombres(e, ficha):
+    """`PLAN-34` E3: lo declarado en el campo de nombres manda sobre lo que devuelva el
+    modelo. Los nombres vetados, siempre (el modelo no los ve); el resto, si se declaro."""
+    d = _declarados(e)
+    destinatario = ficha.destinatario
+    if d.get("destinatario"):
+        destinatario = destinatario.model_copy(update={"nombre": d["destinatario"]})
+    elementos = list(destinatario.elementos)
+    tienen_nombre = {el.nombre for el in elementos if el.nombre}
+    for anterior in e.ficha.destinatario.elementos:
+        if anterior.nombre in (d.get("otros") or []) and anterior.nombre not in tienen_nombre:
+            elementos.append(anterior)
+    destinatario = destinatario.model_copy(update={"elementos": elementos})
+    cambios = {"destinatario": destinatario}
+    if d:
+        # Con el campo de nombres usado, los vetados son los del campo: el modelo no los ve.
+        # Sin el (la CLI de antes, un guion), los que saque de la conversacion, como siempre.
+        cambios["nombres_vetados"] = list(e.ficha.nombres_vetados)
+    if d.get("regalado_por") is not None:
+        cambios["regalado_por"] = d["regalado_por"] or None
+    return FichaDeEntrevista.model_validate(
+        ficha.model_copy(update=cambios).model_dump(mode="json"))
+
+
+def _tabla(con, e):
+    """Las parejas de la obra, completadas con los nombres que la ficha ya tenga."""
+    return pseudonimos.asegurar(con, e.obra, e.ficha)
+
+
 def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
           tope=config.TOPE_REINTENTOS_TRANSPORTE, extensiones=None, observar=None) -> Turno:
     e = _leer(con, id_e)
@@ -264,6 +315,8 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
         raise EntrevistaCerrada(id_e)
     entrevistador, obs = _observado(_con_gasto(entrevistador, con, e.obra), observar, e.obra,
                                      "turno_de_entrevista", con)
+    # `SPEC-34` `RF-03`: la frontera, por fuera de todo lo demas.
+    entrevistador = pseudonimos.envolver(entrevistador, _tabla(con, e))
     antes = _estado(e, reglas, anio_actual)
     error = None
     for _ in range(tope):
@@ -282,16 +335,109 @@ def turno(con, id_e, respuesta, entrevistador, reglas, anio_actual,
         raise EntrevistadorIlegible(
             "el entrevistador no devolvio una ficha valida en {0} intentos: "
             "{1}".format(tope, error))
-    e.ficha = ficha
+    # `RF-04`: un pseudonimo que volvio con otra forma no se restituye a medias: se ve.
+    residuos = list(getattr(entrevistador, "residuos", []) or [])
+    e.ficha = _reponer_nombres(e, ficha)
     e.juicios = sorted(set(e.juicios) | set(juicios))
     e.avisos_confirmados = sorted(set(e.avisos_confirmados) | set(confirmados))
+    # Un nombre que el modelo saco de una respuesta, sin declararlo, ya no sale en el
+    # turno siguiente.
+    _tabla(con, e)
     despues = _estado(e, reglas, anio_actual)
     _auditar(con, e, despues)
     repo.guardar(con, e, respuesta=respuesta, pregunta=pregunta, estado={
-        "tema": despues["tema"], "falta": despues["falta"], "avisos": despues["avisos"],
+        "tema": despues["tema"], "falta": despues["falta"],
+        "avisos": despues["avisos"] + [_aviso_de_residuo(r) for r in residuos],
         "contradicciones_abiertas": [{"tipo": c.tipo.value, "descripcion": c.descripcion}
                                      for c in despues["contradicciones"]]})
     return Turno(e, pregunta, despues)
+
+
+def _aviso_de_residuo(palabra):
+    return ("el entrevistador escribio «{0}», que no es ninguno de los nombres declarados: "
+            "revisa la ficha en el cuaderno [INV-31]".format(palabra))
+
+
+def _estado_a_guardar(s):
+    return {"tema": s["tema"], "falta": s["falta"], "avisos": s["avisos"],
+            "contradicciones_abiertas": [{"tipo": c.tipo.value, "descripcion": c.descripcion}
+                                         for c in s["contradicciones"]]}
+
+
+def declarar_nombres(con, id_e, nombres, reglas, anio_actual) -> Turno:
+    """`SPEC-34` `RF-01`: los nombres entran por su campo y **no pasan por ningun agente**.
+
+    La primera vez que se declara el destinatario, sin turnos todavia, es la respuesta a la
+    primera pregunta: se registra como turno `fuera_del_modelo` y la siguiente pregunta es
+    fija. Despues, declarar solo cambia la ficha."""
+    e = _leer(con, id_e)
+    if e.cerrada:
+        raise EntrevistaCerrada(id_e)
+    primera = not e.ficha.destinatario.nombre and not repo.turnos(con, id_e)
+    antes = _declarados(e)
+    destinatario = e.ficha.destinatario
+    if nombres.destinatario and nombres.destinatario.strip():
+        destinatario = destinatario.model_copy(update={"nombre": nombres.destinatario.strip()})
+    nuevos = {o.nombre.strip(): o for o in nombres.otros}
+    # Los que se declararon antes y ya no vienen, se quitan; los del modelo, no se tocan.
+    quitados = set(antes.get("otros") or []) - set(nuevos)
+    elementos = [el for el in destinatario.elementos if el.nombre not in quitados]
+    con_nombre = {el.nombre for el in elementos if el.nombre}
+    for nombre, o in nuevos.items():
+        if nombre not in con_nombre:
+            elementos.append(ElementoPersonal(tipo=TE(o.tipo.value),
+                                              descripcion=(o.relacion or o.tipo.value),
+                                              nombre=nombre, relacion=o.relacion))
+    cambios = {"destinatario": destinatario.model_copy(update={"elementos": elementos}),
+               "nombres_vetados": [v.strip() for v in nombres.vetados if v.strip()]}
+    if nombres.regalado_por is not None:
+        cambios["regalado_por"] = nombres.regalado_por.strip() or None
+    e.ficha = FichaDeEntrevista.model_validate(
+        e.ficha.model_copy(update=cambios).model_dump(mode="json"))
+    e.vistas["nombres_declarados"] = {
+        "destinatario": e.ficha.destinatario.nombre, "otros": sorted(nuevos),
+        "regalado_por": e.ficha.regalado_por or ""}
+    _tabla(con, e)
+    s = _estado(e, reglas, anio_actual)
+    if primera and e.ficha.destinatario.nombre:
+        pregunta = PREGUNTA_TRAS_EL_NOMBRE.format(nombre=e.ficha.destinatario.nombre.split()[0])
+        repo.guardar(con, e, respuesta=e.ficha.destinatario.nombre, pregunta=pregunta,
+                     estado=_estado_a_guardar(s), fuera_del_modelo=True)
+    else:
+        repo.guardar(con, e)
+        turnos = repo.turnos(con, id_e)
+        pregunta = turnos[-1]["pregunta"] if turnos else PRIMERA_PREGUNTA
+    return Turno(e, pregunta, s)
+
+
+def confirmar_aviso(con, id_e, vetado, reglas, anio_actual) -> Turno:
+    """`SPEC-25` `RF-10`, fuera del modelo: el comprador sabe que vetar ese nombre quita
+    tambien a quien comparte pila con el. `KeyError` si no hay aviso de ese nombre."""
+    e = _leer(con, id_e)
+    if e.cerrada:
+        raise EntrevistaCerrada(id_e)
+    pendientes = {v for v, _ in avisos_de_nombres_con_vetado(e.ficha, e.avisos_confirmados)}
+    if vetado not in pendientes:
+        raise KeyError("no hay ningun aviso sin confirmar del nombre vetado indicado")
+    e.avisos_confirmados = sorted(set(e.avisos_confirmados) | {vetado})
+    repo.guardar(con, e)
+    return estado(con, id_e, reglas, anio_actual)
+
+
+def nombres_de(e) -> dict:
+    """Lo que el cuaderno ensena de los nombres: los reales, nunca los pseudonimos."""
+    declarados = set(_declarados(e).get("otros") or [])
+    return {
+        "destinatario": e.ficha.destinatario.nombre,
+        "regalado_por": e.ficha.regalado_por,
+        "otros": [{"nombre": el.nombre, "tipo": el.tipo.value, "relacion": el.relacion,
+                   "declarado": el.nombre in declarados}
+                  for el in e.ficha.destinatario.elementos
+                  if el.nombre and el.tipo in (TE.PERSONA, TE.MASCOTA)],
+        "vetados": list(e.ficha.nombres_vetados),
+        "avisos": [{"vetado": v, "texto": t}
+                   for v, t in avisos_de_nombres_con_vetado(e.ficha, e.avisos_confirmados)],
+    }
 
 
 def pegar_texto(con, id_e, texto, extractor, observar=None) -> list:
@@ -301,6 +447,7 @@ def pegar_texto(con, id_e, texto, extractor, observar=None) -> list:
         raise EntrevistaCerrada(id_e)
     extractor, _ = _observado(_con_gasto(extractor, con, e.obra), observar, e.obra,
                               "texto_libre", con)
+    extractor = pseudonimos.envolver(extractor, _tabla(con, e))
     r = texto_libre.extraer(con, e.obra, texto, extractor)
     e.ficha = texto_libre.anadir_propuestos(e.ficha, r.hechos)
     repo.guardar(con, e)
@@ -338,7 +485,8 @@ def historial(con, id_e, reglas=None, anio_actual=None) -> dict:
                                  or s["avisos"]),
             "hechos_propuestos": [h.model_dump(mode="json")
                                   for h in e.ficha.hechos_propuestos],
-            "primera_pregunta": PRIMERA_PREGUNTA, "turnos": repo.turnos(con, id_e)}
+            "primera_pregunta": PRIMERA_PREGUNTA, "turnos": repo.turnos(con, id_e),
+            "nombres": nombres_de(e)}
 
 
 def cerrar(con, id_e, reglas=None, anio_actual=None):

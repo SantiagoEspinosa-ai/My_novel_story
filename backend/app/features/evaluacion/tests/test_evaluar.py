@@ -133,7 +133,8 @@ def test_evaluar_un_guion_hace_la_entrevista_contra_la_api_y_anota_su_coste(tmp_
     assert codigo == 0, salida
     filas = libro.filas(sqlite3.connect(str(tmp_path / "evaluacion.db")))
     assert [f["capitulo"] for f in filas][:3] == ["entrevista", "plan", "1"]
-    assert filas[0]["delegaciones"] == sum(1 for t in b.guion.turnos if not t.cerrar)
+    # `SPEC-34` `RF-01`: el turno del nombre va a su campo y no delega; el resto, una cada uno.
+    assert filas[0]["delegaciones"] == sum(1 for t in b.guion.turnos if not t.cerrar) - 1
     assert filas[0]["ejecucion"] != filas[0]["obra"], "la obra la pone la entrevista"
     assert FichaDeEntrevista.model_validate(llamados.ficha.model_dump()).hechos_propuestos == []
 

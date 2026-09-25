@@ -21,7 +21,7 @@ marca, y es lo que hace que entregar dos veces no duplique nada.
 
 from app.commons.dominio.enumeraciones import NivelDeVeto as NV
 from app.commons.dominio.enumeraciones import TipoDeDecisionDePolitica as TD
-from app.commons.politica import auditoria
+from app.commons.politica import auditoria, pseudonimos
 from app.commons.trabajos import cola
 from app.features.entrevista import repository as entrevistas
 from app.features.politica import repository as politica
@@ -61,7 +61,11 @@ def entregar(con, obra) -> dict:
     olvidados = cola.olvidar_resultados(con, "entrevista",
                                         entrevistas.de_la_obra(con, obra))
     borrado = entrevistas.borrar_de_la_obra(con, obra)
+    # `SPEC-34`, `PLAN-34` E4: las parejas llevan los nombres reales, y se van con la ficha.
+    # Si la cascada vuelve a delegar con `--ficha`, se reconstruyen iguales: la eleccion es
+    # determinista.
+    pseudonimos_borrados = pseudonimos.borrar_de_la_obra(con, obra)
     detalle = dict(borrado, resultados_olvidados=olvidados,
-                   vetadas_conservadas=conservadas)
+                   vetadas_conservadas=conservadas, pseudonimos=pseudonimos_borrados)
     auditoria.registrar_decision(con, TD.BORRADO_AL_ENTREGAR, obra, detalle)
     return detalle

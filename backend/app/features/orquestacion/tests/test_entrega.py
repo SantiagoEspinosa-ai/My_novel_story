@@ -64,8 +64,9 @@ def test_el_audit_log_dice_que_se_borro_pero_no_el_contenido(con, entregable):
     entrega.entregar(con, entregable.obra)
     [d] = [d for d in auditoria.decisiones(con, entregable.obra)
            if d["tipo"] == TD.BORRADO_AL_ENTREGAR]
+    # `PLAN-34` E4: tambien cuantas parejas de pseudonimos se borraron; solo el numero.
     assert d["detalle"] == {"entrevistas": 1, "turnos": 1, "resultados_olvidados": 0,
-                            "vetadas_conservadas": 3}
+                            "vetadas_conservadas": 3, "pseudonimos": 0}
     volcado = json.dumps(auditoria.decisiones(con), ensure_ascii=False)
     assert CONVERSACION not in volcado and "Irene" not in volcado
 

@@ -1,6 +1,40 @@
 {
   "components": {
     "schemas": {
+      "AvisoDeNombre": {
+        "properties": {
+          "texto": {
+            "title": "Texto",
+            "type": "string"
+          },
+          "vetado": {
+            "title": "Vetado",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vetado",
+          "texto"
+        ],
+        "title": "AvisoDeNombre",
+        "type": "object"
+      },
+      "AvisoEntrada": {
+        "additionalProperties": false,
+        "description": "Confirmar un aviso de nombre (`SPEC-25` `RF-10`) fuera del modelo.",
+        "properties": {
+          "vetado": {
+            "minLength": 1,
+            "title": "Vetado",
+            "type": "string"
+          }
+        },
+        "required": [
+          "vetado"
+        ],
+        "title": "AvisoEntrada",
+        "type": "object"
+      },
       "BorradorElegido": {
         "description": "El `Borrador` elegido de la escena: el aceptado o, si no consta, el ultimo.",
         "properties": {
@@ -1381,6 +1415,9 @@
             "title": "Hechos Propuestos",
             "type": "array"
           },
+          "nombres": {
+            "$ref": "#/components/schemas/NombresSalida"
+          },
           "obra": {
             "title": "Obra",
             "type": "string"
@@ -1407,7 +1444,8 @@
           "puede_cerrar",
           "hechos_propuestos",
           "primera_pregunta",
-          "turnos"
+          "turnos",
+          "nombres"
         ],
         "title": "HistorialSalida",
         "type": "object"
@@ -1511,6 +1549,107 @@
           "anterior"
         ],
         "title": "IndiceDeVersion",
+        "type": "object"
+      },
+      "NombresEntrada": {
+        "additionalProperties": false,
+        "description": "`SPEC-34` `RF-01`, `PLAN-34` E3: los nombres, escritos por el comprador en su campo y\nguardados sin pasar por ningun agente. Es **el estado completo** de lo declarado: una\npersona que ya no viene es una persona que se quita.",
+        "properties": {
+          "destinatario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destinatario"
+          },
+          "otros": {
+            "items": {
+              "$ref": "#/components/schemas/OtroNombre"
+            },
+            "title": "Otros",
+            "type": "array"
+          },
+          "regalado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regalado Por"
+          },
+          "vetados": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Vetados",
+            "type": "array"
+          }
+        },
+        "title": "NombresEntrada",
+        "type": "object"
+      },
+      "NombresSalida": {
+        "description": "Lo que la ficha sabe de los nombres, **siempre con el nombre real** (`SPEC-35`\n`RF-06`). `declarado` dice si lo escribio el comprador en su campo o lo saco el\nEntrevistador de una respuesta.",
+        "properties": {
+          "avisos": {
+            "items": {
+              "$ref": "#/components/schemas/AvisoDeNombre"
+            },
+            "title": "Avisos",
+            "type": "array"
+          },
+          "destinatario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Destinatario"
+          },
+          "otros": {
+            "items": {
+              "$ref": "#/components/schemas/OtroNombreSalida"
+            },
+            "title": "Otros",
+            "type": "array"
+          },
+          "regalado_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regalado Por"
+          },
+          "vetados": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Vetados",
+            "type": "array"
+          }
+        },
+        "required": [
+          "destinatario",
+          "regalado_por",
+          "otros",
+          "vetados",
+          "avisos"
+        ],
+        "title": "NombresSalida",
         "type": "object"
       },
       "NotaDelEditor": {
@@ -1681,6 +1820,72 @@
           "premisa"
         ],
         "title": "ObraSalida",
+        "type": "object"
+      },
+      "OtroNombre": {
+        "additionalProperties": false,
+        "description": "Una persona o una mascota con nombre. El tipo es `tipo_de_elemento_personal`, pero\nsolo los dos que llevan nombre de alguien (`SPEC-34` `RF-01`): un rasgo con nombre es\nun error de validacion.",
+        "properties": {
+          "nombre": {
+            "minLength": 1,
+            "title": "Nombre",
+            "type": "string"
+          },
+          "relacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relacion"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDeElementoPersonal"
+          }
+        },
+        "required": [
+          "nombre",
+          "tipo"
+        ],
+        "title": "OtroNombre",
+        "type": "object"
+      },
+      "OtroNombreSalida": {
+        "properties": {
+          "declarado": {
+            "title": "Declarado",
+            "type": "boolean"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "relacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relacion"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nombre",
+          "tipo",
+          "relacion",
+          "declarado"
+        ],
+        "title": "OtroNombreSalida",
         "type": "object"
       },
       "PdfDisponible": {
@@ -2058,6 +2263,16 @@
         "title": "TiempoVerbal",
         "type": "string"
       },
+      "TipoDeElementoPersonal": {
+        "enum": [
+          "rasgo",
+          "recuerdo",
+          "persona",
+          "mascota"
+        ],
+        "title": "TipoDeElementoPersonal",
+        "type": "string"
+      },
       "TrabajoSalida": {
         "additionalProperties": false,
         "description": "Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su\nvocabulario lo declara `docs/architecture.md` § \"Los estados de un trabajo\".\n`abandonado` no es `fallido` (no se sabe si llego a pasar): viajan distintos.",
@@ -2167,6 +2382,18 @@
               }
             ],
             "title": "Falta"
+          },
+          "fuera_del_modelo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Se contesto en el campo de nombres, sin agente (SPEC-34 RF-01). None en los turnos anteriores a la migracion 19",
+            "title": "Fuera Del Modelo"
           },
           "orden": {
             "title": "Orden",
@@ -2533,6 +2760,57 @@
         ]
       }
     },
+    "/entrevistas/{id_e}/avisos/confirmar": {
+      "post": {
+        "description": "`SPEC-25` `RF-10`, fuera del modelo (`PLAN-34` E3).",
+        "operationId": "confirmar_aviso_entrevistas__id_e__avisos_confirmar_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvisoEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirmar Aviso",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
     "/entrevistas/{id_e}/cerrar": {
       "post": {
         "description": "El comprador confirma la ficha. `409` dice que lo impide, no solo que no.",
@@ -2667,6 +2945,57 @@
           }
         },
         "summary": "Descartar",
+        "tags": [
+          "entrevista"
+        ]
+      }
+    },
+    "/entrevistas/{id_e}/nombres": {
+      "put": {
+        "description": "`SPEC-34` `RF-01`: los nombres, escritos en su campo. **No llama a ningun agente**,\nasi que responde en el momento, sin trabajo.",
+        "operationId": "nombres_entrevistas__id_e__nombres_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_e",
+            "required": true,
+            "schema": {
+              "title": "Id E",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NombresEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nombres",
         "tags": [
           "entrevista"
         ]

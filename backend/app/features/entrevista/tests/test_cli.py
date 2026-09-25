@@ -39,18 +39,42 @@ def cliente(tmp_path):
     con_edad = {"destinatario": {"nombre": "Irene Valdés", "edad": 34}}
     agente = Guion([solo_nombre, con_edad, completa])
     app.state.entrevistador = lambda: agente
+    app.state.guion_de_prueba = agente
     yield TestClient(app)
     del app.state.entrevistador
 
 
 def test_un_dialogo_de_tres_turnos_llega_al_brief(cliente):
-    respuestas = iter(["Irene Valdés", "34", "le encantan los mapas", ":cerrar"])
+    """`PLAN-34` E3: la primera respuesta es el nombre y va al campo de nombres, asi que los
+    tres turnos del Entrevistador son los tres siguientes."""
+    respuestas = iter(["Irene Valdés", "34", "le encantan los mapas", "nada mas", ":cerrar"])
     dicho = []
     brief = entrevista_cli.dialogar(cliente, entrada=lambda _: next(respuestas),
                                     salida=dicho.append, espera=0)
     assert brief["destinatario"]["nombre"] == "Irene Valdés"
     texto = "\n".join(dicho)
     assert "10 capitulos" in texto and "pregunta 3" in texto
+
+
+def test_la_primera_respuesta_va_al_campo_de_nombres_sin_llamar_al_modelo(cliente):
+    """`SPEC-34` `RF-01`."""
+    respuestas = iter(["Irene Valdés", ":salir"])
+    dicho = []
+    entrevista_cli.dialogar(cliente, entrada=lambda _: next(respuestas),
+                            salida=dicho.append, espera=0)
+    assert app.state.guion_de_prueba.i == 0
+    assert any("Irene" in d and "años" in d for d in dicho)
+
+
+def test_la_orden_nombres_declara_personas_mascotas_y_vetados(cliente):
+    respuestas = iter(["Irene Valdés", ":nombres", "Ramón", "Brisa; mascota; su perra", "",
+                       "Marcos Ledesma", ":salir"])
+    dicho = []
+    entrevista_cli.dialogar(cliente, entrada=lambda _: next(respuestas),
+                            salida=dicho.append, espera=0)
+    assert app.state.guion_de_prueba.i == 0
+    texto = "\n".join(dicho)
+    assert "Brisa" in texto and "Marcos Ledesma" in texto and "Ramón" in texto
 
 
 def test_cerrar_antes_de_tiempo_dice_lo_que_falta_y_sigue(cliente):
@@ -74,7 +98,7 @@ def test_la_cli_no_importa_ninguna_feature():
 def test_al_cerrar_la_cli_ensena_el_identificador_de_la_obra(cliente):
     """`SPEC-29` `RF-12`: la sesion nace con la entrevista, y la generacion tiene que
     recibir la misma obra (`--obra`) para caer en ella."""
-    respuestas = iter(["Irene Valdés", "34", "le encantan los mapas", ":cerrar"])
+    respuestas = iter(["Irene Valdés", "34", "le encantan los mapas", "nada mas", ":cerrar"])
     dicho = []
     entrevista_cli.dialogar(cliente, entrada=lambda _: next(respuestas),
                             salida=dicho.append, espera=0)

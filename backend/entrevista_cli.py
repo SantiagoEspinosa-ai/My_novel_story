@@ -9,8 +9,15 @@ falta, lo que se contradice y si se puede cerrar lo decide la API; esto solo
 pregunta, espera el trabajo y enseña lo que vuelve. Una prueba comprueba que no
 importa `app` (`test_cli.py`).
 
+LOS NOMBRES NO PASAN POR EL MODELO (`SPEC-34` `RF-01`)
+-----------------------------------------------------
+La primera respuesta es el nombre del destinatario y va al campo de nombres: la API lo
+guarda sin llamar a ningun agente. Las demas personas y mascotas con nombre, quien regala y
+los nombres que no deben aparecer se declaran con `:nombres`.
+
 ORDENES
 -------
+    :nombres   quien regala, personas y mascotas con nombre, y nombres vetados
     :texto     pegar un texto libre (carta, anecdota); se termina con una linea
                que solo tenga un punto
     :confirmar <id>   /   :descartar <id>    un hecho propuesto del texto libre
@@ -61,13 +68,69 @@ def _leer_texto(entrada):
         lineas.append(linea)
 
 
+def _declarar(cliente, id_e, nombres, salida):
+    r = cliente.put("/entrevistas/{0}/nombres".format(id_e), json=nombres)
+    if r.status_code != 200:
+        salida("No se pudieron guardar los nombres: {0}".format(r.json().get("detail")))
+        return None
+    return r.json()
+
+
+def _pedir_nombres(cliente, id_e, entrada, salida):
+    """`:nombres`: lo que ya hay mas lo que se anade. La API recibe el estado completo."""
+    actuales = cliente.get("/entrevistas/{0}/turnos".format(id_e)).json()["nombres"]
+    regala = entrada("Quien regala (vacio si nadie o si no cambia): ").strip()
+    salida("Personas o mascotas con nombre, una por linea: nombre; persona|mascota; "
+           "relacion. Linea vacia para terminar.")
+    otros = [{"nombre": o["nombre"], "tipo": o["tipo"], "relacion": o["relacion"]}
+             for o in actuales["otros"]]
+    while True:
+        linea = entrada("... ").strip()
+        if not linea:
+            break
+        partes = [x.strip() for x in linea.split(";")]
+        tipo = partes[1] if len(partes) > 1 and partes[1] in ("persona", "mascota") \
+            else "persona"
+        otros.append({"nombre": partes[0], "tipo": tipo,
+                      "relacion": partes[2] if len(partes) > 2 and partes[2] else None})
+    vetados = entrada("Nombres que no deben aparecer, separados por comas "
+                      "(vacio si ninguno mas): ").strip()
+    nombres = {"destinatario": actuales["destinatario"],
+               "regalado_por": regala or actuales["regalado_por"],
+               "otros": otros,
+               "vetados": actuales["vetados"] + [v.strip() for v in vetados.split(",")
+                                                 if v.strip()]}
+    r = _declarar(cliente, id_e, nombres, salida)
+    if r is not None:
+        salida("Nombres guardados: {0}".format(", ".join(
+            [nombres["destinatario"] or "(sin destinatario)"]
+            + ([nombres["regalado_por"]] if nombres["regalado_por"] else [])
+            + [o["nombre"] for o in otros])))
+        if nombres["vetados"]:
+            salida("No apareceran: {0}".format(", ".join(nombres["vetados"])))
+        _mostrar_estado(r, salida)
+
+
 def dialogar(cliente, entrada=input, salida=print, espera=1.0):
     """Devuelve el brief si se cierra, o `None` si se sale."""
     e = cliente.post("/entrevistas").json()
     salida(e["pregunta"])
+    sin_nombre = True
     while True:
         respuesta = entrada("> ").strip()
         if not respuesta:
+            continue
+        if sin_nombre and not respuesta.startswith(":"):
+            # `SPEC-34` `RF-01`: la respuesta a la primera pregunta es el nombre, y va a su
+            # campo sin pasar por el modelo.
+            r = _declarar(cliente, e["id"], {"destinatario": respuesta}, salida)
+            if r is not None:
+                sin_nombre = False
+                salida(r["pregunta"])
+                _mostrar_estado(r, salida)
+            continue
+        if respuesta == ":nombres":
+            _pedir_nombres(cliente, e["id"], entrada, salida)
             continue
         if respuesta == ":salir":
             salida("Entrevista {0} sin cerrar.".format(e["id"]))

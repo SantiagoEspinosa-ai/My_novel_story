@@ -14,6 +14,10 @@ class EntrevistadorDelGuion:
     def __init__(self, guion):
         self.fichas = [t.ficha_esperada.model_dump(mode="json")
                        for t in guion.turnos if t.respuesta is not None]
+        # `SPEC-34` `RF-01`: la respuesta del nombre va a su campo y no llega al modelo.
+        primero = next((t for t in guion.turnos if t.respuesta is not None), None)
+        if primero is not None and primero.ficha_esperada.destinatario.nombre:
+            self.fichas = self.fichas[1:] or self.fichas
         self.i = 0
 
     def llamar(self, prompt):

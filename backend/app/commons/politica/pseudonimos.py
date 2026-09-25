@@ -65,6 +65,23 @@ MASCOTAS = (
     "Lupo", "Milo", "Olfo", "Pancho", "Rocky", "Sultán", "Thor", "Yako", "Lua", "Nuka",
     "Balto", "Draco", "Fosca", "Gumer", "Hachi", "Iker", "Jara", "Kuki", "Laika", "Mambo")
 
+# El genero del pseudonimo (hallazgo 5 de `PLAN-34`). Antes que la terminacion, los nombres
+# de pila que se sabe que son femeninos sin acabar en `a`, o masculinos acabando en ella.
+# «Irene» recibia un pseudonimo masculino: lo cazo la prueba de la entrega.
+# Escritos sin acentos y en minuscula, que es como los compara `_plano`.
+FEMENINOS_SIN_A = frozenset((
+    "irene", "ines", "carmen", "pilar", "isabel", "belen", "mercedes", "dolores", "rocio",
+    "consuelo", "nieves", "luz", "ruth", "rut", "noemi", "maribel", "raquel", "beatriz",
+    "esther", "ester", "soledad", "montserrat", "asuncion", "concepcion", "rosario", "amparo",
+    "trinidad", "abigail", "miriam", "judit", "marisol", "flor", "iris", "paz", "sol",
+    "yasmin", "jazmin", "chloe", "cloe", "zoe", "lourdes", "remedios", "milagros", "angeles",
+    "reyes", "itziar", "maite", "leire", "uxue", "aitziber", "edurne", "garazi", "irati",
+    "ane", "anabel", "mabel", "elisabet", "libertad", "caridad", "piedad", "estibaliz",
+    "margot", "ingrid", "astrid"))
+MASCULINOS_CON_A = frozenset((
+    "borja", "luca", "joshua", "nicola", "elia", "bautista", "ezra", "mustafa", "sasha",
+    "misha", "nikita", "mattia", "juanma", "garcilaso"))
+
 # `RF-07`: lo que sale en lugar de un nombre vetado.
 MARCA_DE_VETADO = "[nombre vetado]"
 
@@ -103,7 +120,18 @@ def _lista_para(titular, palabra, es_la_primera):
         return MASCOTAS
     if not es_la_primera:
         return APELLIDOS
-    return PILA_FEMENINA if _plano(palabra).endswith("a") else PILA_MASCULINA
+    return PILA_FEMENINA if es_nombre_femenino(palabra) else PILA_MASCULINA
+
+
+def es_nombre_femenino(palabra) -> bool:
+    """La lectura que haria el modelo del nombre: las listas conocidas y, si no esta, la
+    terminacion en `a`. Punto ciego declarado: un nombre raro que contradiga la regla."""
+    plano = _plano(palabra)
+    if plano in FEMENINOS_SIN_A:
+        return True
+    if plano in MASCULINOS_CON_A:
+        return False
+    return plano.endswith("a")
 
 
 def _inicio(obra, palabra, n):
