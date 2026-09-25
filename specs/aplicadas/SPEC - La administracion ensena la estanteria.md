@@ -1,11 +1,13 @@
 ---
 id: SPEC-42
 titulo: La administración enseña las novelas de la estantería, las mismas y en el mismo orden
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: «La administración solo enseña las novelas de la estantería, las mismas y en el mismo orden. Ni las retiradas ni las que no están ahí.»"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: 122ad27
 ---
 
 # SPEC-42 — La administración enseña la estantería
