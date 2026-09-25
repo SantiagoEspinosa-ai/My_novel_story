@@ -12,7 +12,7 @@ QUE HACE, EN ORDEN
 ------------------
 1. Lee el libro de gasto (`--libro`, `gasto_de_evaluacion`) y enseña **lo gastado, lo que
    queda hasta el techo y el mayor coste medido de una novela completa** (o «sin
-   medir»). El techo, 150 USD, es una decision de presupuesto (`SPEC-31`), y se comprueba
+   medir»). El techo, 121 USD desde la v6 de SPEC-31, es una decision de presupuesto (`SPEC-31`), y se comprueba
    contra lo gastado, nunca contra una prevision. Con el techo alcanzado, sale con 3.
 2. Sin `--confirmo-el-gasto`, sale con 2 sin pedir ningun agente.
 3. **Una base por ejecucion** (`--base`, por defecto `evaluacion-<ejecucion>.db`): una base

@@ -81,13 +81,15 @@ def test_el_mayor_coste_de_una_novela_completa_es_sin_medir_hasta_que_haya_una(c
     assert libro.mayor_coste_de_novela_completa(con) == 4.0
 
 
-def test_el_techo_es_una_decision_de_presupuesto_de_150_usd():
-    """`SPEC-31`: lo fija el autor. No es una medida y no caduca con nada."""
-    assert config.TECHO_DE_GASTO_EVALUACION_USD == 150
-    assert carga.cargar_sistema().evaluacion.techo_de_gasto_usd == 150
+def test_el_techo_es_una_decision_de_presupuesto_de_121_usd():
+    """`SPEC-31`: lo fija el autor. No es una medida y no caduca con nada. v6 (2026-09-25): el
+    autor lo baja de 150 a 121 para que el libro pare en sus 150 reales, porque 28,86 USD de lo
+    gastado no pasan por el libro. La prueba se reescribio con el valor, no se borro."""
+    assert config.TECHO_DE_GASTO_EVALUACION_USD == 121
+    assert carga.cargar_sistema().evaluacion.techo_de_gasto_usd == 121
     fuente = (pathlib.Path(config.__file__)).read_text(encoding="utf-8")
     bloque = fuente[:fuente.index("TECHO_DE_GASTO_EVALUACION_USD")].rsplit("\n\n", 1)[-1]
     assert "presupuesto" in bloque and "no medida" in bloque
     sistema = json.loads((pathlib.Path(carga.__file__).resolve().parents[3] / "config"
                           / "sistema.json").read_text(encoding="utf-8"))
-    assert sistema["evaluacion"]["techo_de_gasto_usd"] == 150
+    assert sistema["evaluacion"]["techo_de_gasto_usd"] == 121

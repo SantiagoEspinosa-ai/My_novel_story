@@ -79,7 +79,10 @@ TIEMPO_MAXIMO_LEAN_SEGUNDOS = 300
 # medir, y por eso el techo se comprueba contra lo gastado (`gasto_de_evaluacion`) y
 # nunca contra una prevision. Se puede pasar en lo que cueste el capitulo en curso: la
 # generacion se para entre capitulos, no a media delegacion (`PLAN-31` E5).
-TECHO_DE_GASTO_EVALUACION_USD = 150
+# v6 de `SPEC-31` (2026-09-25): el autor lo baja de 150 a 121. El libro solo ve lo que pasa por
+# `evaluar.py`, y el autor lleva 76 USD gastados cuando el libro dice 47,14: con 121 en el libro,
+# el harness para en sus 150 reales. Sigue siendo una decision de presupuesto, no medida.
+TECHO_DE_GASTO_EVALUACION_USD = 121
 
 # **Decision de presupuesto, no medida** (`SPEC-33` cuestion 1): el techo de lo que pueden
 # gastar las generaciones lanzadas desde la web, separado del de la evaluacion para que el
