@@ -311,3 +311,29 @@ def test_el_material_lleva_el_lugar_de_la_escena_siguiente_de_su_version(con):
     ultima = modulo_obra.reunir_material(con, escaleta.escena(con, "cap-10-e1"), OBRA,
                                          version=2)
     assert ultima["lugar_siguiente"] is None
+
+
+def _con_una_version_3_sin_escribir(con):
+    """La 2 publicada y una 3 recien creada por una cascada, con su capitulo 5 sin escribir:
+    el estado de la demo de B4 a mitad."""
+    _novela_con_dos_versiones(con)
+    capitulos = brief.capitulos_de_version(con, OBRA, 2)
+    capitulos[4] = "cap-05-v3"
+    brief.crear_version(con, OBRA, capitulos, anterior=2, commit="abc9999")
+
+
+def test_la_lectura_web_lee_la_ultima_publicada_y_no_la_ultima_creada(con):
+    """`F-150`: `lectura/repository` tenia su propia copia de la regla de la vigente, con
+    `MAX(numero)`, y la web ensenaba como vigente la version que la cascada estaba
+    escribiendo. Es `CE-14` (`F-121`) otra vez, por una copia que llego de otra rama."""
+    from app.features.lectura import repository as lectura
+    _con_una_version_3_sin_escribir(con)
+    ids = [c["id"] if isinstance(c, dict) else c[0] for c in lectura.capitulos(con, OBRA)]
+    assert "cap-02-v2" in ids and "cap-05-v3" not in ids, ids
+
+
+def test_el_arrastre_se_mide_sobre_la_ultima_publicada(con):
+    """`F-150`, la otra copia: `arrastre.medir` tomaba la ultima creada, y con una version
+    a medio escribir decia que la obra estaba incompleta."""
+    _con_una_version_3_sin_escribir(con)
+    assert arrastre.medir(con, OBRA)["medido"] is True
