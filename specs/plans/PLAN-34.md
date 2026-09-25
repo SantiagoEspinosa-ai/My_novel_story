@@ -2,12 +2,31 @@
 id: PLAN-34
 spec: SPEC-34
 titulo: Implementación de la pseudonimización de los nombres
-estado: aprobada
+estado: aplicada
 aprobada_por: "sesión autónoma del 2026-09-24, por delegación explícita del autor («Decide tú todo […] No pares a consultarme»)"
 fecha_aprobacion: 2026-09-24
 fecha: 2026-09-24
-version: 1
+version: 2
+fecha_aplicacion: 2026-09-24
 ---
+
+> **v2 (2026-09-24), lo hecho frente a lo planeado.** E1–E7 terminados, sin llamar al modelo.
+> - **La entrega borra las parejas en E3, no en E4.** La prueba que ya existía
+>   (`test_tras_entregar_no_queda_ningun_dato_de_la_ficha_en_ninguna_tabla`) lo cazó en cuanto
+>   E3 guardó la primera pareja.
+> - **El género, con listas** (`F-205`): la regla de la terminación dio un pseudónimo
+>   masculino a «Irene». Antes de la terminación se miran dos listas de nombres conocidos.
+> - **Los restos solo son diminutivos y plurales**: con la raíz sola, un «Martín» inventado por
+>   el Planificador habría sido un resto de «Marta» en cada escena, con su reescritura pagada.
+> - **Los guiones de la evaluación** (`SPEC-31`) contestan la primera pregunta con una frase
+>   («Se llama…»). Lo que el comprador teclea en el campo es el nombre que el guion espera en
+>   la ficha de ese turno (`evaluar.nombre_del_primer_turno`).
+> - **Sin campo de nombres, como antes**: si una entrevista no lo usa (la CLI vieja, un
+>   guion), los nombres vetados que saque el modelo se aceptan, y cualquier nombre que el
+>   modelo ponga en la ficha recibe pseudónimo desde el turno siguiente.
+> - **La conexión de las tools es de solo lectura**: leer las parejas no crea la tabla.
+> - **Punto ciego nuevo**: el nombre nuevo de un renombrado (`SPEC-23`) lo da el lector y no
+>   está en la ficha, así que sale tal cual.
 
 # PLAN-34 — Los nombres, fuera del modelo
 

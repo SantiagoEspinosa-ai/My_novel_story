@@ -995,6 +995,32 @@ Dos scripts en `backend/hooks/`, declarados en `.claude/settings.json`:
 
 **Solo actúan sobre el pipeline**: `SesionDelegada` lanza cada delegación con `HARNESS_AGENTE` y, si las hay, `HARNESS_REGLAS`; sin esa variable los dos scripts salen con 0. Una sesión interactiva en el mismo proyecto no se toca. **Las puertas del código siguen mandando**: el hook es una primera línea más barata que una delegación nueva, no la única. Desde `SPEC-28` el de policy sí se dispara: el Escritor y el Editor tienen tools.
 
+### La frontera de los nombres (`SPEC-34`, `PLAN-34`)
+
+**Los nombres reales no salen hacia los agentes.** Las sesiones delegadas anonimizan los
+nombres de personas por una política de la organización (`F-146`), y el autor decidió que no
+salgan en vez de sortearla. La base guarda los reales; la sustitución se hace en la frontera,
+en los dos sentidos:
+
+- **Entrada.** El comprador escribe los nombres en un campo propio de la entrevista
+  (`PUT /entrevistas/{id}/nombres`), que no llama a ningún agente. Cada palabra de un nombre
+  recibe un pseudónimo, que se guarda en `pseudonimo` y ya no cambia.
+- **La frontera es una envoltura**, `SesionPseudonimizada` (`commons/politica/pseudonimos.py`),
+  con la firma de las demás (`llamar(prompt) -> dict`): el prompt sale con pseudónimos y sin
+  nombres vetados, y la respuesta vuelve restituida **antes de guardarse y de cualquier
+  validador**. Envuelve al Entrevistador y al extractor (`entrevista/service.py`) y a los cinco
+  agentes de la generación y de la cascada (`novela.preparar_agentes`), por fuera de todo lo
+  demás.
+- **Tres salidas no pasan por `llamar`** y se pseudonimizan con la misma tabla: lo que devuelven
+  las tools de la story bible, las reglas del hook `Stop` y, por ellas, el motivo con el que el
+  hook devuelve el capítulo.
+- **Langfuse no necesita nada**: los tipos de `envio.py` ya impiden enviar un texto de la obra.
+- **Lo que no se puede restituir se ve** (`INV-31`): un diminutivo del pseudónimo es un hallazgo
+  `mayor` en su escena, un hueco del plan o un aviso del turno de la entrevista.
+
+El inspector visual (`INV-30`) es el único agente que no recibe un prompt sino una página, y la
+página enseña los nombres reales: solo inspecciona bases de datos inventados (`RF-09`).
+
 ### Las tools de lectura de la story bible (`SPEC-28`)
 
 Un servidor MCP propio por stdio (`backend/herramientas/story_bible.py`, sobre
