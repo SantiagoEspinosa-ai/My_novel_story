@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Administración · tres propuestas</title>
+<!-- Maquetas estaticas con datos inventados, para elegir. No son la web. -->
+<style>
+  :root {
+    --tinta:#1b2238; --suave:#4a5270; --papel:#f7f3ec; --pared:#efe6d8; --blanco:#fff;
+    --madera:#6b4a2f; --linea:#e3dccf; --acento:#a8321f; --acento-suave:#f6e2dc; --oro:#f0c46a;
+    --ok:#1d6b37; --ok-f:#dff1e4; --mayor:#8a3b00; --mayor-f:#fde4cc; --menor:#5e5207; --menor-f:#f4efd9;
+    --bloq:#9a1f15; --bloq-f:#f8e0de; --azul:#1d4f8a; --azul-f:#e1ebf7;
+    --serif:"Fraunces","Literata",Georgia,serif; --sans:"Inter","Segoe UI",system-ui,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#ddd6c8; font-family:var(--sans); color:var(--tinta); font-size:13px; }
+  .propuesta { width:1240px; margin:32px auto; background:var(--papel); border-radius:14px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.15); }
+  .etiqueta { background:var(--tinta); color:var(--papel); padding:14px 24px; font-size:14px; line-height:1.5; }
+  .etiqueta b { color:var(--oro); font-size:18px; margin-right:10px; }
+  .cab { background:var(--tinta); color:#fff; padding:12px 28px; font-family:var(--serif); font-size:16px; border-top:1px solid #2c3553; }
+  h1, h2, h3 { font-family:var(--serif); font-weight:600; margin:0; }
+  .p { display:inline-block; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .ok { background:var(--ok-f); color:var(--ok); } .mayor { background:var(--mayor-f); color:var(--mayor); }
+  .menor { background:var(--menor-f); color:var(--menor); } .bloq { background:var(--bloq-f); color:var(--bloq); }
+  .azul { background:var(--azul-f); color:var(--azul); }
+  .tarjeta { background:var(--blanco); border:1px solid var(--linea); border-radius:10px; padding:14px 16px; }
+  .gris { color:var(--suave); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--linea); vertical-align:top; }
+  th { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--suave); font-weight:600; }
+
+  /* ================= A · Expediente ================= */
+  .a { display:grid; grid-template-columns:260px 1fr; min-height:900px; }
+  .a-lista { background:var(--pared); border-right:1px solid var(--linea); padding:18px 14px; }
+  .a-lista h2 { font-size:18px; margin-bottom:12px; }
+  .a-item { background:var(--blanco); border:1px solid var(--linea); border-radius:8px; padding:10px 12px; margin-bottom:8px; }
+  .a-item.sel { border-left:5px solid var(--acento); }
+  .a-item b { font-family:var(--serif); font-size:15px; display:block; }
+  .a-det { padding:20px 28px; display:grid; gap:14px; align-content:start; }
+  .a-titulo { display:flex; justify-content:space-between; align-items:baseline; }
+  .a-titulo h1 { font-size:30px; }
+  .a-resumen { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .a-resumen .tarjeta strong { font-family:var(--serif); font-size:22px; display:block; }
+  .a-sec h3 { font-size:16px; margin-bottom:8px; }
+  .a-dos { display:grid; grid-template-columns:1.3fr 1fr; gap:14px; }
+  .spark { display:grid; grid-template-columns:150px 1fr 36px; align-items:center; gap:10px; margin:5px 0; }
+  .spark svg { width:100%; height:28px; display:block; }
+  .barra { height:14px; border-radius:3px; display:flex; overflow:hidden; }
+  .barra i { display:block; height:100%; }
+  .leyenda span { display:inline-flex; align-items:center; gap:4px; margin-right:10px; font-size:11px; }
+  .leyenda i { width:10px; height:10px; border-radius:2px; display:inline-block; }
+
+  /* ================= B · Matriz por capítulo ================= */
+  .b { padding:20px 28px 28px; }
+  .b-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .b-sel { display:flex; gap:6px; }
+  .b-sel span { padding:6px 12px; border-radius:999px; background:var(--blanco); border:1px solid var(--linea); }
+  .b-sel span.on { background:var(--tinta); color:#fff; border-color:var(--tinta); }
+  .b-ver { display:flex; gap:6px; margin-bottom:12px; align-items:center; }
+  .b-ver span { padding:4px 10px; border-radius:6px; border:1px solid var(--linea); background:var(--blanco); font-size:12px; }
+  .b-ver span.on { border-color:var(--acento); color:var(--acento); font-weight:600; }
+  .matriz { background:var(--blanco); border:1px solid var(--linea); border-radius:10px; overflow:hidden; }
+  .matriz th, .matriz td { text-align:center; padding:7px 4px; font-size:12px; }
+  .matriz td:first-child, .matriz th:first-child { text-align:left; padding-left:12px; }
+  .grupo { background:var(--pared); }
+  .n5 { background:#cfe8d6; } .n4 { background:#e6f2e8; } .n3 { background:#fbf1d8; } .n2 { background:#f8d9c6; color:var(--mayor); font-weight:700; } .n1 { background:#f3c1bb; color:var(--bloq); font-weight:700; }
+  .cambiado td:first-child { box-shadow:inset 4px 0 0 var(--acento); }
+  .fila-parada { background:var(--bloq-f); }
+  .b-pie { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+
+  /* ================= C · Línea de tiempo ================= */
+  .c { padding:20px 28px 30px; display:grid; grid-template-columns:1fr 300px; gap:24px; }
+  .c h1 { font-size:28px; margin-bottom:4px; }
+  .linea { position:relative; margin-top:18px; padding-left:34px; }
+  .linea::before { content:""; position:absolute; left:11px; top:6px; bottom:6px; width:2px; background:var(--linea); }
+  .ev { position:relative; margin-bottom:14px; }
+  .ev::before { content:""; position:absolute; left:-29px; top:6px; width:14px; height:14px; border-radius:50%; background:var(--blanco); border:3px solid var(--suave); }
+  .ev.bien::before { border-color:var(--ok); } .ev.mal::before { border-color:var(--bloq); background:var(--bloq-f); }
+  .ev.version::before { border-color:var(--acento); background:var(--acento); }
+  .ev .cuando { font-size:11px; color:var(--suave); }
+  .ev .tarjeta { margin-top:4px; }
+  .ev h3 { font-size:15px; display:flex; gap:8px; align-items:center; }
+  .notas { display:flex; gap:4px; margin-top:6px; }
+  .notas span { font-size:11px; padding:2px 6px; border-radius:4px; }
+  .banda { margin:22px 0 10px; padding:6px 12px; border-radius:6px; background:var(--tinta); color:var(--papel); font-weight:600; }
+  .c-lado { display:grid; gap:12px; align-content:start; position:relative; }
+  .c-lado h3 { font-size:15px; margin-bottom:6px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ A ============ -->
+<section class="propuesta">
+  <div class="etiqueta"><b>A · Expediente</b> Lista de novelas a la izquierda y, al elegir una, su expediente completo: resumen arriba y un bloque por pregunta (¿sube o baja la calidad?, ¿en qué se gasta?, ¿qué está abierto?, ¿dónde se paró?, ¿se puede publicar?, ¿qué cambió?). Se lee de arriba abajo como un informe.</div>
+  <div class="cab">Novelas para regalar · administración</div>
+  <div class="a">
+    <aside class="a-lista">
+      <h2>Novelas</h2>
+      <div class="a-item sel"><b>El mapa de Irene</b><span class="p ok">publicada</span> · v3 · 16,89 USD</div>
+      <div class="a-item"><b>La casa del faro</b><span class="p azul">editando · cap. 3</span> · 2,40 USD</div>
+      <div class="a-item"><b>La noche de los cometas</b><span class="p bloq">parada · cap. 3</span> · 8,77 USD</div>
+      <div class="a-item"><b>(sin título)</b><span class="gris">entrevista a medias</span></div>
+    </aside>
+    <div class="a-det">
+      <div class="a-titulo"><h1>El mapa de Irene</h1><span class="gris">3 versiones · vigente: v3</span></div>
+      <div class="a-resumen">
+        <div class="tarjeta"><span class="gris">Coste total</span><strong>16,89 USD</strong>36 delegaciones</div>
+        <div class="tarjeta"><span class="gris">Nota media del Editor</span><strong>4,4</strong>de 4,0 (cap. 1) a 4,7 (cap. 10)</div>
+        <div class="tarjeta"><span class="gris">Hallazgos abiertos</span><strong>3</strong><span class="p mayor">2 mayor</span> <span class="p menor">1 menor</span></div>
+        <div class="tarjeta"><span class="gris">Puerta de publicación</span><strong>Publicada</strong>Lean: 0 (pasa) · ronda 2</div>
+      </div>
+      <div class="a-sec tarjeta">
+        <h3>¿Sube o baja la calidad? · las seis notas, capítulo a capítulo</h3>
+        <div class="spark"><span>continuidad</span><svg viewBox="0 0 100 26" preserveAspectRatio="none"><polyline fill="none" stroke="#1d6b37" stroke-width="2" points="0,10 11,10 22,6 33,10 44,6 55,6 66,6 77,2 88,6 100,2"/></svg><b>4,5</b></div>
+        <div class="spark"><span>tono</span><svg viewBox="0 0 100 26" preserveAspectRatio="none"><polyline fill="none" stroke="#1d6b37" stroke-width="2" points="0,2 11,2 22,2 33,2 44,6 55,2 66,2 77,2 88,2 100,2"/></svg><b>4,9</b></div>
+        <div class="spark"><span>arco</span><svg viewBox="0 0 100 26" preserveAspectRatio="none"><polyline fill="none" stroke="#1d6b37" stroke-width="2" points="0,14 11,10 22,10 33,10 44,6 55,6 66,6 77,6 88,2 100,2"/></svg><b>4,3</b></div>
+        <div class="spark"><span>coherencia de personajes</span><svg viewBox="0 0 100 26" preserveAspectRatio="none"><polyline fill="none" stroke="#1d6b37" stroke-width="2" points="0,6 11,6 22,6 33,6 44,6 55,6 66,10 77,6 88,6 100,6"/></svg><b>4,2</b></div>
+        <div class="spark"><span>ritmo</span><svg viewBox="0 0 100 26" preserveAspectRatio="none"><polyline fill="none" stroke="#8a3b00" stroke-width="2" points="0,14 11,18 22,14 33,22 44,14 55,10 66,10 77,10 88,6 100,6"/></svg><b>3,6</b></div>
+        <div class="spark"><span>personalización</span><svg viewBox="0 0 100 26" preserveAspectRatio="none"><polyline fill="none" stroke="#1d6b37" stroke-width="2" points="0,6 11,2 22,2 33,6 44,2 55,2 66,2 77,2 88,2 100,2"/></svg><b>4,8</b></div>
+        <p class="gris" style="margin:6px 0 0">Una línea por criterio, del capítulo 1 al 10. Ritmo baja a 2 en el capítulo 4 (umbral 3).</p>
+      </div>
+      <div class="a-dos">
+        <div class="a-sec tarjeta">
+          <h3>¿En qué se gasta? · por capítulo y por agente</h3>
+          <div class="leyenda"><span><i style="background:#34406b"></i>escritor</span><span><i style="background:#a8321f"></i>editor</span><span><i style="background:#8a6414"></i>resumidor</span><span><i style="background:#2f4a3f"></i>plan y revisor</span></div>
+          <table>
+            <tr><td>Plan</td><td style="width:70%"><div class="barra" style="width:40%"><i style="width:100%;background:#2f4a3f"></i></div></td><td>2,10</td></tr>
+            <tr><td>Cap. 1</td><td><div class="barra" style="width:30%"><i style="width:60%;background:#34406b"></i><i style="width:35%;background:#a8321f"></i><i style="width:5%;background:#8a6414"></i></div></td><td>1,32</td></tr>
+            <tr><td>Cap. 4</td><td><div class="barra" style="width:62%"><i style="width:65%;background:#34406b"></i><i style="width:32%;background:#a8321f"></i><i style="width:3%;background:#8a6414"></i></div></td><td>2,74</td></tr>
+            <tr><td class="gris">… 7 más</td><td></td><td></td></tr>
+            <tr><td>Puerta</td><td><div class="barra" style="width:18%"><i style="width:100%;background:#a8321f"></i></div></td><td>0,81</td></tr>
+          </table>
+        </div>
+        <div class="a-sec tarjeta">
+          <h3>¿Qué está abierto?</h3>
+          <table>
+            <tr><th>Invariante</th><th>Sev.</th><th>Dónde</th></tr>
+            <tr><td>INV-26 ritmo</td><td><span class="p mayor">mayor</span></td><td>cap. 4</td></tr>
+            <tr><td>INV-23</td><td><span class="p mayor">mayor</span></td><td>cap. 7</td></tr>
+            <tr><td>INV-25 repetición</td><td><span class="p menor">menor</span></td><td>cap. 9</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="a-dos">
+        <div class="a-sec tarjeta">
+          <h3>¿Dónde se paró?</h3>
+          <table>
+            <tr><th>Cuándo</th><th>Dónde</th><th>Por qué</th><th>Intentos</th></tr>
+            <tr><td>1.ª ejecución</td><td>cap. 3</td><td>INV-03 bloqueante</td><td>3 (1,90 USD)</td></tr>
+            <tr><td>reanudada</td><td colspan="3" class="gris">desde el cap. 3, sin más paradas</td></tr>
+          </table>
+        </div>
+        <div class="a-sec tarjeta">
+          <h3>¿Se puede publicar? · y ¿qué cambió?</h3>
+          <table>
+            <tr><td>Ronda 1</td><td><span class="p bloq">no publica</span></td><td>Lean 2: sin veredicto</td></tr>
+            <tr><td>Ronda 2</td><td><span class="p ok">publica</span></td><td>Lean 0</td></tr>
+            <tr><td>v2</td><td colspan="2">«el perro se llama Nala» · caps. 4–10</td></tr>
+            <tr><td>v3</td><td colspan="2">«el abuelo es Anselmo» · caps. 4–10</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ B ============ -->
+<section class="propuesta">
+  <div class="etiqueta"><b>B · Matriz por capítulo</b> Una sola tabla por novela en la que cada fila es un capítulo y cada columna es algo medido: las seis notas (como mapa de calor), el coste de cada agente, los hallazgos, los intentos y si cambió en la versión elegida. Todo se compara en horizontal y en vertical de un vistazo. Las paradas y la puerta van debajo.</div>
+  <div class="cab">Novelas para regalar · administración</div>
+  <div class="b">
+    <div class="b-top">
+      <h1 style="font-size:26px">El mapa de Irene</h1>
+      <div class="b-sel"><span class="on">El mapa de Irene</span><span>La casa del faro</span><span>La noche de los cometas</span></div>
+    </div>
+    <div class="b-ver"><span class="gris">Versión:</span><span>v1</span><span>v2 · «el perro se llama Nala»</span><span class="on">v3 · «el abuelo es Anselmo» (vigente)</span></div>
+    <div class="matriz">
+      <table>
+        <tr class="grupo"><th></th><th colspan="6">Notas del Editor (umbral 3)</th><th colspan="4">Coste por agente (USD)</th><th colspan="2">Hallazgos abiertos</th><th>Intentos</th><th>Cambió</th></tr>
+        <tr><th>Capítulo</th><th>cont.</th><th>tono</th><th>arco</th><th>pers.</th><th>ritmo</th><th>perso.</th><th>escritor</th><th>editor</th><th>resum.</th><th>total</th><th>mayor</th><th>menor</th><th></th><th>en v3</th></tr>
+        <tr><td>1</td><td class="n4">4</td><td class="n5">5</td><td class="n3">3</td><td class="n4">4</td><td class="n3">3</td><td class="n4">4</td><td>0,80</td><td>0,46</td><td>0,06</td><td><b>1,32</b></td><td>—</td><td>—</td><td>1</td><td class="gris">igual</td></tr>
+        <tr><td>2</td><td class="n4">4</td><td class="n5">5</td><td class="n4">4</td><td class="n4">4</td><td class="n3">3</td><td class="n5">5</td><td>0,78</td><td>0,44</td><td>0,05</td><td><b>1,27</b></td><td>—</td><td>—</td><td>1</td><td class="gris">igual</td></tr>
+        <tr class="fila-parada"><td>3 · parada</td><td class="n4">4</td><td class="n5">5</td><td class="n4">4</td><td class="n4">4</td><td class="n3">3</td><td class="n5">5</td><td>1,40</td><td>0,44</td><td>0,06</td><td><b>1,90</b></td><td>—</td><td>—</td><td><b>3</b></td><td class="gris">igual</td></tr>
+        <tr class="cambiado"><td>4</td><td class="n4">4</td><td class="n5">5</td><td class="n4">4</td><td class="n4">4</td><td class="n2">2</td><td class="n5">5</td><td>1,78</td><td>0,88</td><td>0,08</td><td><b>2,74</b></td><td>1</td><td>—</td><td>2</td><td><span class="p azul">reescrito</span></td></tr>
+        <tr class="cambiado"><td>5</td><td class="n5">5</td><td class="n5">5</td><td class="n4">4</td><td class="n4">4</td><td class="n4">4</td><td class="n5">5</td><td>0,82</td><td>0,45</td><td>0,05</td><td><b>1,32</b></td><td>—</td><td>—</td><td>1</td><td><span class="p azul">reescrito</span></td></tr>
+        <tr class="cambiado"><td>6</td><td class="n4">4</td><td class="n5">5</td><td class="n5">5</td><td class="n3">3</td><td class="n4">4</td><td class="n5">5</td><td>0,81</td><td>0,45</td><td>0,05</td><td><b>1,31</b></td><td>—</td><td>—</td><td>1</td><td><span class="p azul">reescrito</span></td></tr>
+        <tr class="cambiado"><td>7</td><td class="n5">5</td><td class="n5">5</td><td class="n5">5</td><td class="n4">4</td><td class="n4">4</td><td class="n5">5</td><td>0,79</td><td>0,44</td><td>0,05</td><td><b>1,28</b></td><td>1</td><td>—</td><td>1</td><td><span class="p azul">reescrito</span></td></tr>
+        <tr class="cambiado"><td>8–10</td><td class="n5">5</td><td class="n5">5</td><td class="n5">5</td><td class="n4">4</td><td class="n4">4</td><td class="n5">5</td><td class="gris" colspan="4">… una fila cada uno</td><td>—</td><td>1</td><td>1</td><td><span class="p azul">reescrito</span></td></tr>
+        <tr class="grupo"><td><b>Media / total</b></td><td>4,5</td><td>4,9</td><td>4,3</td><td>4,2</td><td>3,6</td><td>4,8</td><td>9,4</td><td>4,9</td><td>0,6</td><td><b>16,89</b></td><td>2</td><td>1</td><td>13</td><td>7 de 10</td></tr>
+      </table>
+    </div>
+    <div class="b-pie">
+      <div class="tarjeta"><h3 style="font-size:15px;margin-bottom:6px">Paradas</h3>
+        <table><tr><th>Capítulo</th><th>Por qué</th><th>Intentos</th><th>Coste</th></tr>
+          <tr><td>3</td><td>INV-03 bloqueante: Tomás actúa sobre un recuerdo que no conoce</td><td>3</td><td>1,90 USD</td></tr></table></div>
+      <div class="tarjeta"><h3 style="font-size:15px;margin-bottom:6px">Puerta de publicación de v3</h3>
+        <table><tr><th>Ronda</th><th>Lean</th><th>Resultado</th><th>Condiciones</th></tr>
+          <tr><td>1</td><td>2</td><td><span class="p bloq">no publica</span></td><td>INV-28 sin veredicto</td></tr>
+          <tr><td>2</td><td>0</td><td><span class="p ok">publica</span></td><td>todas</td></tr></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ C ============ -->
+<section class="propuesta">
+  <div class="etiqueta"><b>C · Línea de tiempo</b> La historia de la novela contada en orden: el plan, cada capítulo con sus notas y su coste, las paradas y reanudaciones, las rondas de la puerta con Lean y cada versión nueva con lo que cambió. Responde «qué pasó y cuándo»; los totales van en una columna fija al lado.</div>
+  <div class="cab">Novelas para regalar · administración</div>
+  <div class="c">
+    <div>
+      <h1>El mapa de Irene</h1>
+      <span class="gris">Desde la entrevista cerrada hasta hoy · 3 versiones</span>
+      <div class="linea">
+        <div class="ev bien"><span class="cuando">24-sep 10:02 · 0,00 USD</span><div class="tarjeta"><h3>Entrevista cerrada <span class="p ok">brief válido</span></h3></div></div>
+        <div class="ev bien"><span class="cuando">24-sep 10:05 · 2,10 USD · planificador + revisor</span><div class="tarjeta"><h3>Plan aprobado en la ronda 2</h3><span class="gris">Ronda 1 devuelta: «el recuerdo de Lisboa no aparece en ningún capítulo»</span></div></div>
+        <div class="ev bien"><span class="cuando">24-sep 10:14 · 1,32 USD</span><div class="tarjeta"><h3>Capítulo 1 <span class="p ok">consolidado</span> 1 intento</h3>
+          <div class="notas"><span class="n4">cont. 4</span><span class="n5">tono 5</span><span class="n3">arco 3</span><span class="n4">pers. 4</span><span class="n3">ritmo 3</span><span class="n4">perso. 4</span></div></div></div>
+        <div class="ev bien"><span class="cuando">24-sep 10:22 · 1,27 USD</span><div class="tarjeta"><h3>Capítulo 2 <span class="p ok">consolidado</span></h3>
+          <div class="notas"><span class="n4">cont. 4</span><span class="n5">tono 5</span><span class="n4">arco 4</span><span class="n4">pers. 4</span><span class="n3">ritmo 3</span><span class="n5">perso. 5</span></div></div></div>
+        <div class="ev mal"><span class="cuando">24-sep 10:41 · 1,90 USD · 3 intentos</span><div class="tarjeta"><h3>Parada en el capítulo 3 <span class="p bloq">INV-03 bloqueante</span></h3><span class="gris">Tomás actúa sobre un recuerdo que nadie le sembró. Reanudada a las 11:05.</span></div></div>
+        <div class="ev bien"><span class="cuando">24-sep 11:12 · 2,74 USD · 2 intentos</span><div class="tarjeta"><h3>Capítulo 4 <span class="p mayor">INV-26 ritmo abierto</span></h3>
+          <div class="notas"><span class="n4">cont. 4</span><span class="n5">tono 5</span><span class="n4">arco 4</span><span class="n4">pers. 4</span><span class="n2">ritmo 2</span><span class="n5">perso. 5</span></div></div></div>
+        <div class="ev"><span class="cuando">… capítulos 5 a 10, igual</span></div>
+        <div class="ev mal"><span class="cuando">24-sep 12:40 · 0,40 USD</span><div class="tarjeta"><h3>Puerta · ronda 1 <span class="p bloq">no publica</span></h3><span class="gris">Lean 2: sin veredicto (sin eventos para mirar)</span></div></div>
+        <div class="ev bien"><span class="cuando">24-sep 12:52 · 0,41 USD</span><div class="tarjeta"><h3>Puerta · ronda 2 <span class="p ok">publicada v1</span></h3><span class="gris">Lean 0 · INV-24, INV-28, INV-29 pasan</span></div></div>
+        <div class="banda">Versión 2 · «el perro se llama Nala»</div>
+        <div class="ev version"><span class="cuando">25-sep 09:10 · 7,66 USD</span><div class="tarjeta"><h3>Cascada: capítulos 4 a 10 reescritos</h3><span class="gris">Parada en el 8 (FalloDeTransporte) · la v2 no se publicó</span></div></div>
+        <div class="banda">Versión 3 · «el abuelo es Anselmo»</div>
+        <div class="ev version"><span class="cuando">25-sep 11:30 · 11,87 USD</span><div class="tarjeta"><h3>Cascada: 4 a 10 · reverificadas 10 escenas <span class="p ok">publicada</span></h3><span class="gris">Lean 0</span></div></div>
+      </div>
+    </div>
+    <aside class="c-lado">
+      <div class="tarjeta"><h3>Totales</h3>
+        <table><tr><td>Coste</td><td><b>16,89 USD</b></td></tr><tr><td>Delegaciones</td><td>36</td></tr><tr><td>Nota media</td><td>4,4</td></tr><tr><td>Paradas</td><td>2</td></tr><tr><td>Versión vigente</td><td>v3</td></tr></table></div>
+      <div class="tarjeta"><h3>Por agente</h3>
+        <table><tr><td>escritor</td><td>9,40</td></tr><tr><td>editor</td><td>4,90</td></tr><tr><td>plan + revisor</td><td>2,10</td></tr><tr><td>resumidor</td><td>0,49</td></tr></table></div>
+      <div class="tarjeta"><h3>Abiertos ahora</h3>
+        <span class="p mayor">INV-26 · cap. 4</span> <span class="p mayor">INV-23 · cap. 7</span> <span class="p menor">INV-25 · cap. 9</span></div>
+    </aside>
+  </div>
+</section>
+
+</body>
+</html>
