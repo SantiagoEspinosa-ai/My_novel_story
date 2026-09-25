@@ -49,3 +49,17 @@ def test_los_hechos_no_se_acotan():
     cambiaria lo que el Escritor tiene que citar sin arreglar nada."""
     p = acotar_a_la_obra(plan(hechos=[{"id": "hec-mapa", "enunciado": "hay un mapa"}]), "obra-a")
     assert [h.id for h in p.hechos] == ["hec-mapa"]
+
+
+def test_un_plan_acotado_a_una_obra_se_reacota_a_otra_sin_dejar_rastro_de_la_primera():
+    """La pasada «despues» del tuning reutiliza el plan aprobado de la «antes» para que la
+    comparacion no mezcle T1 con la varianza del Planificador. El plan guardado lleva los
+    identificadores de su obra: copiado tal cual, la obra nueva tendria personajes y
+    capitulos de otra (la familia de `F-100`). Se usan obras de nombre distinto y que no
+    son prefijo una de otra, para que no pase por coincidencia (Regla 11)."""
+    import json
+    from app.features.planificacion.ids import reacotar
+    de_a = acotar_a_la_obra(plan(), "obra-antes")
+    en_b = reacotar(de_a, "obra-antes", "obra-despues")
+    assert en_b == acotar_a_la_obra(plan(), "obra-despues")
+    assert "obra-antes" not in json.dumps(en_b.model_dump(mode="json"))

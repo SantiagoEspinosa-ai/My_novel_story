@@ -34,10 +34,20 @@ from app.commons.configuracion.esquemas import PlanDeLaObra
 
 def acotar_a_la_obra(plan: PlanDeLaObra, obra: str) -> PlanDeLaObra:
     prefijo = "{0}-".format(obra)
+    return _cada_id(plan, lambda i: i if i.startswith(prefijo) else prefijo + i)
 
-    def a(i):
-        return i if i.startswith(prefijo) else prefijo + i
 
+def reacotar(plan: PlanDeLaObra, de_obra: str, a_obra: str) -> PlanDeLaObra:
+    """El plan de `de_obra` con los identificadores de `a_obra`: para reutilizar un plan
+    aprobado en otra ejecucion (la pasada «despues» del tuning parte del plan de la
+    «antes»). Recorre los mismos campos que `acotar_a_la_obra`: hay un solo recorrido."""
+    viejo, nuevo = "{0}-".format(de_obra), "{0}-".format(a_obra)
+    return _cada_id(plan, lambda i: nuevo + (i[len(viejo):] if i.startswith(viejo) else i))
+
+
+def _cada_id(plan: PlanDeLaObra, a) -> PlanDeLaObra:
+    """Aplica `a` a cada identificador del plan que es de la obra. Los hechos no, que ya
+    tienen clave `(obra, id)` (`F-39`)."""
     d = plan.model_dump(mode="json")
     mundo = d["mundo"]
     for l in mundo["lugares"]:
