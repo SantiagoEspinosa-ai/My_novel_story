@@ -2,7 +2,8 @@
 id: PLAN-45
 spec: SPEC-45
 titulo: El cambio del lector desde la web
-estado: aprobada
+estado: aplicada
+fecha_aplicacion: 2026-09-25
 aprobada_por: "sesión del 2026-09-25, por la delegación escrita del autor («Decide tú todo lo demás»)"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25

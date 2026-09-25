@@ -1,11 +1,13 @@
 ---
 id: SPEC-45
 titulo: El cambio del lector se aplica desde la web, y su error se entiende
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: «La petición de cambio desde la web falla con NoSePuedeRegenerar: es F-126 […] Arréglalo […] Dale al worker los mismos agentes que usa pedir_cambio.py. Y el mensaje de error que ve el lector es de programador. Que diga algo que se entienda, con el detalle técnico solo en /admin.»"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: 977afa5
 ---
 
 # SPEC-45 — El cambio del lector desde la web
