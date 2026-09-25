@@ -40,7 +40,7 @@ function CapituloDeVersion({ obra, capitulo, numero }: {
   return (
     <Esperando lectura={versiones}>
       {(v: Versiones) => {
-        const vigente = v.versiones[v.versiones.length - 1].numero;
+        const vigente = v.vigente; // la dice el backend (F-150): la ultima creada no es la vigente
         return (
           <Esperando lectura={lectura}>
             {(cap: CapituloLeidoDeVersion) => (

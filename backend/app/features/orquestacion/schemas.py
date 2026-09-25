@@ -25,6 +25,8 @@ class VersionSalida(_DelDominio):
 class VersionesSalida(_DelDominio):
     obra: str
     versiones: list[VersionSalida]
+    vigente: int = Field(description="El numero de la version vigente: la ultima publicada, "
+                                     "o la 1 si no hay ninguna (`F-121`, `F-150`)")
 
 
 class EscenaDeVersionSalida(_DelDominio):

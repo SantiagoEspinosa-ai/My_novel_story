@@ -152,6 +152,7 @@ export const versiones: Versiones = {
     { numero: 2, anterior: 1, peticion: 1, commit: "def5678",
       creada_en: "2026-09-24 11:00:00" },
   ],
+  vigente: 2,
 };
 
 const conVerificacion = (e: Omit<EscenaLeida, "borrador" | "personajes_presentes">,

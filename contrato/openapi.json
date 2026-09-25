@@ -2367,11 +2367,17 @@
             },
             "title": "Versiones",
             "type": "array"
+          },
+          "vigente": {
+            "description": "El numero de la version vigente: la ultima publicada, o la 1 si no hay ninguna (`F-121`, `F-150`)",
+            "title": "Vigente",
+            "type": "integer"
           }
         },
         "required": [
           "obra",
-          "versiones"
+          "versiones",
+          "vigente"
         ],
         "title": "VersionesSalida",
         "type": "object"
@@ -3610,7 +3616,7 @@
     },
     "/obras/{id_obra}/versiones": {
       "get": {
-        "description": "Las versiones con su numero, su anterior, su commit, cuando se crearon y su\npeticion (`RF-53`).",
+        "description": "Las versiones con su numero, su anterior, su commit, cuando se crearon y su\npeticion (`RF-53`), y cual es la vigente: la web no la deduce (`F-150`).",
         "operationId": "versiones_obras__id_obra__versiones_get",
         "parameters": [
           {
