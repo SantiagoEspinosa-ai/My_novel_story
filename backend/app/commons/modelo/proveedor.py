@@ -226,7 +226,11 @@ class SesionDelegada:
                 extra["herramientas"] = dict(self.herramientas, delegacion=delegacion)
             elif self.mcp_fijo:
                 extra["mcp_fijo"] = self.mcp_fijo
-            salida = self._ejecutar(_resolver_ejecutable(), self.nombre,
+            # Solo el proceso real necesita el ejecutable: un doble no lo busca, y las
+            # pruebas no dependen de que `claude` este instalado en la maquina.
+            ejecutable = (_resolver_ejecutable() if self._ejecutar is _ejecutar_proceso
+                          else "claude")
+            salida = self._ejecutar(ejecutable, self.nombre,
                                     self.agente, prompt, self.cwd, **extra)
         except FalloDeTransporte:
             raise
