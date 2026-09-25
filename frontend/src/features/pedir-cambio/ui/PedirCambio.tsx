@@ -7,6 +7,7 @@ import {
 } from "@/shared/api";
 import { INTERVALO_DE_TRABAJO_MS } from "@/shared/config";
 import { ESTADO_DE_TRABAJO, EtiquetaDeEstado } from "@/shared/ui";
+import "./pedir-cambio.css";
 
 // Pedir un cambio desde la pagina (SPEC-22 RF-47..RF-51, RF-55; SPEC-23 D-3).
 //
@@ -154,6 +155,7 @@ export function PedirCambio({ obra, escena, fragmento, onCerrar,
 
       {propuesta && idTrabajo === null &&
         <VistaPropuesta propuesta={propuesta} capitulo={capitulo}
+          indice={indice.estado === "listo" ? indice.datos : null}
           enviando={enviando} onConfirmar={confirmar} />}
 
       {idTrabajo !== null &&
@@ -231,6 +233,32 @@ function ElegirPersonaje({ presentes, fichas, elegido, onElegir, nombre, onNombr
   );
 }
 
+// SPEC-35 RF-09: la propuesta como una balda. Los capitulos de la obra en su orden, y resaltados
+// **exactamente** los que el backend propone. Uno propuesto que no este en el indice tambien sale:
+// esconderlo haria confirmar algo que no se ha visto.
+function Balda({ indice, propuestos, capitulo }: {
+  indice: Indice; propuestos: string[]; capitulo: (id: string) => string;
+}) {
+  const enElIndice = new Set(indice.capitulos.map((c) => c.id));
+  const ids = [...indice.capitulos.map((c) => c.id), ...propuestos.filter((id) => !enElIndice.has(id))];
+  const tocados = new Set(propuestos);
+  return (
+    <ol className="balda" data-testid="balda">
+      {ids.map((id) => {
+        const toca = tocados.has(id);
+        return (
+          <li key={id} data-capitulo={id}
+            data-testid={toca ? "capitulo-que-se-toca" : "capitulo-que-no-se-toca"}
+            className={`balda__lomo${toca ? " balda__lomo--se-toca" : ""}`}>
+            <span className="balda__titulo">{capitulo(id)}</span>
+            {toca && <span className="balda__marca">se reescribe</span>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function ListaDeCapitulos({ ids, capitulo }: { ids: string[]; capitulo: (id: string) => string }) {
   return (
     <ol className="pedir-cambio__capitulos">
@@ -241,9 +269,10 @@ function ListaDeCapitulos({ ids, capitulo }: { ids: string[]; capitulo: (id: str
   );
 }
 
-function VistaPropuesta({ propuesta, capitulo, enviando, onConfirmar }: {
+function VistaPropuesta({ propuesta, capitulo, indice, enviando, onConfirmar }: {
   propuesta: Propuesta;
   capitulo: (id: string) => string;
+  indice: Indice | null;
   enviando: boolean;
   onConfirmar: () => void;
 }) {
@@ -252,8 +281,11 @@ function VistaPropuesta({ propuesta, capitulo, enviando, onConfirmar }: {
     <div className="propuesta" data-testid="propuesta">
       {lista
         ? <>
-            <h3>Se reescribirían estos capítulos</h3>
-            <ListaDeCapitulos ids={lista} capitulo={capitulo} />
+            <h3>{lista.length === 1 ? "Para que la historia siga encajando, se reescribiría 1 capítulo"
+              : `Para que la historia siga encajando, se reescribirían ${lista.length} capítulos`}</h3>
+            {indice
+              ? <Balda indice={indice} propuestos={lista} capitulo={capitulo} />
+              : <ListaDeCapitulos ids={lista} capitulo={capitulo} />}
           </>
         : <>
             <h3>Todavía no se sabe qué capítulos se reescribirían</h3>

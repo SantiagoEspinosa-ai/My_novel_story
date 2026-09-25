@@ -28,6 +28,8 @@ export type CosteDeLaGeneracion = Esquemas["CosteDeLaGeneracion"];
 export type ConfirmacionDeGasto = Esquemas["ConfirmacionDeGasto"];
 export type Estanteria = Esquemas["Estanteria"];
 export type ObraEnLaEstanteria = Esquemas["ObraEnLaEstanteria"];
+export type PdfDisponible = Esquemas["PdfDisponible"];
+export type PeticionDeLaVersion = Esquemas["PeticionDeLaVersion"];
 
 export const PREFIJO = "/api";
 
@@ -109,6 +111,11 @@ export function crearCliente(fetchInyectado: Fetch) {
       enviar<unknown>(`/entrevistas/${e(entrevista)}/cerrar`),
     generacion: (obra: string) => leer<GeneracionEnVivo>(`/obras/${e(obra)}/generacion`),
     estanteria: () => leer<Estanteria>("/obras"),
+    // SPEC-35 RF-12: si hay PDF, sin generarlo. La descarga es un enlace: `urlDelPdf`.
+    pdfDisponible: (obra: string) => leer<PdfDisponible>(`/obras/${e(obra)}/pdf/disponible`),
+    // SPEC-35 RF-10: las palabras del lector que originaron una version.
+    peticionDeLaVersion: (obra: string, numero: number) =>
+      leer<PeticionDeLaVersion>(`/obras/${e(obra)}/versiones/${numero}/peticion`),
     gasto: () => leer<ConfirmacionDeGasto>("/generaciones/gasto"),
     // SPEC-33 RF-11: gasta dinero. Solo lo llama la confirmacion, despues de ensenar las cifras.
     lanzar: (obra: string) =>
@@ -117,3 +124,12 @@ export function crearCliente(fetchInyectado: Fetch) {
 }
 
 export type Cliente = ReturnType<typeof crearCliente>;
+
+/**
+ * SPEC-35 RF-12: la URL del PDF de una obra, para un enlace de descarga. No es un metodo del
+ * cliente porque no pide nada: la descarga la hace el navegador. Vive aqui porque este es el
+ * unico sitio que conoce las rutas de la API (VER-106).
+ */
+export function urlDelPdf(obra: string): string {
+  return `${PREFIJO}/obras/${encodeURIComponent(obra)}/pdf`;
+}

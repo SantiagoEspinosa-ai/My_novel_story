@@ -4,6 +4,7 @@ import { EscenaConEstado } from "@/entities/escena";
 import { Progreso } from "@/entities/progreso";
 import { useLectura, type Indice, type IndiceDeVersion, type Versiones } from "@/shared/api";
 import { ESTADO_DE_CAPITULO, Esperando, EtiquetaDeEstado, MARCA_DE_CAMBIO } from "@/shared/ui";
+import "./indice.css";
 
 // El indice pinta **en el orden en que llega** (SPEC-22 RF-38): no ordena, no agrupa y no
 // deduce a que capitulo va cada escena. «Capitulo N» es el `orden` que trae la respuesta.

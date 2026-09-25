@@ -99,6 +99,13 @@ class Estanteria(_DelDominio):
     obras: list[ObraEnLaEstanteria]
 
 
+class PeticionDeLaVersion(_DelDominio):
+    """`SPEC-35` `RF-10`: las palabras del lector que originaron la version, o nulo si no
+    nacio de una peticion."""
+
+    texto: str | None
+
+
 class GeneracionEnVivo(_DelDominio):
     obra: str
     total_de_capitulos: int

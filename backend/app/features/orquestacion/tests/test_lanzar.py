@@ -113,3 +113,31 @@ def test_una_generacion_que_falla_deja_su_motivo_en_el_trabajo(cliente, ruta):
     t = cliente.get("/trabajos/" + _lanzar(cliente, e.obra).json()["id_trabajo"]).json()
     assert t["estado"] == "fallido"
     assert t["motivo"]
+
+
+def test_la_conexion_se_puede_usar_desde_otro_hilo(tmp_path):
+    """`F-202`: FastAPI puede abrir la conexion de la dependencia en un hilo y usarla en otro.
+    Con el `check_same_thread` por defecto, el servidor real daba un 500 intermitente; el
+    cliente de pruebas lo hace todo en un hilo y no lo veia."""
+    import threading
+    from types import SimpleNamespace
+
+    from app.features.orquestacion.router_regalo import conexion
+
+    peticion = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(
+        ruta_db=str(tmp_path / "hilos.db"))))
+    generador = conexion(peticion)
+    con = next(generador)
+    errores = []
+
+    def usar():
+        try:
+            con.execute("SELECT 1").fetchone()
+        except Exception as e:  # el fallo que se busca es precisamente este
+            errores.append(e)
+
+    hilo = threading.Thread(target=usar)
+    hilo.start()
+    hilo.join()
+    generador.close()
+    assert errores == []

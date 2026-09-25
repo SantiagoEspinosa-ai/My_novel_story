@@ -1,0 +1,8 @@
+/* SPEC-35 RF-10: el aviso de un capitulo que cambio por una peticion. Solo variables del tema. */
+.por-tu-cambio {
+  display: flex; flex-wrap: wrap; gap: var(--espacio-s) var(--espacio-m); align-items: baseline;
+  margin: var(--espacio-m) 0; padding: var(--espacio-m) var(--espacio-l);
+  background: var(--color-acentoSuave); border-radius: var(--radio-m); color: var(--color-texto);
+}
+.por-tu-cambio a { margin-left: auto; font-weight: 600; }
+.capitulo h1 { font-family: var(--fuente-titulos); }

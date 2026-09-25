@@ -5,8 +5,15 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-23
 fecha: 2026-09-23
-version: 5
+version: 6
 ---
+
+> **v6 (2026-09-25), decisión del autor:** el techo baja de **150 a 121 USD** en el libro de gasto.
+> El autor lleva 76 USD gastados de sus 150, y el libro marca 47,14: hay 28,86 que no pasan por
+> `evaluar.py`. Con 121 en el libro, el harness para en los 150 reales. La decisión la tomó en la
+> sesión del frontend, al aprobar el tuning solo con el brief base (a repetir la «antes» de ese
+> brief con el código de hoy, `T1` y la «después»). Sigue siendo una decisión de presupuesto, no
+> una medida.
 
 > **Historial.** v1: redactada con la decisión del autor sobre el presupuesto
 > (2026-09-23), con `O-1` y `O-2` abiertas y tres propuestas. v2: el autor decide
@@ -36,7 +43,7 @@ red-teaming que había, `VER-30`, está obsoleta: trataba de las reglas de terro
 
 ## El presupuesto es una decisión, no un requisito
 
-**Techo: 150 USD** para todas las ejecuciones de esta spec. Lo fija el autor como
+**Techo: 150 USD** para todas las ejecuciones de esta spec (**121 desde v6**, ver arriba). Lo fija el autor como
 **decisión de presupuesto**; el enunciado no pone ninguno.
 
 Lo que hay que saber para leerlo: **el coste de una novela con el pipeline actual

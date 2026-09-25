@@ -1,0 +1,20 @@
+/* SPEC-35 RF-10: el indice en el estilo de la propuesta. Solo variables del tema (SPEC-22 RF-59).
+   El estado y los hallazgos de cada escena se quedan (CLAUDE.md): se rediseñan, no se quitan. */
+.indice { background: var(--color-pared); }
+.indice h1 { font-family: var(--fuente-titulos); font-size: 2.6rem; }
+.versiones {
+  display: inline-flex; flex-wrap: wrap; gap: var(--espacio-xs); padding: var(--espacio-xs);
+  background: var(--color-linea); border-radius: var(--radio-pildora); margin-bottom: var(--espacio-m);
+}
+.versiones__rotulo { align-self: center; padding: 0 var(--espacio-s); font-size: 0.8rem; color: var(--color-textoSuave); }
+.version { padding: var(--espacio-s) var(--espacio-m); border-radius: var(--radio-pildora); text-decoration: none; color: var(--color-textoSuave); font-size: 0.9rem; }
+.version--actual { background: var(--color-noche); color: var(--color-sobreNoche); font-weight: 600; }
+.capitulo-del-indice { background: var(--color-papelDeLibro); }
+.capitulo-del-indice h2 { font-family: var(--fuente-titulos); }
+/* A 390 px las etiquetas se salian de la tarjeta (visto por la sesion de PLAN-22): pueden bajar
+   de linea y partirse. */
+.capitulo-del-indice__cabecera { flex-wrap: wrap; gap: var(--espacio-s); }
+.capitulo-del-indice__etiquetas { display: flex; flex-wrap: wrap; gap: var(--espacio-xs); min-width: 0; }
+.capitulo-del-indice__etiquetas .etiqueta { white-space: normal; }
+.escena-del-indice { flex-wrap: wrap; min-width: 0; }
+.escena-del-indice a { overflow-wrap: anywhere; }

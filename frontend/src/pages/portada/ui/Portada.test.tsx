@@ -6,8 +6,11 @@ import { ClienteProvider, crearCliente } from "@/shared/api";
 import { fetchDeFixtures, indice, indiceSinDedicatoria } from "@/shared/testing";
 import { PaginaPortada } from "./Portada";
 
-function montar(datos: typeof indice) {
-  const cliente = crearCliente(fetchDeFixtures({ "/api/obras/obra-inventada/indice": datos }));
+const DISPONIBLE = "/api/obras/obra-inventada/pdf/disponible";
+
+function montar(datos: typeof indice, pdf?: { disponible: boolean; motivo: string | null }) {
+  const cliente = crearCliente(fetchDeFixtures({
+    "/api/obras/obra-inventada/indice": datos, ...(pdf ? { [DISPONIBLE]: pdf } : {}) }));
   return render(
     <ClienteProvider cliente={cliente}>
       <MemoryRouter initialEntries={["/obras/obra-inventada"]}>
@@ -32,12 +35,27 @@ describe("Portada", () => {
     expect(fuera).toBe("Titulo inventado");
   });
 
-  it("enlaza con el indice y las fichas de su obra", async () => {
+  // Reescrita por PLAN-35 E4: comprobaba que la portada enlaza **a su propia obra**, y lo sigue
+  // comprobando con el enlace nuevo a empezar a leer, que lleva al primer capitulo en orden.
+  it("enlaza con el primer capitulo, el indice y las fichas de su obra", async () => {
     montar(indice);
     const enlaces = await screen.findAllByRole("link");
     expect(enlaces.map((a) => a.getAttribute("href"))).toEqual([
+      `/obras/obra-inventada/capitulos/${indice.capitulos[0].id}`,
       "/obras/obra-inventada/indice",
       "/obras/obra-inventada/fichas",
     ]);
+  });
+
+  it("con PDF disponible ofrece descargarlo", async () => {
+    montar(indice, { disponible: true, motivo: null });
+    const pdf = await screen.findByRole("link", { name: "Descargar en PDF" });
+    expect(pdf).toHaveAttribute("href", "/api/obras/obra-inventada/pdf");
+  });
+
+  it("sin PDF no ofrece el boton y dice por que", async () => {
+    montar(indice, { disponible: false, motivo: "la ronda 1 de la puerta no publico la obra" });
+    expect(await screen.findByText(/no publico la obra/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Descargar en PDF" })).toBeNull();
   });
 });

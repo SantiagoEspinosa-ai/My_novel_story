@@ -13,6 +13,11 @@ def coste(usd, delegaciones, sin_coste, generacion):
             "sin_coste": sin_coste, "es_suelo": sin_coste > 0}
 
 
+def peticion_de_la_version(con, obra, numero):
+    """`SPEC-35` `RF-10`: `(existe, texto)`."""
+    return repo.texto_de_la_peticion(con, obra, numero)
+
+
 def estanteria(con):
     """`RF-01`, `RF-02`: el estado de cada obra es su ultima fase, o ninguna."""
     obras = repo.obras_de_la_estanteria(con)
@@ -46,7 +51,7 @@ def generacion(con, obra, umbral):
     capitulos = []
     for numero in range(1, total + 1):
         f = fases.get(numero, {})
-        id_capitulo = repo.capitulo_vigente(con, obra, numero)
+        id_capitulo = repo.capitulo_de_la_ultima_version(con, obra, numero)
         notas = repo.notas_aceptadas(con, obra, id_capitulo) if id_capitulo else []
         capitulos.append({
             "numero": numero, "es_el_actual": numero == actual, "fase": f.get("fase"),

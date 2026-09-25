@@ -99,8 +99,26 @@ describe("PedirCambio", () => {
     const propuesta = await screen.findByTestId("propuesta");
     const tocados = within(propuesta).getAllByTestId("capitulo-que-se-toca");
     expect(tocados.map((c) => c.getAttribute("data-capitulo"))).toEqual(["cap-b", "cap-a"]);
-    expect(tocados.map((c) => c.textContent)).toEqual(["Capítulo 1", "Capítulo 2"]);
+    // PLAN-35 E6: cada capitulo tocado lleva ademas la marca «se reescribe» (texto, no solo
+    // color); lo que se comprueba sigue siendo el nombre de cada uno, en su orden.
+    expect(tocados.map((c) => c.querySelector(".balda__titulo")?.textContent))
+      .toEqual(["Capítulo 1", "Capítulo 2"]);
     expect(screen.getByRole("button", { name: /Confirmar el cambio/ })).toBeInTheDocument();
+  });
+
+  // PLAN-35 E6 (SPEC-35 RF-09): la propuesta se pinta como una balda con los capitulos de la
+  // obra en su orden, y solo los que el backend propone van resaltados.
+  it("la balda resalta solo los capitulos propuestos", async () => {
+    montar({ [`POST ${OBRA}/cambios/propuesta`]: {
+      ...propuestaConSalida, capitulos_propuestos: ["cap-a"] } });
+    await elegirHechoYEscribir();
+    fireEvent.click(screen.getByRole("button", { name: /Ver qué capítulos se tocarían/ }));
+    const balda = await screen.findByTestId("balda");
+    const lomos = within(balda).getAllByRole("listitem");
+    expect(lomos.map((l) => l.getAttribute("data-capitulo"))).toEqual(["cap-b", "cap-a"]);
+    expect(lomos.map((l) => l.getAttribute("data-testid")))
+      .toEqual(["capitulo-que-no-se-toca", "capitulo-que-se-toca"]);
+    expect(within(balda).getByTestId("capitulo-que-se-toca")).toHaveTextContent("se reescribe");
   });
 
   it("la promesa sale con su punto ciego", async () => {

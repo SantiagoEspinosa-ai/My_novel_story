@@ -206,3 +206,34 @@ horizontal a 1280 ni a 390 px.
 **Lo que no prueba.** Que el camino con el modelo real funcione: ni un turno de la entrevista ni
 una generación se lanzaron desde la web. Es `PLAN-33` E16, que gasta: la referencia es la
 novela de ejemplo, 16,89 USD, y lo que costaría esta está sin medir.
+
+### Las pantallas rediseñadas, en un navegador real y sin agente (`PLAN-35` E8, 2026-09-25)
+
+**Sobre qué.** La portada con el PDF, el índice de una versión, el capítulo cambiado con el aviso
+«por tu cambio» y pedir un cambio hasta la balda. La base es la de `backend/semilla_lectura.py`,
+con datos **inventados** (dos versiones, una petición y la versión 2 publicada, `SPEC-34`
+`RF-09`), servida en el 8010 y el 5183. El recorrido es `frontend/scripts/recorrido-seis-pantallas.mjs`,
+en Edge sin cabeza, **sin modelo y sin gastar**: proponer un cambio no llama al modelo, y
+«Confirmar el cambio», que sí gastaría, no se pulsa.
+
+**Qué comprobó.** Doce comprobaciones, las doce en verde:
+- el PDF se ofrece con su enlace;
+- la vigente la dice el backend (`F-150`);
+- un capítulo marcado como cambiado;
+- **el estado y los hallazgos de cada escena siguen en el índice y el capítulo** (`CLAUDE.md`);
+- el aviso con las palabras del lector, y sin aviso en un capítulo compartido;
+- la balda con los capítulos propuestos y la promesa junto a su punto ciego;
+- ni el índice ni la portada se desbordan a 390 px.
+
+**Qué detectó, y qué cambió.**
+
+| Hallazgo | Qué se vio | Cambio |
+| --- | --- | --- |
+| `F-201` | Antes de abrir el navegador, con `curl`: `/pdf/disponible` decía «sí» y la descarga daba un 500, porque la semilla deja una escena sin texto en una versión publicada | **Corregido**: la consulta comprueba que el libro se pueda componer, y la descarga responde `409` con el motivo; las dos pruebas nuevas fallaron antes |
+| — | En la cubierta, el filete de arriba salía apagado: una regla vieja de `estilos.css` sobre el mismo pseudo-elemento | **Corregido** en el CSS de la portada |
+| — | El aviso terminaba en «….».: sobraba un punto tras las palabras del lector | **Corregido**; las palabras del lector no se tocan |
+| — | El índice se salía de la pantalla a 390 px (lo vio la sesión de `PLAN-22`) | **Corregido**: las etiquetas pueden bajar de línea; 390 de ancho medido |
+| — | Dos comprobaciones fallaron en un primer pase **por el orden del guion**, no de la web: el PDF y los hechos llegan después de pintar la página | Corregido en el guion, que ahora espera |
+
+**Lo que no prueba.** Que confirmar un cambio regenere bien: gasta y es la demo `B4`, en
+`harness/evals/medidas.md`. Y no es la inspección con el agente del browser MCP.

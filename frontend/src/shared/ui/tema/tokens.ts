@@ -17,8 +17,17 @@ const PALETA = {
   linea: "#e3dccf",
   acento: "#a8321f", // coral oscuro: llamadas a la accion
   acentoSuave: "#f6e2dc",
-  dorado: "#8a6414", // detalles de portada
+  dorado: "#7a5710", // detalles de portada; mas oscuro que #8a6414 para pasar AA sobre la pared (SPEC-35)
   sobreOscuro: "#ffffff",
+  // SPEC-35 RF-01: el estilo elegido de la propuesta visual (madera, crema y noche).
+  pared: "#efe6d8", // fondo de la estanteria y del cuaderno
+  papelDeLibro: "#fbf8f2", // la pagina de un libro abierto
+  madera: "#6b4a2f",
+  maderaOscura: "#3b2a1e",
+  sobreMadera: "#f0dfb8",
+  noche: "#1b2238",
+  sobreNoche: "#f7f3ec",
+  oro: "#f0c46a", // luz de lampara sobre la noche
 };
 
 export const COLORES = {
@@ -34,6 +43,14 @@ export const COLORES = {
   cabecera: PALETA.tinta,
   sobreCabecera: PALETA.sobreOscuro,
   detalle: PALETA.dorado,
+  pared: PALETA.pared,
+  papelDeLibro: PALETA.papelDeLibro,
+  madera: PALETA.madera,
+  maderaOscura: PALETA.maderaOscura,
+  sobreMadera: PALETA.sobreMadera,
+  noche: PALETA.noche,
+  sobreNoche: PALETA.sobreNoche,
+  oro: PALETA.oro,
 };
 
 export const TIPOGRAFIA = {

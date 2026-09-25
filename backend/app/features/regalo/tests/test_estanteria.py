@@ -58,3 +58,31 @@ def test_una_obra_que_solo_tiene_entrevista_tambien_esta(cliente, con):
     _entrevista(con, "obra-nueva", "Nerea", cerrada=False, id_e="ent-n")
     n = _estanteria(cliente)["obra-nueva"]
     assert (n["titulo"], n["destinatario"], n["entrevista_cerrada"]) == (None, "Nerea", False)
+
+
+def test_la_conexion_se_puede_usar_desde_otro_hilo(tmp_path):
+    """`F-202`: FastAPI puede abrir la conexion de la dependencia en un hilo y usarla en otro.
+    Con el `check_same_thread` por defecto, el servidor real daba un 500 intermitente; el
+    cliente de pruebas lo hace todo en un hilo y no lo veia."""
+    import threading
+    from types import SimpleNamespace
+
+    from app.features.regalo.router import conexion
+
+    peticion = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(
+        ruta_db=str(tmp_path / "hilos.db"))))
+    generador = conexion(peticion)
+    con = next(generador)
+    errores = []
+
+    def usar():
+        try:
+            con.execute("SELECT 1").fetchone()
+        except Exception as e:  # el fallo que se busca es precisamente este
+            errores.append(e)
+
+    hilo = threading.Thread(target=usar)
+    hilo.start()
+    hilo.join()
+    generador.close()
+    assert errores == []
