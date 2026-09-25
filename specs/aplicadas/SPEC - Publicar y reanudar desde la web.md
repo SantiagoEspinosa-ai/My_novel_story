@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
 fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: e12682c
 ---
 
 # SPEC-39 — Publicar y reanudar desde la web
