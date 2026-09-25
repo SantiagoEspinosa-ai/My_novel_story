@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-25
 fecha: 2026-09-24
 version: 3
 fecha_aplicacion: 2026-09-24
+commit_de_aplicacion: eaf79c8
 ---
 
 > **v3 (2026-09-24), la cuestión 4, resuelta; no cambia ningún `RF`.** La sesión del
