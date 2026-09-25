@@ -7,8 +7,9 @@ import { INTERVALO_DE_REGALO_MS } from "@/shared/config";
 import { EtiquetaDeEstado, FASE_DE_GENERACION } from "@/shared/ui";
 import "./acciones-de-obra.css";
 
-// Publicar y reanudar una novela (SPEC-39). Si se puede, por que no, desde donde y cuanto lo
-// resuelve el backend; aqui se ensena, y nada que gaste se lanza sin decirlo antes.
+// Publicar y reanudar una novela (SPEC-39), y generarla si nunca se lanzo (SPEC-44). Si se
+// puede, por que no, desde donde y cuanto lo resuelve el backend; aqui se ensena, y nada que
+// gaste se lanza sin decirlo antes.
 export function AccionesDeObra({ obra, intervaloMs = INTERVALO_DE_REGALO_MS }: {
   obra: string; intervaloMs?: number;
 }) {
@@ -18,9 +19,12 @@ export function AccionesDeObra({ obra, intervaloMs = INTERVALO_DE_REGALO_MS }: {
   // Publicar se ensena si se puede, o si lo unico que falta es Lean (RF-03): hay que decirlo.
   const publicar = a.publicar.posible || (!a.publicar.lean_disponible && a.publicar.motivo === a.publicar.lean_motivo);
   const reanudar = a.reanudar.posible || (a.reanudar.motivo ?? "").startsWith("lo gastado");
-  if (!publicar && !reanudar) return null;
+  // Una API anterior a SPEC-44 no trae `generar`: sin el, no se ofrece.
+  const generar = !!a.generar && (a.generar.posible || (a.generar.motivo ?? "").startsWith("lo gastado"));
+  if (!publicar && !reanudar && !generar) return null;
   return (
     <div className="acciones-de-obra">
+      {generar && <Generar obra={obra} a={a} />}
       {publicar && <Publicar obra={obra} a={a} intervaloMs={intervaloMs} />}
       {reanudar && <Reanudar obra={obra} a={a} />}
     </div>
@@ -104,6 +108,61 @@ function Publicar({ obra, a, intervaloMs }: { obra: string; a: Acciones; interva
           )}
         </div>
       )}
+    </section>
+  );
+}
+
+// Lo que ensenan Generar y Reanudar: lo gastado en la base frente al techo, y si se puede lanzar.
+function useGasto() {
+  const cliente = useCliente();
+  const [g, setG] = useState<ConfirmacionDeGasto | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    cliente.gasto().then((d) => { if (vivo) setG(d); },
+      (e: unknown) => { if (vivo) setError(motivoDelError(e)); });
+    return () => { vivo = false; };
+  }, [cliente]);
+  return { g, error };
+}
+
+function Generar({ obra, a }: { obra: string; a: Acciones }) {
+  const cliente = useCliente();
+  const navegar = useNavigate();
+  const { g, error: errorDelGasto } = useGasto();
+  const [error, setError] = useState<string | null>(null);
+  const [lanzando, setLanzando] = useState(false);
+  const x = a.generar;
+
+  async function generar() {
+    setError(null);
+    setLanzando(true);
+    try {
+      await cliente.lanzar(obra);
+      navegar(`/obras/${encodeURIComponent(obra)}/generacion`);
+    } catch (e) {
+      setError(motivoDelError(e));
+      setLanzando(false);
+    }
+  }
+
+  return (
+    <section className="tarjeta acciones-de-obra__bloque" data-testid="generar">
+      <h2>Generar la novela</h2>
+      {x.posible ? (
+        <>
+          <p>La entrevista está cerrada y la novela no se ha escrito nunca. Generarla hace el plan y
+            escribe los diez capítulos, y al final la pasa por la puerta de publicación.</p>
+          {x.estimacion_usd !== null && (
+            <p>Estimación: <strong>{usd(x.estimacion_usd)}</strong>, con {x.fuente}. Es una
+              estimación, no un precio.</p>
+          )}
+          {g && <p>Gastado en esta base: {g.gastado.usd === null ? "sin medir" : usd(g.gastado.usd)} de {usd(g.techo_usd).replace(",00", "")} (como mínimo).</p>}
+          <button type="button" className="boton boton--principal" disabled={!g || g.alcanzado || lanzando}
+            onClick={() => void generar()}>Sí, generar (gasta dinero)</button>
+        </>
+      ) : <p role="alert" className="aviso">{x.motivo}</p>}
+      {(error ?? errorDelGasto) && <p role="alert" className="aviso">{error ?? errorDelGasto}</p>}
     </section>
   );
 }

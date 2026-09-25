@@ -843,6 +843,7 @@ export interface components {
          * @description `SPEC-39` `RF-07`: que se puede hacer con la novela, y por que no, lo decide el backend.
          */
         AccionesDeObra: {
+            generar: components["schemas"]["Generar"];
             publicar: components["schemas"]["Publicar"];
             reanudar: components["schemas"]["Reanudar"];
         };
@@ -1520,6 +1521,20 @@ export interface components {
             titulo?: string | null;
             /** Total De Capitulos */
             total_de_capitulos: number;
+        };
+        /**
+         * Generar
+         * @description `SPEC-44` `RF-01`, `RF-03`: lanzar una novela que nunca se lanzo, con su estimacion.
+         */
+        Generar: {
+            /** Estimacion Usd */
+            estimacion_usd: number | null;
+            /** Fuente */
+            fuente: string | null;
+            /** Motivo */
+            motivo: string | null;
+            /** Posible */
+            posible: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {

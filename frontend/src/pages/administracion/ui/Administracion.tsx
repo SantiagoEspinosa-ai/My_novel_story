@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useLectura, type Administracion, type ObraEnLaAdministracion } from "@/shared/api";
 import { EtiquetaDeEstado, Esperando, FASE_DE_GENERACION, SinDato } from "@/shared/ui";
+import { BotonDeAccion } from "@/features/acciones-de-obra";
 import "./administracion.css";
 
 // La administracion (SPEC-36 RF-03): todas las novelas con su fase, su coste, sus hallazgos
@@ -42,7 +43,7 @@ function Tabla({ a }: { a: Administracion }) {
       </div>
       <table className="administracion__tabla">
         <thead>
-          <tr><th>Novela</th><th>Fase</th><th>Coste</th><th>Delegaciones</th><th>Hallazgos abiertos</th><th>Lean</th></tr>
+          <tr><th>Novela</th><th>Fase</th><th>Coste</th><th>Delegaciones</th><th>Hallazgos abiertos</th><th>Lean</th><th>Acción</th></tr>
         </thead>
         <tbody>{a.obras.map((o) => <Fila key={o.id} o={o} />)}</tbody>
       </table>
@@ -65,6 +66,8 @@ function Fila({ o }: { o: ObraEnLaAdministracion }) {
       <td>{o.coste === null ? "—" : o.coste.delegaciones}</td>
       <td>{texto || "0"}</td>
       <td>{o.codigo_lean === null ? "—" : o.codigo_lean}</td>
+      {/* SPEC-44 RF-04: la accion que toca, hacia su confirmacion con el coste. */}
+      <td><BotonDeAccion obra={o.id} /></td>
     </tr>
   );
 }

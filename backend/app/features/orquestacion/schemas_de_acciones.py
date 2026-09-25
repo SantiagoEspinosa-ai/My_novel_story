@@ -23,8 +23,18 @@ class Reanudar(BaseModel):
     estimacion_usd: float | None
 
 
+class Generar(BaseModel):
+    """`SPEC-44` `RF-01`, `RF-03`: lanzar una novela que nunca se lanzo, con su estimacion."""
+
+    posible: bool
+    motivo: str | None
+    estimacion_usd: float | None
+    fuente: str | None
+
+
 class AccionesDeObra(BaseModel):
     """`SPEC-39` `RF-07`: que se puede hacer con la novela, y por que no, lo decide el backend."""
 
     publicar: Publicar
     reanudar: Reanudar
+    generar: Generar

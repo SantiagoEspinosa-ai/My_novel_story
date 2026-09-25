@@ -3,7 +3,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
-import { administracion, fetchConMetodo } from "@/shared/testing";
+import { accionesGenerar, administracion, fetchConMetodo } from "@/shared/testing";
 import { PaginaAdministracion } from "./Administracion";
 
 function montar() {
@@ -52,5 +52,24 @@ describe("Administracion", () => {
     await screen.findByTestId(`admin-${al_reves.obras[0].id}`);
     const filas = screen.getAllByTestId(/^admin-obra/).map((f) => f.dataset.testid);
     expect(filas).toEqual(al_reves.obras.map((o) => `admin-${o.id}`));
+  });
+});
+
+// PLAN-44 G2 (SPEC-44 RF-04): cada fila ofrece la accion que toca, hacia su confirmacion.
+describe("Administracion › acción de cada fila", () => {
+  it("cada fila lleva su acción", async () => {
+    const doble = fetchConMetodo({
+      "GET /api/admin/obras": [{ cuerpo: administracion }],
+      "GET /api/obras/obra-a-medias/acciones": [{ cuerpo: accionesGenerar }],
+    });
+    render(
+      <ClienteProvider cliente={crearCliente(doble.fetch)}>
+        <MemoryRouter><PaginaAdministracion /></MemoryRouter>
+      </ClienteProvider>,
+    );
+    const fila = await screen.findByTestId("admin-obra-a-medias");
+    expect(await within(fila).findByRole("link", { name: "Generar" })).toHaveAttribute(
+      "href", "/admin/obras/obra-a-medias");
+    expect(screen.getByRole("columnheader", { name: "Acción" })).toBeInTheDocument();
   });
 });

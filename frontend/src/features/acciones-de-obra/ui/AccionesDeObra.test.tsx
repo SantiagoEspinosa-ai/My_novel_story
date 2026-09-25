@@ -4,9 +4,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
 import {
-  accionesPublicar, accionesReanudar, accionesSinLean, confirmacionConUltima, fetchConMetodo,
+  accionesGenerar, accionesNinguna, accionesPublicar, accionesReanudar, accionesSinLean,
+  confirmacionConUltima, fetchConMetodo,
 } from "@/shared/testing";
 import { AccionesDeObra } from "./AccionesDeObra";
+import { BotonDeAccion } from "./BotonDeAccion";
 
 const O = "/api/obras/obra-x";
 
@@ -82,9 +84,49 @@ describe("AccionesDeObra", () => {
   });
 
   it("si no hay nada que hacer, no pinta nada", async () => {
-    const { pedidas } = montar({ publicar: accionesReanudar.publicar, reanudar: accionesPublicar.reanudar });
+    const { pedidas } = montar({ publicar: accionesReanudar.publicar, reanudar: accionesPublicar.reanudar,
+      generar: accionesPublicar.generar });
     await waitFor(() => expect(pedidas.map((p) => p.clave)).toContain(`GET ${O}/acciones`));
     expect(screen.queryByTestId("publicar")).toBeNull();
     expect(screen.queryByTestId("reanudar")).toBeNull();
+  });
+});
+
+// PLAN-44 G2 (SPEC-44): generar, y el boton de cada fila de la administracion.
+describe("AccionesDeObra › generar", () => {
+  it("una novela sin generar ofrece generarla con su estimación", async () => {
+    const { pedidas } = montar(accionesGenerar, {
+      [`POST ${O}/generaciones`]: [{ estado: 202, cuerpo: { id_trabajo: "t-9", generacion: "gen-9" } }],
+    });
+    const bloque = await screen.findByTestId("generar");
+    expect(bloque).toHaveTextContent("5,81 USD");
+    expect(bloque).toHaveTextContent("la media de las 2 novelas publicadas en esta base");
+    fireEvent.click(await screen.findByRole("button", { name: /Sí, generar/ }));
+    expect(await screen.findByText("pagina de la generacion")).toBeInTheDocument();
+    expect(pedidas.map((p) => p.clave)).toContain(`POST ${O}/generaciones`);
+  });
+});
+
+function montarBoton(acciones: unknown) {
+  const doble = fetchConMetodo({ [`GET ${O}/acciones`]: [{ cuerpo: acciones }] });
+  render(
+    <ClienteProvider cliente={crearCliente(doble.fetch)}>
+      <MemoryRouter><BotonDeAccion obra="obra-x" /></MemoryRouter>
+    </ClienteProvider>,
+  );
+}
+
+describe("BotonDeAccion", () => {
+  it.each([
+    [accionesGenerar, "Generar"], [accionesReanudar, "Reanudar"], [accionesPublicar, "Publicar"],
+  ])("ofrece la acción que toca y lleva a la página de la novela", async (acciones, nombre) => {
+    montarBoton(acciones);
+    expect(await screen.findByRole("link", { name: nombre })).toHaveAttribute(
+      "href", "/admin/obras/obra-x");
+  });
+
+  it("sin ninguna posible no ofrece nada", async () => {
+    montarBoton(accionesNinguna);
+    await waitFor(() => expect(screen.queryByRole("link")).toBeNull());
   });
 });

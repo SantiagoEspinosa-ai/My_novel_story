@@ -335,16 +335,27 @@ const nadaQueReanudar = { posible: false, motivo: "todos los capítulos están e
 const nadaQuePublicar = { posible: false, motivo: "faltan capítulos por escribir: desde el 4",
   version: 1, lean_disponible: true, lean_motivo: null, coste_medio_del_editor: 0.31,
   delegaciones_medidas_del_editor: 12 };
+// SPEC-44: generar.
+const nadaQueGenerar = { posible: false, motivo: "ya se lanzó (fase: publicada)",
+  estimacion_usd: 5.81, fuente: "la media de las 2 novelas publicadas en esta base" };
 export const accionesPublicar: AccionesDeObra = {
-  publicar: { ...nadaQuePublicar, posible: true, motivo: null }, reanudar: nadaQueReanudar };
+  publicar: { ...nadaQuePublicar, posible: true, motivo: null }, reanudar: nadaQueReanudar,
+  generar: nadaQueGenerar };
 export const accionesSinLean: AccionesDeObra = {
   publicar: { ...nadaQuePublicar, motivo: "Falta Lean (lake) en esta máquina. Se instala con elan.",
     lean_disponible: false, lean_motivo: "Falta Lean (lake) en esta máquina. Se instala con elan." },
-  reanudar: nadaQueReanudar };
+  reanudar: nadaQueReanudar, generar: nadaQueGenerar };
 export const accionesReanudar: AccionesDeObra = {
   publicar: nadaQuePublicar,
   reanudar: { posible: true, motivo: null, desde_capitulo: 4, faltan: 7, coste_por_capitulo: 1.5,
-    fuente: "la media de los 3 capítulos medidos de esta novela", estimacion_usd: 10.5 } };
+    fuente: "la media de los 3 capítulos medidos de esta novela", estimacion_usd: 10.5 },
+  generar: { ...nadaQueGenerar, motivo: "ya se lanzó: si está parada, usa «Reanudar»" } };
+export const accionesGenerar: AccionesDeObra = {
+  publicar: nadaQuePublicar, reanudar: { ...nadaQueReanudar, motivo: "la novela no está parada" },
+  generar: { ...nadaQueGenerar, posible: true, motivo: null } };
+export const accionesNinguna: AccionesDeObra = {
+  publicar: nadaQuePublicar, reanudar: { ...nadaQueReanudar, motivo: "la novela no está parada" },
+  generar: { ...nadaQueGenerar, motivo: "la entrevista no está cerrada: hay que terminarla antes de generar" } };
 
 export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }> = {
   turnoConAviso: { esquema: "TurnoDeEntrevistaSalida", datos: turnoConAviso },
@@ -374,6 +385,8 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   accionesPublicar: { esquema: "AccionesDeObra", datos: accionesPublicar },
   accionesSinLean: { esquema: "AccionesDeObra", datos: accionesSinLean },
   accionesReanudar: { esquema: "AccionesDeObra", datos: accionesReanudar },
+  accionesGenerar: { esquema: "AccionesDeObra", datos: accionesGenerar },
+  accionesNinguna: { esquema: "AccionesDeObra", datos: accionesNinguna },
 };
 
 type Respuesta = { estado?: number; cuerpo: unknown };

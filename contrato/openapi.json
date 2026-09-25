@@ -4,6 +4,9 @@
       "AccionesDeObra": {
         "description": "`SPEC-39` `RF-07`: que se puede hacer con la novela, y por que no, lo decide el backend.",
         "properties": {
+          "generar": {
+            "$ref": "#/components/schemas/Generar"
+          },
           "publicar": {
             "$ref": "#/components/schemas/Publicar"
           },
@@ -13,7 +16,8 @@
         },
         "required": [
           "publicar",
-          "reanudar"
+          "reanudar",
+          "generar"
         ],
         "title": "AccionesDeObra",
         "type": "object"
@@ -1863,6 +1867,56 @@
           "coste"
         ],
         "title": "GeneracionEnVivo",
+        "type": "object"
+      },
+      "Generar": {
+        "description": "`SPEC-44` `RF-01`, `RF-03`: lanzar una novela que nunca se lanzo, con su estimacion.",
+        "properties": {
+          "estimacion_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimacion Usd"
+          },
+          "fuente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuente"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "posible": {
+            "title": "Posible",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "posible",
+          "motivo",
+          "estimacion_usd",
+          "fuente"
+        ],
+        "title": "Generar",
         "type": "object"
       },
       "HTTPValidationError": {

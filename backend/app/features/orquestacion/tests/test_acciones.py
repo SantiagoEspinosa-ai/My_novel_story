@@ -191,3 +191,46 @@ def test_al_arrancar_una_generacion_en_curso_queda_abandonada_y_la_obra_parada(c
                        "ORDER BY id DESC LIMIT 1", (obra,)).fetchone()
     assert fase[0] == "parada" and "reinici" in fase[1]
     con.close()
+
+
+# --- PLAN-44 G1 (SPEC-44): generar ------------------------------------------------------
+
+def test_una_novela_solo_con_entrevista_tiene_acciones_y_se_puede_generar(cliente, base):
+    """`RF-02`: sin plan no hay fila en `obra`, y eso no la hace inexistente."""
+    e = _entrevista(base)
+    g = _acciones(cliente, e.obra)["generar"]
+    assert g["posible"] is True, g
+    assert g["estimacion_usd"] is not None and g["fuente"]
+
+
+def test_una_entrevista_abierta_no_se_puede_generar_y_dice_por_que(cliente, base):
+    e = _entrevista(base, cerrada=False)
+    g = _acciones(cliente, e.obra)["generar"]
+    assert g["posible"] is False and "entrevista" in g["motivo"]
+
+
+def test_una_lanzada_ya_no_se_genera_sino_que_se_reanuda(cliente, base):
+    obra = _escrita(cliente, base)
+    _parada_en_el_4(base, obra)
+    a = _acciones(cliente, obra)
+    assert a["generar"]["posible"] is False and "reanud" in a["generar"]["motivo"].lower()
+    assert a["reanudar"]["posible"] is True
+
+
+def test_la_estimacion_de_generar_es_la_media_de_las_publicadas(cliente, base):
+    con = sqlite3.connect(base)
+    with con:
+        for obra, usd in (("obra-p1", 4.0), ("obra-p2", 8.0)):
+            con.execute("INSERT INTO progreso_de_generacion (obra, fase) VALUES (?, 'publicada')",
+                        (obra,))
+            con.execute("INSERT INTO gasto_de_delegacion (obra, agente, coste_usd) VALUES (?, "
+                        "'escritor', ?)", (obra, usd))
+    con.close()
+    e = _entrevista(base)
+    g = _acciones(cliente, e.obra)["generar"]
+    assert g["estimacion_usd"] == pytest.approx(6.0)
+    assert "2 novelas publicadas" in g["fuente"]
+
+
+def test_sin_obra_ni_entrevista_es_404(cliente):
+    assert cliente.get("/obras/no-existe/acciones").status_code == 404
