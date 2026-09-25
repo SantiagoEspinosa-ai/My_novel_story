@@ -413,7 +413,7 @@ class _LeanFijo:
     def __init__(self):
         self.llamadas = 0
 
-    def verificar(self, con, obra):
+    def verificar(self, con, obra, version=None):
         from app.features.auditoria.publicacion import ResultadoLean
         self.llamadas += 1
         return ResultadoLean(0)

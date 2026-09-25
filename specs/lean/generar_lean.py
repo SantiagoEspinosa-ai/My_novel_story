@@ -109,16 +109,35 @@ def _txt(valor) -> str:
     return '"' + str(valor or "").replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def leer(con: sqlite3.Connection, obra: str) -> dict:
+def leer(con: sqlite3.Connection, obra: str, version: int | None = None) -> dict:
     con.row_factory = sqlite3.Row
     eventos = [dict(f) for f in con.execute(
         "SELECT id, t_fabula, duracion_min, lugar, escena, capitulo "
         "FROM evento_cronologico WHERE obra = ?", (obra,))]
-    # El orden NO se deja a SQL: `capitulo` es TEXT y ordenarlo como cadena
-    # rompe al llegar al decimo capitulo. Ver `clave_de_capitulo`.
-    eventos.sort(key=lambda e: (clave_de_capitulo(e["capitulo"])[0] is None,
-                                clave_de_capitulo(e["capitulo"])[0] or 0,
-                                e["id"]))
+    orden_de = {}
+    if version is not None:
+        try:
+            orden_de = {f["capitulo"]: f["orden"] for f in con.execute(
+                "SELECT capitulo, orden FROM capitulo_de_version WHERE obra = ? AND "
+                "numero = ?", (obra, version))}
+        except sqlite3.OperationalError:
+            orden_de = {}  # una base sin tabla de versiones
+    if orden_de:
+        # La version que se publica (`PLAN-23`, la puerta por version): solo los eventos
+        # de sus capitulos, y el orden **de la version**. Sin esto Lean recibia los de todas
+        # las versiones -tres capitulos 4 en el mismo instante- y `cap-04-v3` da 3 por sus
+        # digitos finales y choca con `cap-03`: la version 3 de la demo no se podia publicar.
+        # Una obra sin filas de version (anterior a `PLAN-23`) se lee como siempre: no tiene
+        # otra version con la que mezclarse.
+        eventos = [dict(e, orden_capitulo=orden_de[e["capitulo"]])
+                   for e in eventos if e["capitulo"] in orden_de]
+        eventos.sort(key=lambda e: (e["orden_capitulo"], e["id"]))
+    else:
+        # El orden NO se deja a SQL: `capitulo` es TEXT y ordenarlo como cadena
+        # rompe al llegar al decimo capitulo. Ver `clave_de_capitulo`.
+        eventos.sort(key=lambda e: (clave_de_capitulo(e["capitulo"])[0] is None,
+                                    clave_de_capitulo(e["capitulo"])[0] or 0,
+                                    e["id"]))
 
     participaciones = {}
     for e in eventos:
@@ -189,7 +208,8 @@ def generar(datos: dict, obra: str) -> tuple[str, dict]:
     # por capitulo y luego por identificador de evento. Se guarda como rango y no
     # como el `orden` de la escena porque no todos los eventos tienen escena.
     for discurso, e in enumerate(datos["eventos"], start=1):
-        orden_cap, sin_orden = clave_de_capitulo(e["capitulo"])
+        orden_cap, sin_orden = ((e["orden_capitulo"], None) if e.get("orden_capitulo")
+                                else clave_de_capitulo(e["capitulo"]))
         if orden_cap is None:
             capitulos_no_ordenables.add(sin_orden)
         else:
@@ -315,11 +335,13 @@ def main(argv=None) -> int:
     ap.add_argument("base", help="ruta de la base SQLite")
     ap.add_argument("obra", help="identificador de la obra")
     ap.add_argument("--salida", default="Cronologia/Generado.lean")
+    ap.add_argument("--version", type=int, default=None,
+                    help="la version que se publica: solo sus capitulos, en su orden")
     args = ap.parse_args(argv)
 
     con = sqlite3.connect(args.base)
     try:
-        datos = leer(con, args.obra)
+        datos = leer(con, args.obra, args.version)
     finally:
         con.close()
 

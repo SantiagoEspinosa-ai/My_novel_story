@@ -113,7 +113,7 @@ class _Editor(_Fijo):
 
 
 class _Lean:
-    def verificar(self, con, obra):
+    def verificar(self, con, obra, version=None):
         return ResultadoLean(0)
 
 

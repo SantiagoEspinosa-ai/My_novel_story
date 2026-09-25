@@ -90,3 +90,61 @@ def _base(tmp_path):
     con = sqlite3.connect(str(tmp_path / "obra.db"))
     con.execute("CREATE TABLE t (x)")
     return con
+
+
+def test_verificar_pasa_la_version_al_generador(tmp_path):
+    visto = []
+
+    def ejecutar(orden, cwd=None, **kw):
+        visto.append(list(orden))
+        salida = COBERTURA.encode() if "exe" in orden else b""
+        return subprocess.CompletedProcess(orden, 0, stdout=salida, stderr=b"")
+
+    VerificadorLean(lake="lake", ejecutar=ejecutar).verificar(_base(tmp_path), "obra-x",
+                                                              version=3)
+    generador = [o for o in visto if "generar_lean.py" in o][0]
+    assert generador[generador.index("--version") + 1] == "3"
+
+
+def _generador():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("generar_lean",
+                                                  lean.LEAN / "generar_lean.py")
+    modulo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modulo)
+    return modulo
+
+
+def test_con_version_el_generador_lee_solo_sus_capitulos_y_en_su_orden(tmp_path):
+    """Una version 2 que sustituye el capitulo 2 por `cap-02-v2`. Sin version se leen los
+    cuatro, y `cap-02-v2` choca con `cap-02` (los digitos finales dan 2): la obra queda sin
+    veredicto. Con version, los tres de la 2, ordenados por la version y no por el id."""
+    from app.commons.db import migraciones
+    con = sqlite3.connect(str(tmp_path / "obra.db"))
+    migraciones.migrar(con)
+    con.executescript("""
+        CREATE TABLE IF NOT EXISTS evento_cronologico (id TEXT, obra TEXT, t_fabula TEXT,
+            duracion_min INTEGER, lugar TEXT, escena TEXT, capitulo TEXT, descripcion TEXT);
+        CREATE TABLE IF NOT EXISTS participacion_en_evento (evento TEXT, personaje TEXT,
+            presencia TEXT);
+        CREATE TABLE IF NOT EXISTS entidad (id TEXT, fecha_de_nacimiento TEXT);
+        CREATE TABLE IF NOT EXISTS delta_de_escena (orden INTEGER, escena TEXT,
+            version INTEGER, contenido TEXT);
+    """)
+    for i, cap in enumerate(["cap-01", "cap-02", "cap-03", "cap-02-v2"], start=1):
+        con.execute("INSERT INTO evento_cronologico VALUES (?, 'obra-x', ?, 60, 'lug', ?, ?, '')",
+                    ("ev-{0}".format(i), "2026-01-0{0}T10:00".format(i), cap + "-e1", cap))
+    for numero, caps in ((1, ["cap-01", "cap-02", "cap-03"]),
+                         (2, ["cap-01", "cap-02-v2", "cap-03"])):
+        for orden, cap in enumerate(caps, start=1):
+            con.execute("INSERT INTO capitulo_de_version (obra, numero, orden, capitulo) "
+                        "VALUES ('obra-x', ?, ?, ?)", (numero, orden, cap))
+    con.commit()
+    g = _generador()
+    sin = g.generar(g.leer(con, "obra-x"), "obra-x")[1]
+    assert sin["capitulos_no_ordenables"], "sin version, cap-02 y cap-02-v2 chocan"
+    datos = g.leer(con, "obra-x", version=2)
+    assert [e["capitulo"] for e in datos["eventos"]] == ["cap-01", "cap-02-v2", "cap-03"]
+    informe = g.generar(datos, "obra-x")[1]
+    assert informe["capitulos_no_ordenables"] == [] and informe["eventos_convertidos"] == 3
+
