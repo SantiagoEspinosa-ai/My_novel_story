@@ -5,8 +5,17 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión («aprovado»)"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
-version: 4
+version: 5
 ---
+
+> **v5 (2026-09-24), la página de la generación; decidido por la sesión autónoma por
+> delegación escrita del autor («Decide tú todo […] No pares a consultarme»).** El autor pidió
+> terminar «las pantallas de entrevista y generación de `SPEC-35`», pero la generación no
+> estaba entre las seis: la propuesta visual la dibujaba como «el escritor en su mesa», que esta
+> spec dejó fuera. Sin ella, quien encarga la novela no ve en qué acaba lo que ha pagado: la
+> página de `SPEC-33` no dice nada si el lanzamiento falla antes del primer capítulo (por
+> ejemplo, sin `claude` en la máquina), y al terminar no lleva a leer. Entra **`RF-13`**, y
+> sigue fuera «el escritor en su mesa» como ilustración. No cambia ninguna otra decisión.
 
 > **v4 (2026-09-25), lo que encontró el plan; no cambia ninguna decisión.** `RF-02` choca con
 > `CLAUDE.md`, que dice que una escena se muestra siempre con su estado y con los hallazgos
@@ -126,13 +135,23 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
   (`SPEC-27`), con el libro de la versión vigente. Si esa obra no tiene PDF que dar, la portada
   no ofrece el botón y el backend lo dice con su motivo (cuestión 2).
 
+### La generación (v5)
+
+- **RF-13** — La página de la generación (`SPEC-33` `RF-14`..`RF-17`) lleva **el estilo noche**
+  de `RF-01` y no pierde nada de lo que enseña. Dos cosas nuevas, las dos resueltas por el
+  backend: **si el último lanzamiento de la obra falló**, la página lo dice con el motivo tal
+  como llega, aunque no haya empezado ningún capítulo; y **cuando la novela termina**, lleva a
+  leerla: «Leer la novela» si se publicó, y si no se publicó, «Leer lo escrito» diciendo que
+  no está publicada y por qué, tal como lo dice el backend. Lo que ya escribió la versión se
+  puede leer siempre: la vigente de una obra sin publicar es la 1 (`F-121`).
+
 ## Qué queda explícitamente fuera
 
 | Fuera | Por qué |
 | --- | --- |
 | **Editar a mano el texto** | `SPEC-20`: el estado consolidado no se toca a mano. Decisión literal del autor, arriba |
 | El diseño móvil | *«No necesitamos la versión móvil.»* Las pantallas no rompen a 390 px, pero no tienen un diseño propio |
-| La estantería de madera, el escritor en su mesa y la vista de administración | Se eligieron en la propuesta, pero no entran en esta spec. Cada una sería otra spec; la de administración necesita decidir antes quién administra y cómo entra, y hoy no hay usuarios |
+| La estantería de madera, el escritor en su mesa (como ilustración; la página de la generación entra en `RF-13`) y la vista de administración | Se eligieron en la propuesta, pero no entran en esta spec. Cada una sería otra spec; la de administración necesita decidir antes quién administra y cómo entra, y hoy no hay usuarios |
 | Las respuestas rápidas a los avisos | Decisión del autor |
 | Cambiar la tipografía de interfaz | La propuesta usa otra; no se ha decidido |
 | La lectura a dos páginas, la entrega «lista para regalar» | No están entre las seis |
