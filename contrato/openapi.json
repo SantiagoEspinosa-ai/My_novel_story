@@ -702,6 +702,59 @@
         "title": "CosteDeLaGeneracion",
         "type": "object"
       },
+      "CosteDeUnAgente": {
+        "additionalProperties": false,
+        "properties": {
+          "agente": {
+            "title": "Agente",
+            "type": "string"
+          },
+          "delegaciones": {
+            "title": "Delegaciones",
+            "type": "integer"
+          },
+          "es_suelo": {
+            "title": "Es Suelo",
+            "type": "boolean"
+          },
+          "generacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generacion"
+          },
+          "sin_coste": {
+            "title": "Sin Coste",
+            "type": "integer"
+          },
+          "usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usd"
+          }
+        },
+        "required": [
+          "generacion",
+          "usd",
+          "delegaciones",
+          "sin_coste",
+          "es_suelo",
+          "agente"
+        ],
+        "title": "CosteDeUnAgente",
+        "type": "object"
+      },
       "CosteDeUnaObra": {
         "additionalProperties": false,
         "description": "Lo anotado de todas las generaciones de una obra. `generacion` va nula: es la suma.",
@@ -1176,6 +1229,192 @@
         "title": "Estanteria",
         "type": "object"
       },
+      "EventoDeLaHistoria": {
+        "additionalProperties": false,
+        "description": "`SPEC-37` `RF-02`: un momento de la historia de una novela. `tipo` es entrevista,\nronda_del_plan, capitulo, parada, ronda_de_la_puerta o version; cada uno rellena lo suyo y\ndeja lo demas vacio. `cuando` es nulo en lo que no tiene hora (las rondas del plan).",
+        "properties": {
+          "aprobado": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aprobado"
+          },
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitulo"
+          },
+          "capitulos_cambiados": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Capitulos Cambiados",
+            "type": "array"
+          },
+          "codigo_lean": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Lean"
+          },
+          "condiciones": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Condiciones",
+            "type": "array"
+          },
+          "coste": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeUnaObra"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cuando": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuando"
+          },
+          "escenas": {
+            "items": {
+              "$ref": "#/components/schemas/EscenaEnGeneracion"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "intentos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intentos"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "notas": {
+            "items": {
+              "$ref": "#/components/schemas/NotaDelEditor"
+            },
+            "title": "Notas",
+            "type": "array"
+          },
+          "objeciones": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Objeciones",
+            "type": "array"
+          },
+          "origen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origen"
+          },
+          "peticion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peticion"
+          },
+          "ronda": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ronda"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "tipo",
+          "cuando",
+          "version",
+          "capitulo",
+          "coste",
+          "notas",
+          "escenas",
+          "intentos",
+          "motivo",
+          "aprobado",
+          "origen",
+          "objeciones",
+          "ronda",
+          "codigo_lean",
+          "condiciones",
+          "peticion",
+          "capitulos_cambiados"
+        ],
+        "title": "EventoDeLaHistoria",
+        "type": "object"
+      },
       "FaseDeGeneracion": {
         "description": "En que punto va una generacion. `parada` lleva su motivo; `esperando_revision` es\nque el pipeline termino sin publicar y ahora le toca a una persona.",
         "enum": [
@@ -1508,6 +1747,41 @@
         "title": "HallazgoAbierto",
         "type": "object"
       },
+      "HallazgoAbiertoDeLaObra": {
+        "additionalProperties": false,
+        "properties": {
+          "capitulo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capitulo"
+          },
+          "descripcion": {
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "invariante": {
+            "title": "Invariante",
+            "type": "string"
+          },
+          "severidad": {
+            "$ref": "#/components/schemas/Severidad"
+          }
+        },
+        "required": [
+          "invariante",
+          "severidad",
+          "capitulo",
+          "descripcion"
+        ],
+        "title": "HallazgoAbiertoDeLaObra",
+        "type": "object"
+      },
       "HallazgosPorSeveridad": {
         "additionalProperties": false,
         "properties": {
@@ -1598,6 +1872,66 @@
           "hechos_que_usa"
         ],
         "title": "HechosDeEscena",
+        "type": "object"
+      },
+      "HistoriaDeObra": {
+        "additionalProperties": false,
+        "description": "`SPEC-37`: la historia de una novela, con sus totales al lado. `atribucion` dice como\nse reparte el coste por capitulo (`RF-04`).",
+        "properties": {
+          "abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbiertoDeLaObra"
+            },
+            "title": "Abiertos",
+            "type": "array"
+          },
+          "atribucion": {
+            "title": "Atribucion",
+            "type": "string"
+          },
+          "eventos": {
+            "items": {
+              "$ref": "#/components/schemas/EventoDeLaHistoria"
+            },
+            "title": "Eventos",
+            "type": "array"
+          },
+          "obra": {
+            "title": "Obra",
+            "type": "string"
+          },
+          "por_agente": {
+            "items": {
+              "$ref": "#/components/schemas/CosteDeUnAgente"
+            },
+            "title": "Por Agente",
+            "type": "array"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "totales": {
+            "$ref": "#/components/schemas/TotalesDeLaHistoria"
+          }
+        },
+        "required": [
+          "obra",
+          "titulo",
+          "totales",
+          "por_agente",
+          "abiertos",
+          "eventos",
+          "atribucion"
+        ],
+        "title": "HistoriaDeObra",
         "type": "object"
       },
       "HistorialSalida": {
@@ -2585,6 +2919,55 @@
         "title": "TipoDeElementoPersonal",
         "type": "string"
       },
+      "TotalesDeLaHistoria": {
+        "additionalProperties": false,
+        "properties": {
+          "coste": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeUnaObra"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nota_media": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota Media"
+          },
+          "paradas": {
+            "title": "Paradas",
+            "type": "integer"
+          },
+          "version_vigente": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Vigente"
+          }
+        },
+        "required": [
+          "coste",
+          "nota_media",
+          "paradas",
+          "version_vigente"
+        ],
+        "title": "TotalesDeLaHistoria",
+        "type": "object"
+      },
       "TrabajoSalida": {
         "additionalProperties": false,
         "description": "Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su\nvocabulario lo declara `docs/architecture.md` § \"Los estados de un trabajo\".\n`abandonado` no es `fallido` (no se sabe si llego a pasar): viajan distintos.",
@@ -2946,6 +3329,49 @@
           }
         },
         "summary": "Administracion",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
+    "/admin/obras/{id_obra}/historia": {
+      "get": {
+        "description": "`SPEC-37`: la historia de una novela, en orden, con sus totales. Sin login (`SPEC-36`).",
+        "operationId": "historia_admin_obras__id_obra__historia_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoriaDeObra"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Historia",
         "tags": [
           "regalo"
         ]

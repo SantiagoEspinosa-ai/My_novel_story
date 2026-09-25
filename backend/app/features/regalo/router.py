@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.commons.configuracion import carga
 from app.features.regalo import service
+from app.features.regalo import historia as modulo_historia
 from app.features.regalo.schemas import (Administracion, ConfirmacionDeGasto, Estanteria,
-                                         GeneracionEnVivo, PeticionDeLaVersion)
+                                         GeneracionEnVivo, HistoriaDeObra, PeticionDeLaVersion)
 
 router = APIRouter(tags=["regalo"])
 
@@ -39,6 +40,15 @@ def administracion(con: sqlite3.Connection = Depends(conexion)):
     """`SPEC-36` `RF-03`: todas las novelas con su fase, coste, hallazgos y Lean. **Sin
     login**, por decision del autor: cualquiera con la URL la ve."""
     return service.administracion(con, _sistema().generacion_web.techo_de_gasto_usd)
+
+
+@router.get("/admin/obras/{id_obra}/historia", response_model=HistoriaDeObra)
+def historia(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-37`: la historia de una novela, en orden, con sus totales. Sin login (`SPEC-36`)."""
+    r = modulo_historia.historia(con, id_obra, _sistema().edicion.umbral_del_editor)
+    if r is None:
+        raise HTTPException(404, "no existe la obra {0}".format(id_obra))
+    return r
 
 
 @router.get("/generaciones/gasto", response_model=ConfirmacionDeGasto)

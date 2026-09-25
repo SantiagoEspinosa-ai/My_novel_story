@@ -151,3 +151,58 @@ class Administracion(_DelDominio):
     gastado: Gastado
     techo_usd: float
     obras: list[ObraEnLaAdministracion]
+
+
+class EventoDeLaHistoria(_DelDominio):
+    """`SPEC-37` `RF-02`: un momento de la historia de una novela. `tipo` es entrevista,
+    ronda_del_plan, capitulo, parada, ronda_de_la_puerta o version; cada uno rellena lo suyo y
+    deja lo demas vacio. `cuando` es nulo en lo que no tiene hora (las rondas del plan)."""
+
+    tipo: str
+    cuando: str | None
+    version: int | None
+    capitulo: int | None
+    coste: CosteDeUnaObra | None
+    notas: list[NotaDelEditor]
+    escenas: list[EscenaEnGeneracion]
+    intentos: int | None
+    motivo: str | None
+    aprobado: bool | None
+    origen: str | None
+    objeciones: list[str]
+    ronda: int | None
+    codigo_lean: int | None
+    condiciones: list[str]
+    peticion: str | None
+    capitulos_cambiados: list[int]
+
+
+class CosteDeUnAgente(CosteDeUnaObra):
+    agente: str
+
+
+class HallazgoAbiertoDeLaObra(_DelDominio):
+    invariante: str
+    severidad: enums.Severidad
+    capitulo: int | None
+    descripcion: str
+
+
+class TotalesDeLaHistoria(_DelDominio):
+    coste: CosteDeUnaObra | None
+    nota_media: float | None
+    paradas: int
+    version_vigente: int | None
+
+
+class HistoriaDeObra(_DelDominio):
+    """`SPEC-37`: la historia de una novela, con sus totales al lado. `atribucion` dice como
+    se reparte el coste por capitulo (`RF-04`)."""
+
+    obra: str
+    titulo: str | None
+    totales: TotalesDeLaHistoria
+    por_agente: list[CosteDeUnAgente]
+    abiertos: list[HallazgoAbiertoDeLaObra]
+    eventos: list[EventoDeLaHistoria]
+    atribucion: str
