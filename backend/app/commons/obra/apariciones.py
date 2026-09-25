@@ -23,8 +23,21 @@ Una lista vacia de **lugares** si es un dato, porque `Escena.lugar` es obligator
 
 import json
 
+from app.commons.obra import vigente
+
 
 def _escenas(con, obra):
+    """Las escenas de la version vigente, en su orden (`F-203`). La tabla `capitulo` tiene
+    los capitulos de todas las versiones, y con tres versiones cada ficha enlazaba tres
+    veces el mismo capitulo. Sin versiones -una obra de antes-, los de la obra."""
+    numero = vigente.version_vigente(con, obra)
+    if numero is not None:
+        return con.execute(
+            "SELECT e.capitulo, v.orden, e.lugar, e.personajes_presentes "
+            "FROM capitulo_de_version v JOIN escena e "
+            "  ON e.capitulo = v.capitulo AND e.obra = v.obra "
+            "WHERE v.obra = ? AND v.numero = ? ORDER BY v.orden, e.orden",
+            (obra, numero)).fetchall()
     return con.execute(
         "SELECT e.capitulo, c.orden, e.lugar, e.personajes_presentes "
         "FROM escena e JOIN capitulo c ON c.id = e.capitulo AND c.obra = e.obra "
