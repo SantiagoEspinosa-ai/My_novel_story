@@ -13,7 +13,11 @@ class VersionNoPublicada(Exception):
 
 def motivo_sin_pdf(con, obra):
     """Por que la obra no tiene PDF, o `None` si lo tiene. Sin generarlo: es lo que la
-    portada pregunta antes de ofrecer el boton (`SPEC-35` `RF-12`)."""
+    portada pregunta antes de ofrecer el boton (`SPEC-35` `RF-12`).
+
+    Mira el veredicto de la puerta **y que el libro se pueda componer**: publicada con una
+    escena sin texto, la portada ofrecia un boton que devolvia un 500 (lo encontro la
+    inspeccion de `PLAN-35` E8). Componer no maqueta el PDF, que es lo caro."""
     v = repository.ultimo_veredicto(con, obra)
     if v is None:
         return ("la obra `{0}` no tiene veredicto de la puerta de publicacion: no se ha "
@@ -25,6 +29,10 @@ def motivo_sin_pdf(con, obra):
                            for c in v["condiciones"]) or "sin condiciones guardadas"
         return "la ronda {0} de la puerta no publico la obra `{1}`: {2}".format(
             v["ronda"], obra, faltan)
+    try:
+        libro.componer(con, obra)
+    except libro.LibroIncompleto as e:
+        return "el libro de la obra `{0}` no se puede componer: {1}".format(obra, e)
     return None
 
 

@@ -15,8 +15,10 @@
 }
 .portada--cubierta .portada__libro::before,
 .portada--cubierta .portada__libro::after {
-  content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+  content: ""; position: absolute; inset: auto; left: 50%; transform: translateX(-50%);
   width: 120px; height: 2px; background: var(--color-oro);
+  /* estilos.css da a ::before un marco interior translucido; aqui es un filete. */
+  border: 0; border-radius: 0; opacity: 1;
 }
 .portada--cubierta .portada__libro::before { top: 56px; }
 .portada--cubierta .portada__libro::after { bottom: 56px; }

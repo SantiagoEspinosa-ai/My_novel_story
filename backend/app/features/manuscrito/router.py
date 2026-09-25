@@ -58,7 +58,7 @@ def descargar(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
     with tempfile.TemporaryDirectory() as carpeta:
         try:
             ruta = service.exportar_pdf(con, id_obra, Path(carpeta) / "libro.pdf")
-        except service.VersionNoPublicada as e:
+        except (service.VersionNoPublicada, service.libro.LibroIncompleto) as e:
             raise HTTPException(409, str(e))
         contenido = Path(ruta).read_bytes()
     nombre = "{0}.pdf".format(titulo)

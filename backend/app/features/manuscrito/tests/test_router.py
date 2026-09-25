@@ -72,3 +72,28 @@ def test_obra_que_no_existe_es_404(cliente):
     for url in ("/obras/no-existe/pdf", "/obras/no-existe/pdf/disponible"):
         r = cliente.get(url)
         assert r.status_code == 404 and "no existe la obra" in r.json()["detail"], url
+
+
+def _escena_sin_texto(ruta):
+    """Una escena del libro sin borrador aceptado: la puerta pudo publicar y el libro no se
+    puede componer. Lo encontro la inspeccion de `PLAN-35` E8 sobre la semilla de lectura."""
+    con = sqlite3.connect(ruta)
+    with con:
+        con.execute("UPDATE escena SET borrador_aceptado = NULL WHERE id = 'o1-cap-02-e1'")
+        con.execute("DELETE FROM borrador WHERE escena = 'o1-cap-02-e1'")
+    con.close()
+
+
+def test_un_libro_que_no_se_puede_componer_no_se_ofrece(cliente, ruta):
+    _veredicto(ruta, True)
+    _escena_sin_texto(ruta)
+    d = cliente.get("/obras/o1/pdf/disponible").json()
+    assert d["disponible"] is False and "sin texto" in d["motivo"]
+
+
+def test_descargar_un_libro_incompleto_es_409_con_motivo_y_no_500(cliente, ruta):
+    _veredicto(ruta, True)
+    _escena_sin_texto(ruta)
+    r = cliente.get("/obras/o1/pdf")
+    assert r.status_code == 409, r.text
+    assert "sin texto" in r.json()["detail"]
