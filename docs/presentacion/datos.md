@@ -136,59 +136,64 @@ Consulta: `SELECT obra, count(*), sum(coste_usd), sum(coste_usd IS NULL) FROM ga
 
 Lo pide `EXAMEN.md:73`: «Debe mostrarse al menos un caso real en el que el validador formal detecta una incoherencia que los otros validadores no detectaron, o justificar por qué no se encontró ninguno».
 
-### ¿Hay caso real? No
+### El caso real: `obra-9df1eb4deb` (2026-09-25)
 
-Ejecuciones reales con Lean, todas limpias:
+La ficha y el caso completos, con la salida literal, están en `specs/lean/casos/obra-9df1eb4deb/` (commit `0cbf4a2`).
 
-| Ejecución | Resultado de Lean | Fuente |
-| --- | --- | --- |
-| R1 | código 0 | `medidas.md:134` |
-| R5 | código 0 | `medidas.md:210-212` |
-| B4, versiones 1 y 3 | código 0, tras arreglar `F-151`, que daba «sin veredicto» | `medidas.md:246-251` |
-| `obra-6845dbb0d0` | código 0 | `SELECT obra, codigo_lean FROM veredicto_de_publicacion` en `web.db` |
+- **La novela.**
+  - Diez capítulos, los diez `consolidada`.
+  - 6,5627 USD en 44 delegaciones, todas medidas.
+  - Modelos: Escritor opus; Planificador, Revisor y Editor sonnet.
+  - Consulta: `SELECT sum(coste_usd), count(*) FROM gasto_de_delegacion WHERE obra='obra-9df1eb4deb'`.
+- **Lean: código 1, 52 violaciones.** 8 de `L-1` (orden de la fábula) y 44 de `L-3` (un personaje en dos lugares a la vez).
+  - Salida literal: `specs/lean/casos/obra-9df1eb4deb/salida-verificar-real.txt`.
+  - Cronología que Lean recibió: `Generado.lean`.
+- **La puerta no la publicó.**
+  - `veredicto_de_publicacion`, rondas 1 y 2: `publica = 0`, `codigo_lean = 1`.
+  - Hallazgo `INV-28` `bloqueante` abierto, id 46.
+- **Ningún otro validador vio nada.** En la obra solo hay hallazgos `INV-17` (2), `INV-25` (11) e `INV-28` (1).
+  - Consulta: `SELECT invariante, count(*) FROM hallazgo WHERE escena LIKE 'obra-9df1eb4deb%' GROUP BY 1`.
+  - Revisor del plan, `INV-02`, `INV-03`, `INV-26` e `INV-27`: sin hallazgos.
+  - **`INV-08`, que debía cazar las 8 `L-1`, no dejó nada.** Se evalúa en cada capítulo y nadie lee su resultado (`F-214`, abierto; `orquestacion/obra.py:359`, `novela.py:522`).
+  - Las 44 `L-3` no las cubre ninguna otra regla: `INV-02` mira escena a escena.
 
-- En la tabla de evals, la columna INV-28 da «pasó» en R1 y R5, y «sin veredicto» donde no hubo novela.
-- **0 hallazgos `INV-28`** en las tres bases locales (`SELECT count(*) FROM hallazgo WHERE invariante='INV-28'`).
-- **No existe ninguna salida de Lean con una violación sobre una novela generada.**
-
-### Justificación de por qué no apareció
-
-1. **El único brief diseñado para provocarlo lo paró antes otro validador.**
-   - Es R3, el brief de incoherencia temporal (`harness/evals/brief-incoherencia-temporal.json`).
-   - El Revisor rechazó el plan en tres rondas: «Incoherencia temporal dentro de la línea de 2019, entre cap-02 y cap-04».
-   - «No se escribió novela, así que Lean no tuvo eventos que mirar… la incoherencia la paró un validador anterior —el semántico del plan— y por eso Lean no la detectó» (`medidas.md:190-200`; `docs/proceso/registro-de-iteraciones.md:72`).
-2. **En la novela regalo, Lean solo tiene datos para una de sus cuatro invariantes.**
-   - `L-2`, `L-3` y `L-4` necesitan presentes, nacimientos y exclusiones, y en la novela regalo nadie los declara.
-   - Solo `L-1`, el orden de la fábula, tiene datos (`specs/lean/README.md:14-16`; `specs/plans/PLAN-30.md:44-47`).
-   - Y `L-1` lo caza antes `INV-08` en la puerta de capítulo, desde el commit `b2f097c` (`docs/cobertura-examen.md:90`).
-3. **Lo que Lean tiene de exclusivo no se ha ejercido con datos reales.**
-   - `L-2` (nadie aparece antes de nacer): `edades()` no tiene llamadas fuera de sus pruebas.
-   - La parte de `L-3` que no cubre `INV-02`: la comparación entre escenas del mismo momento.
-   - Fuente: `cobertura-examen.md:90`, hueco `EX-15`, abierto.
-
-### Lo más cerca de un caso: Lean destapó un validador que no se ejecutaba (F-47)
-
-- `docs/verification.md:1226`: «`INV-08` esta declarada, tiene su consulta escrita y no la ejecuta nadie».
-- Lean cazaba una inversión del orden de la fábula que `INV-08` debía cazar y no cazaba, porque a `orden_temporal` solo la llamaban sus pruebas.
-- `specs/lean/README.md:147-176`: «Lean no es más listo que `orden_temporal()`… lo que hace es ejecutarse».
-- Se cerró enchufando `INV-08` en la puerta de capítulo (`b2f097c`).
-- Ocurrió sobre una base sembrada, no sobre una generación pagada.
-
-### El caso demostrativo, sobre una base sembrada
-
-Ejecutado para este documento; salió con código 1:
+Líneas literales:
 
 ```
-cd specs/lean && ./.lake/build/bin/verificar-real.exe
-#VIOLACION L-1 ev-1,ev-2 ev-2 se lee despues de ev-1 (discurso 1 -> 2) pero ocurre antes en la fabula (2019-6-8 10:0 < 2019-6-10 21:0) y no declara analepsis
-#VIOLACION L-3 ev-3a,ev-3b [NOMBRE] esta presente en ev-3a (lug-faro) y en ev-3b (lug-bosque) a la vez
-#VIOLACION L-4 ev-3b,ev-4 [NOMBRE] queda excluido en ev-3b (2019-6-12 18:0) y aparece en ev-4 (2019-6-20 11:0)
+== obra-9df1eb4deb ==
+cobertura: eventos: 10 · sin fecha legible: 0 · sin nacimiento: 3 · con exclusion: 0 · capitulos no ordenables: 0
+violaciones: 52 · sin datos: 13
+  [L-1] evt-obra-9df1eb4deb-cap-02-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 2) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
 Hay incoherencias temporales: la version NO se publica.
 ```
 
-- Enseña cómo actúa Lean. **No es el caso real que pide el enunciado.**
-- `specs/lean/README.md:238-245`: «La obra de arriba está sembrada, no generada… Decir que ya lo es sería contar como medido algo que no se ha medido».
-- **Qué lo convertiría en caso real:** una novela generada en la que los agentes declaren presentes y nacimientos, para que `L-2` a `L-4` tengan datos. No existe hoy.
+**Qué pasaba en la novela.**
+
+| Capítulos | `t_fabula` | Efecto |
+| --- | --- | --- |
+| 1 y 10 | `2026-09-25` | — |
+| 2 a 9 | `2012-09-25` en los ocho, sin hora, en lugares distintos | `L-1`: un recuerdo sin analepsis declarada, que hoy no se puede declarar (`SPEC-24` sin plan)<br>`L-3`: ocho escenas en el mismo instante |
+
+**Qué cambió.** `F-213`, commit `a40bffd`:
+- El plan vuelve al Planificador, sin pagar al Revisor, si la `t_fabula` no avanza estrictamente de una escena a la siguiente.
+- El prompt pide fecha y hora distintas por escena.
+- La novela se relanzó con la misma ficha como `obra-b113c7dd8c`. La obra del caso se conserva tal cual, como prueba.
+
+### Antes de este caso
+
+- **Todas las ejecuciones reales dieron Lean 0:**
+
+  | Ejecución | Fuente |
+  | --- | --- |
+  | R1 | `medidas.md:134` |
+  | R5 | `medidas.md:210-212` |
+  | B4, versiones 1 y 3 | `medidas.md:246-251` |
+  | `obra-6845dbb0d0` | `veredicto_de_publicacion` |
+
+- **R3, el brief pensado para provocarlo, lo paró antes el Revisor del plan** (`medidas.md:190-200`).
+- **F-47: Lean destapó que `INV-08` no se ejecutaba** (`docs/verification.md:1226`). Fue sobre una base sembrada, no sobre una generación.
+- **Caso demostrativo sobre esa base sembrada:** `specs/lean/README.md:130-145`. Hoy lo deja atrás el caso real.
 
 ### Dónde está
 
@@ -537,7 +542,6 @@ La orden de delegación pasa siempre `--model` desde `sistema.json` (`backend/ap
   - Pedir un cambio desde la web falla (F-126).
   - Cambiar un imprescindible no cambia sus palabras clave (F-125).
   - El inspector visual no devuelve nada al Escritor (EX-04, el único bloqueante que queda contra el enunciado, `cobertura-examen.md:44-48,70`).
-  - Lean sin caso real (EX-15).
 - **Hallazgos F abiertos:** F-28, 48, 55, 57, 66, 91, 101, 110, 112, 116, 120, 125, 126, 130, 134, 135, 142, 145, 154 y 155 (`grep -n "\*\*Abierto" docs/verification.md`).
   - F-110, F-112 y F-116 son contraejemplos de TLC sin arreglo en el código.
 - **Specs sin aplicar:**
@@ -554,7 +558,6 @@ La orden de delegación pasa siempre `--model` desde `sistema.json` (`backend/ap
 
 ## Lo que no existe hoy y no se puede enseñar
 
-- **Caso real de Lean sobre una novela generada.** Solo la justificación de § 3 y el caso sembrado.
 - **Ejemplo real de palabra vetada detectada y reescrita, con su texto.** El único caso real, F-59, fue un falso positivo, y su base no está en disco.
 - **Pasada «después» del tuning.** No se lanzó.
 - **Desglose por agente de R1, R5 y B4, y sus bases.** Los worktrees ya no existen.
