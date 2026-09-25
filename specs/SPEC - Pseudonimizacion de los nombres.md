@@ -1,16 +1,19 @@
 ---
 id: SPEC-34
 titulo: Pseudonimización de los nombres en la frontera con los agentes
-estado: en_revision
-aprobada_por:
-fecha_aprobacion:
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión"
+fecha_aprobacion: 2026-09-25
 fecha: 2026-09-24
-version: 1
+version: 2
 ---
 
 > **Historial.** v1: redactada con las tres respuestas del autor del 2026-09-24 (los nombres
 > entran por campos propios, el modelo ve nombres inventados, y se pseudonimiza todo lo que
 > sale). Cuatro cuestiones abiertas al final.
+> v2: el autor aprueba la spec con las propuestas de las cuestiones 1 a 3, que pasan a
+> `RF-07`, `RF-08` y `RF-09` diciendo de qué cuestión salen. La 4 queda como condición del
+> plan.
 
 # SPEC-34 — Pseudonimización de los nombres
 
@@ -52,6 +55,17 @@ las dos van a la presentación como limitación declarada (`docs/proceso/trade-o
   enviado a los agentes y a Langfuse en una generación con dobles y no encuentra ninguno de
   los nombres reales de la ficha.
 
+- **RF-07 · Los nombres vetados no salen** (de la cuestión 1). `nombres_vetados` no se
+  manda a ningún agente; se comprueba solo sobre el texto restituido (`RF-05`). Coste
+  aceptado: el Escritor no sabe qué evitar, y un veto que coincida por azar se caza después,
+  con una reescritura.
+- **RF-08 · Un pseudónimo por cada forma del nombre** (de la cuestión 2): uno por cada forma
+  que registre `formas_de_nombre`, para que «Olivia» sola también se sustituya y no solo
+  «Olivia Carranza».
+- **RF-09 · El inspector visual mira datos inventados** (de la cuestión 3). `INV-30` inspecciona
+  una base de datos inventados, como la semilla de la lectura, y no una obra real. Coste
+  aceptado: `INV-30` deja de inspeccionar la novela entregada.
+
 ## Qué queda explícitamente fuera
 
 - Un nombre real que el comprador escriba en el **texto libre** sin declararlo en un campo:
@@ -66,7 +80,9 @@ las dos van a la presentación como limitación declarada (`docs/proceso/trade-o
 de `docs/verification.md`: entre una aproximación que falla a la vista y otra que se ajusta
 más y falla en silencio, la primera.
 
-## Cuestiones abiertas para la aprobación
+## Cuestiones de la aprobación
+
+Las 1 a 3 están resueltas (`RF-07` a `RF-09`); la 4 sigue abierta y **condiciona el plan**.
 
 1. **Los nombres vetados** (`nombres_vetados` de la ficha) son de personas reales que el
    comprador no quiere en el libro, y hoy el Escritor los recibe en la lista para evitarlos.
