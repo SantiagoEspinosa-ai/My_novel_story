@@ -87,6 +87,31 @@ paradas reales a mitad. **La web no**: enseñaba como vigente la versión que se
 | `F-151` | La puerta de Lean no podía publicar ninguna versión 2 o posterior: leía los eventos de todas las versiones | Lean recibe la versión y solo sus eventos | Cerrado; publicada en la ronda 2 |
 | `F-150` | La web enseñaba como vigente la versión que la cascada estaba escribiendo | El backend lee la última publicada de `commons/obra/vigente.py` | Cerrado en el backend; el frontend recibe `vigente` en la respuesta de versiones (decisión del autor) |
 
+### El tuning (`PLAN-31` `T1`): **no completado**
+
+Decisión del autor (2026-09-25): se cierra como no completado, con sus números reales y su
+causa. La pasada «después» **no se lanzó**, y `T1` (el Escritor, sobre el ritmo; `6deefe5`)
+está commiteado **sin medir**.
+
+| Paso | Qué pasó | Coste |
+| --- | --- | --- |
+| `antes-2`: el brief base repetido con el código de `89425c4` y la misma versión del Escritor que `R1` (`8f9a1478e71a`) | Capítulos 1 y 2 consolidados; **el 3 se paró tres veces** por `INV-03`: Tere actúa sobre `imp-02` e `imp-03` sin constar que los conozca. 3 borradores y 5 hallazgos bloqueantes | **8,7712 USD en 14 delegaciones** (6,8424 del primer intento, 1,0935 de la reanudación y 0,8353 del reintento final) |
+| La «después» | No se lanzó: con el mismo plan habría chocado con la misma parada | — |
+
+**Por qué hacía falta repetir la «antes».** Desde `R1` cambió lo que recibe el Escritor
+(`F-149`: el lugar de la escena siguiente), y la «versión del prompt» de la tabla es solo la
+huella de `escritor.md`, que no cambió. Comparar la «después» con `R1` habría mezclado `T1` con
+ese cambio sin que la tabla lo dejara ver.
+
+**Lo que sí se midió, y es el resultado de este paso (`F-155`).** Los tres planes de las
+generaciones por ficha (`R1`, `R5` y `antes-2`) tienen **`conocimiento_inicial` vacío**: el
+Planificador no lo siembra nunca, porque ni su prompt ni el código de planificación lo piden, y
+el esquema lo deja vacío por defecto (Regla 4). **Dos de las tres generaciones se pararon por
+eso**: un personaje secundario actúa sobre un imprescindible de la destinataria que nadie le
+sembró. En `R5` fue Luisa sobre `imp-01`, en el capítulo 2; en `antes-2`, Tere sobre `imp-02` e
+`imp-03`, en el capítulo 3. `R1` se libró porque su Escritor no hizo actuar a ningún secundario
+sobre un imprescindible. El libro de gasto pasa de 47,1354 a 55,9066 USD.
+
 ## Tras Lean
 
 | Hallazgo | Qué se vio | Qué cambió | Efecto |
@@ -128,9 +153,8 @@ los documentos de ese flujo.
 
 ## Pendiente
 
-- **La iteración de tuning** que pide el enunciado: ajustar el prompt del Escritor y medirlo
-  con la nota del Editor por criterio, antes y después (`SPEC-31` `RF-03`, `RF-08`). **La pasada
-  «antes» está ejecutada con los cinco briefs; el cambio (`T1`) y la pasada «después», sin
-  hacer.**
+- **La iteración de tuning** que pide el enunciado: **no completada**, por decisión del autor
+  (§ "El tuning" arriba). La pasada «antes» está ejecutada con los cinco briefs; `T1` está
+  commiteado sin medir, y la «después» no se lanzó. Lo que la bloquea es `F-155`.
 - Los abiertos de arriba: `F-110`, `F-112`, `F-116`, `F-120`, `F-142` y `F-145`.
 - **La repetición de la obra de diez capítulos** con los arreglos dentro (`F-52`).
