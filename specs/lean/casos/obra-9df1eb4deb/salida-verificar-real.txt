@@ -1,0 +1,133 @@
+== obra-9df1eb4deb ==
+cobertura: eventos: 10 · sin fecha legible: 0 · sin nacimiento: 3 · con exclusion: 0 · capitulos no ordenables: 0
+violaciones: 52 · sin datos: 13
+  [L-1] evt-obra-9df1eb4deb-cap-02-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 2) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-1] evt-obra-9df1eb4deb-cap-03-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 3) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-1] evt-obra-9df1eb4deb-cap-04-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 4) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-1] evt-obra-9df1eb4deb-cap-05-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 5) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-1] evt-obra-9df1eb4deb-cap-06-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 6) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-1] evt-obra-9df1eb4deb-cap-07-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 7) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-1] evt-obra-9df1eb4deb-cap-08-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 8) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-1] evt-obra-9df1eb4deb-cap-09-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 9) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-casimiro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-casimiro esta presente en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+  [L-3] obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+no comprobado por falta de dato:
+  - obra-9df1eb4deb-per-hachi no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-casimiro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-casimiro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-casimiro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-teodoro no tiene fecha de nacimiento: su edad no se comprueba
+  - obra-9df1eb4deb-per-hachi no tiene fecha de nacimiento: su edad no se comprueba
+
+#COBERTURA eventos=10 no_ordenables=0
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-02-e1
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-03-e1
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-04-e1
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-05-e1
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-06-e1
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-07-e1
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-08-e1
+#PAR L-1 evt-obra-9df1eb4deb-cap-01-e1 evt-obra-9df1eb4deb-cap-09-e1
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-02-e1 evt-obra-9df1eb4deb-cap-02-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 2) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-03-e1 evt-obra-9df1eb4deb-cap-03-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 3) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-04-e1 evt-obra-9df1eb4deb-cap-04-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 4) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-05-e1 evt-obra-9df1eb4deb-cap-05-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 5) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-06-e1 evt-obra-9df1eb4deb-cap-06-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 6) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-07-e1 evt-obra-9df1eb4deb-cap-07-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 7) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-08-e1 evt-obra-9df1eb4deb-cap-08-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 8) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-1 evt-obra-9df1eb4deb-cap-01-e1,evt-obra-9df1eb4deb-cap-09-e1 evt-obra-9df1eb4deb-cap-09-e1 se lee despues de evt-obra-9df1eb4deb-cap-01-e1 (discurso 1 -> 9) pero ocurre antes en la fabula (2012-9-25 0:0 < 2026-9-25 0:0) y no declara analepsis
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-04-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-04-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-02-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-02-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-04-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-04-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-03-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-03-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-05-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-05-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-07-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-07-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-casimiro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-04-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-04-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-05-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-05-e1,evt-obra-9df1eb4deb-cap-06-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-05-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-05-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-05-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-05-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-05-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-06-e1,evt-obra-9df1eb4deb-cap-07-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-06-e1,evt-obra-9df1eb4deb-cap-07-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-06-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-06-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-06-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-06-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-06-e1 (obra-9df1eb4deb-lug-vagon-restaurante) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-07-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-07-e1,evt-obra-9df1eb4deb-cap-08-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-07-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-07-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-07-e1 (obra-9df1eb4deb-lug-vagon) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-08-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-ana esta presente en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-08-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-casimiro esta presente en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+#VIOLACION L-3 evt-obra-9df1eb4deb-cap-08-e1,evt-obra-9df1eb4deb-cap-09-e1 obra-9df1eb4deb-per-teodoro esta presente en evt-obra-9df1eb4deb-cap-08-e1 (obra-9df1eb4deb-lug-locomotora) y en evt-obra-9df1eb4deb-cap-09-e1 (obra-9df1eb4deb-lug-estacion-lisboa) a la vez
+
+Hay incoherencias temporales: la version NO se publica.
