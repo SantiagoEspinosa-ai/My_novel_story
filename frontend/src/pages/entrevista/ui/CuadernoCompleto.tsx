@@ -1,18 +1,21 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { Cuaderno as CuadernoDelBackend, Nombres } from "@/shared/api";
 import { Sabido } from "./Cuaderno";
 
 // SPEC-35 RF-07: cuando el backend dice `puede_cerrar`, el repaso de la ficha y lo que se
 // propone -titulo, premisa y dedicatoria-, con la opcion de seguir hablando. Cerrar es un
 // acto aparte y sin vuelta atras (SPEC-25), y la pantalla lo dice. Lo ausente se dice.
-export function CuadernoCompleto({ cuaderno, nombres, alCambiar, alCerrar, rechazo }: {
+export function CuadernoCompleto({ cuaderno, nombres, alCambiar, alCerrar, rechazo, alGuardarDedicatoria }: {
   cuaderno: CuadernoDelBackend;
   nombres: Nombres;
   alCambiar: () => void;
   alCerrar: () => void;
   rechazo: ReactNode;
+  alGuardarDedicatoria: (texto: string) => Promise<void>;
 }) {
   const p = cuaderno.propuesta;
+  // SPEC-40: la dedicatoria la escribe quien encarga la novela, aqui y fuera del modelo.
+  const [dedicatoria, setDedicatoria] = useState(p.dedicatoria ?? "");
   return (
     <section className="tarjeta cuaderno-completo" data-testid="cuaderno-completo"
       aria-label="El cuaderno completo">
@@ -25,6 +28,15 @@ export function CuadernoCompleto({ cuaderno, nombres, alCambiar, alCerrar, recha
         <p>{p.premisa ?? <Falta />}</p>
         <p className="cuaderno-completo__etiqueta">Dedicatoria</p>
         <p className="dedicatoria">{p.dedicatoria ?? <span className="sin-dato">sin dedicatoria</span>}</p>
+        <form className="cuaderno__formulario" onSubmit={(ev) => {
+          ev.preventDefault();
+          void alGuardarDedicatoria(dedicatoria.trim());
+        }}>
+          <label>La dedicatoria
+            <textarea rows={2} value={dedicatoria} onChange={(ev) => setDedicatoria(ev.target.value)} />
+          </label>
+          <button type="submit" className="boton boton--secundario">Guardar la dedicatoria</button>
+        </form>
       </div>
       <Sabido cuaderno={cuaderno} />
       {nombres.vetados.length > 0 && (

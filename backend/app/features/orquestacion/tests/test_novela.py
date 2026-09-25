@@ -859,7 +859,7 @@ class _EditorDeLaPuerta(_Fijo):
     def llamar(self, prompt):
         import re
         self.llamadas.append(prompt)
-        if "Juzga una novela para regalar entera" in prompt:
+        if "Juzga una novela personalizada entera" in prompt:
             return self.juicios.pop(0) if len(self.juicios) > 1 else self.juicios[0]
         if "CAPITULOS IMPLICADOS" in prompt and "instruccion" in prompt:
             capitulo = re.search(r"CAPITULOS IMPLICADOS\n- ([\w-]+):", prompt).group(1)

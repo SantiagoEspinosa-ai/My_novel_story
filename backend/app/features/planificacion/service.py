@@ -25,12 +25,13 @@ from app.commons.configuracion.esquemas import PlanDeLaObra
 from app.commons.dominio.destinatario import EXTENSION
 from app.commons.configuracion.esquemas import rango_de_palabras
 from app.features.planificacion.ids import acotar_a_la_obra
+from app.commons.politica import vista_de_agentes
 from app.features.planificacion import cobertura
 from app.features.planificacion import repository as repo
 
-PROMPT_PLANIFICADOR = """Planifica una novela para regalar a partir de esta ficha.
+PROMPT_PLANIFICADOR = """Planifica una novela personalizada a partir de esta ficha.
 
-FICHA (lo unico que dijo el comprador; no inventes nada que la contradiga)
+FICHA (lo unico que se sabe; no inventes nada que la contradiga)
 {ficha}
 
 PREMISA Y TITULO (los decidio la entrevista; no los cambies)
@@ -42,7 +43,7 @@ FORMA
 {objeciones}
 Devuelve un unico objeto JSON: {{"plan": {{...}}}}, con el plan de esta forma:
   mundo: lugares [{{id, nombre, accesos}}] y personajes [{{id, nombre,
-    empieza_en, fecha_de_nacimiento}}]. El destinatario y cada persona o
+    empieza_en, fecha_de_nacimiento}}]. El protagonista y cada persona o
     mascota de la ficha van con su nombre EXACTO.
   capitulos: [{{id: "cap-01".."cap-10", titulo, escenas: [{{eje, signo, lugar,
     pov, sinopsis, t_fabula, personajes_presentes}}]}}], con una sola escena.
@@ -60,7 +61,7 @@ de otros lugares declarados en `lugares` (por ejemplo "lug-cocina"), nunca una
 descripcion.
 """
 
-PROMPT_REVISOR = """Revisa si este plan es fiel a lo que pidio el comprador.
+PROMPT_REVISOR = """Revisa si este plan es fiel a su ficha.
 
 FICHA
 {ficha}
@@ -69,7 +70,7 @@ PLAN
 {plan}
 
 Comprueba que se respetan el genero, el tono, la ocasion y el papel del
-destinatario; que el plan no contradice ni inventa datos de la ficha; y que la
+protagonista; que el plan no contradice ni inventa datos de la ficha; y que la
 historia tiene arco: empieza, se complica y cierra. No juzgues el recuento de
 capitulos ni las palabras clave: eso ya lo comprobo el sistema.
 
@@ -127,7 +128,10 @@ def planificar(con, obra, ficha, planificador, revisor,
                            else config.TOPE_REINTENTOS_TRANSPORTE)
     # `SPEC-34` `RF-07`: los nombres vetados no salen hacia ningun agente. La cobertura los
     # sigue mirando con la ficha entera.
-    ficha_json = ficha.model_copy(update={"nombres_vetados": []}).model_dump_json(indent=2)
+    # `SPEC-40` `RF-01`: la vista de los agentes, con el protagonista y sin nada del regalo
+    # (tampoco los nombres vetados: `SPEC-34` `RF-07`). La cobertura mira la ficha entera.
+    ficha_json = json.dumps(vista_de_agentes.ficha_para_agentes(ficha), ensure_ascii=False,
+                            indent=2)
     anteriores = []
     rondas = fallos_de_formato = 0
     # `F-111`, TLC `CE-8`: al relanzar se sigue numerando desde la ultima version de la obra;

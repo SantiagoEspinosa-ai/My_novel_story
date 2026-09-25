@@ -80,7 +80,7 @@ def prompt_de_resumen(texto, hechos=None):
             "identificadores de esta lista; si la escena no cuenta ninguno, devuelve "
             "hechos_clave vacia.\n" + lista + "\n\nESCENA\n" + texto)
 
-RUBRICA_DEL_EDITOR = """Juzga este capitulo de una novela para regalar con tu rubrica.
+RUBRICA_DEL_EDITOR = """Juzga este capitulo de una novela personalizada con tu rubrica.
 Una nota de 1 a 5 por criterio -continuidad, tono, arco,
 coherencia_de_personajes, ritmo, personalizacion-, cada una con su justificacion
 y, si es baja, una instruccion concreta para el escritor.

@@ -113,8 +113,8 @@ def test_el_planificador_no_recibe_los_nombres_vetados(con, tmp_path):
     agentes = dobles.agentes_para(vista)
     _escribir(con, tmp_path, ficha, agentes, hasta_capitulo=1)
     # Los dobles comparten la lista: los prompts con la ficha son los del Planificador y el
-    # Revisor.
-    con_ficha = [p for p in agentes["planificador"].prompts if '"nombres_vetados"' in p]
+    # Revisor. Desde `SPEC-40` la vista de los agentes ni siquiera lleva la clave.
+    con_ficha = [p for p in agentes["planificador"].prompts if '"protagonista"' in p]
     assert con_ficha
     for p in con_ficha:
-        assert '"nombres_vetados": []' in p
+        assert "nombres_vetados" not in p and "Marcos" not in p

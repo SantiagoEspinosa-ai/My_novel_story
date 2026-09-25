@@ -1688,6 +1688,11 @@ export interface components {
          *     persona que ya no viene es una persona que se quita.
          */
         NombresEntrada: {
+            /**
+             * Dedicatoria
+             * @description SPEC-40: se escribe aqui, fuera del modelo. Nula: no cambia
+             */
+            dedicatoria?: string | null;
             /** Destinatario */
             destinatario?: string | null;
             /** Otros */

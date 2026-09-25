@@ -2303,6 +2303,18 @@
         "additionalProperties": false,
         "description": "`SPEC-34` `RF-01`, `PLAN-34` E3: los nombres, escritos por el comprador en su campo y\nguardados sin pasar por ningun agente. Es **el estado completo** de lo declarado: una\npersona que ya no viene es una persona que se quita.",
         "properties": {
+          "dedicatoria": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SPEC-40: se escribe aqui, fuera del modelo. Nula: no cambia",
+            "title": "Dedicatoria"
+          },
           "destinatario": {
             "anyOf": [
               {

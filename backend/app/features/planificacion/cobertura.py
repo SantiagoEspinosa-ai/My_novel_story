@@ -45,7 +45,8 @@ def huecos(plan, ficha) -> list:
                           "plan".format(e.descripcion))
 
     nombres_del_plan = {p.nombre for p in plan.mundo.personajes}
-    esperados = [("el destinatario", ficha.destinatario.nombre)] + [
+    # `SPEC-40` `RF-03`: estas objeciones vuelven al Planificador; ahi es «el protagonista».
+    esperados = [("el protagonista", ficha.destinatario.nombre)] + [
         (e.tipo.value, e.nombre) for e in ficha.destinatario.elementos
         if e.imprescindible and e.tipo in (TE.PERSONA, TE.MASCOTA) and e.nombre]
     for quien, nombre in esperados:

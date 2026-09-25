@@ -51,7 +51,8 @@ def test_el_destinatario_con_otro_nombre_es_un_hueco():
     d = plan_dict()
     d["mundo"]["personajes"][0]["nombre"] = "Irena Valdés"
     hs = huecos(plan(mundo=d["mundo"]), ficha())
-    assert any("Irene Valdés" in h and "destinatario" in h for h in hs)
+    # `SPEC-40` `RF-03`: la objecion vuelve al Planificador, y ahi es «el protagonista».
+    assert any("Irene Valdés" in h and "protagonista" in h for h in hs)
 
 
 def test_una_mascota_imprescindible_mal_escrita_es_un_hueco():

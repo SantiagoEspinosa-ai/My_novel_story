@@ -48,6 +48,8 @@ class NombresEntrada(BaseModel):
     regalado_por: str | None = None
     otros: list[OtroNombre] = Field(default_factory=list)
     vetados: list[str] = Field(default_factory=list)
+    dedicatoria: str | None = Field(
+        default=None, description="SPEC-40: se escribe aqui, fuera del modelo. Nula: no cambia")
 
 
 class AvisoEntrada(BaseModel):

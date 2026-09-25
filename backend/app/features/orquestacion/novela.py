@@ -146,7 +146,7 @@ def imprescindibles_por_escena(con, obra, plan, version=None):
 
 # --- El nivel obra (`SPEC-26` `RF-12`, `RF-15`, `RF-16`) --------------------------
 
-PROMPT_JUICIO_DE_OBRA = """Juzga una novela para regalar entera, a partir de los
+PROMPT_JUICIO_DE_OBRA = """Juzga una novela personalizada entera, a partir de los
 resumenes de sus capitulos y del texto completo del ultimo.
 
 ¿Tiene arco -empieza, se complica y se cierra-? ¿El final es abrupto: corta sin
@@ -255,8 +255,8 @@ def inmutable(ficha, premisa=None):
         return ficha.literales_de_otro.get(campo, v.value) if v.value == "otro" else v.value
     d = ficha.destinatario
     return ("Premisa: {6}\n"
-            "Novela para regalar. Genero: {0}. Tono: {1}. Ocasion: {2}.\n"
-            "La novela es para {3}, de {4} años, que es {5} de la historia.\n"
+            "Novela personalizada. Genero: {0}. Tono: {1}. Ocasion: {2}.\n"
+            "El personaje central es {3}, de {4} años: es {5} de la historia.\n"
             "Tercera persona, pasado. La personalizacion se integra con naturalidad; "
             "nunca justifica una mala escritura.").format(
                 valor("genero"), valor("tono"), valor("ocasion"), d.nombre, d.edad,

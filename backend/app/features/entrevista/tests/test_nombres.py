@@ -40,6 +40,9 @@ class EntrevistadorEco:
         self.prompts.append(prompt)
         bloque = prompt.split("FICHA ACTUAL\n", 1)[1].split("\n\nLO QUE FALTA", 1)[0]
         ficha = json.loads(bloque)
+        # `SPEC-40`: la ficha llega con el `protagonista`; el doble la devuelve con
+        # `destinatario`, que es lo que los cambios de las pruebas tocan. Las dos se leen.
+        ficha["destinatario"] = ficha.pop("protagonista", ficha.get("destinatario"))
         ficha["destinatario"]["edad"] = 9
         if self.cambiar:
             self.cambiar(ficha)

@@ -73,6 +73,8 @@ function NombresDelCuaderno({ nombres, cerrada, alGuardar, alConfirmarAviso }: {
     otros: nombres.otros.map((o) => ({ nombre: o.nombre, tipo: o.tipo as "persona" | "mascota",
       relacion: o.relacion })),
     vetados: [...nombres.vetados],
+    // SPEC-40: nula es «no cambia»; la dedicatoria se escribe en el cuaderno completo.
+    dedicatoria: null,
   });
 
   async function guardar(n: NombresEntrada, limpiar: () => void) {

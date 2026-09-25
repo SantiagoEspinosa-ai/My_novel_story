@@ -120,7 +120,7 @@ def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=(), umbral_nombre=None
     return Evaluacion(decision, ronda, implicados, resultado, cierre)
 
 
-PROMPT_FEEDBACK_LEAN = """Eres el editor de una novela para regalar. La verificacion formal de
+PROMPT_FEEDBACK_LEAN = """Eres el editor de una novela personalizada. La verificacion formal de
 la cronologia (Lean) ha encontrado incoherencias temporales. No reescribes nada: lo que
 Lean mira lo fija el plan antes de escribir, y la generacion se va a detener. Explica en
 una o dos frases que falla en el plan, para el informe.
@@ -134,7 +134,7 @@ CAPITULOS IMPLICADOS
 Devuelve un unico objeto JSON: "diagnostico": una o dos frases.
 """
 
-PROMPT_INSTRUCCIONES = """Eres el editor de una novela para regalar. El juicio de la obra
+PROMPT_INSTRUCCIONES = """Eres el editor de una novela personalizada. El juicio de la obra
 entera ha encontrado problemas. No reescribes: das una instruccion concreta al escritor
 por cada capitulo que haya que tocar, y solo de los capitulos implicados.
 

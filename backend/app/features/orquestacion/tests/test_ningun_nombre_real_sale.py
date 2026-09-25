@@ -41,10 +41,12 @@ class EntrevistadorQueCompleta:
         self.prompts.append(prompt)
         bloque = prompt.split("FICHA ACTUAL\n", 1)[1].split("\n\nLO QUE FALTA", 1)[0]
         f = json.loads(bloque)
-        pila = f["destinatario"]["nombre"].split()[0]
-        mascota = next(e["nombre"] for e in f["destinatario"]["elementos"] if e.get("nombre"))
-        f["destinatario"]["edad"] = 9
-        f["destinatario"]["elementos"] += [
+        # `SPEC-40`: la ficha llega con el `protagonista`, y se devuelve igual.
+        p = f["protagonista"]
+        pila = p["nombre"].split()[0]
+        mascota = next(e["nombre"] for e in p["elementos"] if e.get("nombre"))
+        p["edad"] = 9
+        p["elementos"] += [
             {"tipo": "rasgo", "descripcion": "colecciona piedras", "imprescindible": True},
             {"tipo": "recuerdo", "descripcion": "la tarde en que {0} aprendio a nadar".format(
                 mascota), "imprescindible": True}]
@@ -112,6 +114,11 @@ def test_ningun_nombre_real_sale_hacia_agentes_tools_ni_langfuse(tmp_path):
     _sin_nombres_reales(salidas, "tool")
     _sin_nombres_reales([json.dumps(o, ensure_ascii=False) for _, o in exportador.enviados],
                         "langfuse")
+    # `SPEC-40` `RF-05`: ningun prompt habla del regalo, del destinatario ni del comprador.
+    from app.commons.politica.vista_de_agentes import PALABRAS_DEL_REGALO
+    for texto in prompts:
+        m = PALABRAS_DEL_REGALO.search(texto)
+        assert m is None, (m.group(), texto[max(0, m.start() - 150):m.end() + 150])
     # Y la base guarda los reales: la sustitucion es en la frontera, no en el canon.
     textos = " ".join(f[0] for f in con.execute("SELECT texto FROM borrador"))
     assert "Olivia" in textos

@@ -93,6 +93,8 @@ describe("Entrevista con Xime", () => {
       otros: [{ nombre: "Nora", tipo: "mascota", relacion: "su perra" },
         { nombre: "Pipa", tipo: "mascota", relacion: "su gata" }],
       vetados: ["Nora Quintana"],
+      // SPEC-40: el cuaderno lateral no toca la dedicatoria (nula es «no cambia»).
+      dedicatoria: null,
     });
   });
 
@@ -141,6 +143,19 @@ describe("CuadernoCompleto", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Quiero cambiar algo" }));
     expect(await screen.findByLabelText("Tu respuesta")).toBeInTheDocument();
     expect(screen.queryByTestId("cuaderno-completo")).toBeNull();
+  });
+
+  it("la dedicatoria se escribe en el cuaderno, fuera del modelo (SPEC-40)", async () => {
+    const { pedidas } = montar({
+      [`GET ${E}/turnos`]: [{ cuerpo: historialListo }],
+      [`PUT ${E}/nombres`]: [{ cuerpo: {} }],
+    });
+    const c = await screen.findByTestId("cuaderno-completo");
+    fireEvent.change(within(c).getByLabelText("La dedicatoria"), { target: { value: "Para Nerea, con cariño." } });
+    fireEvent.click(within(c).getByRole("button", { name: "Guardar la dedicatoria" }));
+    await waitFor(() => expect(pedidas.find((p) => p.clave === `PUT ${E}/nombres`)?.cuerpo)
+      .toMatchObject({ dedicatoria: "Para Nerea, con cariño.", destinatario: "Nerea Salgado" }));
+    expect(pedidas.map((p) => p.clave)).not.toContain(`POST ${E}/turnos`);
   });
 
   it("sin dedicatoria lo dice y no se inventa una", async () => {

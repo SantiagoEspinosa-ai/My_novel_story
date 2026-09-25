@@ -143,6 +143,12 @@ export function PaginaEntrevista({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
           ) : completo ? (
             <CuadernoCompleto cuaderno={historial.cuaderno} nombres={historial.nombres}
               alCambiar={() => setQuiereCambiar(true)} alCerrar={() => void cerrar()}
+              alGuardarDedicatoria={(texto) => guardarNombres({
+                destinatario: historial.nombres.destinatario,
+                regalado_por: historial.nombres.regalado_por,
+                otros: historial.nombres.otros.map((o) => ({ nombre: o.nombre,
+                  tipo: o.tipo as "persona" | "mascota", relacion: o.relacion })),
+                vetados: historial.nombres.vetados, dedicatoria: texto })}
               rechazo={rechazo && <Rechazado rechazo={rechazo} />} />
           ) : (
             <form className="entrevista__responder"

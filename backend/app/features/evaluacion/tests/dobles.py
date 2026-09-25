@@ -112,7 +112,7 @@ def agentes_para(ficha, prompts=None, coste=None):
         return {"texto": texto, "pov_usado": m.group(0) if m else pov, "delta": DELTA_OK}
 
     def editor(prompt):
-        if "Juzga una novela para regalar entera" in prompt:
+        if "Juzga una novela personalizada entera" in prompt:
             return {"arco_cerrado": True, "final_abrupto": False, "justificacion": "bien"}
         return {"valoraciones": [{"criterio": c, "nota": 4, "justificacion": "bien"}
                                  for c in CRITERIOS]}
