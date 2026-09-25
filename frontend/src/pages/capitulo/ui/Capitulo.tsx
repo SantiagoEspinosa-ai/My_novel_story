@@ -5,6 +5,7 @@ import {
   useLectura, type CapituloLeido, type CapituloLeidoDeVersion, type Versiones,
 } from "@/shared/api";
 import { ESTADO_DE_CAPITULO, Esperando, EtiquetaDeEstado, MARCA_DE_CAMBIO } from "@/shared/ui";
+import "./capitulo.css";
 
 // La lectura continua de un capitulo (SPEC-22 RF-41). Que escenas entran y en que orden lo
 // decide el backend; aqui se pinta **una escena por bloque**, cada una con su estado y sus
@@ -45,7 +46,8 @@ function CapituloDeVersion({ obra, capitulo, numero }: {
           <Esperando lectura={lectura}>
             {(cap: CapituloLeidoDeVersion) => (
               <VistaCapitulo obra={obra} capitulo={cap} numero={numero} vigente={vigente}
-                pedir={numero === vigente} />
+                pedir={numero === vigente}
+                anterior={v.versiones.find((x) => x.numero === numero)?.anterior ?? null} />
             )}
           </Esperando>
         );
@@ -54,11 +56,12 @@ function CapituloDeVersion({ obra, capitulo, numero }: {
   );
 }
 
-function VistaCapitulo({ obra, capitulo, numero, vigente, pedir = false }: {
+function VistaCapitulo({ obra, capitulo, numero, vigente, anterior = null, pedir = false }: {
   obra: string;
   capitulo: CapituloLeido | CapituloLeidoDeVersion;
   numero?: number;
   vigente?: number;
+  anterior?: number | null;
   pedir?: boolean;
 }) {
   const o = encodeURIComponent(obra);
@@ -75,6 +78,9 @@ function VistaCapitulo({ obra, capitulo, numero, vigente, pedir = false }: {
           Estás leyendo la versión {numero}, que se conserva entera. Los cambios se piden sobre
           la <Link to={`/obras/${o}/versiones/${vigente}/indice`}>versión {vigente}</Link>.
         </p>
+      )}
+      {deVersion?.compartido === false && numero !== undefined && (
+        <PorTuCambio obra={obra} numero={numero} anterior={anterior} />
       )}
       <h1>{`Capítulo ${capitulo.orden}`}</h1>
       <div className="capitulo__etiquetas">
@@ -95,5 +101,24 @@ function VistaCapitulo({ obra, capitulo, numero, vigente, pedir = false }: {
         );
       })}
     </main>
+  );
+}
+
+// SPEC-35 RF-10: un capitulo que cambio en una version dice que peticion lo cambio, con las
+// palabras del lector, y enlaza a la version anterior. Sin peticion (una version que no nacio
+// de un cambio), o mientras no llega, no hay aviso: no se inventa un porque.
+function PorTuCambio({ obra, numero, anterior }: {
+  obra: string; numero: number; anterior: number | null;
+}) {
+  const lectura = useLectura((c) => c.peticionDeLaVersion(obra, numero), `peticion:${obra}:${numero}`);
+  if (lectura.estado !== "listo" || lectura.datos.texto === null) return null;
+  const o = encodeURIComponent(obra);
+  return (
+    <p className="por-tu-cambio" data-testid="por-tu-cambio" role="note">
+      <span>Este capítulo se reescribió por tu cambio: «{lectura.datos.texto}»</span>
+      {anterior !== null && (
+        <Link to={`/obras/${o}/versiones/${anterior}/indice`}>Leer cómo era antes</Link>
+      )}
+    </p>
   );
 }
