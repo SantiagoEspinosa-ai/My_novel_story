@@ -155,6 +155,7 @@ export const generacionEnCurso: GeneracionEnVivo = {
     ...Array.from({ length: 8 }, (_, i) => capitulo(i + 3)),
   ],
   coste: { generacion: "gen-inventada", usd: 1.25, delegaciones: 7, sin_coste: 0, es_suelo: false },
+  titulo: "La casa del faro",
   fase_de_la_obra: "editando",
   motivo_del_fallo: null,
 };
@@ -162,7 +163,7 @@ export const generacionEnCurso: GeneracionEnVivo = {
 /** F-206: planificando, la obra todavia no esta montada y no tiene capitulos. */
 export const generacionPlanificando: GeneracionEnVivo = {
   obra: "obra-regalo-inventada", total_de_capitulos: 0, capitulos: [], coste: null,
-  fase_de_la_obra: "planificando", motivo_del_fallo: null,
+  titulo: null, fase_de_la_obra: "planificando", motivo_del_fallo: null,
 };
 
 /** SPEC-35 RF-13: el lanzamiento fallo antes de la primera fila de progreso. */

@@ -123,4 +123,26 @@ describe("Generacion", () => {
     await screen.findByTestId("capitulos");
     expect(screen.queryByRole("link", { name: /Leer/ })).toBeNull();
   });
+
+  // PLAN-36 G3 (SPEC-36 RF-02): el escritor en su mesa, encima de lo de siempre.
+  it("la mesa dice qué capítulo se escribe y el título de la novela", async () => {
+    montar([generacionEnCurso]);
+    const mesa = await screen.findByTestId("mesa-del-escritor");
+    expect(mesa).toHaveTextContent("La casa del faro");
+    expect(mesa).toHaveTextContent("Escribiendo el capítulo 2 de 10");
+  });
+
+  it("la fila de hojas marca las escritas y la actual", async () => {
+    montar([generacionEnCurso]);
+    const hojas = within(await screen.findByTestId("hojas")).getAllByRole("listitem");
+    expect(hojas).toHaveLength(10);
+    expect(hojas[0]).toHaveAttribute("data-hoja", "escrita");
+    expect(hojas[1]).toHaveAttribute("data-hoja", "actual");
+    expect(hojas[2]).toHaveAttribute("data-hoja", "en_blanco");
+  });
+
+  it("sin título todavía lo dice", async () => {
+    montar([generacionPlanificando]);
+    expect(await screen.findByTestId("mesa-del-escritor")).toHaveTextContent("sin título todavía");
+  });
 });

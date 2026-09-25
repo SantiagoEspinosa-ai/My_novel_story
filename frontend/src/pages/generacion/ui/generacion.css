@@ -37,3 +37,22 @@
   border: 1px solid var(--color-oro); border-radius: var(--radio-m);
 }
 .generacion__terminada p { margin: 0; }
+
+/* SPEC-36 RF-02: el escritor en su mesa. Solo variables del tema. */
+.mesa { display: grid; grid-template-columns: 26rem 1fr; gap: var(--espacio-xl); align-items: center; margin: var(--espacio-l) 0; }
+@media (max-width: 860px) { .mesa { grid-template-columns: 1fr; } }
+.mesa__escena { position: relative; height: 280px; }
+.mesa__luz { position: absolute; left: -40px; top: 60px; width: 380px; height: 240px; background: radial-gradient(ellipse at 40% 0%, var(--color-oro), transparent 70%); opacity: 0.45; }
+.mesa__pantalla { position: absolute; left: 80px; top: 30px; width: 90px; height: 50px; background: var(--color-oro); clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%); }
+.mesa__brazo { position: absolute; left: 122px; top: 78px; width: 6px; height: 130px; background: var(--color-detalle); }
+.mesa__tablero { position: absolute; left: 0; right: 0; bottom: 30px; height: 22px; background: linear-gradient(var(--color-madera), var(--color-maderaOscura)); border-radius: 4px; }
+.mesa__hoja { position: absolute; bottom: 52px; width: 110px; height: 140px; background: var(--color-papelDeLibro); border-radius: 2px; box-shadow: var(--sombra-media); }
+.mesa__hoja--1 { left: 190px; transform: rotate(-8deg); }
+.mesa__hoja--2 { left: 230px; transform: rotate(5deg); }
+.mesa__pluma { position: absolute; left: 330px; bottom: 110px; width: 6px; height: 90px; background: var(--color-oro); transform: rotate(35deg); border-radius: 3px; }
+.mesa__titulo { margin: 0; color: var(--color-sobreNoche); font-size: 2rem; }
+.mesa__dice { font-family: var(--fuente-lectura); font-style: italic; font-size: 1.3rem; color: var(--color-oro); }
+.mesa__hojas { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.mesa__hojita { height: 64px; border-radius: 4px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font-size: 0.75rem; border: 1px solid var(--color-tintaSuave, var(--color-textoSuave)); color: var(--color-sobreNoche); }
+.mesa__hojita--escrita { background: var(--color-papelDeLibro); color: var(--color-texto); }
+.mesa__hojita--actual { border-color: var(--color-oro); color: var(--color-oro); box-shadow: 0 0 18px var(--color-oro); }

@@ -5,7 +5,9 @@ import {
   useCliente, useLectura, type CapituloEnGeneracion, type GeneracionEnVivo,
 } from "@/shared/api";
 import { INTERVALO_DE_REGALO_MS } from "@/shared/config";
-import { ESTADO_DE_ESCENA, EtiquetaDeEstado, FASE_DE_GENERACION, SEVERIDAD } from "@/shared/ui";
+import {
+  ESTADO_DE_ESCENA, EtiquetaDeEstado, FASE_DE_GENERACION, SEVERIDAD, SinDato,
+} from "@/shared/ui";
 import { CosteEnVivo } from "./CosteEnVivo";
 import "./generacion.css";
 
@@ -48,6 +50,7 @@ export function PaginaGeneracion({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
             : "La novela se está escribiendo"}</h1>
           <CosteEnVivo coste={g.coste} />
         </header>
+        <MesaDelEscritor g={g} />
         {g.motivo_del_fallo && (
           <p role="alert" className="aviso generacion__fallo">
             La novela no se pudo empezar a escribir: {g.motivo_del_fallo}
@@ -69,6 +72,40 @@ export function PaginaGeneracion({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
         )}
       </div>
     </main>
+  );
+}
+
+// SPEC-36 RF-02: el escritor en su mesa. La escena es CSS; lo que dice sale de lo que llega: el
+// capitulo que es el actual, la fase de la obra y, por capitulo, si ya paso (como en la tarjeta).
+function MesaDelEscritor({ g }: { g: GeneracionEnVivo }) {
+  const actual = g.capitulos.find((c) => c.es_el_actual);
+  const dice = actual
+    ? `Escribiendo el capítulo ${actual.numero} de ${g.total_de_capitulos}…`
+    : g.fase_de_la_obra === "publicada" ? "La novela está terminada."
+      : g.fase_de_la_obra ? `${FASE_DE_GENERACION[g.fase_de_la_obra].etiqueta}…`
+        : "Esperando a empezar…";
+  return (
+    <section className="mesa" data-testid="mesa-del-escritor">
+      <div className="mesa__escena" aria-hidden="true">
+        <div className="mesa__luz" /><div className="mesa__pantalla" /><div className="mesa__brazo" />
+        <div className="mesa__hoja mesa__hoja--1" /><div className="mesa__hoja mesa__hoja--2" />
+        <div className="mesa__pluma" /><div className="mesa__tablero" />
+      </div>
+      <div className="mesa__texto">
+        <h2 className="mesa__titulo">
+          <SinDato valor={g.titulo ?? null} ausente="sin título todavía">{(t) => t}</SinDato>
+        </h2>
+        <p className="mesa__dice">{dice}</p>
+        {g.capitulos.length > 0 && (
+          <ol className="mesa__hojas" data-testid="hojas" aria-label="capítulos">
+            {g.capitulos.map((c) => {
+              const hoja = c.es_el_actual ? "actual" : c.fase ? "escrita" : "en_blanco";
+              return <li key={c.numero} data-hoja={hoja} className={`mesa__hojita mesa__hojita--${hoja}`}>{c.numero}</li>;
+            })}
+          </ol>
+        )}
+      </div>
+    </section>
   );
 }
 
