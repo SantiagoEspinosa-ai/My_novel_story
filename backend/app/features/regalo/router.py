@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.commons.configuracion import carga
 from app.features.regalo import service
-from app.features.regalo.schemas import (ConfirmacionDeGasto, Estanteria, GeneracionEnVivo,
-                                         PeticionDeLaVersion)
+from app.features.regalo.schemas import (Administracion, ConfirmacionDeGasto, Estanteria,
+                                         GeneracionEnVivo, PeticionDeLaVersion)
 
 router = APIRouter(tags=["regalo"])
 
@@ -32,6 +32,13 @@ def _sistema():
 def estanteria(con: sqlite3.Connection = Depends(conexion)):
     """`RF-01`..`RF-03`: todas las obras, con su portada, su destinatario y su estado."""
     return service.estanteria(con)
+
+
+@router.get("/admin/obras", response_model=Administracion)
+def administracion(con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-36` `RF-03`: todas las novelas con su fase, coste, hallazgos y Lean. **Sin
+    login**, por decision del autor: cualquiera con la URL la ve."""
+    return service.administracion(con, _sistema().generacion_web.techo_de_gasto_usd)
 
 
 @router.get("/generaciones/gasto", response_model=ConfirmacionDeGasto)

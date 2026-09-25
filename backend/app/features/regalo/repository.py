@@ -183,3 +183,34 @@ def gasto_de(con, obra=None, generacion=None):
            + (" WHERE " + " AND ".join(donde) if donde else ""))
     usd, n, nulos = con.execute(sql, args).fetchone()
     return usd, n, nulos or 0
+
+
+# --- `SPEC-36`: el titulo en la generacion y la administracion -------------------------
+
+def titulo_de(con, obra):
+    """El titulo de la obra montada, o `None` si todavia no se ha montado."""
+    f = con.execute("SELECT titulo FROM obra WHERE id = ?", (obra,)).fetchone()
+    return f[0] if f else None
+
+
+def hallazgos_abiertos_por_severidad(con, obra):
+    """Los hallazgos `abierto` o `sin_veredicto` de las escenas de la obra, por severidad."""
+    cuenta = {"bloqueante": 0, "mayor": 0, "menor": 0}
+    if not migraciones.tiene_tabla(con, "hallazgo"):
+        return cuenta
+    for severidad, n in con.execute(
+            "SELECT h.severidad, COUNT(*) FROM hallazgo h JOIN escena e ON e.id = h.escena "
+            "WHERE e.obra = ? AND h.estado IN ('abierto', 'sin_veredicto') "
+            "GROUP BY h.severidad", (obra,)):
+        if severidad in cuenta:
+            cuenta[severidad] = n
+    return cuenta
+
+
+def codigo_lean_de(con, obra):
+    """El codigo de Lean del ultimo veredicto de la puerta de la obra, o `None`."""
+    if not migraciones.tiene_tabla(con, "veredicto_de_publicacion"):
+        return None
+    f = con.execute("SELECT codigo_lean FROM veredicto_de_publicacion WHERE obra = ? "
+                    "ORDER BY version DESC, ronda DESC LIMIT 1", (obra,)).fetchone()
+    return f[0] if f else None

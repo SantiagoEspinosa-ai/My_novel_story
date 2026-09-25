@@ -65,5 +65,23 @@ def generacion(con, obra, umbral):
             "coste": None if ultima is None
             else coste(*repo.gasto_de(con, obra, ultima), ultima),
             # `SPEC-35` `RF-13`: lo que la pagina dice aunque no haya capitulos.
+            "titulo": repo.titulo_de(con, obra),
             "fase_de_la_obra": repo.ultima_fase(con, obra),
             "motivo_del_fallo": repo.motivo_del_ultimo_lanzamiento(con, obra)}
+
+
+def administracion(con, techo):
+    """`SPEC-36` `RF-03`: cada obra con su fase, su coste de todas sus generaciones, sus
+    hallazgos abiertos y el ultimo codigo de Lean. Solo lee."""
+    usd, n, nulos = repo.gasto_de(con)
+    obras = []
+    for o in repo.obras_de_la_estanteria(con):
+        c_usd, c_n, c_nulos = repo.gasto_de(con, o["id"])
+        obras.append({
+            "id": o["id"], "titulo": o["titulo"], "fase": repo.ultima_fase(con, o["id"]),
+            "coste": None if c_n == 0 else coste(c_usd, c_n, c_nulos, None),
+            "hallazgos": repo.hallazgos_abiertos_por_severidad(con, o["id"]),
+            "codigo_lean": repo.codigo_lean_de(con, o["id"])})
+    return {"gastado": {"usd": usd, "delegaciones": n, "sin_coste": nulos, "es_suelo": True,
+                        "por_que_es_suelo": POR_QUE_ES_SUELO},
+            "techo_usd": techo, "obras": obras}

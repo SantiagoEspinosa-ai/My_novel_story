@@ -115,5 +115,39 @@ class GeneracionEnVivo(_DelDominio):
     total_de_capitulos: int
     capitulos: list[CapituloEnGeneracion]
     coste: CosteDeLaGeneracion | None
+    titulo: str | None = None
     fase_de_la_obra: enums.FaseDeGeneracion | None = None
     motivo_del_fallo: str | None = None
+
+
+class HallazgosPorSeveridad(_DelDominio):
+    bloqueante: int
+    mayor: int
+    menor: int
+
+
+class CosteDeUnaObra(_DelDominio):
+    """Lo anotado de todas las generaciones de una obra. `generacion` va nula: es la suma."""
+
+    generacion: str | None
+    usd: float | None
+    delegaciones: int
+    sin_coste: int
+    es_suelo: bool
+
+
+class ObraEnLaAdministracion(_DelDominio):
+    id: str
+    titulo: str | None
+    fase: enums.FaseDeGeneracion | None
+    coste: CosteDeUnaObra | None
+    hallazgos: HallazgosPorSeveridad
+    codigo_lean: int | None
+
+
+class Administracion(_DelDominio):
+    """`SPEC-36` `RF-03`: la vista de administracion, resuelta en el backend."""
+
+    gastado: Gastado
+    techo_usd: float
+    obras: list[ObraEnLaAdministracion]

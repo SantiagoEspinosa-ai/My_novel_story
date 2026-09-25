@@ -1,6 +1,33 @@
 {
   "components": {
     "schemas": {
+      "Administracion": {
+        "additionalProperties": false,
+        "description": "`SPEC-36` `RF-03`: la vista de administracion, resuelta en el backend.",
+        "properties": {
+          "gastado": {
+            "$ref": "#/components/schemas/Gastado"
+          },
+          "obras": {
+            "items": {
+              "$ref": "#/components/schemas/ObraEnLaAdministracion"
+            },
+            "title": "Obras",
+            "type": "array"
+          },
+          "techo_usd": {
+            "title": "Techo Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "gastado",
+          "techo_usd",
+          "obras"
+        ],
+        "title": "Administracion",
+        "type": "object"
+      },
       "AvisoDeNombre": {
         "properties": {
           "texto": {
@@ -673,6 +700,55 @@
           "es_suelo"
         ],
         "title": "CosteDeLaGeneracion",
+        "type": "object"
+      },
+      "CosteDeUnaObra": {
+        "additionalProperties": false,
+        "description": "Lo anotado de todas las generaciones de una obra. `generacion` va nula: es la suma.",
+        "properties": {
+          "delegaciones": {
+            "title": "Delegaciones",
+            "type": "integer"
+          },
+          "es_suelo": {
+            "title": "Es Suelo",
+            "type": "boolean"
+          },
+          "generacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generacion"
+          },
+          "sin_coste": {
+            "title": "Sin Coste",
+            "type": "integer"
+          },
+          "usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usd"
+          }
+        },
+        "required": [
+          "generacion",
+          "usd",
+          "delegaciones",
+          "sin_coste",
+          "es_suelo"
+        ],
+        "title": "CosteDeUnaObra",
         "type": "object"
       },
       "CriterioDeEdicion": {
@@ -1359,6 +1435,17 @@
             "title": "Obra",
             "type": "string"
           },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
           "total_de_capitulos": {
             "title": "Total De Capitulos",
             "type": "integer"
@@ -1419,6 +1506,30 @@
           "descripcion"
         ],
         "title": "HallazgoAbierto",
+        "type": "object"
+      },
+      "HallazgosPorSeveridad": {
+        "additionalProperties": false,
+        "properties": {
+          "bloqueante": {
+            "title": "Bloqueante",
+            "type": "integer"
+          },
+          "mayor": {
+            "title": "Mayor",
+            "type": "integer"
+          },
+          "menor": {
+            "title": "Menor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bloqueante",
+          "mayor",
+          "menor"
+        ],
+        "title": "HallazgosPorSeveridad",
         "type": "object"
       },
       "HechoPropuesto": {
@@ -1783,6 +1894,70 @@
           "bajo_el_umbral"
         ],
         "title": "NotaDelEditor",
+        "type": "object"
+      },
+      "ObraEnLaAdministracion": {
+        "additionalProperties": false,
+        "properties": {
+          "codigo_lean": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Lean"
+          },
+          "coste": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeUnaObra"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fase": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FaseDeGeneracion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hallazgos": {
+            "$ref": "#/components/schemas/HallazgosPorSeveridad"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "fase",
+          "coste",
+          "hallazgos",
+          "codigo_lean"
+        ],
+        "title": "ObraEnLaAdministracion",
         "type": "object"
       },
       "ObraEnLaEstanteria": {
@@ -2754,6 +2929,28 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/admin/obras": {
+      "get": {
+        "description": "`SPEC-36` `RF-03`: todas las novelas con su fase, coste, hallazgos y Lean. **Sin\nlogin**, por decision del autor: cualquiera con la URL la ve.",
+        "operationId": "administracion_admin_obras_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Administracion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Administracion",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
     "/capitulos/{id_capitulo}": {
       "get": {
         "description": "Un capitulo de corrido: sus escenas en orden, cada una con estado y hallazgos.",
