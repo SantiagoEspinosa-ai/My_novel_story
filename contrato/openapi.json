@@ -1,6 +1,23 @@
 {
   "components": {
     "schemas": {
+      "AccionesDeObra": {
+        "description": "`SPEC-39` `RF-07`: que se puede hacer con la novela, y por que no, lo decide el backend.",
+        "properties": {
+          "publicar": {
+            "$ref": "#/components/schemas/Publicar"
+          },
+          "reanudar": {
+            "$ref": "#/components/schemas/Reanudar"
+          }
+        },
+        "required": [
+          "publicar",
+          "reanudar"
+        ],
+        "title": "AccionesDeObra",
+        "type": "object"
+      },
       "Administracion": {
         "additionalProperties": false,
         "description": "`SPEC-36` `RF-03`: la vista de administracion, resuelta en el backend.",
@@ -3064,6 +3081,148 @@
         "title": "PropuestaSalida",
         "type": "object"
       },
+      "Publicar": {
+        "properties": {
+          "coste_medio_del_editor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coste Medio Del Editor"
+          },
+          "delegaciones_medidas_del_editor": {
+            "title": "Delegaciones Medidas Del Editor",
+            "type": "integer"
+          },
+          "lean_disponible": {
+            "title": "Lean Disponible",
+            "type": "boolean"
+          },
+          "lean_motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lean Motivo"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "posible": {
+            "title": "Posible",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "posible",
+          "motivo",
+          "version",
+          "lean_disponible",
+          "lean_motivo",
+          "coste_medio_del_editor",
+          "delegaciones_medidas_del_editor"
+        ],
+        "title": "Publicar",
+        "type": "object"
+      },
+      "Reanudar": {
+        "properties": {
+          "coste_por_capitulo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coste Por Capitulo"
+          },
+          "desde_capitulo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desde Capitulo"
+          },
+          "estimacion_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimacion Usd"
+          },
+          "faltan": {
+            "title": "Faltan",
+            "type": "integer"
+          },
+          "fuente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fuente"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "posible": {
+            "title": "Posible",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "posible",
+          "motivo",
+          "desde_capitulo",
+          "faltan",
+          "coste_por_capitulo",
+          "fuente",
+          "estimacion_usd"
+        ],
+        "title": "Reanudar",
+        "type": "object"
+      },
       "Referencia": {
         "additionalProperties": false,
         "description": "Una medida de **otra** base, con su fuente: se ensena como referencia.",
@@ -4653,6 +4812,49 @@
         ]
       }
     },
+    "/obras/{id_obra}/acciones": {
+      "get": {
+        "description": "`SPEC-39` `RF-07`: si se puede publicar o reanudar, por que no, desde donde y cuanto.",
+        "operationId": "acciones_obras__id_obra__acciones_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccionesDeObra"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Acciones",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
     "/obras/{id_obra}/cambios": {
       "post": {
         "description": "`202` con el identificador de trabajo. `409` si no hay salida elegida -hoy,\nsiempre: falta la medida-, si la lista no es la propuesta o si `C-4` no la admite.\nCon `409` **no se guarda ni se encola nada**.",
@@ -5090,6 +5292,47 @@
         "summary": "Progreso",
         "tags": [
           "lectura"
+        ]
+      }
+    },
+    "/obras/{id_obra}/publicaciones": {
+      "post": {
+        "description": "`SPEC-39` `RF-01`..`RF-03`: una ronda de la puerta, Lean incluido, sin reescribir. `409`\ncon el motivo si no se puede, **sin Lean incluido**, antes de llamar a nadie.",
+        "operationId": "publicar_obras__id_obra__publicaciones_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publicar",
+        "tags": [
+          "regalo"
         ]
       }
     },

@@ -429,6 +429,24 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
     return dict(r, plan=aprobado)
 
 
+def vetadas_de_la_version(con, obra, ficha, sistema, version=None, listas=None):
+    """Las vetadas que se comprueban en una version, y su catalogo: las tres listas, las de
+    la ficha y, en una version con renombrados, el nombre viejo (`PLAN-23` A7). La usan la
+    escritura y la puerta que se lanza desde la web (`SPEC-39`)."""
+    from app.commons.configuracion import carga
+    from app.features.politica import repository as politica
+    politica.asegurar_tablas(con)
+    politica.cargar_listas(con, listas or carga.cargar_vetadas())
+    politica.vetar_en_novela(con, obra, palabras=ficha.vetadas,
+                             nombres=ficha.nombres_vetados)
+    catalogo = politica.vetadas_para(con, obra, ficha.destinatario.edad,
+                                     sistema.franjas_de_edad)
+    numero = version if version is not None else brief.version_vigente(con, obra)
+    vetadas = regeneracion.vetadas_de_version(con, obra, numero,
+                                              base=[v.forma for v in catalogo])
+    return vetadas, catalogo
+
+
 def escribir_version(con, obra, ficha, agentes, plan, premisa, capitulos, version, sistema,
                      donde, listas=None, lean=None, observacion=None, seguir=None,
                      carpeta_de_reglas=None, con_puerta=True, desde=1):
@@ -450,16 +468,7 @@ def escribir_version(con, obra, ficha, agentes, plan, premisa, capitulos, versio
     from app.features.orquestacion import obra as modulo_obra
     from app.features.politica import repository as politica
 
-    politica.asegurar_tablas(con)
-    politica.cargar_listas(con, listas or carga.cargar_vetadas())
-    politica.vetar_en_novela(con, obra, palabras=ficha.vetadas,
-                             nombres=ficha.nombres_vetados)
-    catalogo = politica.vetadas_para(con, obra, ficha.destinatario.edad,
-                                     sistema.franjas_de_edad)
-    # `PLAN-23` A7: en una version con renombrados, el nombre viejo es una vetada mas.
-    numero = version if version is not None else brief.version_vigente(con, obra)
-    vetadas = regeneracion.vetadas_de_version(con, obra, numero,
-                                              base=[v.forma for v in catalogo])
+    vetadas, catalogo = vetadas_de_la_version(con, obra, ficha, sistema, version, listas)
     if observacion is not None:
         # Una forma en varios niveles se envia como la mas publica: la global ya lo es.
         for v in sorted(catalogo, key=lambda v: v.nivel.value != "global", reverse=True):

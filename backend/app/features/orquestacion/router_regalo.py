@@ -12,7 +12,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request,
 
 from app.commons.configuracion import carga
 from app.commons.trabajos import cola
+from app.features.orquestacion import acciones as modulo_acciones
 from app.features.orquestacion import regalo
+from app.features.orquestacion.schemas_de_acciones import AccionesDeObra
 
 router = APIRouter(tags=["regalo"])
 
@@ -70,3 +72,63 @@ def lanzar(id_obra: str, request: Request, tareas: BackgroundTasks,
 
     tareas.add_task(_ejecutar, ruta, id_t, trabajo)
     return {"id_trabajo": id_t, "generacion": generacion}
+
+
+# --- `SPEC-39`: publicar y reanudar -----------------------------------------------------
+
+def _lean(estado):
+    """Con un Lean inyectado (las pruebas), esta disponible; si no, se busca `lake`."""
+    if getattr(estado, "lean_regalo", None) is not None:
+        return True, None
+    return modulo_acciones.lake_disponible()
+
+
+@router.get("/obras/{id_obra}/acciones", response_model=AccionesDeObra)
+def acciones(id_obra: str, request: Request, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-39` `RF-07`: si se puede publicar o reanudar, por que no, desde donde y cuanto."""
+    sistema = carga.cargar_sistema()
+    r = modulo_acciones.acciones(con, id_obra, sistema, _lean(request.app.state),
+                                 sistema.generacion_web.techo_de_gasto_usd)
+    if r is None:
+        raise HTTPException(404, "no existe la obra {0}".format(id_obra))
+    return r
+
+
+def _juez_de_publicacion(sistema, con, obra, ficha):
+    """El Editor aislado, con la frontera de los nombres y anotando su gasto."""
+    from app.commons.modelo import gasto
+    from app.commons.politica import pseudonimos
+    from app.features.orquestacion import ciclo
+    juez = pseudonimos.envolver(ciclo.editor_aislado(modelo=sistema.modelos.editor),
+                                pseudonimos.asegurar(con, obra, ficha))
+    juez.anotador = gasto.anotador(con, obra, regalo.nueva_generacion())
+    return juez
+
+
+@router.post("/obras/{id_obra}/publicaciones", status_code=status.HTTP_202_ACCEPTED)
+def publicar(id_obra: str, request: Request, tareas: BackgroundTasks,
+             con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-39` `RF-01`..`RF-03`: una ronda de la puerta, Lean incluido, sin reescribir. `409`
+    con el motivo si no se puede, **sin Lean incluido**, antes de llamar a nadie."""
+    sistema = carga.cargar_sistema()
+    estado = request.app.state
+    a = modulo_acciones.acciones(con, id_obra, sistema, _lean(estado),
+                                 sistema.generacion_web.techo_de_gasto_usd)
+    if a is None:
+        raise HTTPException(404, "no existe la obra {0}".format(id_obra))
+    if not a["publicar"]["posible"]:
+        raise HTTPException(409, a["publicar"]["motivo"])
+    ficha = regalo.ficha_cerrada(con, id_obra)
+    id_t = cola.encolar(con, modulo_acciones.TIPO_DE_PUBLICACION, {"obra": id_obra})
+    ruta = estado.ruta_db
+
+    def trabajo(c):
+        from app.features.auditoria.lean import VerificadorLean
+        lean = getattr(estado, "lean_regalo", None) or VerificadorLean(
+            tiempo=sistema.lean.tiempo_maximo_segundos)
+        fabrica = getattr(estado, "juez_de_publicacion", None)
+        juez = fabrica() if fabrica else _juez_de_publicacion(sistema, c, id_obra, ficha)
+        return modulo_acciones.publicar_una_ronda(c, id_obra, ficha, lean, juez, sistema)
+
+    tareas.add_task(_ejecutar, ruta, id_t, trabajo)
+    return {"id_trabajo": id_t}

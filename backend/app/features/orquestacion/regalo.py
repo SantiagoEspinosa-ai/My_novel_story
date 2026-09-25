@@ -138,3 +138,21 @@ def generar(con, ruta, obra, ficha, generacion, sistema, fabrica=None, lean=None
     return {"generacion": generacion, "coste": coste_total(r, ag),
             "publicada": None if pub is None else pub.publicada,
             "parada": r["generacion"].parada}
+
+
+def abandonar_huerfanas(con):
+    """`SPEC-39` `RF-06`, `F-208`: las generaciones y publicaciones corren dentro del proceso de
+    la API. Al arrancar, lo que estaba en cola o en curso es de un proceso que ya no existe:
+    pasa a abandonado, y una generacion deja su obra parada con el motivo. Devuelve cuantas."""
+    from app.commons.trabajos import cola
+    from app.features.orquestacion import progreso
+    cola.asegurar_tabla(con)
+    filas = con.execute("SELECT id, tipo, json_extract(carga, '$.obra') FROM trabajo WHERE tipo IN "
+                        "(?, 'publicacion_regalo') AND estado IN ('en_cola', 'en_curso')",
+                        (TIPO_DE_TRABAJO,)).fetchall()
+    for id_t, tipo, obra in filas:
+        cola.marcar_abandonado(con, id_t)
+        if tipo == TIPO_DE_TRABAJO and obra:
+            progreso.fijar(con, obra, "parada",
+                           motivo="el servidor se reinició mientras se escribía: se puede reanudar")
+    return len(filas)

@@ -65,7 +65,14 @@ def fijar_base(aplicacion):
 
 @contextlib.asynccontextmanager
 async def _ciclo_de_vida(aplicacion):
-    fijar_base(aplicacion)
+    ruta = fijar_base(aplicacion)
+    # `SPEC-39` `RF-06`, `F-208`: lo que corria en un proceso anterior ya no corre.
+    from app.features.orquestacion import regalo as modulo_regalo
+    con = sqlite3.connect(ruta)
+    try:
+        modulo_regalo.abandonar_huerfanas(con)
+    finally:
+        con.close()
     activar_observabilidad(aplicacion)
     yield
 
