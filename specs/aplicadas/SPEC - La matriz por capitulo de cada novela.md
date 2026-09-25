@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
 fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: 0cd3f6c
 ---
 
 # SPEC-38 — La matriz por capítulo
