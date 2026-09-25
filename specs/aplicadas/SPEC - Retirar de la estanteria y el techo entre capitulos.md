@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
 fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: f8b7477
 ---
 
 # SPEC-41 — Retirar de la estantería, y el techo entre capítulos
