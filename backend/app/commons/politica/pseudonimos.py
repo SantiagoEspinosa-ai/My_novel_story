@@ -31,6 +31,7 @@ pseudonimo femenino. Punto ciego declarado en `docs/verification.md`.
 
 import hashlib
 import re
+import sqlite3
 
 from app.commons.db.migraciones import PSEUDONIMO_SQL
 from app.commons.dominio.destinatario import Pseudonimo
@@ -230,11 +231,18 @@ def asegurar_tabla(con):
         con.executescript(PSEUDONIMO_SQL)
 
 
-def de_la_obra(con, obra, vetados=None) -> Tabla:
-    """Las parejas guardadas de la obra; una tabla vacia si no tiene, que no sustituye nada."""
-    asegurar_tabla(con)
-    filas = con.execute("SELECT palabra_real, pseudonimo FROM pseudonimo WHERE obra = ?",
-                        (obra,)).fetchall()
+def de_la_obra(con, obra, vetados=None, asegurar=True) -> Tabla:
+    """Las parejas guardadas de la obra; una tabla vacia si no tiene, que no sustituye nada.
+
+    `asegurar=False` para una conexion de solo lectura (el servidor de la story bible): no
+    crea la tabla, y sin ella no hay parejas."""
+    if asegurar:
+        asegurar_tabla(con)
+    try:
+        filas = con.execute("SELECT palabra_real, pseudonimo FROM pseudonimo WHERE obra = ?",
+                            (obra,)).fetchall()
+    except sqlite3.OperationalError:
+        filas = []
     return Tabla({r: p for r, p in filas}, vetados)
 
 

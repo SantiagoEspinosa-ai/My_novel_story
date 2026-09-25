@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from app.commons.dominio import story_bible as sb
 from app.commons.modelo.presupuesto import CARACTERES_POR_TOKEN
+from app.commons.politica import pseudonimos
 from app.features.consolidacion import aplicar
 from app.features.cronologia import repository as cronologia
 from app.features.escaleta import repository as escaleta
@@ -118,6 +119,9 @@ def atender(con_lectura, con_traza, obra, agente, delegacion, nombre, argumentos
         return error("no_existe", str(e))
     except ValidationError:
         return error("salida_invalida", "la story bible devolvio un dato fuera de esquema")
-    texto = salida.model_dump_json()
+    # `SPEC-34` `RF-03`: lo que vuelve al agente, con los nombres como los ve el. La
+    # conexion de lectura es de solo lectura: no se crea nada.
+    texto = pseudonimos.de_la_obra(con_lectura, obra, asegurar=False).pseudonimizar(
+        salida.model_dump_json())
     registrar("ok", len(texto) // CARACTERES_POR_TOKEN)
     return {"content": [{"type": "text", "text": texto}], "isError": False}

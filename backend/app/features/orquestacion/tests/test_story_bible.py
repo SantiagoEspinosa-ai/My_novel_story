@@ -178,3 +178,27 @@ def test_atender_no_toca_el_presupuesto():
     import inspect
     fuente = inspect.getsource(tools)
     assert "reservar" not in fuente and "recorte" not in fuente
+
+
+# --- `PLAN-34` E5: lo que devuelven las tools va con pseudonimos (`SPEC-34` `RF-03`) ------
+
+def test_la_ficha_de_un_personaje_llega_con_pseudonimo(con):
+    from app.commons.dominio.enumeraciones import TitularDePseudonimo
+    from app.commons.politica import pseudonimos
+    tabla = pseudonimos.asignar(con, "obra-a", [("Irene Valdés",
+                                                 TitularDePseudonimo.DESTINATARIO)])
+    r = _atender(con, "ficha", {"id": "obra-a-per-irene"})
+    texto = r["content"][0]["text"]
+    assert "Irene" not in texto and "Valdés" not in texto
+    assert tabla.pares["Irene"] in texto
+
+
+def test_una_base_de_solo_lectura_sin_parejas_no_falla(tmp_path):
+    """El servidor abre la story bible en solo lectura: leer las parejas no puede crear la
+    tabla, y una base sin ella no tiene nada que sustituir."""
+    import pathlib as _p
+    from app.commons.politica import pseudonimos
+    ruta = tmp_path / "vieja.db"
+    sqlite3.connect(str(ruta)).execute("CREATE TABLE x (a)").connection.commit()
+    ro = sqlite3.connect("file:{0}?mode=ro".format(_p.Path(ruta).as_posix()), uri=True)
+    assert pseudonimos.de_la_obra(ro, "obra-a", asegurar=False).pares == {}
