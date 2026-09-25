@@ -98,9 +98,12 @@ def ultima_fase(con, obra):
     return f[0] if f else None
 
 
-def capitulo_vigente(con, obra, numero):
-    """El capitulo que ocupa `numero` en la ultima version de la obra (`SPEC-23`), o el
-    que hay si la obra no tiene versiones."""
+def capitulo_de_la_ultima_version(con, obra, numero):
+    """El capitulo que ocupa `numero` en la ultima version **creada** de la obra
+    (`SPEC-23`), o el que hay si la obra no tiene versiones.
+
+    No es la vigente: la vigente es la ultima **publicada** (`commons/obra/vigente.py`). La
+    generacion en vivo ensena la version que se esta escribiendo, que es la ultima creada."""
     if migraciones.tiene_tabla(con, "capitulo_de_version"):
         f = con.execute(
             "SELECT capitulo FROM capitulo_de_version WHERE obra = ? AND orden = ? AND "

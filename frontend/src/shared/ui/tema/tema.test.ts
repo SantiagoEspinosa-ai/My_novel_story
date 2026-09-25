@@ -68,6 +68,15 @@ describe("tema", () => {
       ["texto suave sobre superficie", COLORES.textoSuave, COLORES.superficie],
       ["texto sobre acento", COLORES.sobreAcento, COLORES.acento],
       ["enlace sobre fondo", COLORES.enlace, COLORES.fondo],
+      // SPEC-35 RF-01: el estilo de madera, crema y noche.
+      ["texto sobre pared", COLORES.texto, COLORES.pared],
+      ["texto suave sobre pared", COLORES.textoSuave, COLORES.pared],
+      ["detalle sobre pared", COLORES.detalle, COLORES.pared],
+      ["texto sobre papel de libro", COLORES.texto, COLORES.papelDeLibro],
+      ["texto suave sobre papel de libro", COLORES.textoSuave, COLORES.papelDeLibro],
+      ["sobre madera", COLORES.sobreMadera, COLORES.maderaOscura],
+      ["sobre noche", COLORES.sobreNoche, COLORES.noche],
+      ["oro sobre noche", COLORES.oro, COLORES.noche],
       ...[ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD, FASE_DE_GENERACION, ESTADO_DE_TRABAJO,
         ESTADO_DE_VERIFICACION, MARCA_DE_CAMBIO].flatMap((m) =>
         Object.entries(m).map(([k, v]) => [k, v.texto, v.fondo] as [string, string, string])),

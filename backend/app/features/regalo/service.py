@@ -51,7 +51,7 @@ def generacion(con, obra, umbral):
     capitulos = []
     for numero in range(1, total + 1):
         f = fases.get(numero, {})
-        id_capitulo = repo.capitulo_vigente(con, obra, numero)
+        id_capitulo = repo.capitulo_de_la_ultima_version(con, obra, numero)
         notas = repo.notas_aceptadas(con, obra, id_capitulo) if id_capitulo else []
         capitulos.append({
             "numero": numero, "es_el_actual": numero == actual, "fase": f.get("fase"),
