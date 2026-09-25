@@ -140,8 +140,9 @@ sesiones.
 | Hallazgos abiertos | 2 `INV-17` `mayor` (capítulos 3 y 5, fuera del rango de palabras) y 7 `INV-25` `menor` | No bloquean la publicación |
 
 **Cómo leer el coste.** Es una novela, no una media: con el Editor juzgando de verdad, cada
-capítulo puede pedir hasta tres reescrituras, y cuántas pide cambia de brief a brief. Es la cifra
-que el libro usa como «mayor coste medido de una novela completa» para decidir cuántos briefs caben.
+capítulo puede pedir hasta tres reescrituras, y cuántas pide cambia de brief a brief. Fue el «mayor coste medido de una novela completa» hasta `R5`, que costó **20,5556 USD**
+(abajo): desde entonces el mayor es `R5`, y es lo que `evaluar.py` calcula del libro. La web sigue
+enseñando `R1` como referencia, con su nombre: «la novela de ejemplo», no «la más cara».
 
 **Lo que no está limpio, dicho.**
 - **Dos códigos.** Los capítulos 1 a 8 se escribieron con `f986cf5`; el 9, el 10 y la puerta, con
