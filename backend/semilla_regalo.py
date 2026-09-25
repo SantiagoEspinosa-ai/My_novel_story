@@ -29,6 +29,9 @@ CRITERIOS = ("continuidad", "tono", "arco", "coherencia_de_personajes", "ritmo",
              "personalizacion")
 ruta = sys.argv[1]
 con = preparar_base(ruta)
+# `SPEC-34` `RF-09`: es una base que puede mirar el inspector visual.
+from app.commons.db import procedencia  # noqa: E402
+procedencia.marcar_datos_inventados(con, "semilla_regalo")
 
 
 def obra(id_obra, titulo, dedicatoria):

@@ -152,3 +152,24 @@ def comprobar(con: sqlite3.Connection, version="__del_arbol__", cwd=None,
                     "comparar las dos tandas atribuiria a la obra lo que hizo "
                     "la maquina".format(guardado, sistema))
     return None
+
+
+# `SPEC-34` `RF-09`, `PLAN-34` E6: una base de datos inventados. La ponen las semillas, y el
+# inspector visual se niega sin ella: recorre la web, y la web enseña los nombres reales.
+DATOS_INVENTADOS = "datos_inventados"
+
+
+def marcar_datos_inventados(con: sqlite3.Connection, origen: str):
+    with con:
+        con.executescript(SQL)
+        con.execute("INSERT OR IGNORE INTO procedencia (clave, valor) VALUES (?, ?)",
+                    (DATOS_INVENTADOS, origen))
+
+
+def son_datos_inventados(con: sqlite3.Connection) -> bool:
+    try:
+        fila = con.execute("SELECT 1 FROM procedencia WHERE clave = ?",
+                           (DATOS_INVENTADOS,)).fetchone()
+    except sqlite3.OperationalError:
+        return False
+    return fila is not None

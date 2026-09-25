@@ -60,6 +60,23 @@ def inspeccionar(ruta, obra, url, inspector, obs=None):
     return juicio
 
 
+def comprobar_datos_inventados(ruta):
+    """`SPEC-34` `RF-09`: el inspector es un agente que ve la web, y la web enseña los nombres
+    reales. Solo mira bases de datos inventados, como las de las semillas; sobre una novela
+    de verdad se niega antes de delegar nada."""
+    from app.commons.db import procedencia
+    con = sqlite3.connect(ruta)
+    try:
+        inventada = procedencia.son_datos_inventados(con)
+    finally:
+        con.close()
+    if not inventada:
+        raise SystemExit(
+            "{0} no es una base de datos inventados: el inspector visual solo mira bases de "
+            "una semilla (SPEC-34 RF-09), porque la web enseña los nombres reales. Crea una "
+            "con semilla_lectura.py o semilla_regalo.py".format(ruta))
+
+
 def main(argv=None):
     from app.commons.observabilidad.exportador import ExportadorEnMemoria
     from app.commons.observabilidad.langfuse import crear_exportador
@@ -71,6 +88,7 @@ def main(argv=None):
     p.add_argument("url")
     p.add_argument("--modelo", default="sonnet")
     a = p.parse_args(argv)
+    comprobar_datos_inventados(a.base)
 
     inspector = SesionDelegada(modelo=a.modelo, agente="inspector_visual")
     inspector.mcp_fijo = str(MCP_DEL_BROWSER)

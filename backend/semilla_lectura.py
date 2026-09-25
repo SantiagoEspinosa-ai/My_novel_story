@@ -104,6 +104,9 @@ def sembrar(ruta):
     """Monta la obra inventada en `ruta`. Devuelve `False` si ya estaba y no toca nada."""
     con = preparar_base(ruta)
     try:
+        # `SPEC-34` `RF-09`: es la base que puede mirar el inspector visual.
+        from app.commons.db import procedencia
+        procedencia.marcar_datos_inventados(con, "semilla_lectura")
         ficha = FichaDeEntrevista.model_validate(FICHA)
         aprobado = PlanAprobado(PlanDeLaObra.model_validate(PLAN), 1, TITULO, FICHA["premisa"])
         if not novela.montar(con, OBRA, ficha, aprobado):
