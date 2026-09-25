@@ -130,3 +130,18 @@ def test_la_definicion_del_escritor_no_contradice_el_formato_del_prompt():
               / "escritor.md").read_text(encoding="utf-8")
     assert "dos claves" not in agente
     assert '"pov_usado"' in agente
+
+
+def test_las_palabras_clave_se_piden_en_su_forma_exacta():
+    """`F-211`: el Escritor conto el rasgo con «bajaba a mirar» y `INV-23` buscaba «baja a
+    mirar»: cuatro intentos, el capitulo rendido. Se le dice que la forma no se conjuga."""
+    texto = _p(imprescindibles=[{"elemento": "siempre baja a mirar",
+                                 "palabras_clave": ["baja a mirar"]}])
+    assert "en esa forma exacta" in texto
+    assert "tiempo del verbo" in texto
+
+
+def test_la_extension_se_traduce_a_parrafos():
+    """`F-209`, segunda vuelta: con la cifra sola el Escritor siguio entre 883 y 991."""
+    texto = _p(parametros={"longitud_objetivo": [1150, 1350]})
+    assert "unos 13 parrafos" in texto

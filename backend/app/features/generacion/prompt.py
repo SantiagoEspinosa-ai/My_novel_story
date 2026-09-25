@@ -95,8 +95,9 @@ SIN_PROBLEMAS = ""
 # corto siempre. Se apunta cerca del maximo porque el error medido es por abajo.
 CON_EXTENSION = """
 EXTENSION
-La escena tiene entre {minimo} y {maximo} palabras; apunta a unas {apunta}. Un texto
-fuera de ese rango vuelve para reescribirlo.
+La escena tiene entre {minimo} y {maximo} palabras; apunta a unas {apunta}, que son
+unos {parrafos} parrafos de unas 100 palabras. Un texto fuera de ese rango vuelve para
+reescribirlo, y el error habitual es quedarse corto.
 """
 SIN_INSTRUCCIONES = ""
 SIN_VETADAS = ""
@@ -108,7 +109,9 @@ escena para reescribirla.
 """
 CON_CLAVES = """ESTE CAPITULO TIENE QUE CONTAR ESTO
 Son recuerdos y rasgos reales de la persona que recibe la novela. Integralos con
-naturalidad, sin forzarlos, y usa estas palabras al contarlos:
+naturalidad, sin forzarlos, y usa estas palabras al contarlos, escritas tal cual y
+en esa forma exacta: sin cambiar el tiempo del verbo, el numero ni el genero. Si la
+narracion va en pasado, ponlas en un dialogo o en una frase en presente.
 {lista}
 
 """
@@ -188,8 +191,9 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
     rango = parametros.get("longitud_objetivo")
     if rango and len(rango) == 2:
         minimo, maximo = int(rango[0]), int(rango[1])
+        apunta = maximo - max(50, (maximo - minimo) // 4)
         bloque_extension = CON_EXTENSION.format(
-            minimo=minimo, maximo=maximo, apunta=maximo - max(50, (maximo - minimo) // 4))
+            minimo=minimo, maximo=maximo, apunta=apunta, parrafos=round(apunta / 100))
     ids = "\n".join([
         "personajes: " + (", ".join(personajes or []) or "(ninguno)"),
         "hechos: " + (", ".join(ids_de_hechos or []) or "(ninguno)"),
