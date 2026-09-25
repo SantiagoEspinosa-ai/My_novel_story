@@ -1,0 +1,29 @@
+/* SPEC-35 RF-08, RF-09: pedir un cambio y la balda de lo que se reescribe, en el estilo de la
+   propuesta visual. Solo variables del tema (SPEC-22 RF-59); se carga despues de estilos.css. */
+.pedir-cambio { background: var(--color-papelDeLibro); border-left: 0; border-radius: var(--radio-l); padding: var(--espacio-xl); }
+.pedir-cambio h2 { font-family: var(--fuente-titulos); font-size: 1.7rem; }
+.pedir-cambio__fragmento { background: var(--color-acentoSuave); border-left: 3px solid var(--color-acento); border-radius: var(--radio-s); }
+.opcion { padding: var(--espacio-m); border-radius: var(--radio-m); }
+.opcion--elegida { border: 2px solid var(--color-acento); background: var(--color-superficie); }
+.propuesta h3 { font-family: var(--fuente-titulos); font-size: 1.4rem; line-height: 1.2; }
+
+/* La balda: madera, lomos de pie y los que se reescriben resaltados, con texto. */
+.balda {
+  list-style: none; margin: var(--espacio-m) 0 0; padding: var(--espacio-l) var(--espacio-l) 0;
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--espacio-s);
+  background: var(--color-maderaOscura); border-left: 14px solid var(--color-madera);
+  border-right: 14px solid var(--color-madera); border-bottom: 18px solid var(--color-madera);
+  border-radius: 0 0 var(--radio-s) var(--radio-s);
+}
+.balda__lomo {
+  width: 64px; min-height: 150px; display: flex; flex-direction: column; align-items: center;
+  justify-content: space-between; gap: var(--espacio-s); padding: var(--espacio-m) 0;
+  background: var(--color-textoSuave); color: var(--color-sobreNoche);
+  border-radius: var(--radio-s) var(--radio-s) 0 0; box-sizing: border-box;
+}
+.balda__lomo--se-toca {
+  min-height: 176px; background: var(--color-acento); color: var(--color-sobreAcento);
+  outline: 3px solid var(--color-oro); outline-offset: 2px;
+}
+.balda__titulo { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--fuente-titulos); font-size: 0.95rem; }
+.balda__marca { font-size: 0.7rem; font-weight: 600; text-align: center; line-height: 1.1; padding: 0 4px; }
