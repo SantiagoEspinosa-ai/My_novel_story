@@ -20,6 +20,11 @@ La ficha sale de la entrevista cerrada de la obra. **Se borra al entregar** (`F-
 base ya no la tiene, el guion lo dice y se para antes de escribir nada; `--ficha` da la
 misma ficha con la que se genero la novela (la de `novela_regalo.py FICHA.json`).
 
+**`--relanzar TRABAJO`** vuelve a atender un trabajo que paro, sin pedir otra vez: la
+cascada solo reutiliza su version si es la misma peticion, y pedir de nuevo crearia otra
+version y reescribiria -y pagaria- lo ya consolidado. Lo dispara una persona, nunca el
+sistema (`cola.relanzar`).
+
 Sale con 0 si la version nueva se publico; con 1 si la peticion no se admite, si falta
 algo, si se paro o si la puerta no la publico; con 2 si no se confirmo el gasto.
 """
@@ -115,9 +120,10 @@ def main(argv=None):
     clase = p.add_mutually_exclusive_group(required=True)
     clase.add_argument("--hecho")
     clase.add_argument("--personaje")
+    clase.add_argument("--relanzar", metavar="TRABAJO")
     p.add_argument("--enunciado")
     p.add_argument("--nombre")
-    p.add_argument("--texto", required=True)
+    p.add_argument("--texto")
     p.add_argument("--ficha", default=None)
     p.add_argument("--confirmo-el-gasto", action="store_true", dest="confirmado")
     args = p.parse_args(argv)
@@ -125,6 +131,8 @@ def main(argv=None):
         p.error("--hecho necesita --enunciado")
     if args.personaje and not args.nombre:
         p.error("--personaje necesita --nombre")
+    if not args.relanzar and not args.texto:
+        p.error("una peticion necesita --texto, las palabras del lector")
 
     if not os.path.exists(args.base):
         print("no existe la base {0}: no se crea una vacia".format(args.base))
@@ -137,15 +145,51 @@ def main(argv=None):
         con.close()
 
 
+def _ficha_del_fichero(args):
+    if not args.ficha:
+        return None
+    with open(args.ficha, encoding="utf-8") as f:
+        return FichaDeEntrevista.model_validate(json.load(f))
+
+
+def _con_ficha(con, args, ficha):
+    """La ficha que se usara, o `None` tras decir por que no la hay."""
+    ficha = ficha or cascada.ficha_de(con, args.obra)
+    if ficha is None:
+        print("\nla obra {0} no tiene ficha en la base: se borra al entregar (F-91). Sin "
+              "ella no hay bloque inmutable y no se inventa. Da la ficha con la que se genero "
+              "con --ficha FICHA.json. No se ha escrito nada.".format(args.obra))
+    return ficha
+
+
+def _relanzar(con, args):
+    if not args.confirmado:
+        print("No se ha relanzado nada: regenerar gasta dinero. Para hacerlo, repite con "
+              "--confirmo-el-gasto.")
+        return 2
+    cola.asegurar_tabla(con)
+    t = cola.leer(con, args.relanzar)
+    if t is None or t.tipo != regeneracion.TIPO_DE_TRABAJO:
+        print("no hay un trabajo de regeneracion {0} en la base".format(args.relanzar))
+        return 1
+    ficha = _con_ficha(con, args, _ficha_del_fichero(args))
+    if ficha is None:
+        return 1
+    sistema = carga.cargar_sistema()
+    procedencia.registrar(con, sistema=sistema.huella)
+    cola.relanzar(con, args.relanzar)
+    print("trabajo {0}, relanzado".format(args.relanzar))
+    return _atender(con, args, args.relanzar, ficha, sistema)
+
+
 def _ejecutar(con, args):
     migraciones.migrar(con)
+    if args.relanzar:
+        return _relanzar(con, args)
     peticion = _peticion(args)
     # `F-147`: la ficha se lee antes de proponer. La propuesta la necesita para saber
     # quien es el destinatario, y una obra entregada ya no la tiene en la base (`F-91`).
-    ficha = None
-    if args.ficha:
-        with open(args.ficha, encoding="utf-8") as f:
-            ficha = FichaDeEntrevista.model_validate(json.load(f))
+    ficha = _ficha_del_fichero(args)
     try:
         propuesta = regeneracion.proponer(con, args.obra, peticion, ficha)
     except regeneracion.PeticionNoAdmitida as e:
@@ -159,12 +203,8 @@ def _ejecutar(con, args):
               "--confirmo-el-gasto.")
         return 2
 
+    ficha = _con_ficha(con, args, ficha)
     if ficha is None:
-        ficha = cascada.ficha_de(con, args.obra)
-    if ficha is None:
-        print("\nla obra {0} no tiene ficha en la base: se borra al entregar (F-91). Sin "
-              "ella no hay bloque inmutable y no se inventa. Da la ficha con la que se genero "
-              "con --ficha FICHA.json. No se ha escrito nada.".format(args.obra))
         return 1
 
     sistema = carga.cargar_sistema()
@@ -177,7 +217,10 @@ def _ejecutar(con, args):
         print("\nno se pudo pedir: {0}".format(e))
         return 1
     print("\npeticion {0}, trabajo {1}".format(id_peticion, id_trabajo))
+    return _atender(con, args, id_trabajo, ficha, sistema)
 
+
+def _atender(con, args, id_trabajo, ficha, sistema):
     registro_hooks = os.path.join(tempfile.gettempdir(),
                                   "hooks-{0}.jsonl".format(args.obra))
     ag = agentes(sistema, {"HARNESS_DB": os.path.abspath(args.base),

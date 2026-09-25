@@ -191,3 +191,48 @@ def test_con_la_ficha_en_un_fichero_el_destinatario_sigue_sin_poder_renombrarse(
     salida = capsys.readouterr().out
     assert codigo == 1, salida
     assert "no se renombra" in salida
+
+
+def _trabajo_de(salida):
+    import re
+    return re.search(r"trabajo ([0-9a-f-]{36})", salida).group(1)
+
+
+def test_relanzar_un_trabajo_parado_sigue_en_la_misma_version_sin_repetir_lo_hecho(
+        tmp_path, monkeypatch, capsys):
+    """La demo real de B4 paro en el capitulo 8 por `F-148`. Pedir el cambio otra vez crea
+    otra peticion y otra version, y reescribe -y paga- lo que ya estaba consolidado: la
+    cascada solo reutiliza su version si es la misma peticion. `--relanzar` vuelve a
+    atender **el mismo trabajo**."""
+    ruta = _en_fichero(tmp_path)
+    rota = _agentes(_EscritorDeLaVersion(rompe_desde=3))
+    guion = _preparado(monkeypatch, agentes=lambda s, e: rota)
+    assert guion.main(["--base", ruta, "--obra", OBRA, "--confirmo-el-gasto"] + HECHO) == 1
+    id_trabajo = _trabajo_de(capsys.readouterr().out)
+
+    escritor = _EscritorDeLaVersion()
+    guion = _preparado(monkeypatch, agentes=lambda s, e: _agentes(escritor))
+    codigo = guion.main(["--base", ruta, "--obra", OBRA, "--relanzar", id_trabajo,
+                         "--confirmo-el-gasto"])
+    salida = capsys.readouterr().out
+    assert codigo == 0, salida
+    con = sqlite3.connect(ruta)
+    assert [v["numero"] for v in brief.versiones_de(con, OBRA)] == [1, 2], "no crea otra"
+    con.close()
+    assert len(escritor.llamadas) == 6, "del 5 al 10: el 3 y el 4 ya estaban"
+    assert _cuantos(ruta, "peticion_de_cambio") == 1
+
+
+def test_relanzar_sin_confirmar_el_gasto_no_delega(tmp_path, monkeypatch, capsys):
+    ruta = _en_fichero(tmp_path)
+    guion = _preparado(monkeypatch)
+    codigo = guion.main(["--base", ruta, "--obra", OBRA, "--relanzar", "no-importa"])
+    assert codigo == 2 and "--confirmo-el-gasto" in capsys.readouterr().out
+
+
+def test_relanzar_un_trabajo_que_no_existe_sale_con_1(tmp_path, monkeypatch, capsys):
+    ruta = _en_fichero(tmp_path)
+    guion = _preparado(monkeypatch, agentes=lambda s, e: _agentes(_EscritorDeLaVersion()))
+    codigo = guion.main(["--base", ruta, "--obra", OBRA, "--relanzar", "no-existe",
+                         "--confirmo-el-gasto"])
+    assert codigo == 1 and "no-existe" in capsys.readouterr().out
