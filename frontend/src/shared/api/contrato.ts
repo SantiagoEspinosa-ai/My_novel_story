@@ -45,6 +45,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/obras/{id_obra}/matriz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Matriz
+         * @description `SPEC-38`: la matriz por capitulo de una version (por defecto, la vigente).
+         */
+        get: operations["matriz_admin_obras__id_obra__matriz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/capitulos/{id_capitulo}": {
         parameters: {
             query?: never;
@@ -991,6 +1011,15 @@ export interface components {
             /** Selectiva */
             selectiva: string[];
         };
+        /** CifrasDeLaMatriz */
+        CifrasDeLaMatriz: {
+            /** Abiertos */
+            abiertos: number;
+            coste: components["schemas"]["CosteDeUnaObra"] | null;
+            gastado: components["schemas"]["Gastado"];
+            /** Techo Usd */
+            techo_usd: number;
+        };
         /**
          * ClaseDePeticion
          * @description `C-4`: lo que el lector puede pedir. Un hecho o un nombre.
@@ -1345,6 +1374,23 @@ export interface components {
             /** Personajes */
             personajes: components["schemas"]["FichaDePersonaje"][];
         };
+        /** FilaDeLaMatriz */
+        FilaDeLaMatriz: {
+            /** Cambio */
+            cambio: boolean | null;
+            /** Capitulo */
+            capitulo: number;
+            coste: components["schemas"]["CosteDeUnaObra"] | null;
+            /** Escenas */
+            escenas: components["schemas"]["EscenaEnGeneracion"][];
+            hallazgos: components["schemas"]["HallazgosPorSeveridad"];
+            /** Intentos */
+            intentos: number;
+            /** Notas */
+            notas: components["schemas"]["NotaDeLaMatriz"][];
+            /** Parada */
+            parada: boolean;
+        };
         /**
          * Gastado
          * @description Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 18
@@ -1559,6 +1605,34 @@ export interface components {
             titulo: string;
         };
         /**
+         * MatrizDeObra
+         * @description `SPEC-38`: la matriz por capitulo de una version de la novela, resuelta en el backend.
+         */
+        MatrizDeObra: {
+            /** Abiertos */
+            abiertos: components["schemas"]["HallazgoAbiertoDeLaObra"][];
+            /** Atribucion */
+            atribucion: string;
+            cifras: components["schemas"]["CifrasDeLaMatriz"];
+            /** Filas */
+            filas: components["schemas"]["FilaDeLaMatriz"][];
+            /** Obra */
+            obra: string;
+            /** Paradas */
+            paradas: components["schemas"]["EventoDeLaHistoria"][];
+            /** Por Agente */
+            por_agente: components["schemas"]["CosteDeUnAgente"][];
+            /** Puerta */
+            puerta: components["schemas"]["EventoDeLaHistoria"][];
+            /** Titulo */
+            titulo: string | null;
+            totales: components["schemas"]["TotalesDeLaMatriz"];
+            /** Version */
+            version: number;
+            /** Versiones */
+            versiones: components["schemas"]["VersionDeLaMatriz"][];
+        };
+        /**
          * NombresEntrada
          * @description `SPEC-34` `RF-01`, `PLAN-34` E3: los nombres, escritos por el comprador en su campo y
          *     guardados sin pasar por ningun agente. Es **el estado completo** de lo declarado: una
@@ -1591,6 +1665,21 @@ export interface components {
             regalado_por: string | null;
             /** Vetados */
             vetados: string[];
+        };
+        /**
+         * NotaDeLaMatriz
+         * @description Una nota del Editor en la matriz: `nota` nula si el capitulo no la tiene todavia.
+         */
+        NotaDeLaMatriz: {
+            /** Bajo El Umbral */
+            bajo_el_umbral: boolean;
+            criterio: components["schemas"]["CriterioDeEdicion"];
+            /** Instruccion */
+            instruccion: string | null;
+            /** Justificacion */
+            justificacion: string | null;
+            /** Nota */
+            nota: number | null;
         };
         /**
          * NotaDelEditor
@@ -1860,6 +1949,17 @@ export interface components {
             /** Version Vigente */
             version_vigente: number | null;
         };
+        /** TotalesDeLaMatriz */
+        TotalesDeLaMatriz: {
+            /** Cambiados */
+            cambiados: number | null;
+            coste: components["schemas"]["CosteDeUnaObra"] | null;
+            hallazgos: components["schemas"]["HallazgosPorSeveridad"];
+            /** Intentos */
+            intentos: number;
+            /** Medias */
+            medias: (number | null)[];
+        };
         /**
          * TrabajoSalida
          * @description Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su
@@ -1922,6 +2022,13 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VersionDeLaMatriz */
+        VersionDeLaMatriz: {
+            /** Numero */
+            numero: number;
+            /** Peticion */
+            peticion: string | null;
         };
         /** VersionDetalleSalida */
         VersionDetalleSalida: {
@@ -2012,6 +2119,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HistoriaDeObra"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    matriz_admin_obras__id_obra__matriz_get: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatrizDeObra"];
                 };
             };
             /** @description Validation Error */

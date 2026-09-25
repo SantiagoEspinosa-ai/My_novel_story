@@ -139,6 +139,16 @@ export const ESTADO_DE_VERIFICACION: Record<string, Distintivo> = {
   fallida: { etiqueta: "falló al reverificar", fondo: "#f8e0de", texto: "#9a1f15" },
 };
 
+// SPEC-38 RF-04: el color de cada nota del Editor en la matriz. El color nunca va solo: la
+// nota va escrita, y la leyenda dice que es cada uno.
+export const NOTA_DEL_EDITOR: Record<"1" | "2" | "3" | "4" | "5", Distintivo> = {
+  "1": { etiqueta: "1 · muy por debajo", fondo: "#f3c1bb", texto: "#7a1a12" },
+  "2": { etiqueta: "2 · bajo el umbral", fondo: "#f8d9c6", texto: "#7a3400" },
+  "3": { etiqueta: "3 · en el umbral", fondo: "#fbf1d8", texto: "#1b2238" },
+  "4": { etiqueta: "4 · bien", fondo: "#e6f2e8", texto: "#1b2238" },
+  "5": { etiqueta: "5 · muy bien", fondo: "#cfe8d6", texto: "#1b2238" },
+};
+
 // SPEC-22 RF-52: la marca de «cambió», tal como la da el backend capitulo a capitulo.
 export const MARCA_DE_CAMBIO: Record<"cambio" | "compartido", Distintivo> = {
   cambio: { etiqueta: "cambió en esta versión", fondo: PALETA.acentoSuave, texto: PALETA.acento },

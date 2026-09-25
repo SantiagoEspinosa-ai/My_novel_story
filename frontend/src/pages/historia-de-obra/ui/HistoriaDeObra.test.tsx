@@ -1,5 +1,7 @@
 // PLAN-37 H2 (SPEC-37): la historia de una novela en la administracion, como linea de tiempo.
-// Todo llega resuelto del backend; la pagina lo pinta en el orden en que llega.
+// Todo llega resuelto del backend; la pagina lo pinta en el orden en que llega. Desde SPEC-38
+// RF-06 es la segunda pestana (`?vista=linea`): estas pruebas la abren alli y comprueban lo
+// mismo que antes.
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
@@ -11,7 +13,7 @@ function montar() {
     "GET /api/admin/obras/obra-publicada/historia": [{ cuerpo: historiaDeObra }] });
   render(
     <ClienteProvider cliente={crearCliente(doble.fetch)}>
-      <MemoryRouter initialEntries={["/admin/obras/obra-publicada"]}>
+      <MemoryRouter initialEntries={["/admin/obras/obra-publicada?vista=linea"]}>
         <Routes><Route path="/admin/obras/:obra" element={<PaginaHistoriaDeObra />} /></Routes>
       </MemoryRouter>
     </ClienteProvider>,

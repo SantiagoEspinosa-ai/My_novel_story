@@ -1,29 +1,49 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
-  useLectura, type EventoDeLaHistoria, type HistoriaDeObra, type ObraEnLaAdministracion,
+  useLectura, type EventoDeLaHistoria, type HistoriaDeObra, type MatrizDeObra,
 } from "@/shared/api";
 import { ESTADO_DE_ESCENA, EtiquetaDeEstado, Esperando, SEVERIDAD, SinDato } from "@/shared/ui";
+import { usd } from "./formato";
+import { Matriz } from "./Matriz";
 import "./historia-de-obra.css";
 
-type Coste = ObraEnLaAdministracion["coste"];
-
-// La historia de una novela (SPEC-37, la propuesta C): lo que paso, en el orden en que llega
-// del backend, y al lado los totales. La pagina no ordena, no suma ni atribuye: pinta.
+// La pagina de cada novela en la administracion. SPEC-38: se abre en la matriz por capitulo, y
+// la linea de tiempo de SPEC-37 es la segunda pestana (`?vista=linea`). La version de la matriz
+// va en `?version=N`, para poder enlazarla. La pagina no ordena, no suma ni atribuye: pinta.
 export function PaginaHistoriaDeObra() {
   const { obra = "" } = useParams();
-  const lectura = useLectura((c) => c.historia(obra), `historia:${obra}`);
+  const [params] = useSearchParams();
+  const linea = params.get("vista") === "linea";
+  const version = params.get("version");
   return (
     <main className="contenido historia">
       <p className="migas"><Link to="/admin">Administración</Link></p>
-      <Esperando lectura={lectura}>{(h: HistoriaDeObra) => <Historia h={h} />}</Esperando>
+      <nav className="historia__pestanas" aria-label="vistas">
+        <Link to="?" aria-current={linea ? undefined : "page"}
+          className={linea ? "historia__pestana" : "historia__pestana historia__pestana--elegida"}>
+          Por capítulo</Link>
+        <Link to="?vista=linea" aria-current={linea ? "page" : undefined}
+          className={linea ? "historia__pestana historia__pestana--elegida" : "historia__pestana"}>
+          Línea de tiempo</Link>
+      </nav>
+      {linea ? <LineaDeTiempo obra={obra} />
+        : <PorCapitulo obra={obra} version={version === null ? undefined : Number(version)} />}
     </main>
   );
 }
 
-function usd(c: Coste) {
-  if (!c) return null;
-  const cifra = c.usd === null ? "sin medir" : `${c.usd.toFixed(2).replace(".", ",")} USD`;
-  return <>{cifra}{c.es_suelo && c.usd !== null ? " (como mínimo)" : ""}</>;
+function PorCapitulo({ obra, version }: { obra: string; version?: number }) {
+  const lectura = useLectura((c) => c.matriz(obra, version), `matriz:${obra}:${version ?? "vigente"}`);
+  return (
+    <Esperando lectura={lectura}>
+      {(m: MatrizDeObra) => <Matriz m={m} vista={(v) => `?version=${v}`} />}
+    </Esperando>
+  );
+}
+
+function LineaDeTiempo({ obra }: { obra: string }) {
+  const lectura = useLectura((c) => c.historia(obra), `historia:${obra}`);
+  return <Esperando lectura={lectura}>{(h: HistoriaDeObra) => <Historia h={h} />}</Esperando>;
 }
 
 function Historia({ h }: { h: HistoriaDeObra }) {

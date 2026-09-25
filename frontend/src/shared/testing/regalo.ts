@@ -2,7 +2,8 @@
 // congelado: el tipo sale de contrato.ts y tests/regalo.test.ts los valida contra el mismo
 // esquema. Viven aparte de fixtures.ts, que es de PLAN-22.
 import type {
-  Administracion, CapituloEnGeneracion, EventoDeLaHistoria, HistoriaDeObra, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
+  Administracion, CapituloEnGeneracion, EventoDeLaHistoria, FilaDeLaMatriz, HistoriaDeObra,
+  MatrizDeObra, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
   Nombres, TurnoDeEntrevista,
 } from "@/shared/api";
 
@@ -296,6 +297,38 @@ export const historiaDeObra: HistoriaDeObra = {
   atribucion: "El coste de cada capitulo es una atribucion por el progreso de la obra.",
 };
 
+// SPEC-38: la matriz por capitulo. Tres capitulos bastan: uno con notas, uno parado y uno
+// sin empezar; la version 2 cambia el tercero.
+const sinNotas = CRITERIOS.map((criterio) => ({ criterio, nota: null, justificacion: null,
+  instruccion: null, bajo_el_umbral: false }));
+const ceroHallazgos = { bloqueante: 0, mayor: 0, menor: 0 };
+function fila(capitulo: number, cambios: Partial<FilaDeLaMatriz>): FilaDeLaMatriz {
+  return { capitulo, notas: sinNotas, coste: null, intentos: 0, hallazgos: ceroHallazgos,
+    cambio: false, parada: false, escenas: [], ...cambios };
+}
+export const matrizDeObra: MatrizDeObra = {
+  obra: "obra-publicada", titulo: "El mapa de Nerea", version: 2,
+  versiones: [{ numero: 1, peticion: null }, { numero: 2, peticion: "el perro se llama Nala" }],
+  cifras: { coste: costeDe(16.89, 36, 1), techo_usd: 50, abiertos: 3,
+    gastado: { usd: 14.7, delegaciones: 39, sin_coste: 1, es_suelo: true, por_que_es_suelo: POR_QUE } },
+  filas: [
+    fila(1, { notas: seisNotas([4, 5, 3, 4, 2, 5]), coste: costeDe(1.32, 3), intentos: 1,
+      hallazgos: { bloqueante: 0, mayor: 1, menor: 0 }, escenas: [{ id: "esc-1", estado: "consolidada" }] }),
+    fila(2, { coste: costeDe(1.9, 5), intentos: 3, parada: true,
+      escenas: [{ id: "esc-2", estado: "generada" }] }),
+    fila(3, { cambio: true }),
+  ],
+  totales: { medias: [4, 5, 3, 4, 2, 5], coste: costeDe(3.22, 8), intentos: 4,
+    hallazgos: { bloqueante: 0, mayor: 1, menor: 0 }, cambiados: 1 },
+  paradas: [evento("parada", { cuando: "2026-09-24 10:41:00", version: 2, capitulo: 2,
+    intentos: 3, motivo: "bloqueante", coste: costeDe(1.9, 5) })],
+  puerta: [evento("ronda_de_la_puerta", { cuando: "2026-09-24 12:40:00", version: 2, ronda: 1,
+    aprobado: false, codigo_lean: 2, condiciones: ["INV-28 (obra): sin veredicto"] })],
+  por_agente: historiaDeObra.por_agente,
+  abiertos: historiaDeObra.abiertos,
+  atribucion: historiaDeObra.atribucion,
+};
+
 export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }> = {
   turnoConAviso: { esquema: "TurnoDeEntrevistaSalida", datos: turnoConAviso },
   turnoSinNada: { esquema: "TurnoDeEntrevistaSalida", datos: turnoSinNada },
@@ -320,6 +353,7 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   estanteria: { esquema: "Estanteria", datos: estanteria },
   administracion: { esquema: "Administracion", datos: administracion },
   historiaDeObra: { esquema: "HistoriaDeObra", datos: historiaDeObra },
+  matrizDeObra: { esquema: "MatrizDeObra", datos: matrizDeObra },
 };
 
 type Respuesta = { estado?: number; cuerpo: unknown };

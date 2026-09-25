@@ -40,6 +40,9 @@ export type ObraEnLaAdministracion = Esquemas["ObraEnLaAdministracion"];
 // SPEC-37: la historia de cada novela.
 export type HistoriaDeObra = Esquemas["HistoriaDeObra"];
 export type EventoDeLaHistoria = Esquemas["EventoDeLaHistoria"];
+// SPEC-38: la matriz por capitulo.
+export type MatrizDeObra = Esquemas["MatrizDeObra"];
+export type FilaDeLaMatriz = Esquemas["FilaDeLaMatriz"];
 
 export const PREFIJO = "/api";
 
@@ -137,6 +140,8 @@ export function crearCliente(fetchInyectado: Fetch) {
     gasto: () => leer<ConfirmacionDeGasto>("/generaciones/gasto"),
     administracion: () => leer<Administracion>("/admin/obras"),
     historia: (obra: string) => leer<HistoriaDeObra>(`/admin/obras/${e(obra)}/historia`),
+    matriz: (obra: string, version?: number) => leer<MatrizDeObra>(
+      `/admin/obras/${e(obra)}/matriz${version === undefined ? "" : `?version=${version}`}`),
     // SPEC-33 RF-11: gasta dinero. Solo lo llama la confirmacion, despues de ensenar las cifras.
     lanzar: (obra: string) =>
       enviar<{ id_trabajo: string; generacion: string }>(`/obras/${e(obra)}/generaciones`),

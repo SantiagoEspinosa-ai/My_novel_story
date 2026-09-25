@@ -5,7 +5,7 @@ import { join, relative, sep } from "node:path";
 import contrato from "../../../../../contrato/openapi.json";
 import { contraste } from "./contraste";
 import {
-  COLORES, COLORES_DE_LOMO, ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, ESTADO_DE_TRABAJO, ESTADO_DE_VERIFICACION,
+  COLORES, COLORES_DE_LOMO, ESTADO_DE_ESCENA, NOTA_DEL_EDITOR, ESTADO_DE_HALLAZGO, ESTADO_DE_TRABAJO, ESTADO_DE_VERIFICACION,
   FASE_DE_GENERACION, MARCA_DE_CAMBIO, SEVERIDAD,
 } from "./tokens";
 
@@ -82,7 +82,7 @@ describe("tema", () => {
       ["sobre noche", COLORES.sobreNoche, COLORES.noche],
       ["oro sobre noche", COLORES.oro, COLORES.noche],
       ...[ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, SEVERIDAD, FASE_DE_GENERACION, ESTADO_DE_TRABAJO,
-        ESTADO_DE_VERIFICACION, MARCA_DE_CAMBIO].flatMap((m) =>
+        ESTADO_DE_VERIFICACION, MARCA_DE_CAMBIO, NOTA_DEL_EDITOR].flatMap((m) =>
         Object.entries(m).map(([k, v]) => [k, v.texto, v.fondo] as [string, string, string])),
     ];
     for (const [nombre, texto, fondo] of pares) {
