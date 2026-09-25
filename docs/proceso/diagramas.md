@@ -150,34 +150,37 @@ campos de tokens), `lectura_de_contexto` (qué entró en cada contexto), `decisi
 ## Validadores y su punto de ejecución
 
 **Construido no es ejercido.** La columna *Ejercido en real* dice si el validador ha corrido
-alguna vez con datos de una ejecución real, y qué hizo; lo comprueba contra las bases
-(`backend/regalo-prueba.db`, `backend/regalo-real.db`) y el registro de hooks la auditoría del
-2026-09-24. Todos los que dicen *sin ejercer* existen y pasan sus pruebas con dobles, y **nunca
+alguna vez con datos de una ejecución real, y qué hizo. La comprobó contra las bases y el
+registro de hooks la auditoría del 2026-09-24, y **se puso al día el 2026-09-25** con la pasada
+«antes» de la evaluación (`harness/evals/resultados.md`, que genera `evaluar.py`) y las
+medidas de `R0` a `R5`, `B4` e `INV-30` en real (`harness/evals/medidas.md`). Todos los que dicen *sin ejercer* existen y pasan sus pruebas con dobles, y **nunca
 han visto un dato real**: un validador que no ha podido fallar no está verificado, solo
 declarado.
 
 | Validador | Tipo | Dónde se ejecuta | Si falla | Ejercido en real |
 | --- | --- | --- | --- | --- |
 | Schema de la ficha | Programático | Al cerrar la entrevista, y al arrancar `novela_regalo.py` | No se entrega la ficha | **En parte**: validó las dos fichas de las ejecuciones reales al arrancar. Al cerrar una entrevista, nunca: no hay ninguna entrevista real (`F-70`) |
-| Contradicciones de la entrevista | Programático | Durante la entrevista | Se pregunta al comprador | **Sin ejercer** |
+| Contradicciones de la entrevista | Programático | Durante la entrevista | Se pregunta al comprador | **Sí**: en `R4` el Entrevistador real detectó las tres contradicciones del brief (edad frente a romance, a boda y a un recuerdo) |
 | Schema de la salida de cada rol | Programático | Al recibir cada salida | La ronda o el intento se repite | **Sí**: rechazó 4 planes reales, dos por base. El contrato del Escritor pasó 3 veces. Editor y Resumidor, sin ejercer |
 | Cobertura del plan (`SPEC-26` `RF-06`) | Programático | Antes del Revisor del plan | El plan vuelve al Planificador | **Sí, sin haber fallado nunca**: los dos planes que llegaron al Revisor la pasaron |
-| Revisor del plan | Semántico | Tras la cobertura | Objeciones, hasta 3 revisiones | **Sí**: aprobó un plan y devolvió otro con objeciones |
-| `validar_capitulo.py` | Programático, hook `Stop` | Al terminar el Escritor, dentro de su sesión | Se le devuelve en la misma sesión | **Sin ejercer sobre un capítulo**: sus 4 ejecuciones reales fueron con el Planificador o el Revisor, en la rama que sale sin comprobar nada (`F-61`) |
-| `policy.py` | Programático, hook `PreToolUse` | Antes de cada herramienta de un agente del pipeline | Se niega y va al audit log | **Sin ejercer**: ninguna ejecución registrada |
-| `INV-21` palabras vetadas | Programático, `bloqueante` | Tras el Escritor, antes del Editor | Reescritura, tope 2; agotado, se para | **Sí, y solo en falso**: sus 46 coincidencias reales fueron «coño» normalizada en «con» (`F-59`). El arreglo está sin ejercer |
-| `INV-22` nombres exactos | Programático, `bloqueante` | Tras el Escritor, antes del Editor | Reescritura, tope 2; agotado, se para | **Sí, con toda probabilidad en falso**: en la ejecución real no dejó rastro en el audit log, que desde `F-73` sí deja. Con el arreglo de `F-71`, los tres borradores reales quedan limpios |
-| `INV-23` palabras clave de los imprescindibles | Programático, `mayor` | Tras el Escritor | Reescritura dentro de los intentos de calidad | **Sin ejercer**: los tres intentos reales se pararon antes |
-| `INV-17` longitud | Programático, `mayor` | Puerta de escena | Hallazgo | **Sí**: un hallazgo real, 1.564 palabras |
-| `INV-03` conocimiento | Programático, `bloqueante` | Puerta de escena | La escena se para | **Sí**: dos hallazgos en la primera ejecución real, por los imprescindibles (`F-60`, cerrado y sin ejercer desde el arreglo) |
-| `INV-26` nota del Editor por criterio | Semántico, `mayor` | Rol editor, tras las reglas | Reescritura, hasta 3 | **Sin ejercer**: el Editor no se ha llamado nunca en la novela regalo |
-| `INV-08` orden temporal | Programático, `mayor` | Puerta de capítulo | Hallazgo | **Sin ejercer**: ninguna escena consolidada |
-| `INV-24` cada imprescindible en algún capítulo | Programático, `bloqueante` | Nivel obra | La novela no se da por terminada | **Sin ejercer** |
-| `INV-25` prosa repetitiva | Programático, `menor` | Nivel obra | Hallazgo | **Sin ejercer** |
-| `INV-27` juicio de obra del Editor | Semántico, `mayor` | Nivel obra, en la puerta | Bloquea la publicación (`SPEC-30` `RF-07`) | **Sin ejercer** |
-| Lean `L-1`…`L-4` | Formal | Puerta de publicación | No se publica; vuelve al Editor, tope 2 | **Sin ejercer en una generación**: la puerta no se ha alcanzado nunca. Lean de verdad sí ha corrido desde el backend, sobre dos bases sembradas y sobre `regalo-prueba.db`, que dio `2` por cero eventos (`specs/lean/medidas.md`) |
-| `INV-30` validación visual con browser MCP (`SPEC-22` `RF-58`) | Semántico, `mayor`: lo juzga el agente `inspector_visual` con Playwright MCP | Puerta de publicación, **después** de publicar, como `INV-27`; hoy se lanza a mano con `backend/inspeccion_visual.py` sobre una base y la URL servida | Deja un hallazgo `INV-30` (`abierto`, o `sin_veredicto` si el veredicto no se lee) y sube `INV-30.<pieza>` como score en la sesión de la obra. ❌ **No vuelve al Escritor ni al rol correspondiente**: el hallazgo queda abierto y lo resuelve una persona. Es lo que `RF-58` deja fuera, y está sin hacer | **Una vez** (E13b.2, sobre la semilla inventada ya arreglada): `pasa` en las cinco piezas, 0,4872 USD. Los scores no llegaron a Langfuse (sin claves en el worktree). Con defectos delante no se ha ejercido nunca: el agente de E13 no los vio (`F-84`) |
+| Revisor del plan | Semántico | Tras la cobertura | Objeciones, hasta 3 revisiones | **Sí**: aprobó a la primera en `R1`, y en `R3` **rechazó el plan por las incoherencias temporales que el brief provoca**, en tres rondas |
+| `validar_capitulo.py` | Programático, hook `Stop` | Al terminar el Escritor, dentro de su sesión | Se le devuelve en la misma sesión | **Sí, sin detectar nada**: en `R0` actuó sobre el Escritor con código 0 (antes, sus 4 ejecuciones reales fueron en la rama que no comprueba nada, `F-61`) |
+| `policy.py` | Programático, hook `PreToolUse` | Antes de cada herramienta de un agente del pipeline | Se niega y va al audit log | **Sí, sin negar nada**: en `R0`, 3 veces sobre el Escritor y 4 sobre el Editor, código 0. Negar una herramienta real, sin ejercer |
+| `INV-21` palabras vetadas | Programático, `bloqueante` | Tras el Escritor, antes del Editor | Reescritura, tope 2; agotado, se para | **Sí, tras el arreglo de `F-59`**: pasó en `R1` y en `R5` sin ninguna coincidencia. En `R5` no tuvo nada que detectar: el Escritor esquivó las variantes porque su prompt le da la lista |
+| `INV-22` nombres exactos | Programático, `bloqueante` | Tras el Escritor, antes del Editor | Reescritura, tope 2; agotado, se para | **Sí**: pasó en `R1` y `R5` |
+| `INV-23` palabras clave de los imprescindibles | Programático, `mayor` | Tras el Escritor | Reescritura dentro de los intentos de calidad | **Sí**: pasó en `R1` y `R5` |
+| `INV-17` longitud | Programático, `mayor` | Puerta de escena | Hallazgo | **Sí**: dos disparos en `R1` (capítulos 3 y 5, que quedaron como hallazgo `mayor`) y dos en `R5` |
+| `INV-03` conocimiento | Programático, `bloqueante` | Puerta de escena | La escena se para | **Sí**: paró `R5` en el capítulo 2 (*«Luisa actúa sobre `imp-01` y no consta que lo conozca»*); la reanudación pasó |
+| `INV-26` nota del Editor por criterio | Semántico, `mayor` | Rol editor, tras las reglas | Reescritura, hasta 3 | **Sí**: las seis notas de cada capítulo en `R1` y `R5`; en `R5` disparó dos reescrituras. En `R0` salió sin veredicto (`F-76`, cerrado) |
+| `INV-08` orden temporal | Programático, `mayor` | Puerta de capítulo | Hallazgo | **Sin veredicto incluso en las dos novelas publicadas** (`R1`, `R5`): la tabla de `evaluar.py` no tiene constancia de que llegara a juzgar. La causa está sin investigar |
+| `INV-24` cada imprescindible en algún capítulo | Programático, `bloqueante` | Nivel obra | La novela no se da por terminada | **Sí**: pasó en `R1` y `R5` |
+| `INV-25` prosa repetitiva | Programático, `menor` | Nivel obra | Hallazgo | **Sí, y falló**: 7 disparos en `R1` y 5 en `R5`, `menor`, sin bloquear. Lo que enseñaba al lector salía normalizado (`F-141`, cerrado) |
+| `INV-27` juicio de obra del Editor | Semántico, `mayor` | Nivel obra, en la puerta | Bloquea la publicación (`SPEC-30` `RF-07`) | **Sí**: pasó en `R1` y `R5` |
+| Lean `L-1`…`L-4` | Formal | Puerta de publicación | No se publica; vuelve al Editor, tope 2 | **Sí, en la puerta**: `0` en `R1` y en `R5`, que se publicaron. En `B4` no podía publicar una versión 2 o posterior (`F-151`, cerrado): la versión 3 se publicó en la ronda 2 |
+| `INV-30` validación visual con browser MCP (`SPEC-22` `RF-58`) | Semántico, `mayor`: lo juzga el agente `inspector_visual` con Playwright MCP | Puerta de publicación, **después** de publicar, como `INV-27`; hoy se lanza a mano con `backend/inspeccion_visual.py` sobre una base y la URL servida | Deja un hallazgo `INV-30` (`abierto`, o `sin_veredicto` si el veredicto no se lee) y sube `INV-30.<pieza>` como score en la sesión de la obra. ❌ **No vuelve al Escritor ni al rol correspondiente**: el hallazgo queda abierto y lo resuelve una persona. Es lo que `RF-58` deja fuera, y está sin hacer | **Sí, y falló**: sobre una copia de la base de `R1` falló en capítulos y fichas con dos defectos reales (`F-141`, cerrado; `F-142`, abierto), 0,6959 USD. Antes, sobre la semilla inventada, pasó las cinco piezas (0,4872 USD). Los scores no llegaron a Langfuse (sin claves en el worktree) |
 | Revisión humana | Semántico | Una novela completa, fuera del pipeline | Compara con el Editor | **No existe** (`SPEC-31`) |
 
-El envío de los scores a Langfuse está construido (`SPEC-29`, `PLAN-29` E6) y **ningún score
-ha llegado nunca a una instancia real**.
+El envío de los scores a Langfuse está construido (`SPEC-29`, `PLAN-29` E6). A una instancia
+real **sí llegaron las observaciones y el coste**: 15 observaciones en la sesión de `R0`, y el coste
+de `R1` coincide con el libro de gasto. **Que los scores de los validadores llegaran está sin
+comprobar en este documento.**
