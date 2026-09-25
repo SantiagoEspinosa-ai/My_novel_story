@@ -97,3 +97,31 @@ def test_descargar_un_libro_incompleto_es_409_con_motivo_y_no_500(cliente, ruta)
     r = cliente.get("/obras/o1/pdf")
     assert r.status_code == 409, r.text
     assert "sin texto" in r.json()["detail"]
+
+
+def test_la_conexion_se_puede_usar_desde_otro_hilo(tmp_path):
+    """`F-202`: FastAPI puede abrir la conexion de la dependencia en un hilo y usarla en otro.
+    Con el `check_same_thread` por defecto, el servidor real daba un 500 intermitente; el
+    cliente de pruebas lo hace todo en un hilo y no lo veia."""
+    import threading
+    from types import SimpleNamespace
+
+    from app.features.manuscrito.router import conexion
+
+    peticion = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(
+        ruta_db=str(tmp_path / "hilos.db"))))
+    generador = conexion(peticion)
+    con = next(generador)
+    errores = []
+
+    def usar():
+        try:
+            con.execute("SELECT 1").fetchone()
+        except Exception as e:  # el fallo que se busca es precisamente este
+            errores.append(e)
+
+    hilo = threading.Thread(target=usar)
+    hilo.start()
+    hilo.join()
+    generador.close()
+    assert errores == []

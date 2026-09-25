@@ -25,7 +25,10 @@ class PdfDisponible(BaseModel):
 
 
 def conexion(request: Request):
-    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"))
+    # `F-202`: FastAPI puede crear la conexion en un hilo y usarla en otro, como los demas
+    # routers ya contemplan.
+    con = sqlite3.connect(getattr(request.app.state, "ruta_db", ":memory:"),
+                          check_same_thread=False)
     try:
         yield con
     finally:
