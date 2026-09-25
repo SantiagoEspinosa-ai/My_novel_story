@@ -20,7 +20,9 @@ def peticion_de_la_version(con, obra, numero):
 
 def estanteria(con):
     """`RF-01`, `RF-02`: el estado de cada obra es su ultima fase, o ninguna."""
-    obras = repo.obras_de_la_estanteria(con)
+    # `SPEC-41` `RF-01`: las retiradas no salen; siguen en la administracion.
+    fuera = repo.retiradas(con)
+    obras = [o for o in repo.obras_de_la_estanteria(con) if o["id"] not in fuera]
     for o in obras:
         o["fase"] = repo.ultima_fase(con, o["id"])
     return {"obras": obras}
@@ -75,13 +77,15 @@ def administracion(con, techo):
     hallazgos abiertos y el ultimo codigo de Lean. Solo lee."""
     usd, n, nulos = repo.gasto_de(con)
     obras = []
+    fuera = repo.retiradas(con)
     for o in repo.obras_de_la_estanteria(con):
         c_usd, c_n, c_nulos = repo.gasto_de(con, o["id"])
         obras.append({
             "id": o["id"], "titulo": o["titulo"], "fase": repo.ultima_fase(con, o["id"]),
             "coste": None if c_n == 0 else coste(c_usd, c_n, c_nulos, None),
             "hallazgos": repo.hallazgos_abiertos_por_severidad(con, o["id"]),
-            "codigo_lean": repo.codigo_lean_de(con, o["id"])})
+            "codigo_lean": repo.codigo_lean_de(con, o["id"]),
+            "retirada": fuera.get(o["id"])})
     return {"gastado": {"usd": usd, "delegaciones": n, "sin_coste": nulos, "es_suelo": True,
                         "por_que_es_suelo": POR_QUE_ES_SUELO},
             "techo_usd": techo, "obras": obras}

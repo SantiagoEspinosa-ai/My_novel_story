@@ -4,6 +4,8 @@ Ningun nombre de aqui puede ser el de una seccion o una clave de `config/sistema
 (`SPEC-22` `RF-57`): por eso una nota dice `bajo_el_umbral` y no trae el umbral.
 """
 
+from pydantic import Field
+
 from app.commons.dominio import enumeraciones as enums
 from app.commons.dominio.modelos import _DelDominio
 
@@ -136,6 +138,19 @@ class CosteDeUnaObra(_DelDominio):
     es_suelo: bool
 
 
+class RetiradaDeLaEstanteria(_DelDominio):
+    """`SPEC-41` `RF-01`: por que una novela no sale en la estanteria."""
+
+    motivo: str
+    quien: str
+    cuando: str
+
+
+class RetiradaEntrada(_DelDominio):
+    motivo: str = Field(min_length=1)
+    quien: str = Field(default="sistema", min_length=1)
+
+
 class ObraEnLaAdministracion(_DelDominio):
     id: str
     titulo: str | None
@@ -143,6 +158,7 @@ class ObraEnLaAdministracion(_DelDominio):
     coste: CosteDeUnaObra | None
     hallazgos: HallazgosPorSeveridad
     codigo_lean: int | None
+    retirada: RetiradaDeLaEstanteria | None = None
 
 
 class Administracion(_DelDominio):

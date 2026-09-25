@@ -128,9 +128,15 @@ def generar(con, ruta, obra, ficha, generacion, sistema, fabrica=None, lean=None
     entorno = {"HARNESS_DB": os.path.abspath(ruta), "HARNESS_OBRA": obra,
                "HARNESS_REGISTRO_HOOKS": registro_hooks}
     ag = (fabrica or agentes)(sistema, entorno, anotar=gasto.anotador(con, obra, generacion))
+    techo = sistema.generacion_web.techo_de_gasto_usd
+
+    def seguir(numero, coste_del_capitulo):
+        """`SPEC-41` `RF-03`: al terminar cada capitulo, lo gastado en la base contra el techo."""
+        usd, _, _ = lecturas.gasto_de(con)
+        return usd is None or usd < techo
     try:
         r = novela.escribir(con, obra, ficha, ag, carpeta_de_reglas=tempfile.gettempdir(),
-                            sistema=sistema, lean=lean, observacion=observacion)
+                            sistema=sistema, lean=lean, observacion=observacion, seguir=seguir)
     finally:
         if observacion is not None:
             observacion.vaciar()

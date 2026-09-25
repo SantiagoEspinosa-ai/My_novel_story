@@ -214,3 +214,32 @@ def codigo_lean_de(con, obra):
     f = con.execute("SELECT codigo_lean FROM veredicto_de_publicacion WHERE obra = ? "
                     "ORDER BY version DESC, ronda DESC LIMIT 1", (obra,)).fetchone()
     return f[0] if f else None
+
+
+# --- `SPEC-41`: retirar de la estanteria ---------------------------------------------------
+
+def _asegurar_retiradas(con):
+    from app.commons.db.migraciones import RETIRADA_SQL
+    with con:
+        con.executescript(RETIRADA_SQL)
+
+
+def retiradas(con):
+    """`{obra: {motivo, quien, cuando}}` de las retiradas."""
+    _asegurar_retiradas(con)
+    return {f[0]: {"motivo": f[1], "quien": f[2], "cuando": f[3]} for f in con.execute(
+        "SELECT obra, motivo, quien, cuando FROM retirada_de_la_estanteria")}
+
+
+def retirar(con, obra, motivo, quien):
+    _asegurar_retiradas(con)
+    with con:
+        con.execute("INSERT OR REPLACE INTO retirada_de_la_estanteria (obra, motivo, quien) "
+                    "VALUES (?, ?, ?)", (obra, motivo, quien))
+
+
+def devolver(con, obra):
+    _asegurar_retiradas(con)
+    with con:
+        return con.execute("DELETE FROM retirada_de_la_estanteria WHERE obra = ?",
+                           (obra,)).rowcount

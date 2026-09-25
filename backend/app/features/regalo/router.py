@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.commons.configuracion import carga
 from app.features.regalo import service
 from app.features.regalo import historia as modulo_historia
+from app.features.regalo.schemas import RetiradaEntrada
 from app.features.regalo.schemas import (Administracion, ConfirmacionDeGasto, Estanteria,
                                          GeneracionEnVivo, HistoriaDeObra, MatrizDeObra,
                                          PeticionDeLaVersion)
@@ -41,6 +42,23 @@ def administracion(con: sqlite3.Connection = Depends(conexion)):
     """`SPEC-36` `RF-03`: todas las novelas con su fase, coste, hallazgos y Lean. **Sin
     login**, por decision del autor: cualquiera con la URL la ve."""
     return service.administracion(con, _sistema().generacion_web.techo_de_gasto_usd)
+
+
+@router.post("/admin/obras/{id_obra}/retirada")
+def retirar(id_obra: str, entrada: RetiradaEntrada, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-41` `RF-01`: quitarla de la estanteria con su motivo. No borra nada."""
+    from app.features.regalo import repository as repo
+    if not repo.existe_la_obra(con, id_obra):
+        raise HTTPException(404, "no existe la obra {0}".format(id_obra))
+    repo.retirar(con, id_obra, entrada.motivo, entrada.quien)
+    return {"obra": id_obra, "retirada": repo.retiradas(con)[id_obra]}
+
+
+@router.delete("/admin/obras/{id_obra}/retirada")
+def devolver(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-41` `RF-02`: devolverla a la estanteria."""
+    from app.features.regalo import repository as repo
+    return {"obra": id_obra, "devuelta": bool(repo.devolver(con, id_obra))}
 
 
 @router.get("/admin/obras/{id_obra}/historia", response_model=HistoriaDeObra)

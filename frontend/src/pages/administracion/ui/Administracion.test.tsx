@@ -44,4 +44,15 @@ describe("Administracion", () => {
     expect(await screen.findByTestId("admin-gastado")).toHaveTextContent("14,70 USD de 50 USD");
     expect(screen.getByRole("note")).toHaveTextContent("sin login");
   });
+
+  it("una novela retirada lo dice con su motivo (SPEC-41)", async () => {
+    const con = { ...administracion, obras: [{ ...administracion.obras[2],
+      retirada: { motivo: "datos de la semilla: no se puede terminar", quien: "sistema",
+        cuando: "2026-09-25 09:00:00" } }] };
+    const doble = fetchConMetodo({ "GET /api/admin/obras": [{ cuerpo: con }] });
+    render(<ClienteProvider cliente={crearCliente(doble.fetch)}><MemoryRouter><PaginaAdministracion /></MemoryRouter></ClienteProvider>);
+    const f = await screen.findByTestId("admin-obra-a-medias");
+    expect(f).toHaveTextContent("retirada de la estantería");
+    expect(f).toHaveTextContent("datos de la semilla: no se puede terminar");
+  });
 });

@@ -159,6 +159,7 @@ La novela se escribe **para alguien** (`SPEC-25`). Estas clases recogen quién e
 | HechoPropuesto | Hecho extraído del texto libre, pendiente de que el comprador lo confirme. | **id**, **texto**, **estado** → `estado_de_hecho_propuesto` |
 | PalabraVetada | Palabra o expresión que no puede aparecer en un capítulo aceptado. | **forma**, **nivel** → `nivel_de_veto`, franja, obra |
 | DecisionDePolitica | Una fila del audit log del policy engine. | **tipo** → `tipo_de_decision_de_politica`, **momento**, obra, detalle |
+| RetiradaDeLaEstanteria | Una novela que no sale en la estantería, con el porqué. No borra nada: la novela sigue en la base y en la administración, con su motivo a la vista; borrar la fila la devuelve (`SPEC-41`) | **obra**, **motivo**, **quien** (el sistema o una persona), **cuando** |
 
 **«otro» no es un valor vacío.** En `ocasion`, `genero_de_la_historia`, `tono_de_la_historia` y `papel_del_destinatario`, elegir `otro` obliga a guardar las palabras literales del comprador en `literales_de_otro`. Es lo que permite preguntar con naturalidad y seguir comprobando con código (`SPEC-25` `O-1`).
 

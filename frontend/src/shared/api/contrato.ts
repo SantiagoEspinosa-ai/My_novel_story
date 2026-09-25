@@ -65,6 +65,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/obras/{id_obra}/retirada": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retirar
+         * @description `SPEC-41` `RF-01`: quitarla de la estanteria con su motivo. No borra nada.
+         */
+        post: operations["retirar_admin_obras__id_obra__retirada_post"];
+        /**
+         * Devolver
+         * @description `SPEC-41` `RF-02`: devolverla a la estanteria.
+         */
+        delete: operations["devolver_admin_obras__id_obra__retirada_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/capitulos/{id_capitulo}": {
         parameters: {
             query?: never;
@@ -1760,6 +1784,7 @@ export interface components {
             hallazgos: components["schemas"]["HallazgosPorSeveridad"];
             /** Id */
             id: string;
+            retirada?: components["schemas"]["RetiradaDeLaEstanteria"] | null;
             /** Titulo */
             titulo: string | null;
         };
@@ -1990,6 +2015,28 @@ export interface components {
         RespuestaEntrada: {
             /** Respuesta */
             respuesta: string;
+        };
+        /**
+         * RetiradaDeLaEstanteria
+         * @description `SPEC-41` `RF-01`: por que una novela no sale en la estanteria.
+         */
+        RetiradaDeLaEstanteria: {
+            /** Cuando */
+            cuando: string;
+            /** Motivo */
+            motivo: string;
+            /** Quien */
+            quien: string;
+        };
+        /** RetiradaEntrada */
+        RetiradaEntrada: {
+            /** Motivo */
+            motivo: string;
+            /**
+             * Quien
+             * @default sistema
+             */
+            quien: string;
         };
         /**
          * RolDramatico
@@ -2240,6 +2287,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MatrizDeObra"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retirar_admin_obras__id_obra__retirada_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetiradaEntrada"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    devolver_admin_obras__id_obra__retirada_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

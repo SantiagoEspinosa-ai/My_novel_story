@@ -2549,6 +2549,16 @@
             "title": "Id",
             "type": "string"
           },
+          "retirada": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RetiradaDeLaEstanteria"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "titulo": {
             "anyOf": [
               {
@@ -3275,6 +3285,52 @@
         "title": "RespuestaEntrada",
         "type": "object"
       },
+      "RetiradaDeLaEstanteria": {
+        "additionalProperties": false,
+        "description": "`SPEC-41` `RF-01`: por que una novela no sale en la estanteria.",
+        "properties": {
+          "cuando": {
+            "title": "Cuando",
+            "type": "string"
+          },
+          "motivo": {
+            "title": "Motivo",
+            "type": "string"
+          },
+          "quien": {
+            "title": "Quien",
+            "type": "string"
+          }
+        },
+        "required": [
+          "motivo",
+          "quien",
+          "cuando"
+        ],
+        "title": "RetiradaDeLaEstanteria",
+        "type": "object"
+      },
+      "RetiradaEntrada": {
+        "additionalProperties": false,
+        "properties": {
+          "motivo": {
+            "minLength": 1,
+            "title": "Motivo",
+            "type": "string"
+          },
+          "quien": {
+            "default": "sistema",
+            "minLength": 1,
+            "title": "Quien",
+            "type": "string"
+          }
+        },
+        "required": [
+          "motivo"
+        ],
+        "title": "RetiradaEntrada",
+        "type": "object"
+      },
       "RolDramatico": {
         "enum": [
           "protagonista",
@@ -3933,6 +3989,96 @@
           }
         },
         "summary": "Matriz",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
+    "/admin/obras/{id_obra}/retirada": {
+      "delete": {
+        "description": "`SPEC-41` `RF-02`: devolverla a la estanteria.",
+        "operationId": "devolver_admin_obras__id_obra__retirada_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Devolver",
+        "tags": [
+          "regalo"
+        ]
+      },
+      "post": {
+        "description": "`SPEC-41` `RF-01`: quitarla de la estanteria con su motivo. No borra nada.",
+        "operationId": "retirar_admin_obras__id_obra__retirada_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetiradaEntrada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retirar",
         "tags": [
           "regalo"
         ]

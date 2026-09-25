@@ -99,3 +99,23 @@ def test_novela_regalo_usa_los_agentes_de_app():
     spec.loader.exec_module(guion)
     assert guion.agentes is regalo.agentes
     assert guion.coste_total is regalo.coste_total
+
+
+# --- `PLAN-41` R2: el techo entre capitulos (`SPEC-41` `RF-03`) ---------------------------
+
+def test_la_generacion_web_se_para_entre_capitulos_al_llegar_al_techo(con, tmp_path):
+    """Con un techo por debajo de lo que cuesta un capitulo, la generacion se para al terminar
+    el primero, con el motivo `techo_de_gasto`, y no llega a escribir el segundo."""
+    from app.commons.configuracion.esquemas import ConfiguracionDelSistema
+    from app.features.orquestacion.tests.test_lanzar import _entrevista  # noqa: F401
+    from app.features.planificacion.tests.conftest import ficha as ficha_de_prueba
+    sistema = ConfiguracionDelSistema.model_validate(
+        {"modelos": MODELOS, "generacion_web": {"techo_de_gasto_usd": 0.9}})
+
+    def fabrica(s, entorno, anotar):
+        return regalo.agentes(s, entorno, anotar=anotar,
+                              ejecutar=_proceso(_agentes_para_la_novela_entera()))
+    r = regalo.generar(con, ":memory:", "obra-x", ficha_de_prueba(), "gen-1", sistema,
+                       fabrica=fabrica, lean=_LeanFijo())
+    assert r["parada"]["motivo"] == "techo_de_gasto", r["parada"]
+    assert r["parada"]["tras_capitulo"] == 1

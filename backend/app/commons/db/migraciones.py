@@ -378,6 +378,12 @@ TODAS = [
         # a `NULL`: no se sabe si se pidieron fuera del modelo, y no se inventa.
         lambda con: _crear_pseudonimos(con),
     ),
+    Migracion(
+        20,
+        "una novela se puede retirar de la estanteria con su motivo",
+        # `SPEC-41` `RF-01`: `RetiradaDeLaEstanteria`. Tabla nueva, sin filas que migrar.
+        lambda con: con.executescript(RETIRADA_SQL),
+    ),
 ]
 
 # `PLAN-23` A3. Vive aqui y no en `features/brief/` porque la necesitan los dos: la
@@ -469,6 +475,17 @@ CREATE TABLE IF NOT EXISTS veredicto_de_publicacion (
     no_ejecutadas TEXT    NOT NULL,
     cuando        TEXT    NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (obra, version, ronda)
+);
+"""
+
+
+# `PLAN-41` R1. Una fila por obra retirada; borrarla la devuelve a la estanteria.
+RETIRADA_SQL = """
+CREATE TABLE IF NOT EXISTS retirada_de_la_estanteria (
+    obra    TEXT PRIMARY KEY,
+    motivo  TEXT NOT NULL,
+    quien   TEXT NOT NULL,
+    cuando  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 """
 
