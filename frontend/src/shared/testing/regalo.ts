@@ -2,7 +2,7 @@
 // congelado: el tipo sale de contrato.ts y tests/regalo.test.ts los valida contra el mismo
 // esquema. Viven aparte de fixtures.ts, que es de PLAN-22.
 import type {
-  CapituloEnGeneracion, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
+  Administracion, CapituloEnGeneracion, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
   Nombres, TurnoDeEntrevista,
 } from "@/shared/api";
 
@@ -241,6 +241,22 @@ export const estanteria: Estanteria = {
   ],
 };
 
+/** SPEC-36 RF-03: la administracion. */
+export const administracion: Administracion = {
+  gastado: { usd: 14.7, delegaciones: 39, sin_coste: 1, es_suelo: true, por_que_es_suelo: POR_QUE },
+  techo_usd: 50,
+  obras: [
+    { id: "obra-publicada", titulo: "El mapa de Nerea", fase: "publicada",
+      coste: { generacion: null, usd: 12.3, delegaciones: 30, sin_coste: 0, es_suelo: false },
+      hallazgos: { bloqueante: 0, mayor: 1, menor: 0 }, codigo_lean: 0 },
+    { id: "obra-escribiendose", titulo: "La casa del faro", fase: "editando",
+      coste: { generacion: null, usd: 2.4, delegaciones: 9, sin_coste: 1, es_suelo: true },
+      hallazgos: { bloqueante: 0, mayor: 0, menor: 2 }, codigo_lean: null },
+    { id: "obra-a-medias", titulo: null, fase: null, coste: null,
+      hallazgos: { bloqueante: 0, mayor: 0, menor: 0 }, codigo_lean: null },
+  ],
+};
+
 export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }> = {
   turnoConAviso: { esquema: "TurnoDeEntrevistaSalida", datos: turnoConAviso },
   turnoSinNada: { esquema: "TurnoDeEntrevistaSalida", datos: turnoSinNada },
@@ -263,6 +279,7 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   confirmacionVacia: { esquema: "ConfirmacionDeGasto", datos: confirmacionVacia },
   confirmacionEnElTecho: { esquema: "ConfirmacionDeGasto", datos: confirmacionEnElTecho },
   estanteria: { esquema: "Estanteria", datos: estanteria },
+  administracion: { esquema: "Administracion", datos: administracion },
 };
 
 type Respuesta = { estado?: number; cuerpo: unknown };

@@ -1,4 +1,5 @@
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { PaginaAdministracion } from "@/pages/administracion";
 import { PaginaCapitulo } from "@/pages/capitulo";
 import { PaginaEntrevista } from "@/pages/entrevista";
 import { PaginaEscena } from "@/pages/escena";
@@ -17,10 +18,14 @@ export function App({ cliente }: { cliente: Cliente }) {
     <ClienteProvider cliente={cliente}>
       <Tema />
       <BrowserRouter>
-        <Cabecera><Link to="/">Estantería</Link></Cabecera>
+        <Cabecera>
+          <Link to="/">Estantería</Link>
+          <Link to="/admin">Administración</Link>
+        </Cabecera>
         <Routes>
           <Route path="/" element={<PaginaEstanteria />} />
           <Route path="/entrevistas/:entrevista" element={<PaginaEntrevista />} />
+          <Route path="/admin" element={<PaginaAdministracion />} />
           <Route path="/obras/:obra/generacion" element={<PaginaGeneracion />} />
           <Route path="/obras/:obra" element={<PaginaPortada />} />
           <Route path="/obras/:obra/indice" element={<PaginaIndice />} />

@@ -4,7 +4,7 @@
 import { render, screen } from "@testing-library/react";
 import { crearCliente } from "@/shared/api";
 import {
-  estanteria, fetchConMetodo, generacionEnCurso, historialAbierto,
+  administracion, estanteria, fetchConMetodo, generacionEnCurso, historialAbierto,
 } from "@/shared/testing";
 import { App } from "./App";
 
@@ -12,6 +12,7 @@ function abrir(ruta: string) {
   window.history.pushState({}, "", ruta);
   const { fetch } = fetchConMetodo({
     "GET /api/obras": [{ cuerpo: estanteria }],
+    "GET /api/admin/obras": [{ cuerpo: administracion }],
     "GET /api/entrevistas/ent-inventada/turnos": [{ cuerpo: historialAbierto }],
     "GET /api/obras/obra-regalo-inventada/generacion": [{ cuerpo: generacionEnCurso }],
   });
@@ -42,6 +43,12 @@ describe("App · la novela regalo", () => {
     const cabecera = (await screen.findAllByRole("banner"))[0];
     expect(cabecera).toHaveTextContent("Novelas para regalar");
     expect(cabecera).not.toHaveTextContent("lectura");
+  });
+
+  it("la administración tiene su ruta y su enlace en la cabecera (SPEC-36 RF-03)", async () => {
+    abrir("/admin");
+    expect(await screen.findByRole("heading", { name: "Administración" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Administración" })).toHaveAttribute("href", "/admin");
   });
 
   it("la cabecera lleva a la estantería desde cualquier página", async () => {
