@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Novela regalo · propuestas visuales (2026-09-25)</title>
+<!-- Maquetas estaticas, con datos inventados. No son la web: sirven para elegir. -->
+<style>
+  :root {
+    --tinta:#1b2238; --tinta-suave:#4a5270; --papel:#f7f3ec; --pared:#efe6d8; --papel-libro:#fbf8f2;
+    --madera:#6b4a2f; --madera-oscura:#3b2a1e; --sobre-madera:#f0dfb8; --noche:#1b2238;
+    --sobre-noche:#f7f3ec; --oro:#f0c46a; --acento:#a8321f; --acento-suave:#f6e2dc; --linea:#e3dccf;
+    --serif:"Fraunces","Literata",Georgia,serif; --lectura:"Literata",Georgia,serif;
+    --sans:"Inter","Segoe UI",system-ui,sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#ddd6c8; font-family:var(--sans); color:var(--tinta); }
+  .propuesta { width:1200px; margin:32px auto; background:var(--papel); border-radius:14px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.15); }
+  .etiqueta { background:var(--tinta); color:var(--sobre-noche); padding:12px 24px; font-size:14px; letter-spacing:.04em; }
+  .etiqueta b { color:var(--oro); font-size:18px; margin-right:10px; }
+  .cabecera { background:var(--tinta); color:#fff; padding:14px 32px; font-family:var(--serif); font-size:18px; border-top:1px solid #2c3553; }
+  h1 { font-family:var(--serif); font-weight:600; margin:0; }
+
+  /* ---------- Estanteria A: lomos en baldas de madera ---------- */
+  .est-a { background:var(--pared); padding:28px 48px 40px; }
+  .est-a header { display:flex; justify-content:space-between; align-items:end; margin-bottom:22px; }
+  .est-a h1 { font-size:40px; }
+  .btn { display:inline-block; background:var(--acento); color:#fff; border-radius:999px; padding:12px 26px; font-weight:600; }
+  .btn.sec { background:#fff; color:var(--acento); border:1px solid var(--acento); }
+  .balda { position:relative; height:250px; display:flex; align-items:flex-end; gap:6px; padding:0 30px; margin-bottom:34px; }
+  .balda::after { content:""; position:absolute; left:0; right:0; bottom:-18px; height:18px; background:linear-gradient(var(--madera),var(--madera-oscura)); border-radius:3px; box-shadow:0 8px 12px rgba(59,42,30,.35); }
+  .lomo { width:64px; border-radius:4px 4px 2px 2px; color:var(--sobre-madera); display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:14px 0; box-shadow:inset -6px 0 10px rgba(0,0,0,.25); }
+  .lomo span { writing-mode:vertical-rl; transform:rotate(180deg); font-family:var(--serif); font-size:17px; }
+  .lomo small { font-size:10px; letter-spacing:.08em; writing-mode:vertical-rl; transform:rotate(180deg); opacity:.85; }
+  .lomo.l1 { height:230px; background:#7a2f25; } .lomo.l2 { height:210px; background:#2f4a3f; } .lomo.l3 { height:236px; background:#34406b; }
+  .lomo.l4 { height:200px; background:#8a6414; } .lomo.hueco { height:220px; width:64px; background:repeating-linear-gradient(45deg,transparent 0 8px,rgba(107,74,47,.18) 8px 16px); border:2px dashed var(--madera); color:var(--madera); box-shadow:none; }
+  .libro-abierto { margin-left:auto; width:380px; background:#fff; border-radius:8px; padding:20px 22px; box-shadow:0 10px 24px rgba(0,0,0,.15); align-self:center; }
+  .libro-abierto h3 { font-family:var(--serif); margin:0 0 6px; font-size:24px; }
+  .libro-abierto p { margin:4px 0; color:var(--tinta-suave); font-family:var(--lectura); font-style:italic; }
+  .pastilla { display:inline-block; font-size:12px; padding:2px 10px; border-radius:999px; background:#dff1e4; color:#1d6b37; margin:10px 0; }
+
+  /* ---------- Estanteria B: libros de frente, como en una libreria ---------- */
+  .est-b { background:linear-gradient(#efe6d8,#e7dac6); padding:28px 48px 40px; }
+  .est-b h1 { font-size:40px; margin-bottom:6px; }
+  .est-b .sub { color:var(--tinta-suave); margin:0 0 20px; }
+  .balda-b { position:relative; display:flex; gap:28px; padding:0 24px 0; margin-bottom:44px; align-items:flex-end; }
+  .balda-b::after { content:""; position:absolute; left:0; right:0; bottom:-16px; height:16px; background:linear-gradient(var(--madera),var(--madera-oscura)); border-radius:3px; box-shadow:0 10px 14px rgba(59,42,30,.3); }
+  .cubierta { width:190px; height:260px; border-radius:3px 8px 8px 3px; padding:22px 18px; color:var(--sobre-madera); display:flex; flex-direction:column; justify-content:space-between; box-shadow:inset 8px 0 0 rgba(0,0,0,.25), 0 10px 18px rgba(0,0,0,.22); font-family:var(--serif); }
+  .cubierta h4 { margin:0; font-size:22px; line-height:1.15; } .cubierta p { margin:0; font-family:var(--lectura); font-style:italic; font-size:13px; }
+  .cubierta .estado { font-family:var(--sans); font-size:11px; background:rgba(255,255,255,.18); padding:3px 9px; border-radius:999px; align-self:flex-start; }
+  .c1 { background:#7a2f25; } .c2 { background:#34406b; } .c3 { background:#2f4a3f; }
+  .cubierta.nueva { background:transparent; border:2px dashed var(--madera); color:var(--madera); box-shadow:none; align-items:center; justify-content:center; text-align:center; }
+
+  /* ---------- Generacion A: el escritor en su mesa ---------- */
+  .gen { background:var(--noche); color:var(--sobre-noche); padding:30px 48px 44px; position:relative; }
+  .gen h1 { color:var(--sobre-noche); font-size:34px; }
+  .mesa { display:grid; grid-template-columns:420px 1fr; gap:40px; margin-top:24px; align-items:center; }
+  .escena { position:relative; height:320px; }
+  .lampara { position:absolute; left:40px; top:10px; width:160px; height:220px; }
+  .lampara .luz { position:absolute; left:-80px; top:70px; width:360px; height:260px; background:radial-gradient(ellipse at 50% 0%, rgba(240,196,106,.45), transparent 70%); }
+  .lampara .pantalla { position:absolute; left:40px; top:40px; width:90px; height:50px; background:var(--oro); clip-path:polygon(20% 0,80% 0,100% 100%,0 100%); }
+  .lampara .brazo { position:absolute; left:82px; top:88px; width:6px; height:130px; background:#8a6414; }
+  .tablero { position:absolute; left:0; right:0; bottom:40px; height:22px; background:linear-gradient(var(--madera),var(--madera-oscura)); border-radius:4px; }
+  .hojas { position:absolute; left:170px; bottom:62px; }
+  .hoja { position:absolute; width:120px; height:150px; background:var(--papel-libro); border-radius:2px; box-shadow:0 4px 10px rgba(0,0,0,.4); padding:12px; font-family:var(--lectura); font-size:8px; color:#777; line-height:1.9; }
+  .hoja:nth-child(1){ transform:rotate(-8deg); left:0; bottom:0; } .hoja:nth-child(2){ transform:rotate(4deg); left:40px; bottom:4px; }
+  .pluma { position:absolute; left:300px; bottom:120px; width:6px; height:90px; background:var(--oro); transform:rotate(35deg); border-radius:3px; }
+  .dice { font-family:var(--lectura); font-size:22px; font-style:italic; color:var(--oro); margin:0 0 18px; }
+  .capitulos-a { display:grid; grid-template-columns:repeat(10,1fr); gap:6px; margin-top:16px; }
+  .capitulos-a div { height:70px; border-radius:4px; background:rgba(247,243,236,.08); border:1px solid rgba(247,243,236,.2); display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; font-size:12px; }
+  .capitulos-a .hecho { background:var(--papel-libro); color:var(--tinta); } .capitulos-a .ahora { border-color:var(--oro); box-shadow:0 0 18px rgba(240,196,106,.5); color:var(--oro); }
+  .nota-gasto { margin-top:18px; font-size:13px; opacity:.85; }
+
+  /* ---------- Generacion B: el cielo de capitulos ---------- */
+  .cielo { display:flex; justify-content:space-between; align-items:flex-end; height:230px; margin:30px 20px 10px; position:relative; }
+  .cielo::before { content:""; position:absolute; left:0; right:0; top:50%; border-top:1px dashed rgba(240,196,106,.35); }
+  .estrella { width:74px; text-align:center; font-size:12px; position:relative; }
+  .estrella i { display:block; margin:0 auto 10px; width:22px; height:22px; border-radius:50%; background:rgba(247,243,236,.15); }
+  .estrella.hecha i { background:var(--oro); box-shadow:0 0 16px var(--oro); } .estrella.ahora i { width:30px; height:30px; background:#fff; box-shadow:0 0 26px var(--oro); animation:none; }
+  .ficha-cap { background:var(--papel-libro); color:var(--tinta); border-radius:10px; padding:18px 22px; margin-top:26px; display:flex; gap:30px; }
+  .ficha-cap h3 { font-family:var(--serif); margin:0 0 4px; }
+
+  /* ---------- Administracion ---------- */
+  .adm { padding:26px 40px 36px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; background:#fff; border-radius:10px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--linea); }
+  th { background:var(--pared); font-weight:600; }
+  .cifras { display:flex; gap:16px; margin:16px 0 20px; }
+  .cifra { background:#fff; border:1px solid var(--linea); border-radius:10px; padding:14px 18px; min-width:200px; }
+  .cifra b { font-family:var(--serif); font-size:26px; display:block; }
+</style>
+</head>
+<body>
+
+<section class="propuesta" id="estanteria-a">
+  <div class="etiqueta"><b>Estantería · A</b> Lomos en baldas de madera. Al pasar o pulsar un lomo, se abre la ficha del libro al lado.</div>
+  <div class="cabecera">Novelas para regalar</div>
+  <div class="est-a">
+    <header><h1>La estantería</h1><span class="btn">Encargar una novela</span></header>
+    <div class="balda">
+      <div class="lomo l1"><span>El mapa de Irene</span><small>PUBLICADA</small></div>
+      <div class="lomo l2"><span>La casa del faro</span><small>ESCRIBIÉNDOSE</small></div>
+      <div class="lomo l3"><span>Un verano en Cádiz</span><small>PUBLICADA</small></div>
+      <div class="lomo l4"><span>(sin título)</span><small>ENTREVISTA</small></div>
+      <div class="lomo hueco"><span>+ nueva</span></div>
+      <div class="libro-abierto">
+        <h3>El mapa de Irene</h3>
+        <p>«Para Irene, que siempre llega.»</p>
+        <div class="pastilla">● publicada</div><br>
+        <span class="btn">Leer</span> <span class="btn sec">Descargar PDF</span>
+      </div>
+    </div>
+    <div class="balda">
+      <div class="lomo l3"><span>La noche de los cometas</span><small>PARADA</small></div>
+      <div class="lomo l1"><span>Diez veranos</span><small>PUBLICADA</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="propuesta" id="estanteria-b">
+  <div class="etiqueta"><b>Estantería · B</b> Libros de frente, como el escaparate de una librería. Cada cubierta ya enseña título, dedicatoria y estado.</div>
+  <div class="cabecera">Novelas para regalar</div>
+  <div class="est-b">
+    <h1>La estantería</h1>
+    <p class="sub">Cada libro es un regalo. Los que se están escribiendo tienen la luz encendida.</p>
+    <div class="balda-b">
+      <div class="cubierta c1"><span class="estado">publicada</span><h4>El mapa de Irene</h4><p>Para Irene, que siempre llega.</p></div>
+      <div class="cubierta c2"><span class="estado">escribiéndose · cap. 3</span><h4>La casa del faro</h4><p>A Tomás, que encendía la luz.</p></div>
+      <div class="cubierta c3"><span class="estado">entrevista a medias</span><h4>(sin título todavía)</h4><p>para Nerea</p></div>
+      <div class="cubierta nueva"><h4>+</h4><p>Encargar una novela</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="propuesta" id="generacion-a">
+  <div class="etiqueta"><b>Generación · A</b> El escritor en su mesa: lámpara, hojas y pluma. Debajo, los diez capítulos como hojas que se van llenando.</div>
+  <div class="cabecera">Novelas para regalar</div>
+  <div class="gen">
+    <h1>La casa del faro</h1>
+    <div class="mesa">
+      <div class="escena">
+        <div class="lampara"><div class="luz"></div><div class="pantalla"></div><div class="brazo"></div></div>
+        <div class="hojas"><div class="hoja">Capítulo 3 ··· ··· ···· ··· ····· ·· ····· ··· ···· ·· ··· ····</div><div class="hoja">··· ···· ·· ······ ··· ···· ····· ·· ···</div></div>
+        <div class="pluma"></div>
+        <div class="tablero"></div>
+      </div>
+      <div>
+        <p class="dice">Escribiendo el capítulo 3 de 10…</p>
+        <p>El editor ya ha leído los dos primeros. Puedes cerrar la página: seguirá escribiéndose.</p>
+        <div class="capitulos-a">
+          <div class="hecho">1</div><div class="hecho">2</div><div class="ahora">3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div>
+        </div>
+        <p class="nota-gasto">Gastado hasta ahora: 2,40 USD (como mínimo)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="propuesta" id="generacion-b">
+  <div class="etiqueta"><b>Generación · B</b> Un cielo de capítulos: cada uno es una estrella que se enciende al terminar. Al pulsarla, sus notas del editor.</div>
+  <div class="cabecera">Novelas para regalar</div>
+  <div class="gen">
+    <h1>La casa del faro se está escribiendo</h1>
+    <div class="cielo">
+      <div class="estrella hecha"><i></i>1</div><div class="estrella hecha" style="margin-bottom:60px"><i></i>2</div>
+      <div class="estrella ahora" style="margin-bottom:110px"><i></i>3 · ahora</div><div class="estrella" style="margin-bottom:70px"><i></i>4</div>
+      <div class="estrella" style="margin-bottom:130px"><i></i>5</div><div class="estrella" style="margin-bottom:40px"><i></i>6</div>
+      <div class="estrella" style="margin-bottom:90px"><i></i>7</div><div class="estrella" style="margin-bottom:150px"><i></i>8</div>
+      <div class="estrella" style="margin-bottom:60px"><i></i>9</div><div class="estrella" style="margin-bottom:20px"><i></i>10</div>
+    </div>
+    <div class="ficha-cap">
+      <div><h3>Capítulo 2</h3>consolidado · el editor le dio un 4 de media</div>
+      <div>ritmo <b>2/5</b> — «acelera el final»</div>
+    </div>
+  </div>
+</section>
+
+<section class="propuesta" id="administracion">
+  <div class="etiqueta"><b>Administración</b> Para quien lleva el servicio, no para quien regala: todas las novelas, su gasto y sus hallazgos, en una tabla. Necesita decidir antes quién entra y cómo.</div>
+  <div class="cabecera">Novelas para regalar · administración</div>
+  <div class="adm">
+    <h1>Administración</h1>
+    <div class="cifras">
+      <div class="cifra">Gastado en esta base<b>14,70 USD</b>de 50 USD, como mínimo</div>
+      <div class="cifra">Novelas<b>4</b>2 publicadas · 1 escribiéndose · 1 en entrevista</div>
+      <div class="cifra">Hallazgos abiertos<b>3</b>1 mayor · 2 menores</div>
+    </div>
+    <table>
+      <tr><th>Novela</th><th>Fase</th><th>Coste</th><th>Delegaciones</th><th>Hallazgos</th><th>Lean</th></tr>
+      <tr><td>El mapa de Irene</td><td>publicada</td><td>12,30 USD</td><td>30</td><td>0</td><td>0 (pasa)</td></tr>
+      <tr><td>La casa del faro</td><td>editando · cap. 3</td><td>2,40 USD</td><td>9</td><td>1 mayor</td><td>—</td></tr>
+      <tr><td>(sin título)</td><td>entrevista</td><td>—</td><td>0</td><td>—</td><td>—</td></tr>
+    </table>
+  </div>
+</section>
+
+</body>
+</html>
