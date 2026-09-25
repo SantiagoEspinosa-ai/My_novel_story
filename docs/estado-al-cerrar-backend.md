@@ -33,7 +33,7 @@ fusionar"). No se ha subido nada: publicar en GitHub es una decisión del autor.
 
 **`examen-cierre` es la rama integrada**, en la carpeta `My_novel_story-examen`, con último
 commit `bb165cf` («Fusionar frontend-regalo: PLAN-35, el techo a 121, docs corregidos, F-201 y
-F-202»). Lleva dentro todas las ramas de la tabla siguiente, comprobado una por una con
+F-202») cuando se escribió este apartado; lo que se sumó después está en el apartado 4, y la cabeza se lee con `git log -1 examen-cierre`. Lleva dentro todas las ramas de la tabla siguiente, comprobado una por una con
 `git merge-base --is-ancestor <rama> examen-cierre`:
 
 | Rama | Carpeta (worktree) | Último commit | Qué trajo |
@@ -53,7 +53,7 @@ F-202»). Lleva dentro todas las ramas de la tabla siguiente, comprobado una por
 
 Después de la fusión, `examen-cierre` sumó `fa0d588` («F-203: las fichas leen los capítulos de
 la versión vigente»), que **no está en `frontend-regalo`**. La web que yo he tenido levantada
-salía de `frontend-regalo`, así que **el arreglo de `F-203` no lo he visto en el navegador**.
+salía de `frontend-regalo`, así que **el arreglo de `F-203` no lo he visto en el navegador**. *(Añadido por la sesión de `examen-cierre`: lo comprobé después en la web servida desde `examen-cierre`; ver apartado 4.)*
 
 ### Lo que no está fusionado
 
@@ -232,11 +232,226 @@ nada que gaste**: ni «Responder», ni «Generar novela», ni «Sí, escribir la
 
 ### Defectos que se ven
 
-- **`F-203`**: con varias versiones, las fichas repiten cada capítulo una vez por versión. En
-  la demo, «Capítulo 4» sale tres veces. **Está arreglado en `examen-cierre` (`fa0d588`), pero
-  no lo he comprobado en el navegador**: la web que abrí era la de `frontend-regalo`.
+- **`F-203`**: con varias versiones, las fichas repetían cada capítulo una vez por versión. **Arreglado en `examen-cierre` (`fa0d588`) y comprobado el 2026-09-25 en la web servida desde `examen-cierre`** (8000/5173): ninguna ficha repite un capítulo y todas enlazan los de la versión 3 (apartado 4).
 - **En la estantería de la demo, el destinatario sale «sin dato»**, porque la base no tiene
   entrevista. No es un fallo de la web: el dato no está.
 - **La cabecera sigue diciendo «Novela regalo · lectura»**
   (`frontend/src/shared/ui/cabecera/Cabecera.tsx`).
 - **Sin versión para móvil**: se descartó en `SPEC-35`.
+
+---
+
+# La parte del backend y la evaluación (sesión de `examen-cierre`)
+
+Escrito el **2026-09-25** por la sesión que integró `examen-cierre`, lanzó las generaciones
+reales y la demo de regeneración. Mismo criterio que arriba: **lo que existe hoy**, leído con
+`git`, con la base o en el navegador ese día. Cada afirmación dice de dónde sale.
+
+## 4. Dónde se quedó mi parte
+
+### Ramas
+
+- **`examen-cierre`** (carpeta `My_novel_story-examen`) es donde está todo lo mío. Encima de lo
+  que cuenta el apartado 1 lleva, en este orden: `F-203` (`fa0d588`), su fila cerrada
+  (`44b5594`), `resultados.md` regenerado (`4f2fae6`), la fusión del documento de cierre de
+  `frontend-regalo` (`bd0570b`) y el commit que añade este texto. **El hash de la cabeza se lee
+  con `git log -1 examen-cierre`**: no lo escribo aquí porque este mismo commit lo cambia.
+- **`nombre-en-el-prompt`** (carpeta `My_novel_story-nombre`, 1 commit: `5d7a73b`, `F-152`):
+  **sin fusionar**. El 2026-09-25 empecé a fusionarla, dio conflicto en `docs/verification.md`
+  y paré porque el autor lo pidió; la fusión **se deshizo** (`git merge --abort`) y
+  `examen-cierre` quedó como estaba. Que entre es decisión del autor (apartado 1).
+- **`My_novel_story-r1`** no es una rama: es un worktree sin rama en `89425c4`. **No se borra**:
+  guarda el libro de gasto (`backend/evaluacion.db`) y la base de cada ejecución real
+  (`backend/evaluacion-<ejecucion>.db`: `R1` a `R5` y la antes-2). Git no los lleva.
+- **Nada está en GitHub** (apartado 1).
+
+### Servidores en marcha al cerrar
+
+| Puertos | Desde | Base | Quién |
+| --- | --- | --- | --- |
+| 8000 (API) y 5173 (web) | `My_novel_story-examen`, código de `examen-cierre` | `backend/ejemplo-web.db` | Esta sesión |
+| 8010 y 5183 | `My_novel_story-frontend` | una copia de la base de la demo | La sesión del frontend |
+
+Los de 8000/5173 los arranqué con las órdenes del apartado 6 y los recorrí en Edge sin cabeza:
+estantería, portada, índice, capítulo, fichas, y el índice y el capítulo 4 de las versiones 1, 2
+y 3. **Sin errores de consola, sin respuestas 4xx ni 5xx y sin desbordar a 390 px.** El capítulo
+4 dice «Tino» 10 veces en la versión 1 y «Anselmo» 6 en la 3. La portada descarga el PDF
+(`/pdf/disponible` → `true`; `/pdf` → 200, 124.926 bytes). Los servidores mueren al cerrar la
+sesión; se vuelven a levantar con el apartado 6.
+
+### El gasto, corregido
+
+Lo medido en esta fase suma **77,2132 USD**: 47,1354 del libro con `R1`–`R5`, 8,7712 de la
+antes-2, 19,5379 de la demo B4, 0,6959 de la inspección de `INV-30` y 1,0728 de la de `PLAN-22`
+E18. **Es un suelo**: solo lo medido. **Corrige dos cifras mías anteriores, las dos erróneas**:
+«unos 76» (contaba dos veces 7,66 USD de la demo) y «unos 85». El techo del libro se bajó a 121
+con aquel 76; con la cifra buena serían 128,69, así que 121 se equivoca hacia lo prudente.
+
+## 5. El enunciado, punto por punto (a 2026-09-25)
+
+Estados: **Hecho** (existe y se ejerció con el modelo real), **A medias** (una parte existe y
+otra no, y se dice cuál), **Abierto declarado** (no existe, con su motivo escrito), **No existe**.
+
+### §1 Configuración
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Entrevistador que recoge los datos y las palabras vetadas | **A medias** | Existe y se ejerció en real (`R2`, `R4`). Pero en `R4` las sesiones delegadas guardaron al destinatario como `[NOMBRE_ANONIMIZADO]` y no hubo novela (`F-146`). La salida, pseudonimizar, es `SPEC-34`, **aprobada, sin `PLAN-34`** |
+| Datos que faltan y al menos una contradicción | **Hecho** | `R4`: el Entrevistador real detectó las tres contradicciones del brief |
+| Texto libre como contenido no confiable | **Hecho** | `R2`: el detector cazó la inyección reconocible con el modelo real y descartó el texto. Punto ciego declarado: una instrucción que no se parece a ningún patrón no dispara (red-team log) |
+| Brief estructurado y validado con schema | **Hecho** | `FichaDeEntrevista` (Pydantic) |
+
+### §2 Lectura (web, con PDF exportado)
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Índice navegable | **Hecho** | Visto hoy en el navegador |
+| Fichas con enlace al capítulo donde aparece cada uno | **Hecho**, con un punto ciego | `F-203` cerrado y visto hoy. **`F-142` abierto**: enlaza donde el plan declaró presente al personaje, no donde el texto lo pone |
+| Portada con dedicatoria | **Hecho** | Visto hoy |
+| Pedir un cambio desde la página | **A medias** | La página existe: fragmento, hecho o nombre, capítulos que se tocarían, confirmar. **Confirmar desde la web no regenera**: el worker de la API no tiene agentes (`F-126`, a propósito: nadie confirma el gasto desde la web), y una obra entregada no tiene ficha, así que un renombrado se rechaza (`F-91`, `F-147`). **La regeneración real se hizo por terminal** (`pedir_cambio.py`, demo B4) y la web enseña su resultado |
+| «Regenera solo esos capítulos» | **Diferencia declarada** | La salida que eligió la medida es la cascada (`SPEC-23`, arrastre medio 2,33 ≤ 3): reescribe **desde el primer capítulo que usa lo cambiado hasta el final**, no solo esos. En B4 fueron del 4 al 10 |
+| Sin romper la continuidad | **Hecho** | B4, versión 3: reverificación de 10 escenas, las 10 verificadas, y Lean con código 0 |
+| Marca de capítulos cambiados | **Hecho** | Visto hoy: «cambió en esta versión» en 4–10 e «igual que en la versión anterior» en 1–3 |
+| Se conserva la versión anterior | **Hecho** | La versión 1 se lee entera; la 2, parada, también |
+| PDF exportado de la novela de ejemplo | **Hecho** | `ejemplos/novela-ejemplo.pdf`, 68 páginas, de `R1` publicada. Es la versión 1, anterior a la demo |
+
+### §3 Harness
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Tres roles como mínimo | **Hecho** | Ocho definiciones en `.claude/agents/`: entrevistador, planificador, revisor del plan, escritor, editor, juez, resumidor e inspector visual |
+| `CLAUDE.md`, una skill y dos hooks | **Hecho** | `CLAUDE.md`; `.agents/skills/novela-regalo/SKILL.md`, citada desde `docs/proceso/claude-code.md`; `.claude/settings.json` engancha `backend/hooks/validar_capitulo.py` en `Stop` y `policy.py` en `PreToolUse`. **Hoy no he vuelto a comprobar que disparen en una ejecución real** |
+| Tools con schema validado | **Hecho** | Las tres tools de solo lectura de la story bible por MCP (`SPEC-28`) |
+| Retries con límite | **Hecho, con un defecto abierto** | Los topes existen y se ejercieron. **`F-110`**: valen por ejecución, y relanzar los reinicia |
+| Tokens y coste por novela en Langfuse | **Hecho** | El coste de `R1` en Langfuse y en el libro es el mismo: 16,8905 USD en 36 delegaciones (`harness/evals/medidas.md`) |
+
+### §4 Memoria
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Story bible en SQLite, con los capítulos donde se usa cada hecho | **Hecho** | `uso_de_hecho` |
+| Tabla de cronología que alimenta Lean | **Hecho** | `evento_cronologico` y `participacion_en_evento`; Lean las lee (§5) |
+| Resúmenes por capítulo | **Hecho, con un defecto abierto** | **`F-116`**: una caída entre consolidar y resumir deja el capítulo sin resumen para siempre |
+| Checkpoint por capítulo | **Hecho, con un defecto abierto** | Ejercido en real: `--reanudar` en `R1`, `R5` y la antes-2; `--relanzar` en B4. **`F-112`**: una caída entre las dos transacciones de consolidar deja un estado que la reanudación no sabe leer |
+
+### §5 Validación y evaluación
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Programáticos (schema, nombres exactos, longitud, imprescindibles, vetadas) | **Hecho** | El schema del plan, `INV-22`, `INV-17`, `INV-23` e `INV-21`, ejercidos en `R1` y `R5` (`harness/evals/resultados.md`) |
+| Validación visual por browser MCP | **A medias** | `INV-30` existe y **falló en real** (`F-141`, arreglado; `F-142`, abierto). **Que devuelva el error al writer no existe**: el autor lo dejó fuera y está declarado |
+| Nombre, punto de ejecución y score en Langfuse de cada validador | **Hecho** | Tabla de validadores en `docs/proceso/diagramas.md` |
+| LLM-as-judge con rúbrica, nota y justificación | **Hecho** | El Editor, seis criterios; en `R1`, medias de 4,00 (ritmo) a 5,00 (tono) |
+| Revisión humana de una novela completa | **No existe** | Es del autor. **La plantilla y el script de comparación que prevé `PLAN-31` tampoco existen**: no hay `harness/evals/revision-humana-brief-base.json` ni `comparar.py` |
+| Lean: fichero generado desde SQLite, al menos dos invariantes | **Hecho** | `specs/lean/generar_lean.py`; cuatro invariantes, `L-1`…`L-4` (`specs/lean/README.md`) |
+| Lean automático, y si falla no se publica | **Hecho** | La puerta ejecuta `lake`; en B4 **no publicó** la versión 3 mientras Lean no tenía veredicto (`F-151`, arreglado) y la publicó con código 0 |
+| Lean: un caso real que los demás no vieran, o por qué no | **Justificado, sin caso** | Ningún caso real. En el brief temporal (`R3`) el Revisor paró el plan por sus incoherencias antes de escribir, y Lean no tuvo eventos que mirar (`EX-15`) |
+| TLA+ del flujo, invariantes, liveness, TLC, correspondencia con el código, contraejemplos | **Hecho, con una deuda** | `specs/tla/`: `HarnessNovela.tla`, `HarnessBackend.tla` y sus `.cfg`; el README relaciona acciones y código y documenta los contraejemplos con su cambio en el código. **El modelo no se ha vuelto a pasar por TLC tras los arreglos de `CE-14` y `CE-15`** (lo dice su README); los cubren pruebas |
+| Cinco briefs, uno adversarial y uno temporal | **Hecho** | `harness/evals/`; los cinco se ejecutaron en la pasada «antes» |
+| Tabla por brief de qué pasó y qué falló | **Hecho, con una limitación** | `harness/evals/resultados.md`, con la columna del Revisor desde hoy. **Enseña la última ejecución de cada brief y pasada**, así que la fila del brief base es la antes-2, incompleta, y `R1` no sale (sigue en `3717f25` y en `medidas.md`). Cambiarlo es cambiar `SPEC-31` `RF-02` |
+| Una iteración de tuning, antes y después | **Abierto declarado** | T1 se commiteó (`6deefe5`) y **no se midió**: la antes-2 paró tres veces en el capítulo 3 por `F-155`, y el autor cerró el tuning sin «después». 8,7712 USD en 14 delegaciones (`medidas.md`) |
+
+### §6 Observabilidad y §7 Guardrails
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Traza por novela en una sesión; spans por rol y por tool; tokens, coste y latencia; scores; prompts versionados | **Hecho** | `SPEC-29`/`PLAN-29`; cada guion informa del envío. **`F-154`**: la versión del prompt del Escritor es la huella de `escritor.md` y no cambia cuando cambia lo que recibe |
+| Guardrail en tres niveles, normalizado, devuelve al writer con límite, se para e informa, audit log y Langfuse, tests por nivel y variante | **Hecho, sin disparar en real** | En `R5`, el brief diseñado para ello, **ninguna vetada disparó**: el Escritor esquivó las variantes porque su prompt le da la lista. Las pruebas cubren cada nivel y las variantes |
+
+### Restricción global y entregables
+
+| Requisito | Estado | Evidencia |
+| --- | --- | --- |
+| Máximo de 100.000 tokens concurrentes | **Hecho** | Límite sobre lo que se envía. Primera medida: 419 tokens estimados en el capítulo 1; el contexto no se ha recortado nunca (`CLAUDE.md`) |
+| Novela de ejemplo en PDF | **Hecho** | `ejemplos/novela-ejemplo.pdf` |
+| `/docs` de proceso | **Hecho** | `docs/proceso/`: spec inicial, trade-offs, explainers, diagramas, registro de iteraciones, red-team log y uso de Claude Code. El enunciado dice «storyMaker»; el repositorio se llama `My_novel_story` |
+| Vídeo de demo | **No existe** | No hay `presentacion/`. Es del autor |
+| Sin claves; `.env.example` | **Hecho** | `backend/.env.example`. En la raíz no hay |
+| `CLAUDE.md`, `.claude/` con memoria y comandos, MCP de browser, su uso documentado, skills y subagentes documentados | **Hecho** | `.claude/memory/`, `.claude/commands/inspeccionar-novela.md` y `.claude/agents/` commiteados; `.mcp.json` con Playwright MCP; `docs/proceso/claude-code.md` |
+
+## 6. Levantar mi parte en local
+
+Lo general (instalar, clonar, dependencias, la base de la demo) está en el apartado 2. Lo que
+añade mi parte:
+
+### Lo que no viaja por git
+
+| Fichero | Dónde está | Para qué | Si se pierde |
+| --- | --- | --- | --- |
+| `backend/ejemplo-web.db` | `My_novel_story-examen` | La demo: la novela de ejemplo con sus versiones 1, 2 y 3 | Se pierde la demo. **Es la única copia con la versión 3**: la que hice antes de B4 estaba en un directorio temporal de la sesión, que no sobrevive |
+| `backend/evaluacion.db` | `My_novel_story-r1` | El libro de gasto de la evaluación: 55,9066 USD en 126 delegaciones | El techo de gasto empezaría de cero. Las cifras están también en `medidas.md` y `resultados.md` |
+| `backend/evaluacion-<ejecucion>.db` | `My_novel_story-r1` | La base de cada ejecución real | La tabla no se puede regenerar |
+| `backend/.env` | `My_novel_story-examen` y `My_novel_story-r1` | Las claves de Langfuse | Todo funciona y no se envía nada a Langfuse; se dice. **No se commitea ni se pega en un chat** |
+
+### Qué hace falta instalar para lo que gasta
+
+`claude` con la sesión iniciada (cada generación delega en Claude Code) y Lean 4 con `lake`
+4.34.0 para la puerta de publicación. Los modelos de cada rol están en
+`backend/config/sistema.json`, que sí viaja.
+
+### Las órdenes, en PowerShell
+
+**La web sobre la demo**, como está en marcha ahora (8000/5173):
+```powershell
+# Ventana 1
+cd C:\Users\student\Desktop\My_novel_story-examen\backend
+$env:HARNESS_BASE = "ejemplo-web.db"
+python -m uvicorn app.main:app --port 8000
+
+# Ventana 2
+cd C:\Users\student\Desktop\My_novel_story-examen\frontend
+npm run dev
+```
+Y se abre **http://localhost:5173**. Por ejemplo,
+http://localhost:5173/obras/brief-base-antes-1/indice (con el selector de versiones) y
+http://localhost:5173/obras/brief-base-antes-1/versiones/3/capitulos/brief-base-antes-1-cap-04-v3.
+
+**Las pruebas:**
+```powershell
+cd backend;  python -m pytest app -q                 # 1281 al cerrar
+cd frontend; npx vitest run                          # 108 al cerrar
+python -X utf8 harness/documentos/contrato.py        # desde la raíz: el congelado coincide
+```
+
+**Lo que gasta.** Todo pide `--confirmo-el-gasto`; sin la bandera, solo enseña lo que haría:
+```powershell
+# Cuánto hay gastado y cuánto queda, sin gastar (desde My_novel_story-r1\backend, donde está el libro)
+python -X utf8 evaluar.py ..\harness\evals\brief-base.json --pasada antes
+# Pedir un cambio (desde My_novel_story-examen\backend): sin --confirmo-el-gasto solo enseña la propuesta
+python -X utf8 pedir_cambio.py --base ejemplo-web.db --obra brief-base-antes-1 --personaje <id> --nombre "<nombre>" --texto "<palabras del lector>" --ficha ..\ejemplos\brief-ejemplo.json
+# Volver a atender un trabajo parado sin pedir otra vez
+python -X utf8 pedir_cambio.py --base ejemplo-web.db --obra brief-base-antes-1 --relanzar <trabajo> --ficha ..\ejemplos\brief-ejemplo.json --confirmo-el-gasto
+```
+
+## 7. Qué queda y por dónde seguir
+
+**Primero, las decisiones del autor**, porque desbloquean lo demás:
+
+1. **Subir `examen-cierre` a GitHub** (apartado 1). Sin eso, nada de esto existe fuera de esta
+   máquina.
+2. **La revisión humana y el vídeo.** No existen. La revisión necesita además una plantilla y un
+   script de comparación que `PLAN-31` prevé y **no existen**.
+3. **`nombre-en-el-prompt`**: fusionar (`F-152`, sin medir) o dejarla.
+
+**Los hallazgos abiertos que importan:**
+
+| Hallazgo | Qué pasa | Por dónde seguir |
+| --- | --- | --- |
+| **`F-155`** | El Planificador **no siembra nunca** el conocimiento inicial: los tres planes de las generaciones por ficha (`R1`, `R5`, antes-2) tienen `conocimiento_inicial` vacío, y **dos de esas tres generaciones se pararon por lo mismo** (`INV-03`: un secundario actúa sobre un imprescindible de la destinataria que nadie le sembró). Es la Regla 4: ni `planificador.md` ni el código lo piden (`esquemas.py:266`) | Una spec que decida quién siembra qué. **Es lo primero antes de volver a intentar el tuning**, que se paró por esto (unos 40 USD: una pasada antes y otra después) |
+| **`F-110`** | Relanzar reinicia los contadores de reintento: los topes valen por ejecución, no por capítulo ni por plan | Decisión del autor pendiente. El dato para no reiniciar existe (`repo.intentos_de`) |
+| **`F-112`** | Consolidar son dos transacciones; una caída entre ellas deja la escena en un estado que la reanudación no sabe leer, y la convierte en parada | Una sola transacción, o que la reanudación reconozca ese estado |
+| **`F-116`** | Una caída entre consolidar y resumir deja el capítulo sin resumen para siempre, y el informe no lo dice | Que la reanudación detecte los capítulos consolidados sin resumen |
+| **`F-142`** | Las fichas enlazan donde el plan declaró presente al personaje, no donde el texto lo pone (`INV-30` lo vio en real) | Decisión del autor: que el delta declare los presentes o que el Editor los contraste |
+
+**Además, abiertos y con su causa escrita en `docs/verification.md`:** `F-146` (espera `PLAN-34`,
+que no se aprueba sin revisar antes con la sesión del frontend cómo pide los nombres la
+entrevista), `F-126` y `F-147` (pedir un cambio de principio a fin desde la web), `F-154`, la
+tabla que solo enseña la última ejecución (`SPEC-31` `RF-02`) y volver a pasar TLC tras `CE-14`
+y `CE-15`.
+
+**Para comprobar este apartado:**
+```
+git -C C:\Users\student\Desktop\My_novel_story-examen log --oneline -6
+git -C C:\Users\student\Desktop\My_novel_story-examen branch --no-merged examen-cierre
+grep "^| F-155 |" docs/verification.md
+```
