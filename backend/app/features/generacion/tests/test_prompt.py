@@ -99,3 +99,34 @@ def test_sin_hechos_que_establecer_el_prompt_no_lo_pide():
         estado={"contexto": []}, objetivo="{}", problemas=None,
         personajes=["per-marta"], ids_de_hechos=["hec-sotano"])
     assert "ESTA ESCENA TIENE QUE ESTABLECER" not in texto
+
+
+def test_la_extension_va_dicha_en_palabras_y_no_solo_en_los_parametros():
+    """`F-209`: con el rango solo dentro del JSON de parametros, el Escritor real se quedo
+    corto en todas las escenas (970-1067 palabras contra 1150-1350) y `INV-17` rindio el
+    capitulo. Se le dice el rango y a cuanto apuntar, que es por arriba del minimo."""
+    texto = _p(parametros={"pov": "per-a", "longitud_objetivo": [1150, 1350]})
+    assert "entre 1150 y 1350 palabras" in texto
+    assert "unas 1300" in texto
+
+
+def test_sin_rango_no_inventa_una_extension():
+    assert "palabras; apunta" not in _p()
+
+
+def test_pov_usado_se_pide_como_obligatorio_en_el_formato():
+    """`F-210`: el Escritor real devolvio texto y delta sin `pov_usado` y el contrato lo
+    rechazo. El formato decia «dos claves» y enumeraba tres."""
+    texto = _p(parametros={"pov": "per-a"})
+    assert "dos claves" not in texto
+    assert "tres claves, las tres obligatorias" in texto
+
+
+def test_la_definicion_del_escritor_no_contradice_el_formato_del_prompt():
+    """`F-210`, la causa: `.claude/agents/escritor.md` pedia «dos claves y nada mas» sin
+    `pov_usado`, y el system prompt ganaba al mensaje. Las dos piden las mismas tres."""
+    import pathlib
+    agente = (pathlib.Path(__file__).resolve().parents[5] / ".claude" / "agents"
+              / "escritor.md").read_text(encoding="utf-8")
+    assert "dos claves" not in agente
+    assert '"pov_usado"' in agente

@@ -49,7 +49,7 @@ LO QUE YA ES VERDAD EN LA FICCION
 
 LO QUE ESTA ESCENA TIENE QUE HACER
 {objetivo}
-
+{extension}
 EL PUNTO DE VISTA ES DEL PLAN, NO TUYO
 {pov}
 Escribe la escena desde ese personaje y desde ningun otro, y **declaralo** en
@@ -61,7 +61,8 @@ no esta en la lista, no lo pongas en el delta y dejalo solo en el texto.
 {identificadores}
 {establece}
 {problemas}{instrucciones}{vetadas}{personalizacion}FORMATO DE LA RESPUESTA
-Devuelve un unico objeto JSON con dos claves:
+Devuelve un unico objeto JSON con tres claves, las tres obligatorias. Una
+respuesta sin `pov_usado` se rechaza entera, aunque el texto este bien:
   "texto": la escena, en prosa.
   "pov_usado": el identificador del personaje desde cuyo punto de vista la
       escribiste. Es lo que se compara con el POV del plan.
@@ -90,6 +91,13 @@ No expliques el JSON ni lo envuelvas en vallas de bloque de codigo.
 """
 
 SIN_PROBLEMAS = ""
+# `F-209`: el rango dentro del JSON de parametros no bastaba; el Escritor real se quedaba
+# corto siempre. Se apunta cerca del maximo porque el error medido es por abajo.
+CON_EXTENSION = """
+EXTENSION
+La escena tiene entre {minimo} y {maximo} palabras; apunta a unas {apunta}. Un texto
+fuera de ese rango vuelve para reescribirlo.
+"""
 SIN_INSTRUCCIONES = ""
 SIN_VETADAS = ""
 CON_NOMBRES = """NOMBRES QUE VAN ESCRITOS EXACTAMENTE ASI
@@ -176,6 +184,12 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
         bloque_personal += CON_CLAVES.format(lista="\n".join(
             "- {0} (palabras: {1})".format(i["elemento"], ", ".join(i["palabras_clave"]))
             for i in imprescindibles))
+    bloque_extension = ""
+    rango = parametros.get("longitud_objetivo")
+    if rango and len(rango) == 2:
+        minimo, maximo = int(rango[0]), int(rango[1])
+        bloque_extension = CON_EXTENSION.format(
+            minimo=minimo, maximo=maximo, apunta=maximo - max(50, (maximo - minimo) // 4))
     ids = "\n".join([
         "personajes: " + (", ".join(personajes or []) or "(ninguno)"),
         "hechos: " + (", ".join(ids_de_hechos or []) or "(ninguno)"),
@@ -187,6 +201,7 @@ def construir(parametros: dict, estado: dict, objetivo: str, problemas=None,
         estado=(estado if isinstance(estado, str)
                 else json.dumps(estado, ensure_ascii=False, sort_keys=True)),
         objetivo=objetivo,
+        extension=bloque_extension,
         problemas=bloque,
         instrucciones=bloque_humano,
         establece=bloque_establece,

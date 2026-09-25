@@ -1,12 +1,12 @@
 {
   "modelos": {
-    "escritor": "fable",
-    "juez": "opus",
+    "escritor": "sonnet",
+    "juez": "sonnet",
     "resumidor": "haiku",
     "entrevistador": "sonnet",
-    "planificador": "opus",
-    "revisor_plan": "opus",
-    "editor": "opus"
+    "planificador": "sonnet",
+    "revisor_plan": "sonnet",
+    "editor": "sonnet"
   },
 
   "topes": {
