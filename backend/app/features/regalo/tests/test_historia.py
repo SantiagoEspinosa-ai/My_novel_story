@@ -210,3 +210,22 @@ def test_las_cifras_de_arriba(cliente, historia):
 def test_la_version_que_no_existe_es_404(cliente, historia):
     assert cliente.get("/admin/obras/{0}/matriz?version=99".format(OBRA)).status_code == 404
     assert cliente.get("/admin/obras/no-existe/matriz").status_code == 404
+
+
+def test_sin_borrador_aceptado_las_notas_son_las_del_texto_elegido(cliente, con, historia):
+    """`F-216`: la novela regalo no rellena `borrador_aceptado`, y la matriz solo miraba las
+    notas de ese borrador: en real salian las seis a `null` en todas las novelas. Las notas son
+    las del texto que se lee, con la misma regla que la lectura (`commons/obra/texto.elegido`)."""
+    with con:
+        con.execute("UPDATE escena SET borrador_aceptado = NULL WHERE id = ?", (id_escena(OBRA, 1),))
+    uno = _matriz(cliente)["filas"][0]
+    assert [n["nota"] for n in uno["notas"]] == [4, 5, 3, 4, 2, 5]
+
+
+def test_las_notas_de_la_generacion_en_vivo_tambien_sin_borrador_aceptado(con, historia):
+    """`F-216`, la otra copia: `notas_aceptadas` (la generacion en vivo) hacia el mismo JOIN."""
+    from app.features.regalo import repository as repo
+    with con:
+        con.execute("UPDATE escena SET borrador_aceptado = NULL WHERE id = ?", (id_escena(OBRA, 1),))
+    notas = repo.notas_aceptadas(con, OBRA, id_capitulo(OBRA, 1))
+    assert [n["nota"] for n in notas] == [4, 5, 3, 4, 2, 5]

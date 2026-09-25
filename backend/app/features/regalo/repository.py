@@ -142,15 +142,17 @@ def capitulo_de_la_ultima_version(con, obra, numero):
 
 
 def notas_aceptadas(con, obra, capitulo):
-    """Las valoraciones del borrador **aceptado** de cada escena del capitulo. Una escena
-    sin borrador aceptado no aporta nada: el capitulo no se ha cerrado (`RF-16`)."""
+    """Las valoraciones del borrador **elegido** de cada escena del capitulo: el aceptado o,
+    sin el, el ultimo, que es la regla de la lectura (`commons/obra/texto.elegido`). `F-216`: la
+    novela regalo no rellena `borrador_aceptado`, y exigirlo dejaba la pagina sin notas."""
     if not migraciones.tiene_tabla(con, "valoracion_del_editor"):
         return []
     return [{"criterio": f[0], "nota": f[1], "justificacion": f[2], "instruccion": f[3]}
             for f in con.execute(
                 "SELECT v.criterio, v.nota, v.justificacion, v.instruccion FROM escena e "
                 "JOIN valoracion_del_editor v ON v.escena = e.id "
-                "AND v.version = e.borrador_aceptado "
+                "AND v.version = COALESCE(e.borrador_aceptado, (SELECT MAX(b.version) "
+                "FROM borrador b WHERE b.escena = e.id)) "
                 "WHERE e.obra = ? AND e.capitulo = ? ORDER BY e.orden, v.rowid",
                 (obra, capitulo))]
 

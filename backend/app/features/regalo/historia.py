@@ -17,6 +17,7 @@ import json
 
 from app.commons.db import migraciones
 from app.commons.dominio import enumeraciones as enums
+from app.commons.obra import texto as texto_de_escena
 from app.commons.obra.vigente import version_vigente
 
 ATRIBUCION = ("El coste de cada capitulo es una atribucion: cada delegacion se asigna a la ultima "
@@ -89,11 +90,14 @@ def _notas(con, escenas, umbral):
     if not _tabla(con, "valoracion_del_editor"):
         return notas
     for id_e, _, aceptado in escenas:
-        if aceptado is None:
+        # `F-216`: las notas son las del texto que se lee, con la regla de la lectura. La
+        # novela regalo no rellena `borrador_aceptado`, y exigirlo dejaba todas a `null`.
+        elegido = texto_de_escena.elegido(con, id_e, aceptado)
+        if elegido is None:
             continue
         filas = {f[0]: f for f in con.execute(
             "SELECT criterio, nota, justificacion, instruccion FROM valoracion_del_editor "
-            "WHERE escena = ? AND version = ?", (id_e, aceptado))}
+            "WHERE escena = ? AND version = ?", (id_e, elegido.version))}
         for c in _CRITERIOS:
             if c in filas:
                 _, nota, justificacion, instruccion = filas[c]

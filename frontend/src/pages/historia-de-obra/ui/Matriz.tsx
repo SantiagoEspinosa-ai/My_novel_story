@@ -59,7 +59,9 @@ export function Matriz({ m, vista }: { m: MatrizDeObra; vista: (v: number) => st
                 </tr>
                 <tr>
                   <th>Capítulo</th>
-                  {m.filas[0]?.notas.map((n) => <th key={n.criterio} title={n.criterio}>{CORTO[n.criterio] ?? n.criterio}</th>)}
+                  {/* Sin filas (nada escrito todavia) los criterios siguen siendo los seis de INV-26. */}
+                  {(m.filas[0]?.notas.map((n) => n.criterio) ?? Object.keys(CORTO)).map((c) =>
+                    <th key={c} title={c}>{CORTO[c] ?? c}</th>)}
                   <th>Coste</th><th>Intentos</th><th>Hallazgos</th><th>En v{m.version}</th>
                 </tr>
               </thead>

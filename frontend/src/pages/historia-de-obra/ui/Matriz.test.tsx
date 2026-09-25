@@ -92,3 +92,20 @@ describe("Matriz", () => {
     expect(screen.getByRole("link", { name: "Por capítulo" })).toBeInTheDocument();
   });
 });
+
+describe("Matriz › sin capítulos", () => {
+  it("una novela sin capítulos escritos sigue nombrando los seis criterios del Editor (F-216)", async () => {
+    const vacia = { ...matrizDeObra, filas: [] };
+    const doble = fetchConMetodo({ [`GET ${M}`]: [{ cuerpo: vacia }] });
+    render(
+      <ClienteProvider cliente={crearCliente(doble.fetch)}>
+        <MemoryRouter initialEntries={["/admin/obras/obra-publicada"]}>
+          <Routes><Route path="/admin/obras/:obra" element={<PaginaHistoriaDeObra />} /></Routes>
+        </MemoryRouter>
+      </ClienteProvider>,
+    );
+    for (const c of ["cont.", "tono", "arco", "pers.", "ritmo", "perso."]) {
+      expect(await screen.findByRole("columnheader", { name: c })).toBeInTheDocument();
+    }
+  });
+});
