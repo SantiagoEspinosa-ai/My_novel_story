@@ -1,12 +1,19 @@
 ---
 id: SPEC-35
 titulo: Seis pantallas de la novela regalo, rediseñadas — entrevista, cuaderno, cambio, versión y portada
-estado: en_revision
-aprobada_por: ""
-fecha_aprobacion: ""
+estado: aprobada
+aprobada_por: "autor del proyecto, en sesión («aprovado»)"
+fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
-version: 1
+version: 2
 ---
+
+> **v2 (2026-09-25), aprobada** sin comentarios: se aprueban las propuestas de las cuestiones 1
+> a 4. La entrevistadora se llama «Clara», con el nombre en la configuración de la interfaz. El
+> PDF solo se ofrece con la obra publicada. Las páginas de `PLAN-22` las rediseña esta spec,
+> con un reparto de ficheros acordado con esa sesión antes de aprobar el plan. Y el orden es
+> primero las cuatro de rediseño y después la entrevista y el cuaderno, tras el plan de
+> `SPEC-34`.
 
 # SPEC-35 — Seis pantallas de la novela regalo, rediseñadas
 
