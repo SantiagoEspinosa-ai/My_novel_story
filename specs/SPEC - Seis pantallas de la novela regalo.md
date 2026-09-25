@@ -5,8 +5,19 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión («aprovado»)"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
-version: 2
+version: 4
 ---
+
+> **v4 (2026-09-25), lo que encontró el plan; no cambia ninguna decisión.** `RF-02` choca con
+> `CLAUDE.md`, que dice que una escena se muestra siempre con su estado y con los hallazgos
+> abiertos que tenga, y en lo técnico `CLAUDE.md` manda sobre una spec. `RF-02` **no se aplica
+> al estado ni a los hallazgos de una escena mostrada con su texto** (el índice y el capítulo):
+> se rediseñan, pero no se quitan. Quitarlos para el cliente exige revisar `CLAUDE.md`, y eso
+> es una decisión del autor.
+
+> **v3 (2026-09-25), decisión del autor:** *«La entrevistadora que se llame Xime.»* La
+> cuestión 1 pasa de «Clara» a **«Xime»**, con el nombre en la configuración de la interfaz
+> igual que antes. La spec sigue aprobada: es la decisión del autor.
 
 > **v2 (2026-09-25), aprobada** sin comentarios: se aprueban las propuestas de las cuestiones 1
 > a 4. La entrevistadora se llama «Clara», con el nombre en la configuración de la interfaz. El
@@ -139,7 +150,7 @@ Los identificadores `RF-xx` son de esta spec y no se renumeran.
 
 Cada una lleva una propuesta. Aprobar sin comentarios es aprobar las propuestas.
 
-1. **El nombre de la entrevistadora.** *Propuesta:* «Clara», como en la propuesta visual, en la
+1. **El nombre de la entrevistadora.** **Decidido en v3: «Xime».** *Propuesta original:* «Clara», como en la propuesta visual, en la
    configuración de la interfaz para poder cambiarlo sin tocar código.
 2. **Cuándo se ofrece el PDF.** *Propuesta:* solo con la obra **publicada**. Un PDF de una
    novela a medio escribir o parada se leería como el regalo terminado.
