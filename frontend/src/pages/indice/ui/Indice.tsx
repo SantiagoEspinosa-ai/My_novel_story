@@ -22,7 +22,7 @@ export function PaginaIndice() {
   return (
     <Esperando lectura={versiones}>
       {(v: Versiones) => {
-        const vigente = v.versiones[v.versiones.length - 1].numero;
+        const vigente = v.vigente; // la dice el backend (F-150): la ultima creada no es la vigente
         return <IndiceConVersiones obra={obra} versiones={v} vigente={vigente}
           numero={numero === undefined ? vigente : Number(numero)} />;
       }}

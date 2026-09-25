@@ -111,3 +111,19 @@ def test_ningun_campo_expone_la_configuracion_del_sistema(cliente):
         assert ruta not in cuerpo and "obra.db" not in cuerpo
         for prohibida in ("modelo", "tope", "ruta", "techo", "presupuesto"):
             assert prohibida not in cuerpo
+
+
+def test_get_versiones_dice_cual_es_la_vigente_y_no_es_la_ultima_de_la_lista(cliente):
+    """`F-150`: la web deducia la vigente como la ultima de la lista, y mientras la cascada
+    escribia una version nueva la marcaba como vigente. El backend la dice (`F-121`: la
+    ultima **publicada**), y la web no la calcula (`CLAUDE.md`)."""
+    from app.features.auditoria import repository as veredictos
+    from app.features.auditoria.publicacion import Decision
+    c, ruta = cliente
+    vs = c.get("/obras/obra-a/versiones").json()
+    assert [v["numero"] for v in vs["versiones"]] == [1, 2]
+    assert vs["vigente"] == 1, "la 2 existe pero no esta publicada"
+    con = sqlite3.connect(ruta)
+    veredictos.guardar(con, "obra-a", Decision(True, [], []), 0, version=2)
+    con.close()
+    assert c.get("/obras/obra-a/versiones").json()["vigente"] == 2

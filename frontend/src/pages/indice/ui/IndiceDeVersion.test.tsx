@@ -42,6 +42,16 @@ describe("Indice", () => {
     expect(within(caps[1]).queryByText("cambió en esta versión")).toBeNull();
   });
 
+  it("la vigente es la que dice el backend, no la ultima de la lista (F-150)", async () => {
+    // La 2 existe pero no esta publicada: la cascada la esta escribiendo. Deducir la
+    // vigente como la ultima la ensenaba al lector con capitulos sin escribir.
+    montar({ [`${OBRA}/versiones`]: { ...versiones, vigente: 1 } });
+    expect(await screen.findByTestId("version-actual")).toHaveTextContent("Versión 1");
+    const caps = await screen.findAllByTestId("capitulo-del-indice");
+    expect(caps.map((c) => c.getAttribute("data-capitulo"))).toEqual(["cap-b", "cap-a"]);
+    expect(screen.getByRole("link", { name: /Versión 2/ })).not.toHaveTextContent("vigente");
+  });
+
   it("sin anterior no marca nada", async () => {
     montar({}, "/obras/obra-inventada/versiones/1/indice");
     const caps = await screen.findAllByTestId("capitulo-del-indice");

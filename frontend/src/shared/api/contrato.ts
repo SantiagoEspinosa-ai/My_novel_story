@@ -511,7 +511,7 @@ export interface paths {
         /**
          * Versiones
          * @description Las versiones con su numero, su anterior, su commit, cuando se crearon y su
-         *     peticion (`RF-53`).
+         *     peticion (`RF-53`), y cual es la vigente: la web no la deduce (`F-150`).
          */
         get: operations["versiones_obras__id_obra__versiones_get"];
         put?: never;
@@ -1521,6 +1521,11 @@ export interface components {
             obra: string;
             /** Versiones */
             versiones: components["schemas"]["VersionSalida"][];
+            /**
+             * Vigente
+             * @description El numero de la version vigente: la ultima publicada, o la 1 si no hay ninguna (`F-121`, `F-150`)
+             */
+            vigente: number;
         };
     };
     responses: never;

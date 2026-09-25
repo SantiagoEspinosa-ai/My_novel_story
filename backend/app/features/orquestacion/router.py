@@ -150,11 +150,12 @@ def entregar(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
 @router.get("/obras/{id_obra}/versiones", response_model=schemas.VersionesSalida)
 def versiones(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
     """Las versiones con su numero, su anterior, su commit, cuando se crearon y su
-    peticion (`RF-53`)."""
+    peticion (`RF-53`), y cual es la vigente: la web no la deduce (`F-150`)."""
     lista = brief.versiones_de(con, id_obra)
     if not lista:
         raise HTTPException(404, "la obra {0} no tiene versiones".format(id_obra))
-    return {"obra": id_obra, "versiones": lista}
+    return {"obra": id_obra, "versiones": lista,
+            "vigente": brief.version_vigente(con, id_obra)}
 
 
 @router.get("/obras/{id_obra}/versiones/{numero}", response_model=schemas.VersionDetalleSalida)
