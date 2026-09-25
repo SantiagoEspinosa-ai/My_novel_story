@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { EscenaConEstado } from "@/entities/escena";
+import { tituloDeCapitulo } from "@/entities/escena";
 import { Progreso } from "@/entities/progreso";
 import { useLectura, type Indice, type IndiceDeVersion, type Versiones } from "@/shared/api";
-import { ESTADO_DE_CAPITULO, Esperando, EtiquetaDeEstado, MARCA_DE_CAMBIO } from "@/shared/ui";
+import { Esperando, EtiquetaDeEstado, MARCA_DE_CAMBIO } from "@/shared/ui";
 import "./indice.css";
 
 // El indice pinta **en el orden en que llega** (SPEC-22 RF-38): no ordena, no agrupa y no
-// deduce a que capitulo va cada escena. «Capitulo N» es el `orden` que trae la respuesta.
+// deduce a que capitulo va cada escena. «Capitulo N» es el `orden` que trae la respuesta y,
+// con titulo en el plan, «Capitulo N · titulo». SPEC-43: es lectura, asi que no ensena el
+// estado de capitulos ni escenas; eso esta en la administracion.
 // No hay partes: la API no las trae porque la base no las tiene.
 //
 // Con versiones (SPEC-23 D-2, PLAN-22 E17) se lee la de la ruta o, sin ella, la ultima de
@@ -113,28 +115,17 @@ function VistaIndice({ indice, numero, cabecera }: {
           const clase = cambio === "true" ? " capitulo-del-indice--cambiado" : "";
           return (
             <li key={c.id} data-testid="capitulo-del-indice" data-capitulo={c.id}
-              data-estado={c.estado} data-cambio={cambio}
+              data-cambio={cambio}
               className={`tarjeta capitulo-del-indice${clase}`}>
               <div className="capitulo-del-indice__cabecera">
                 <h2><Link to={`${base}/capitulos/${encodeURIComponent(c.id)}`}>
-                  {`Capítulo ${c.orden}`}
+                  {tituloDeCapitulo(c)}
                 </Link></h2>
                 <span className="capitulo-del-indice__etiquetas">
                   {cambio === "true" && <EtiquetaDeEstado distintivo={MARCA_DE_CAMBIO.cambio} />}
                   {cambio === "false" && <EtiquetaDeEstado distintivo={MARCA_DE_CAMBIO.compartido} />}
-                  <EtiquetaDeEstado distintivo={ESTADO_DE_CAPITULO[c.estado]} />
                 </span>
               </div>
-              <ol className="escenas">
-                {c.escenas.map((e) => (
-                  <li key={e.id} data-testid="escena-del-indice" data-escena={e.id}
-                    className="escena-del-indice">
-                    <Link to={`/obras/${obra}/escenas/${encodeURIComponent(e.id)}`}>{e.id}</Link>
-                    <EscenaConEstado escena={e} conTexto={false}
-                      verificacion={e.estado_de_verificacion} />
-                  </li>
-                ))}
-              </ol>
             </li>
           );
         })}

@@ -5,7 +5,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
-import { fetchConMetodo, historiaDeObra } from "@/shared/testing";
+import { fetchConMetodo, historiaDeObra, indice } from "@/shared/testing";
 import { PaginaHistoriaDeObra } from "./HistoriaDeObra";
 
 function montar() {
@@ -75,5 +75,26 @@ describe("HistoriaDeObra", () => {
   it("el coste atribuido dice cómo se atribuyó", async () => {
     montar();
     expect(await screen.findByTestId("atribucion")).toHaveTextContent("atribucion por el progreso");
+  });
+});
+
+// PLAN-43 L3 (SPEC-43 RF-04): la lectura ya no ensena el estado ni los hallazgos; aqui si.
+describe("HistoriaDeObra › pestaña Escenas", () => {
+  it("la pestaña Escenas enseña el estado y los hallazgos de cada escena", async () => {
+    const doble = fetchConMetodo({ "GET /api/obras/obra-inventada/indice": [{ cuerpo: indice }] });
+    render(
+      <ClienteProvider cliente={crearCliente(doble.fetch)}>
+        <MemoryRouter initialEntries={["/admin/obras/obra-inventada?vista=escenas"]}>
+          <Routes><Route path="/admin/obras/:obra" element={<PaginaHistoriaDeObra />} /></Routes>
+        </MemoryRouter>
+      </ClienteProvider>,
+    );
+    const escenas = await screen.findAllByTestId("escena-en-admin");
+    expect(escenas.map((e) => e.getAttribute("data-escena"))).toEqual(
+      indice.capitulos.flatMap((c) => c.escenas.map((e) => e.id)));
+    for (const e of escenas) expect(within(e).getByTestId("estado-de-escena")).toBeInTheDocument();
+    expect(screen.getAllByTestId("hallazgo").map((h) => h.textContent)).toEqual(
+      expect.arrayContaining([expect.stringContaining("INV-17")]));
+    expect(screen.getByRole("link", { name: "Escenas" })).toHaveAttribute("aria-current", "page");
   });
 });

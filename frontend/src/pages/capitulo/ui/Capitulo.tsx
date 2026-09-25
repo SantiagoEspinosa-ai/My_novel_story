@@ -1,20 +1,21 @@
 import { Link, useParams } from "react-router-dom";
-import { EscenaConEstado } from "@/entities/escena";
+import { TextoDeEscena, tituloDeCapitulo } from "@/entities/escena";
 import { ConPeticion } from "@/features/pedir-cambio";
 import {
-  useLectura, type CapituloLeido, type CapituloLeidoDeVersion, type Versiones,
+  useLectura, type CapituloLeido, type CapituloLeidoDeVersion, type Indice, type Versiones,
 } from "@/shared/api";
-import { ESTADO_DE_CAPITULO, Esperando, EtiquetaDeEstado, MARCA_DE_CAMBIO } from "@/shared/ui";
+import { Esperando, EtiquetaDeEstado, MARCA_DE_CAMBIO } from "@/shared/ui";
 import "./capitulo.css";
 
 // La lectura continua de un capitulo (SPEC-22 RF-41). Que escenas entran y en que orden lo
-// decide el backend; aqui se pinta **una escena por bloque**, cada una con su estado y sus
-// hallazgos (RF-39). No se juntan textos: juntarlos borraria de que escena es cada frase.
+// decide el backend; aqui se pinta **una escena por bloque**. No se juntan textos: juntarlos
+// borraria de que escena es cada frase.
 //
-// Dentro de una version (PLAN-22 E17) cada escena lleva ademas su estado de verificacion
-// en esa version (RF-54) y el capitulo su marca de cambio (RF-52), tal como llegan. Una
-// version que no es la vigente se lee entera (RF-53) pero no ofrece pedir cambios: se pide
-// sobre la vigente, que es de la que parte la peticion.
+// SPEC-43: la lectura es para el lector. Ni el estado de la escena ni sus hallazgos ni su
+// estado de verificacion: todo eso vive en la administracion (la pestana «Escenas» de cada
+// novela). Se queda la marca de cambio de una version (RF-52, SPEC-35 RF-10), que es del
+// lector. Una version que no es la vigente se lee entera (RF-53) pero no ofrece pedir
+// cambios: se pide sobre la vigente, que es de la que parte la peticion.
 export function PaginaCapitulo() {
   const { obra = "", capitulo = "", numero } = useParams();
   if (numero !== undefined) {
@@ -69,7 +70,7 @@ function VistaCapitulo({ obra, capitulo, numero, vigente, anterior = null, pedir
   const indice = numero === undefined
     ? `/obras/${o}/indice` : `/obras/${o}/versiones/${numero}/indice`;
   return (
-    <main className="contenido capitulo" data-capitulo={capitulo.id} data-estado={capitulo.estado}>
+    <main className="contenido capitulo" data-capitulo={capitulo.id}>
       <nav className="migas">
         <Link to={indice}>Índice{numero !== undefined ? ` · versión ${numero}` : ""}</Link>
       </nav>
@@ -82,17 +83,15 @@ function VistaCapitulo({ obra, capitulo, numero, vigente, anterior = null, pedir
       {deVersion?.compartido === false && numero !== undefined && (
         <PorTuCambio obra={obra} numero={numero} anterior={anterior} />
       )}
-      <h1>{`Capítulo ${capitulo.orden}`}</h1>
+      <h1>{tituloDeCapitulo(capitulo)}</h1>
       <div className="capitulo__etiquetas">
         {deVersion?.compartido === false &&
           <EtiquetaDeEstado distintivo={MARCA_DE_CAMBIO.cambio} />}
         {deVersion?.compartido === true &&
           <EtiquetaDeEstado distintivo={MARCA_DE_CAMBIO.compartido} />}
-        <EtiquetaDeEstado distintivo={ESTADO_DE_CAPITULO[capitulo.estado]} />
       </div>
       {capitulo.escenas.map((e) => {
-        const verificacion = "estado_de_verificacion" in e ? e.estado_de_verificacion : undefined;
-        const escena = <EscenaConEstado escena={e} verificacion={verificacion} />;
+        const escena = <TextoDeEscena escena={e} />;
         return (
           <section key={e.id} data-testid="bloque-de-escena" data-escena={e.id}
             className="tarjeta bloque-de-escena">
@@ -100,7 +99,36 @@ function VistaCapitulo({ obra, capitulo, numero, vigente, anterior = null, pedir
           </section>
         );
       })}
+      <NavegacionEntreCapitulos obra={obra} capitulo={capitulo.id} numero={numero} />
     </main>
+  );
+}
+
+// SPEC-43 RF-03: al final, anterior, siguiente y el indice, en el orden de lectura de la
+// version que se lee. El orden lo da el indice del backend; aqui no se ordena. Mientras el
+// indice no llega no se pinta (arriba queda el enlace al indice); si no llega, solo la vuelta.
+function NavegacionEntreCapitulos({ obra, capitulo, numero }: {
+  obra: string; capitulo: string; numero?: number;
+}) {
+  const lectura = useLectura(
+    (c) => (numero === undefined ? c.indice(obra) : c.indiceDeVersion(obra, numero)),
+    numero === undefined ? `indice:${obra}` : `indice:${obra}:${numero}`);
+  const o = encodeURIComponent(obra);
+  const base = numero === undefined ? `/obras/${o}` : `/obras/${o}/versiones/${numero}`;
+  if (lectura.estado === "cargando") return null;
+  const capitulos = lectura.estado === "listo" ? (lectura.datos as Indice).capitulos : [];
+  const i = capitulos.findIndex((c) => c.id === capitulo);
+  const anterior = i > 0 ? capitulos[i - 1] : null;
+  const siguiente = i >= 0 && i < capitulos.length - 1 ? capitulos[i + 1] : null;
+  const a = (id: string) => `${base}/capitulos/${encodeURIComponent(id)}`;
+  return (
+    <nav className="entre-capitulos" aria-label="entre capítulos">
+      {anterior ? <Link className="entre-capitulos__anterior" to={a(anterior.id)}>
+        ← Anterior: {tituloDeCapitulo(anterior)}</Link> : <span />}
+      <Link className="entre-capitulos__indice" to={`${base}/indice`}>Volver al índice</Link>
+      {siguiente ? <Link className="entre-capitulos__siguiente" to={a(siguiente.id)}>
+        Siguiente: {tituloDeCapitulo(siguiente)} →</Link> : <span />}
+    </nav>
   );
 }
 

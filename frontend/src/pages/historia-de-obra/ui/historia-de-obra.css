@@ -65,3 +65,7 @@
 .matriz__debajo h2 { margin: 0 0 var(--espacio-s); font-size: 1.05rem; }
 .matriz__mini { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .matriz__mini th, .matriz__mini td { text-align: left; padding: var(--espacio-xs); border-bottom: 1px solid var(--color-linea); vertical-align: top; }
+/* SPEC-43 RF-04: la pestana Escenas. Solo variables del tema. */
+.historia__escenas { list-style: none; padding: 0; display: grid; gap: var(--espacio-m); }
+.historia__escenas h2 { margin: 0 0 var(--espacio-s); font-size: 1.05rem; }
+.historia__escenas code { font-size: 0.8rem; color: var(--color-textoSuave); }

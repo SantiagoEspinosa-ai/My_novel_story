@@ -1,6 +1,7 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { EscenaConEstado, tituloDeCapitulo } from "@/entities/escena";
 import {
-  useLectura, type EventoDeLaHistoria, type HistoriaDeObra, type MatrizDeObra,
+  useLectura, type EventoDeLaHistoria, type HistoriaDeObra, type Indice, type MatrizDeObra,
 } from "@/shared/api";
 import { ESTADO_DE_ESCENA, EtiquetaDeEstado, Esperando, SEVERIDAD, SinDato } from "@/shared/ui";
 import { AccionesDeObra } from "@/features/acciones-de-obra";
@@ -9,26 +10,34 @@ import { Matriz } from "./Matriz";
 import "./historia-de-obra.css";
 
 // La pagina de cada novela en la administracion. SPEC-38: se abre en la matriz por capitulo, y
-// la linea de tiempo de SPEC-37 es la segunda pestana (`?vista=linea`). La version de la matriz
-// va en `?version=N`, para poder enlazarla. La pagina no ordena, no suma ni atribuye: pinta.
+// la linea de tiempo de SPEC-37 es la segunda pestana (`?vista=linea`). SPEC-43 RF-04: la
+// tercera (`?vista=escenas`) ensena cada escena con su estado y sus hallazgos abiertos, que la
+// lectura ya no ensena (CLAUDE.md § React: la administracion es para quien revisa). La version
+// de la matriz va en `?version=N`, para poder enlazarla. La pagina no ordena, no suma ni
+// atribuye: pinta.
 export function PaginaHistoriaDeObra() {
   const { obra = "" } = useParams();
   const [params] = useSearchParams();
-  const linea = params.get("vista") === "linea";
+  const vistaElegida = params.get("vista");
+  const linea = vistaElegida === "linea";
+  const escenas = vistaElegida === "escenas";
+  const pestana = (elegida: boolean) =>
+    elegida ? "historia__pestana historia__pestana--elegida" : "historia__pestana";
   const version = params.get("version");
   return (
     <main className="contenido historia">
       <p className="migas"><Link to="/admin">Administración</Link></p>
       <nav className="historia__pestanas" aria-label="vistas">
-        <Link to="?" aria-current={linea ? undefined : "page"}
-          className={linea ? "historia__pestana" : "historia__pestana historia__pestana--elegida"}>
-          Por capítulo</Link>
+        <Link to="?" aria-current={linea || escenas ? undefined : "page"}
+          className={pestana(!linea && !escenas)}>Por capítulo</Link>
         <Link to="?vista=linea" aria-current={linea ? "page" : undefined}
-          className={linea ? "historia__pestana historia__pestana--elegida" : "historia__pestana"}>
-          Línea de tiempo</Link>
+          className={pestana(linea)}>Línea de tiempo</Link>
+        <Link to="?vista=escenas" aria-current={escenas ? "page" : undefined}
+          className={pestana(escenas)}>Escenas</Link>
       </nav>
       {linea && <AccionesDeObra obra={obra} />}
       {linea ? <LineaDeTiempo obra={obra} />
+        : escenas ? <Escenas obra={obra} />
         : <PorCapitulo obra={obra} version={version === null ? undefined : Number(version)} />}
     </main>
   );
@@ -39,6 +48,31 @@ function PorCapitulo({ obra, version }: { obra: string; version?: number }) {
   return (
     <Esperando lectura={lectura}>
       {(m: MatrizDeObra) => <Matriz m={m} vista={(v) => `?version=${v}`} />}
+    </Esperando>
+  );
+}
+
+// SPEC-43 RF-04: cada escena con su estado y sus hallazgos abiertos, sin el texto, en el orden
+// del indice de la version vigente, que es el que lee el lector.
+function Escenas({ obra }: { obra: string }) {
+  const lectura = useLectura((c) => c.indice(obra), `indice:${obra}`);
+  return (
+    <Esperando lectura={lectura}>
+      {(i: Indice) => (
+        <ol className="historia__escenas">
+          {i.capitulos.map((c) => (
+            <li key={c.id} className="tarjeta">
+              <h2>{tituloDeCapitulo(c)}</h2>
+              {c.escenas.map((e) => (
+                <div key={e.id} data-testid="escena-en-admin" data-escena={e.id}>
+                  <code>{e.id}</code>
+                  <EscenaConEstado escena={e} conTexto={false} />
+                </div>
+              ))}
+            </li>
+          ))}
+        </ol>
+      )}
     </Esperando>
   );
 }

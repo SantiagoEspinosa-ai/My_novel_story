@@ -357,6 +357,18 @@
             "description": "Orden de lectura; la lista ya viene en este orden",
             "title": "Orden",
             "type": "integer"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene",
+            "title": "Titulo"
           }
         },
         "required": [
@@ -401,6 +413,18 @@
             "description": "Orden de lectura; la lista ya viene en este orden",
             "title": "Orden",
             "type": "integer"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene",
+            "title": "Titulo"
           }
         },
         "required": [
@@ -526,6 +550,18 @@
           "orden": {
             "title": "Orden",
             "type": "integer"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene",
+            "title": "Titulo"
           }
         },
         "required": [
@@ -573,6 +609,18 @@
           "orden": {
             "title": "Orden",
             "type": "integer"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene",
+            "title": "Titulo"
           }
         },
         "required": [

@@ -66,3 +66,31 @@ def test_el_capitulo_trae_su_orden_y_estado_y_solo_sus_escenas(cliente):
     cap = _capitulo(cliente, "cap-a")
     assert (cap["id"], cap["orden"], cap["estado"]) == ("cap-a", 2, "abierto")
     assert [e["id"] for e in cap["escenas"]] == ["esc-a1", "esc-a2"]
+
+
+def _con_plan(tmp_path, aprobado=1):
+    """El plan por SQL: `planificacion/` es otra feature (`A-02`)."""
+    import json
+    import sqlite3
+    con = sqlite3.connect(str(tmp_path / "lectura.db"))
+    with con:
+        con.execute("CREATE TABLE IF NOT EXISTS plan_de_obra (obra TEXT, version INTEGER, "
+                    "plan TEXT, aprobado INTEGER, origen TEXT, objeciones TEXT DEFAULT '[]')")
+        con.execute("INSERT INTO plan_de_obra VALUES (?, 1, ?, ?, 'revisor', '[]')",
+                    (OBRA, json.dumps({"capitulos": [{"id": "cap-b", "titulo": "El faro"}]}),
+                     aprobado))
+    con.close()
+
+
+def test_el_capitulo_lleva_el_titulo_del_plan_aprobado(cliente, tmp_path):
+    """`SPEC-43` `RF-02`: «Capitulo N · su titulo». El titulo es del plan (`PLAN-43` L1)."""
+    _con_plan(tmp_path)
+    assert _capitulo(cliente, "cap-b")["titulo"] == "El faro"
+    indice = cliente.get("/obras/{0}/indice".format(OBRA)).json()
+    assert [c["titulo"] for c in indice["capitulos"]] == ["El faro", None]
+
+
+def test_sin_plan_aprobado_el_titulo_es_nulo(cliente, tmp_path):
+    assert _capitulo(cliente, "cap-b")["titulo"] is None
+    _con_plan(tmp_path, aprobado=0)
+    assert _capitulo(cliente, "cap-b")["titulo"] is None

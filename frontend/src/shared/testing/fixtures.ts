@@ -62,9 +62,9 @@ export const indice: Indice = {
   titulo: "Titulo inventado",
   dedicatoria: "Para nadie real",
   capitulos: [
-    { id: "cap-b", orden: 1, estado: "abierto",
+    { id: "cap-b", orden: 1, estado: "abierto", titulo: "El faro inventado",
       escenas: [delIndice(escenaConsolidada), delIndice(escenaRendida)] },
-    { id: "cap-a", orden: 2, estado: "abierto",
+    { id: "cap-a", orden: 2, estado: "abierto", titulo: null,
       escenas: [delIndice(escenaSinVeredicto), delIndice(escenaPlanificada)] },
   ],
 };
@@ -72,11 +72,13 @@ export const indice: Indice = {
 export const indiceSinDedicatoria: Indice = { ...indice, dedicatoria: null };
 
 export const capituloB: CapituloLeido = {
-  id: "cap-b", orden: 1, estado: "abierto", escenas: [escenaConsolidada, escenaRendida],
+  id: "cap-b", orden: 1, estado: "abierto", titulo: "El faro inventado",
+  escenas: [escenaConsolidada, escenaRendida],
 };
 
 export const capituloA: CapituloLeido = {
-  id: "cap-a", orden: 2, estado: "abierto", escenas: [escenaSinVeredicto, escenaPlanificada],
+  id: "cap-a", orden: 2, estado: "abierto", titulo: null,
+  escenas: [escenaSinVeredicto, escenaPlanificada],
 };
 
 export const fichas: Fichas = {

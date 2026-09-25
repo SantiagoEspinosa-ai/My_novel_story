@@ -18,35 +18,31 @@ function montar(datos = indice) {
 }
 
 describe("Indice", () => {
-  it("pinta los capitulos y las escenas en el orden de la respuesta", async () => {
+  it("pinta los capitulos en el orden de la respuesta", async () => {
     // Un orden que ninguna regla del navegador produciria: si la interfaz ordenara por id
     // o por orden, no saldria asi.
     const desordenado = structuredClone(indice);
     desordenado.capitulos.reverse();
-    desordenado.capitulos[0].escenas.reverse();
     montar(desordenado);
     const capitulos = await screen.findAllByTestId("capitulo-del-indice");
     expect(capitulos.map((c) => c.getAttribute("data-capitulo"))).toEqual(["cap-a", "cap-b"]);
-    const escenas = within(capitulos[0]).getAllByTestId("escena-del-indice");
-    expect(escenas.map((e) => e.getAttribute("data-escena"))).toEqual(["esc-a2", "esc-a1"]);
     expect(within(capitulos[0]).getByText("Capítulo 2")).toBeInTheDocument();
   });
 
   it("cada capitulo enlaza con su id de capitulo", async () => {
     montar();
-    const enlaces = await screen.findAllByRole("link", { name: /^Capítulo \d+$/ });
+    const enlaces = await screen.findAllByRole("link", { name: /^Capítulo \d+/ });
     expect(enlaces.map((a) => a.getAttribute("href"))).toEqual([
       "/obras/obra-inventada/capitulos/cap-b",
       "/obras/obra-inventada/capitulos/cap-a",
     ]);
   });
 
-  it("cada escena del indice lleva su estado y sus hallazgos", async () => {
-    montar();
-    const escenas = await screen.findAllByTestId("escena-del-indice");
-    expect(escenas).toHaveLength(4);
-    for (const e of escenas) {
-      expect(within(e).getByTestId("estado-de-escena")).toBeInTheDocument();
-    }
+  it("es para el lector: titulos de capitulo y nada tecnico (SPEC-43)", async () => {
+    const { container } = montar();
+    expect(await screen.findByRole("link", { name: "Capítulo 1 · El faro inventado" })).toBeInTheDocument();
+    expect(screen.queryByTestId("estado-de-escena")).toBeNull();
+    expect(screen.queryByTestId("escena-del-indice")).toBeNull();
+    expect(container.textContent).not.toMatch(/INV-\d+|esc-b1|capítulo abierto|consolidada/);
   });
 });

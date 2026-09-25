@@ -67,7 +67,7 @@ describe("Indice", () => {
     expect(await screen.findByText(/Estás leyendo la versión 1/)).toBeInTheDocument();
     const caps = await screen.findAllByTestId("capitulo-del-indice");
     expect(caps.map((c) => c.getAttribute("data-capitulo"))).toEqual(["cap-b", "cap-a"]);
-    const enlaces = screen.getAllByRole("link", { name: /^Capítulo \d+$/ });
+    const enlaces = screen.getAllByRole("link", { name: /^Capítulo \d+/ });
     expect(enlaces.map((a) => a.getAttribute("href"))).toEqual([
       "/obras/obra-inventada/versiones/1/capitulos/cap-b",
       "/obras/obra-inventada/versiones/1/capitulos/cap-a",
@@ -76,10 +76,10 @@ describe("Indice", () => {
     // dos paginas (FSD no deja que una pagina importe otra).
   });
 
-  it("cada escena de una version lleva su estado de verificacion", async () => {
+  it("el lector no ve el estado de verificacion: es de la administracion (SPEC-43)", async () => {
     montar({});
-    const escenas = await screen.findAllByTestId("escena-del-indice");
-    expect(escenas.map((e) => within(e).getByTestId("verificacion")
-      .getAttribute("data-verificacion"))).toEqual(["sin_reverificar", "sin_reverificar", "verificada"]);
+    await screen.findAllByTestId("capitulo-del-indice");
+    expect(screen.queryByTestId("verificacion")).toBeNull();
+    expect(screen.queryByTestId("escena-del-indice")).toBeNull();
   });
 });

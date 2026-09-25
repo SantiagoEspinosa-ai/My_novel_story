@@ -55,10 +55,11 @@ describe("Capitulo de una version", () => {
     expect(screen.queryByTestId("por-tu-cambio")).toBeNull();
   });
 
-  it("el capitulo cambiado sigue ensenando el estado de cada escena (CLAUDE.md)", async () => {
+  it("el capitulo cambiado se lee sin estados: son de la administracion (SPEC-43)", async () => {
     montar("cap-a-v2", capituloAV2, PALABRAS);
     const bloques = await screen.findAllByTestId("bloque-de-escena");
     expect(bloques).toHaveLength(capituloA.escenas.length);
-    expect(screen.getAllByTestId("verificacion").length).toBeGreaterThan(0);
+    expect(screen.queryByTestId("verificacion")).toBeNull();
+    expect(screen.queryByTestId("estado-de-escena")).toBeNull();
   });
 });

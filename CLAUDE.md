@@ -22,7 +22,8 @@ La línea de arriba importa `AGENTS.md` entero: Claude Code la expande al arranc
 ### React
 
 - La interfaz muestra estado, no lo calcula. El cambio de valor de una escena y el estado de las invariantes vienen resueltos de la API.
-- Una escena se muestra siempre con su estado (`planificada`…`consolidada`) y con los hallazgos abiertos que tenga. Un texto sin ese contexto induce a darlo por bueno.
+- **La lectura es para el lector y la administración para quien revisa** (`SPEC-43`). La lectura (índice, capítulo y escena) no enseña nada técnico: ni estados ni hallazgos ni identificadores. Titula «Capítulo N · título» y navega entre capítulos.
+- En la administración, una escena se muestra siempre con su estado (`planificada`…`consolidada`) y con los hallazgos abiertos que tenga, en la pestaña «Escenas» de cada novela. Un texto sin ese contexto induce a darlo por bueno a quien revisa. La API de lectura los sigue devolviendo.
 
 ### Límite de contexto: 100.000 tokens
 

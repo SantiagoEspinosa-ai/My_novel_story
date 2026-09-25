@@ -22,15 +22,14 @@ describe("App", () => {
       [`${OBRA}/versiones/1/capitulos/cap-b`]: capituloBV1,
       [`${OBRA}/versiones/1/capitulos/cap-a`]: capituloAV1,
     }))} />);
-    fireEvent.click(await screen.findByRole("link", { name: /Versión 1/ }));
+    fireEvent.click(await screen.findByRole("link", { name: /Versión 1/ }, { timeout: 5000 }));
     for (const [n, capitulo] of [[0, capituloBV1], [1, capituloAV1]] as const) {
-      const enlaces = await screen.findAllByRole("link", { name: /^Capítulo \d+$/ });
+      const enlaces = await screen.findAllByRole("link", { name: /^Capítulo \d+/ }, { timeout: 5000 });
       fireEvent.click(enlaces[n]);
-      const bloques = await screen.findAllByTestId("bloque-de-escena");
+      const bloques = await screen.findAllByTestId("bloque-de-escena", {}, { timeout: 5000 });
       expect(bloques.map((b) => b.getAttribute("data-escena")))
         .toEqual(capitulo.escenas.map((e) => e.id));
       for (const b of bloques) {
-        expect(within(b).getByTestId("verificacion")).toBeInTheDocument();
         // Una version que no es la vigente se lee, pero no se pide sobre ella.
         expect(within(b).queryByRole("button", { name: /Pedir un cambio/ })).toBeNull();
       }

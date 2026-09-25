@@ -976,6 +976,11 @@ export interface components {
              * @description Orden de lectura; la lista ya viene en este orden
              */
             orden: number;
+            /**
+             * Titulo
+             * @description Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene
+             */
+            titulo?: string | null;
         };
         /** CapituloDelIndiceDeVersion */
         CapituloDelIndiceDeVersion: {
@@ -997,6 +1002,11 @@ export interface components {
              * @description Orden de lectura; la lista ya viene en este orden
              */
             orden: number;
+            /**
+             * Titulo
+             * @description Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene
+             */
+            titulo?: string | null;
         };
         /**
          * CapituloEnGeneracion
@@ -1056,6 +1066,11 @@ export interface components {
             id: string;
             /** Orden */
             orden: number;
+            /**
+             * Titulo
+             * @description Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene
+             */
+            titulo?: string | null;
         };
         /** CapituloLeidoDeVersion */
         CapituloLeidoDeVersion: {
@@ -1076,6 +1091,11 @@ export interface components {
             numero: number;
             /** Orden */
             orden: number;
+            /**
+             * Titulo
+             * @description Capitulo.titulo, del plan aprobado (`SPEC-43` `RF-02`); nulo si no lo tiene
+             */
+            titulo?: string | null;
         };
         /** CapitulosPorSalida */
         CapitulosPorSalida: {

@@ -46,7 +46,7 @@ La **Escena** es la unidad atómica: la unidad que se genera, se verifica y se r
 | --- | --- | --- |
 | Obra | La novela completa como unidad publicable. | **id**, **titulo**, **premisa**, genero, subgenero, extension\_objetivo, guia\_de\_estilo, contrato\_con\_el\_lector, dedicatoria (texto de la obra: se copia de la ficha al montar y sobrevive al borrado de la ficha, `SPEC-32`) |
 | Parte | Agrupación de capítulos con unidad dramática (acto). | **id**, **orden**, funcion\_estructural, valor\_inicial, valor\_final |
-| Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, **estado** → `estado_de_capitulo`, gancho\_de\_cierre, escenas\[\] |
+| Capitulo | Unidad de lectura con corte deliberado. | **id**, **orden**, **estado** → `estado_de_capitulo`, titulo (el del plan aprobado; `SPEC-43`), gancho\_de\_cierre, escenas\[\] |
 | Escena | Bloque continuo de tiempo y espacio con un cambio de valor. | **id**, **capitulo** → Capitulo (`SPEC-21` C-1), **pov**, **lugar**, **momento\_narrativo**, **objetivo\_dramatico**, **conflicto**, **cambio\_de\_valor**, **estado** → `estado_de_escena`, personajes\_presentes\[\], salida, longitud\_objetivo, intentos, borrador\_aceptado → Borrador |
 | Beat | Micro-unidad de cambio dentro de una escena. | **id**, tipo, valor\_antes, valor\_despues, establece\[\] → HechoCanonico |
 

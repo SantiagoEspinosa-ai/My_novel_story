@@ -24,8 +24,10 @@ def indice(con, id_obra, version=None):
     obra = repo.obra(con, id_obra)
     if obra is None:
         return None
+    titulos = repo.titulos_de_capitulo(con, id_obra)
     obra["capitulos"] = [
         {"id": c["id"], "orden": c["orden"], "estado": c["estado"],
+         "titulo": titulos.get(c["id"]),
          "escenas": [_escena_del_indice(con, e)
                      for e in repo.escenas_de_capitulo(con, id_obra, c["id"])]}
         for c in repo.capitulos(con, id_obra, version)]
@@ -48,6 +50,7 @@ def capitulo(con, id_capitulo):
     if c is None:
         return None
     return {"id": c["id"], "orden": c["orden"], "estado": c["estado"],
+            "titulo": repo.titulos_de_capitulo(con, c["obra"]).get(c["id"]),
             "escenas": [_escena_leida(con, e)
                         for e in repo.escenas_de_capitulo(con, c["obra"], c["id"])]}
 

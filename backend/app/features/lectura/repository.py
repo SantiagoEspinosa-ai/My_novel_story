@@ -181,3 +181,15 @@ def progreso(con, id_obra):
     return {"obra": id_obra, "fase": f[0], "capitulo": f[1], "total_de_capitulos": f[2],
             "motivo": f[3], "desde": f[4], "ultima_actividad": ultima,
             "segundos_desde_la_ultima_actividad": max(0, segundos)}
+
+
+def titulos_de_capitulo(con, id_obra):
+    """`SPEC-43` `RF-02`: `{capitulo: titulo}` del ultimo plan aprobado. El titulo es del plan
+    (`Capitulo.titulo`, opcional): sin plan, o sin tabla, no hay ninguno, y no se inventa."""
+    if not _columnas(con, "plan_de_obra"):
+        return {}
+    f = con.execute("SELECT plan FROM plan_de_obra WHERE obra = ? AND aprobado = 1 "
+                    "ORDER BY version DESC LIMIT 1", (id_obra,)).fetchone()
+    if f is None or not f[0]:
+        return {}
+    return {c.get("id"): c.get("titulo") for c in json.loads(f[0]).get("capitulos") or []}

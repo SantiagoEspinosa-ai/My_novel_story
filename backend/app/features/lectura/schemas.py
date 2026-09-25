@@ -41,6 +41,8 @@ class CapituloDelIndice(BaseModel):
     id: str = Field(description="El id del Capitulo; nunca el de la obra (RF-37)")
     orden: int = Field(description="Orden de lectura; la lista ya viene en este orden")
     estado: EstadoDeCapitulo
+    titulo: str | None = Field(default=None, description="Capitulo.titulo, del plan aprobado "
+                               "(`SPEC-43` `RF-02`); nulo si no lo tiene")
     escenas: list[EscenaDelIndice] = Field(description="En orden de lectura")
 
 
@@ -84,6 +86,8 @@ class CapituloLeido(BaseModel):
     id: str = Field(description="El id del Capitulo; nunca el de la obra (RF-37)")
     orden: int
     estado: EstadoDeCapitulo
+    titulo: str | None = Field(default=None, description="Capitulo.titulo, del plan aprobado "
+                               "(`SPEC-43` `RF-02`); nulo si no lo tiene")
     escenas: list[EscenaLeida] = Field(description="En orden de lectura")
 
 
