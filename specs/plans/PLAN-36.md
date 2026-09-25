@@ -2,7 +2,8 @@
 id: PLAN-36
 spec: SPEC-36
 titulo: Implementación de la estantería de madera, el escritor en su mesa y la administración
-estado: aprobada
+estado: aplicada
+fecha_aplicacion: 2026-09-25
 aprobada_por: "sesión del 2026-09-25, por la delegación escrita del autor («Decide tú todo […]»), tras su elección de las propuestas"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25

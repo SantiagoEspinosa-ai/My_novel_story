@@ -1,6 +1,6 @@
 // PLAN-33 E7 (SPEC-33 RF-14..RF-17): la generacion, visible. Los capitulos en fila con su
 // fase y las notas del Editor al cerrarse cada uno. Todo llega resuelto de la API.
-import { act, render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ClienteProvider, crearCliente } from "@/shared/api";
 import {
@@ -115,7 +115,8 @@ describe("Generacion", () => {
     });
     expect(await screen.findByRole("link", { name: "Leer lo escrito" }))
       .toHaveAttribute("href", "/obras/obra-regalo-inventada");
-    expect(await screen.findByTestId("sin-publicar")).toHaveTextContent("Lean no disponible");
+    // El motivo llega en otra peticion: se espera a el, no solo al aviso.
+    await waitFor(() => expect(screen.getByTestId("sin-publicar")).toHaveTextContent("Lean no disponible"));
   });
 
   it("en curso no ofrece leer todavía", async () => {

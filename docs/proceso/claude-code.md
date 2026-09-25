@@ -255,3 +255,13 @@ en curso y la publicada, de noche; la portada y el índice.
 **Encontró un defecto**: la generación publicada seguía titulándose «La novela se está
 escribiendo». Se corrigió con su prueba antes de cerrar. **Nada pulsó «Responder» ni «Sí,
 escribir la novela»**: el camino con el modelo real sigue sin inspeccionar en esta máquina.
+
+### La estantería de madera, el escritor en su mesa y la administración (`PLAN-36` G5, 2026-09-25)
+
+El lienzo de `/design` no está en el repositorio, así que las propuestas se volvieron a generar
+como maquetas estáticas (`docs/proceso/propuestas-visuales/propuestas.html`) y el autor eligió
+sobre ellas: lomos en baldas, el escritor en su mesa y la administración sin login (`SPEC-36`).
+Recorrido en Edge sin cabeza sobre `backend/web.db`: **encontró que la clase `.balda` ya
+existía** en `pedir-cambio.css` (la balda de «qué se reescribe») y su fondo oscuro se comía el
+mueble; se renombró. También se recortaron los títulos largos que se salían del lomo. La ficha
+del lomo no se capturó, porque la captura no puede pulsar: la cubren las pruebas.

@@ -41,7 +41,7 @@ function Baldas({ obras }: { obras: ObraEnLaEstanteria[] }) {
     <div className="estanteria__mueble">
       <div className="estanteria__baldas">
         {baldas.map((b, n) => (
-          <div key={n} className="balda" data-testid="balda">
+          <div key={n} className="estanteria__balda" data-testid="balda">
             {b.map((o) => (
               <Lomo key={o.id} obra={o} pulsado={o.id === elegida}
                 alPulsar={() => setElegida(o.id === elegida ? null : o.id)} />

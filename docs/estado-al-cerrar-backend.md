@@ -476,5 +476,8 @@ en GitHub**: publicarla es decisión del autor.
   entrevista con el Entrevistador real ni una generación. Sin Lean (`lake`) una novela generada
   no se publica: se lee como «lo escrito», sin PDF.
 
+- **`SPEC-36` aplicada**: la estantería de lomos en baldas, el escritor en su mesa y la
+  administración en `/admin`, **sin login** por decisión del autor.
+
 **Levantar:** `powershell -ExecutionPolicy Bypass -File .\arrancar-web.ps1` y abrir
 http://127.0.0.1:5173/.

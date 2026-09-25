@@ -1,11 +1,12 @@
 ---
 id: SPEC-36
 titulo: La estantería de madera, el escritor en su mesa y la administración
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: eligió «A · Lomos en baldas», «A · Escritor en su mesa» y «Sí, sin login» sobre docs/proceso/propuestas-visuales/propuestas.html"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
 ---
 
 # SPEC-36 — La estantería de madera, el escritor en su mesa y la administración

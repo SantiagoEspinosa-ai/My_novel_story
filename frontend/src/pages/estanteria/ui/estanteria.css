@@ -16,11 +16,11 @@
 .estanteria__mueble { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: var(--espacio-xl); align-items: start; }
 @media (max-width: 900px) { .estanteria__mueble { grid-template-columns: 1fr; } }
 .estanteria__baldas { display: grid; gap: calc(var(--espacio-xl) + 18px); }
-.balda {
+.estanteria__balda {
   position: relative; display: flex; align-items: flex-end; gap: 6px; flex-wrap: wrap;
   padding: 0 var(--espacio-l); min-height: 250px;
 }
-.balda::after {
+.estanteria__balda::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -18px; height: 18px;
   background: linear-gradient(var(--color-madera), var(--color-maderaOscura));
   border-radius: 3px; box-shadow: var(--sombra-media);
@@ -29,12 +29,12 @@
   width: 64px; border: none; border-radius: 4px 4px 2px 2px; cursor: pointer;
   color: var(--color-sobreMadera); display: flex; flex-direction: column; align-items: center;
   justify-content: space-between; padding: var(--espacio-m) 0; font: inherit;
-  box-shadow: var(--sombra-suave); transition: transform 0.2s;
+  box-shadow: var(--sombra-suave); transition: transform 0.2s; overflow: hidden;
 }
 .lomo:hover, .lomo[aria-pressed="true"] { transform: translateY(-14px); }
 .lomo[aria-pressed="true"] { outline: 3px solid var(--color-oro); outline-offset: 2px; }
 .lomo__titulo, .lomo__estado { writing-mode: vertical-rl; transform: rotate(180deg); }
-.lomo__titulo { font-family: var(--fuente-titulos); font-size: 1rem; max-height: 150px; overflow: hidden; text-overflow: ellipsis; }
+.lomo__titulo { font-family: var(--fuente-titulos); font-size: 0.95rem; line-height: 1.15; max-height: 150px; max-width: 52px; overflow: hidden; }
 .lomo__estado { font-family: var(--fuente-interfaz); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .ficha-del-libro {
   position: sticky; top: var(--espacio-m); background: var(--color-papelDeLibro);
