@@ -6,8 +6,18 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión («si escribe el plan y ejecutalo»)"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
-version: 1
+version: 2
 ---
+
+> **v2 (2026-09-25), lo hecho frente a lo planeado.** Primera tanda terminada (E0–E8).
+> - **E5 es solo estilo.** El panel ya tenía el fragmento como cita, así que su prueba nueva
+>   habría pasado sin cambiar nada y no se escribió; lo verificó la inspección.
+> - **E7 espera a `vigente`** en la respuesta de versiones (`F-150`, decisión del autor, hecho
+>   por la sesión de `PLAN-22` en `89425c4`), y lee de ahí la vigente en vez de deducirla.
+> - **E8 encontró `F-201`** (el PDF ofrecido que daba un 500) y lo corrigió con dos pruebas rojas
+>   antes.
+> - Los estilos van en un CSS propio de cada página o feature, cargado después de `estilos.css`.
+> - La segunda tanda (la entrevista con Xime y el cuaderno) sigue esperando al plan de `SPEC-34`.
 
 # PLAN-35 — Las seis pantallas, primera tanda
 
