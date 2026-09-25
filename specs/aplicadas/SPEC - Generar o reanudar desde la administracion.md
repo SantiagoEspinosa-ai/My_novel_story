@@ -1,11 +1,13 @@
 ---
 id: SPEC-44
 titulo: Generar o reanudar una novela desde la administración
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: «Hay otras novelas sin generar, genera un boton para poder reanudarlas o generarlas»"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: 86adacc
 ---
 
 # SPEC-44 — Generar o reanudar desde la administración
