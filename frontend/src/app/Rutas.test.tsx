@@ -22,7 +22,8 @@ describe("App · la novela regalo", () => {
   it("la raíz es la estantería", async () => {
     abrir("/");
     expect(await screen.findByRole("heading", { name: "La estantería" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Generar novela" })).toBeInTheDocument();
+    // SPEC-36 RF-01: el boton unico se llama como en la propuesta.
+    expect(screen.getByRole("button", { name: "Encargar una novela" })).toBeInTheDocument();
   });
 
   it("la entrevista tiene su ruta", async () => {

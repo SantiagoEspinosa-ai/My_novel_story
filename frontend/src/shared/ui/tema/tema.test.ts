@@ -5,7 +5,7 @@ import { join, relative, sep } from "node:path";
 import contrato from "../../../../../contrato/openapi.json";
 import { contraste } from "./contraste";
 import {
-  COLORES, ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, ESTADO_DE_TRABAJO, ESTADO_DE_VERIFICACION,
+  COLORES, COLORES_DE_LOMO, ESTADO_DE_ESCENA, ESTADO_DE_HALLAZGO, ESTADO_DE_TRABAJO, ESTADO_DE_VERIFICACION,
   FASE_DE_GENERACION, MARCA_DE_CAMBIO, SEVERIDAD,
 } from "./tokens";
 
@@ -77,6 +77,7 @@ describe("tema", () => {
       ["sobre madera", COLORES.sobreMadera, COLORES.maderaOscura],
       // PLAN-35 F4..F6: la cara de Xime, el aviso de que cerrar no tiene vuelta atras y la noche.
       ["cara de la entrevistadora", COLORES.sobreMadera, COLORES.madera],
+      ...COLORES_DE_LOMO.map((c) => [`lomo ${c}`, COLORES.sobreMadera, c] as [string, string, string]),
       ["texto sobre acento suave", COLORES.texto, COLORES.acentoSuave],
       ["sobre noche", COLORES.sobreNoche, COLORES.noche],
       ["oro sobre noche", COLORES.oro, COLORES.noche],

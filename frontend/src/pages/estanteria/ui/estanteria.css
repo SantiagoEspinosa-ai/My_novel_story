@@ -1,5 +1,7 @@
-/* SPEC-33 RF-01: la estanteria. Tarjetas tipograficas con el color del tema, sin imagen.
-   Solo variables del tema (SPEC-22 RF-59): cambiar la paleta es cambiar tokens.ts. */
+/* SPEC-36 RF-01: la estanteria de madera. Lomos en baldas y la ficha del libro al lado.
+   Solo variables del tema (SPEC-22 RF-59); el color de cada lomo llega de COLORES_DE_LOMO. */
+.estanteria-pared { background: var(--color-pared); min-height: calc(100vh - 64px); }
+.estanteria { max-width: 1180px; }
 .estanteria__cabecera {
   display: flex; justify-content: space-between; align-items: flex-end; gap: var(--espacio-l);
   flex-wrap: wrap; margin-bottom: var(--espacio-xl);
@@ -10,31 +12,38 @@
   text-transform: uppercase; color: var(--color-detalle);
 }
 .boton--grande { font-size: 1.05rem; padding: var(--espacio-m) var(--espacio-xl); }
-.estanteria__vacia { color: var(--color-textoSuave); font-style: italic; }
-.estanteria__baldas {
-  list-style: none; padding: 0; margin: 0; display: grid; gap: var(--espacio-xl) var(--espacio-l);
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+.estanteria__vacia, .estanteria__pista { color: var(--color-textoSuave); font-style: italic; font-family: var(--fuente-lectura); }
+.estanteria__mueble { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: var(--espacio-xl); align-items: start; }
+@media (max-width: 900px) { .estanteria__mueble { grid-template-columns: 1fr; } }
+.estanteria__baldas { display: grid; gap: calc(var(--espacio-xl) + 18px); }
+.balda {
+  position: relative; display: flex; align-items: flex-end; gap: 6px; flex-wrap: wrap;
+  padding: 0 var(--espacio-l); min-height: 250px;
 }
-.libro {
-  position: relative; display: grid; grid-template-rows: 1fr auto; min-height: 21rem;
-  background: var(--color-superficie); border: 1px solid var(--color-linea);
-  border-radius: var(--radio-s) var(--radio-m) var(--radio-m) var(--radio-s);
-  box-shadow: var(--sombra-media); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+.balda::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -18px; height: 18px;
+  background: linear-gradient(var(--color-madera), var(--color-maderaOscura));
+  border-radius: 3px; box-shadow: var(--sombra-media);
 }
-.libro:hover { transform: translateY(-4px); box-shadow: var(--sombra-portada); }
-.libro__lomo { position: absolute; inset: 0 auto 0 0; width: 10px; background: var(--color-acento); }
-.libro[data-fase="publicada"] .libro__lomo { background: var(--color-detalle); }
-.libro[data-fase="sin_generacion"] .libro__lomo { background: var(--color-linea); }
-.libro__portada {
-  display: flex; flex-direction: column; justify-content: center; gap: var(--espacio-m);
-  padding: var(--espacio-xl) var(--espacio-l) var(--espacio-l) calc(var(--espacio-l) + 10px);
-  text-align: center; border-bottom: 1px solid var(--color-linea);
+.lomo {
+  width: 64px; border: none; border-radius: 4px 4px 2px 2px; cursor: pointer;
+  color: var(--color-sobreMadera); display: flex; flex-direction: column; align-items: center;
+  justify-content: space-between; padding: var(--espacio-m) 0; font: inherit;
+  box-shadow: var(--sombra-suave); transition: transform 0.2s;
 }
-.libro__titulo { margin: 0; font-family: var(--fuente-titulos); font-size: 1.5rem; line-height: 1.2; }
-.libro__dedicatoria { margin: 0; font-family: var(--fuente-lectura); font-style: italic; color: var(--color-textoSuave); }
-.libro__para { margin: 0; font-family: var(--fuente-interfaz); font-size: 0.85rem; color: var(--color-textoSuave); }
-.libro__pie {
-  display: flex; flex-wrap: wrap; gap: var(--espacio-s); align-items: center; justify-content: space-between;
-  padding: var(--espacio-m) var(--espacio-m) var(--espacio-m) calc(var(--espacio-m) + 10px);
+.lomo:hover, .lomo[aria-pressed="true"] { transform: translateY(-14px); }
+.lomo[aria-pressed="true"] { outline: 3px solid var(--color-oro); outline-offset: 2px; }
+.lomo__titulo, .lomo__estado { writing-mode: vertical-rl; transform: rotate(180deg); }
+.lomo__titulo { font-family: var(--fuente-titulos); font-size: 1rem; max-height: 150px; overflow: hidden; text-overflow: ellipsis; }
+.lomo__estado { font-family: var(--fuente-interfaz); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.ficha-del-libro {
+  position: sticky; top: var(--espacio-m); background: var(--color-papelDeLibro);
+  border: 1px solid var(--color-linea); border-left: 6px solid var(--color-madera);
+  border-radius: var(--radio-m); box-shadow: var(--sombra-portada); padding: var(--espacio-l);
+  display: grid; gap: var(--espacio-s);
 }
-@media (prefers-reduced-motion: reduce) { .libro { transition: none; } .libro:hover { transform: none; } }
+.ficha-del-libro__titulo { margin: 0; font-size: 1.6rem; }
+.ficha-del-libro__dedicatoria { margin: 0; font-family: var(--fuente-lectura); font-style: italic; color: var(--color-textoSuave); }
+.ficha-del-libro__para { margin: 0; font-size: 0.9rem; color: var(--color-textoSuave); }
+.ficha-del-libro__acciones { display: flex; flex-wrap: wrap; gap: var(--espacio-s); margin-top: var(--espacio-s); }
+@media (prefers-reduced-motion: reduce) { .lomo { transition: none; } }

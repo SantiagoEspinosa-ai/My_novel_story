@@ -53,6 +53,10 @@ export const COLORES = {
   oro: PALETA.oro,
 };
 
+// SPEC-36 RF-01: el color de los lomos de la estanteria. Todos llevan el texto sobreMadera
+// encima; tema.test.ts comprueba su contraste.
+export const COLORES_DE_LOMO = ["#7a2f25", "#2f4a3f", "#34406b", "#6b4a2f", "#5a2d4f", "#3b2a1e"];
+
 export const TIPOGRAFIA = {
   // Provisional tambien: una serif con caracter para leer y una sans para la interfaz.
   lectura: '"Literata", "Iowan Old Style", Georgia, serif',

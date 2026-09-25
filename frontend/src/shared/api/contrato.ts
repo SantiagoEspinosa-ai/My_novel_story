@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/admin/obras": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Administracion
+         * @description `SPEC-36` `RF-03`: todas las novelas con su fase, coste, hallazgos y Lean. **Sin
+         *     login**, por decision del autor: cualquiera con la URL la ve.
+         */
+        get: operations["administracion_admin_obras_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/capitulos/{id_capitulo}": {
         parameters: {
             query?: never;
@@ -712,6 +733,17 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Administracion
+         * @description `SPEC-36` `RF-03`: la vista de administracion, resuelta en el backend.
+         */
+        Administracion: {
+            gastado: components["schemas"]["Gastado"];
+            /** Obras */
+            obras: components["schemas"]["ObraEnLaAdministracion"][];
+            /** Techo Usd */
+            techo_usd: number;
+        };
         /** AvisoDeNombre */
         AvisoDeNombre: {
             /** Texto */
@@ -978,6 +1010,22 @@ export interface components {
             es_suelo: boolean;
             /** Generacion */
             generacion: string;
+            /** Sin Coste */
+            sin_coste: number;
+            /** Usd */
+            usd: number | null;
+        };
+        /**
+         * CosteDeUnaObra
+         * @description Lo anotado de todas las generaciones de una obra. `generacion` va nula: es la suma.
+         */
+        CosteDeUnaObra: {
+            /** Delegaciones */
+            delegaciones: number;
+            /** Es Suelo */
+            es_suelo: boolean;
+            /** Generacion */
+            generacion: string | null;
             /** Sin Coste */
             sin_coste: number;
             /** Usd */
@@ -1253,6 +1301,8 @@ export interface components {
             motivo_del_fallo?: string | null;
             /** Obra */
             obra: string;
+            /** Titulo */
+            titulo?: string | null;
             /** Total De Capitulos */
             total_de_capitulos: number;
         };
@@ -1281,6 +1331,15 @@ export interface components {
              * @description Quien lo detecto
              */
             verificador: string;
+        };
+        /** HallazgosPorSeveridad */
+        HallazgosPorSeveridad: {
+            /** Bloqueante */
+            bloqueante: number;
+            /** Mayor */
+            mayor: number;
+            /** Menor */
+            menor: number;
         };
         /** HechoPropuesto */
         HechoPropuesto: {
@@ -1442,6 +1501,18 @@ export interface components {
             justificacion: string;
             /** Nota */
             nota: number;
+        };
+        /** ObraEnLaAdministracion */
+        ObraEnLaAdministracion: {
+            /** Codigo Lean */
+            codigo_lean: number | null;
+            coste: components["schemas"]["CosteDeUnaObra"] | null;
+            fase: components["schemas"]["FaseDeGeneracion"] | null;
+            hallazgos: components["schemas"]["HallazgosPorSeveridad"];
+            /** Id */
+            id: string;
+            /** Titulo */
+            titulo: string | null;
         };
         /**
          * ObraEnLaEstanteria
@@ -1787,6 +1858,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    administracion_admin_obras_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Administracion"];
+                };
+            };
+        };
+    };
     capitulo_capitulos__id_capitulo__get: {
         parameters: {
             query?: never;
