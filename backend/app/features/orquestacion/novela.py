@@ -263,9 +263,17 @@ def inmutable(ficha, premisa=None):
                 valor("papel").replace("_", " "), premisa or "(sin decidir)")
 
 
-def _reglas_del_hook(carpeta, obra, vetadas, nombres, longitud):
+def _reglas_del_hook(carpeta, obra, vetadas, nombres, longitud, tabla=None):
+    """Las reglas que lee el hook `Stop`. **Con los nombres como los ve el Escritor**
+    (`SPEC-34`, `PLAN-34` E4): el hook compara con su texto, que va pseudonimizado, y su
+    motivo le vuelve al Escritor. Los nombres vetados no van: los comprueba el ciclo sobre
+    el texto restituido (`RF-05`, `RF-07`)."""
     import json
     import os
+    if tabla is not None:
+        vetados = set(tabla.vetados)
+        vetadas = [tabla.pseudonimizar(v) for v in vetadas if v not in vetados]
+        nombres = [tabla.pseudonimizar(n) for n in nombres]
     ruta = os.path.join(carpeta, "reglas-{0}.json".format(obra))
     minimo, maximo = longitud
     with open(ruta, "w", encoding="utf-8") as f:
@@ -361,10 +369,14 @@ _FASE_DE = {"planificador": "planificando", "revisor": "revisando_plan",
             "escritor": "escribiendo", "editor": "editando", "resumidor": "resumiendo"}
 
 
-def preparar_agentes(con, obra, agentes, sistema, donde):
+def preparar_agentes(con, obra, agentes, sistema, donde, ficha=None):
     """Los agentes como los usa la generacion: con reintentos de transporte (`F-72`) y
     dejando la obra en su fase al llamarlos (`PLAN-22` E13c). Los usa tambien la cascada
-    (`PLAN-23` B-S1.1), que escribe con el mismo montaje."""
+    (`PLAN-23` B-S1.1), que escribe con el mismo montaje.
+
+    Con `ficha` (`SPEC-34`, `PLAN-34` E4), cada agente va envuelto en la frontera de los
+    nombres, por fuera de todo lo demas: el prompt sale con pseudonimos y la respuesta
+    vuelve restituida antes de guardarse y de pasar por ningun validador."""
     # `F-72`: con el tope de `sistema.json`. El Escritor se reintenta desde el ciclo.
     from app.commons.modelo.cliente import ConReintentos
     agentes = {k: a if k == "escritor" else
@@ -372,9 +384,14 @@ def preparar_agentes(con, obra, agentes, sistema, donde):
                for k, a in agentes.items()}
     # `PLAN-22` E13c: cada agente deja la obra en su fase al llamarlo.
     from app.features.orquestacion.progreso import ConFase
-    return {k: ConFase(a, con, obra, _FASE_DE.get(k, "escribiendo"),
-                       lambda: (donde["capitulo"], donde["total"]))
-            for k, a in agentes.items()}
+    agentes = {k: ConFase(a, con, obra, _FASE_DE.get(k, "escribiendo"),
+                          lambda: (donde["capitulo"], donde["total"]))
+               for k, a in agentes.items()}
+    if ficha is None:
+        return agentes
+    from app.commons.politica import pseudonimos
+    tabla = pseudonimos.asegurar(con, obra, ficha)
+    return {k: pseudonimos.envolver(a, tabla) for k, a in agentes.items()}
 
 
 def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sistema,
@@ -384,7 +401,7 @@ def _escribir(con, obra, ficha, agentes, hasta_capitulo, carpeta_de_reglas, sist
 
     sistema = sistema or carga.cargar_sistema()
     donde = {"capitulo": None, "total": None}
-    agentes = preparar_agentes(con, obra, agentes, sistema, donde)
+    agentes = preparar_agentes(con, obra, agentes, sistema, donde, ficha=ficha)
     # Reanudar no rehace el plan: si la obra ya tiene uno aprobado, se usa ese.
     with _grupo(observacion, "planificacion"):
         try:
@@ -460,9 +477,11 @@ def escribir_version(con, obra, ficha, agentes, plan, premisa, capitulos, versio
             herramientas["version"] = version
         for nombre in ("escritor", "editor"):
             agentes[nombre].herramientas = dict(herramientas)
+    from app.commons.politica import pseudonimos
     agentes["escritor"].reglas = _reglas_del_hook(
         carpeta_de_reglas or tempfile.gettempdir(), obra, vetadas, nombres,
-        rango_de_palabras(ficha.extension, sistema))
+        rango_de_palabras(ficha.extension, sistema),
+        tabla=pseudonimos.asegurar(con, obra, ficha))
 
     total = modulo_obra.Generacion(vetadas_comprobadas=True,
                                    genero=ficha.genero.value if ficha.genero else None)

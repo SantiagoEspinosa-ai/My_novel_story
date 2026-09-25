@@ -240,6 +240,20 @@ def _acta_de(acta, texto, c):
                                  (c.generacion.leida_delta or {}) if c.generacion else {})
 
 
+def _residuos_de_pseudonimos(con, escena_id, texto, generacion, nombres):
+    """Los restos de `INV-31` en el texto y el delta de la escena, ya restituidos, con las
+    parejas de su obra. Una obra sin parejas no tiene restos."""
+    from app.commons.politica import pseudonimos
+    fila = con.execute("SELECT obra FROM escena WHERE id = ?", (escena_id,)).fetchone()
+    if fila is None:
+        return []
+    tabla = pseudonimos.de_la_obra(con, fila[0])
+    if not tabla.pares:
+        return []
+    return tabla.residuos({"texto": texto, "delta": getattr(generacion, "leida_delta", None)},
+                          conocidos=nombres or [])
+
+
 def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
              techo=100_000, trabajo="ciclo", hechos=None, problemas=None,
              instrucciones=None, acta=None, vetadas=None, nombres=None,
@@ -281,6 +295,18 @@ def ejecutar(con, escena_id, contexto, escritor, juez, resumidor, mundo,
         if c.nombres_encontrados:
             c.fallo = "nombre_mal_escrito"
             return c
+    # `INV-31` (`SPEC-34` `RF-04`): un pseudonimo que volvio con otra forma y no se pudo
+    # restituir. `mayor`, como `INV-23`: provoca otro intento, no para.
+    for palabra in _residuos_de_pseudonimos(con, escena_id, texto, c.generacion, nombres):
+        h = Hallazgo(invariante="INV-31", verificador="verificador_de_reglas",
+                     escena=escena_id, severidad=TODAS["INV-31"].severidad,
+                     estado=EstadoDeHallazgo.ABIERTO,
+                     descripcion="«{0}» es una forma de un nombre inventado que no se pudo "
+                                 "devolver al nombre real".format(palabra))
+        repo.guardar_hallazgo(con, invariante=h.invariante, verificador=h.verificador,
+                              escena=h.escena, severidad=h.severidad, estado=h.estado,
+                              descripcion=h.descripcion)
+        c.generacion.hallazgos.append(h)
     # `INV-23` (`RF-14`): `mayor`, asi que no para: entra en los hallazgos de
     # este intento, se guarda como los de la puerta y provoca otro intento.
     ausentes = claves_ausentes(texto, imprescindibles or [])

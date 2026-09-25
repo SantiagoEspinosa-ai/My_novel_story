@@ -125,7 +125,9 @@ def planificar(con, obra, ficha, planificador, revisor,
     if tope_de_formato is None:
         tope_de_formato = (sistema.topes.reintentos_de_transporte if sistema
                            else config.TOPE_REINTENTOS_TRANSPORTE)
-    ficha_json = ficha.model_dump_json(indent=2)
+    # `SPEC-34` `RF-07`: los nombres vetados no salen hacia ningun agente. La cobertura los
+    # sigue mirando con la ficha entera.
+    ficha_json = ficha.model_copy(update={"nombres_vetados": []}).model_dump_json(indent=2)
     anteriores = []
     rondas = fallos_de_formato = 0
     # `F-111`, TLC `CE-8`: al relanzar se sigue numerando desde la ultima version de la obra;
@@ -153,7 +155,12 @@ def planificar(con, obra, ficha, planificador, revisor,
                         fallos_de_formato, anteriores[0]))
             continue
         rondas += 1
-        huecos = cobertura.huecos(plan, ficha)
+        # `SPEC-34` `RF-04`: un pseudonimo que volvio con otra forma no se restituyo; el
+        # plan vuelve al Planificador, como cualquier otro hueco.
+        huecos = cobertura.huecos(plan, ficha) + [
+            "«{0}» parece una forma de un nombre de la ficha que no es la exacta: usa el "
+            "nombre tal como esta en la ficha [INV-31]".format(r)
+            for r in getattr(planificador, "residuos", None) or []]
         if huecos:
             anteriores = huecos
             repo.guardar(con, obra, version, plan, False, "codigo", huecos)

@@ -165,7 +165,7 @@ def regenerar(con, peticion, agentes=None, ficha=None, sistema=None, lean=None,
         observacion.herramientas_de = lambda d: observabilidad.spans_de_herramientas(con, d)
         agentes = novela._observados(agentes, observacion)
         grupo = observacion.grupo("regeneracion")
-    preparados = novela.preparar_agentes(con, obra, agentes, sistema, donde)
+    preparados = novela.preparar_agentes(con, obra, agentes, sistema, donde, ficha=ficha)
     try:
         with grupo:
             r = novela.escribir_version(

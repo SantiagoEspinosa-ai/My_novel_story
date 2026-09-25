@@ -164,8 +164,10 @@ class Tabla:
         return patron.sub(lambda m: mapa[m.group()], texto) if patron else texto
 
     def ocultar_vetados(self, texto):
-        """`RF-07`: cada nombre vetado completo sale como `MARCA_DE_VETADO`."""
-        patron = _patron([v for v in self.vetados if v.strip()])
+        """`RF-07`: cada nombre vetado sale como `MARCA_DE_VETADO`. Una forma que tambien es
+        un nombre de la obra (el aviso de `SPEC-25` `RF-10`: comparten pila) no se oculta:
+        la sustituye su pseudonimo."""
+        patron = _patron([v for v in self.vetados if v.strip() and v not in self.pares])
         return patron.sub(MARCA_DE_VETADO, texto) if patron else texto
 
     def pseudonimizar(self, texto):
@@ -292,9 +294,12 @@ def asegurar(con, obra, ficha) -> Tabla:
     """La tabla de la obra, completada con lo que declare la ficha. Es lo que usa la
     generacion con una ficha que no paso por la entrevista (un JSON de la CLI o de la
     evaluacion)."""
+    from app.commons.politica.vetadas import formas_de_nombre
     tabla = asignar(con, obra, nombres_de_la_ficha(ficha),
                     evitar=list(ficha.vetadas) + list(ficha.nombres_vetados))
-    tabla.vetados = list(ficha.nombres_vetados)
+    # Con todas sus formas (`SPEC-25` `RF-15`: completo y por su nombre de pila): la lista
+    # de vetadas del Escritor lleva las dos, y la de pila sola tambien es el nombre.
+    tabla.vetados = sorted({f for n in ficha.nombres_vetados for f in formas_de_nombre(n)})
     return tabla
 
 

@@ -238,6 +238,14 @@ def _agentes(obra=None):
             "editor": editor, "resumidor": resumidor}
 
 
+def _visto(con, texto, obra="obra-x"):
+    """`SPEC-34`: lo que el agente recibe es el texto con pseudonimos. Estas pruebas miran
+    que el dato **llega**; que llegue sin el nombre real lo mira
+    `test_pseudonimos_en_la_generacion`."""
+    from app.commons.politica import pseudonimos
+    return pseudonimos.de_la_obra(con, obra).pseudonimizar(texto)
+
+
 def test_escribir_encadena_plan_montaje_y_generacion(con, tmp_path):
     """Fue un xfail estricto mientras existio `F-58`: el genero y el tono del
     bloque inmutable no llegaban porque el Escritor recibia tamaños."""
@@ -247,9 +255,9 @@ def test_escribir_encadena_plan_montaje_y_generacion(con, tmp_path):
     assert r["plan"].version == 1
     assert r["generacion"].escenas_hechas == ["obra-x-cap-01-e1"], "acotada a su obra (`F-64`)"
     prompt = agentes["escritor"].llamadas[0]
-    assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt
+    assert _visto(con, "Irene Valdés") in prompt and "mapa" in prompt and "hospital" in prompt
     assert "aventura" in prompt and "divertido" in prompt
-    assert "Irene sigue un mapa." in prompt, "la sinopsis del plan llega"
+    assert _visto(con, "Irene sigue un mapa.") in prompt, "la sinopsis del plan llega"
 
 
 def test_escribir_deja_las_reglas_del_hook_al_escritor(con, tmp_path):
@@ -258,8 +266,11 @@ def test_escribir_deja_las_reglas_del_hook_al_escritor(con, tmp_path):
                     carpeta_de_reglas=str(tmp_path))
     reglas = _json.loads(open(agentes["escritor"].reglas, encoding="utf-8").read())
     assert reglas["longitud"] == [1150, 1350], "la extension de la ficha (`SPEC-32`)"
-    assert "Irene Valdés" in reglas["nombres"] and "hospital" in reglas["vetadas"]
-    assert "Tomas" in reglas["vetadas"], "el nombre vetado, tambien por su nombre de pila"
+    assert _visto(con, "Irene Valdés") in reglas["nombres"] and "hospital" in reglas["vetadas"]
+    # `SPEC-34` `RF-07`: el nombre vetado ya no va al hook, cuyo motivo vuelve al Escritor.
+    # Lo sigue comprobando el ciclo, por su nombre de pila tambien, sobre el texto
+    # restituido (`INV-21`).
+    assert not any("Tomas" in v for v in reglas["vetadas"])
 
 
 def test_un_plan_no_aprobado_no_escribe_nada(con, tmp_path):
@@ -280,14 +291,15 @@ def test_escribir_encadena_plan_montaje_y_primer_capitulo(con, tmp_path):
     assert r["plan"].version == 1 and r["cierre"] is None
     assert r["generacion"].escenas_hechas == ["obra-x-cap-01-e1"], "acotada a su obra (`F-64`)"
     prompt = agentes["escritor"].llamadas[0]
-    assert "Irene Valdés" in prompt and "mapa" in prompt and "hospital" in prompt
+    assert _visto(con, "Irene Valdés") in prompt and "mapa" in prompt and "hospital" in prompt
 
 
 def test_la_premisa_decidida_llega_al_escritor_como_texto(con, tmp_path):
     agentes = _agentes()
     novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
                     carpeta_de_reglas=str(tmp_path))
-    assert "Un mapa heredado lleva a Irene de vuelta a Lisboa." in agentes["escritor"].llamadas[0]
+    assert (_visto(con, "Un mapa heredado lleva a Irene de vuelta a Lisboa.")
+            in agentes["escritor"].llamadas[0])
 
 
 # --- `F-60`: el destinatario conoce sus propios recuerdos ------------------------

@@ -153,7 +153,7 @@ def test_asegurar_desde_la_ficha_toma_todos_los_nombres_declarados(con):
         "regalado_por": "Ramón", "nombres_vetados": ["Marcos Ledesma"]})
     t = ps.asegurar(con, "obra-3", ficha)
     assert set(t.pares) == {"Olivia", "Carranza", "Tino", "Aurora", "Ramón"}
-    assert t.vetados == ["Marcos Ledesma"]
+    assert t.vetados == ["Marcos", "Marcos Ledesma"]
     assert "Marcos" not in t.pares.values()
 
 

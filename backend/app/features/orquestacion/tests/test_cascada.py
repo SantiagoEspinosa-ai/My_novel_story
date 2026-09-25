@@ -295,7 +295,11 @@ def test_en_un_renombrado_la_cascada_escribe_con_el_nombre_nuevo_y_veta_el_viejo
     assert r["publicacion"]["publicada"] is True, r["publicacion"]
     with open(escritor.reglas, encoding="utf-8") as f:
         reglas = json.load(f)
-    assert "Brisa" in reglas["vetadas"] and "Nala" in reglas["nombres"]
+    # `SPEC-34`: las reglas del hook van como las ve el Escritor, con el pseudonimo de la
+    # perra. «Nala» no es de la ficha (el nombre nuevo lo dio el lector) y va tal cual.
+    from app.commons.politica import pseudonimos
+    vista = pseudonimos.de_la_obra(con, OBRA).pseudonimizar("Brisa")
+    assert vista in reglas["vetadas"] and "Nala" in reglas["nombres"]
     assert _textos(con, 1) == v1 and all("Brisa" in t for t in v1.values())
 
 
