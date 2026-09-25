@@ -970,3 +970,19 @@ def test_el_tope_de_delegaciones_acota_la_novela_entera_y_no_cada_capitulo(con, 
     g = r["generacion"]
     assert g.parada is not None and g.parada["motivo"] == "tope_delegaciones"
     assert g.delegaciones <= 5 + 3, "puede pasarse en lo que cueste el capitulo en curso, no mas"
+
+
+def test_el_escritor_recibe_el_tope_de_veces_del_nombre_que_comprueba_inv25(con, tmp_path):
+    """`INV-25` salta con el nombre de pila del destinatario por encima de
+    `umbral_repeticion_nombre`, y ese numero no llegaba a ningun prompt (Regla 4): en la
+    pasada «antes» del brief base seis capitulos lo pasaron, con 13 y 14. Se prueba con un
+    umbral que no es el de fabrica, para que un 12 escrito a mano no pase (Regla 11)."""
+    from app.commons.configuracion import carga
+    base = carga.cargar_sistema()
+    sistema = base.model_copy(update={"edicion": base.edicion.model_copy(
+        update={"umbral_repeticion_nombre": 7})})
+    agentes = _agentes()
+    novela.escribir(con, "obra-x", ficha(), agentes, hasta_capitulo=1,
+                    carpeta_de_reglas=str(tmp_path), sistema=sistema, lean=_LeanFijo())
+    prompt = agentes["escritor"].llamadas[0]
+    assert "Irene como mucho 7 veces" in prompt, prompt[:600]

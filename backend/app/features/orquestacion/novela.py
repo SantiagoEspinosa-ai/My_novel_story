@@ -243,7 +243,7 @@ def cerrar(con, obra, ficha, juez_de_obra, umbral_nombre=None, longitud_frase=No
 
 # --- La novela entera, encadenada ----------------------------------------------
 
-def inmutable(ficha, premisa=None):
+def inmutable(ficha, premisa=None, umbral_nombre=None):
     """El bloque 1 del contexto para una novela regalo: lo que no cambia en toda
     la obra. El genero y el tono salen de la ficha, no de la definicion del
     Escritor (`SPEC-26` `RF-20`), y **la premisa llega como texto**: sin ella el
@@ -258,9 +258,19 @@ def inmutable(ficha, premisa=None):
             "Novela para regalar. Genero: {0}. Tono: {1}. Ocasion: {2}.\n"
             "La novela es para {3}, de {4} años, que es {5} de la historia.\n"
             "Tercera persona, pasado. La personalizacion se integra con naturalidad; "
-            "nunca justifica una mala escritura.").format(
+            "nunca justifica una mala escritura.{7}").format(
                 valor("genero"), valor("tono"), valor("ocasion"), d.nombre, d.edad,
-                valor("papel").replace("_", " "), premisa or "(sin decidir)")
+                valor("papel").replace("_", " "), premisa or "(sin decidir)",
+                _tope_del_nombre(d.nombre, umbral_nombre))
+
+
+def _tope_del_nombre(nombre, umbral):
+    """Regla 4: `INV-25` cuenta el nombre de pila y salta por encima del umbral, asi que
+    el Escritor tiene que saberlo. En la pasada «antes» del brief base seis capitulos lo
+    pasaron (13 y 14 con umbral 12) sin que ningun prompt dijera el numero."""
+    if not umbral or not nombre:
+        return ""
+    return "\nNombra a {0} como mucho {1} veces por capitulo.".format(nombre.split()[0], umbral)
 
 
 def _reglas_del_hook(carpeta, obra, vetadas, nombres, longitud):
@@ -473,7 +483,8 @@ def escribir_version(con, obra, ficha, agentes, plan, premisa, capitulos, versio
         with _grupo(observacion, "capitulo", numero_cap):
             g = modulo_obra.generar_obra(
                 con, obra, agentes["escritor"], agentes["editor"], agentes["resumidor"],
-                inmutable=inmutable(ficha, premisa),
+                inmutable=inmutable(ficha, premisa,
+                                    sistema.edicion.umbral_repeticion_nombre),
                 techo=sistema.presupuesto.techo_de_contexto,
                 tope_intentos=1 + sistema.topes.reescrituras_del_editor,
                 tope_vetadas=sistema.topes.reescrituras_por_vetada,
@@ -526,7 +537,8 @@ def escribir_version(con, obra, ficha, agentes, plan, premisa, capitulos, versio
             return modulo_obra.reescribir_capitulo(
                 con_, obra, escena_id, agentes["escritor"], agentes["editor"],
                 agentes["resumidor"], instrucciones=instrucciones,
-                inmutable=inmutable(ficha, premisa),
+                inmutable=inmutable(ficha, premisa,
+                                    sistema.edicion.umbral_repeticion_nombre),
                 techo=sistema.presupuesto.techo_de_contexto, vetadas=vetadas,
                 nombres=nombres, imprescindibles=imprescindibles,
                 anterior_cruza_capitulo=True, observacion=observacion, acotar_mundo=True,
