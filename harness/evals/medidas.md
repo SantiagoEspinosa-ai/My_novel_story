@@ -232,3 +232,12 @@ Reverificación sin modelo: 7 verificadas, ninguna fallida, 3 sin reverificar (l
 **7,6566 USD en 14 delegaciones**, con coste medido en todas; 1.033 s. Relanzar no repite lo
 consolidado.
 
+## B4 (relanzada) · Parada en el capítulo 9 por `F-149` (2026-09-25)
+
+Relanzado el mismo trabajo con `--relanzar`, tras cerrar `F-148`: el capítulo 8 de la versión 2
+pasó y se consolidó; el 9 paró por la mitad de accesibilidad de `INV-02`. El 8 reescrito dejó a
+tres personajes en la majada alta y el 9 ocurre en la plaza, que no es vecina: el Escritor no
+sabe dónde ocurre la escena siguiente (`F-149`). No se arregla relanzando. La versión 1 siguió
+siendo la vigente. **2,3491 USD en 4 delegaciones**, medidas todas; 255 s. **La demo entera, hasta
+aquí: 10,0057 USD en 18 delegaciones.**
+
