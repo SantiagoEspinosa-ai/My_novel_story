@@ -2,7 +2,8 @@
 id: PLAN-38
 spec: SPEC-38
 titulo: Implementación de la matriz por capítulo de cada novela
-estado: aprobada
+estado: aplicada
+fecha_aplicacion: 2026-09-25
 aprobada_por: "sesión del 2026-09-25, por la delegación escrita del autor («Decide tú todo […]»)"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25

@@ -141,7 +141,7 @@ export function Matriz({ m, vista }: { m: MatrizDeObra; vista: (v: number) => st
           </div>
         </section>
 
-        <aside className="historia__lado" data-testid="panel-lateral">
+        <aside className="matriz__lado" data-testid="panel-lateral">
           <div className="tarjeta">
             <h2>Por agente</h2>
             {m.por_agente.length === 0 ? <p className="sin-dato">sin gasto</p> : (

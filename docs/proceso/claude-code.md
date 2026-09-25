@@ -273,3 +273,10 @@ expediente, matriz por capítulo y línea de tiempo); el autor eligió la línea
 La inspección en Edge sin cabeza sobre `backend/web.db` **encontró que un capítulo sin hora
 salía después de la puerta de su versión**; ahora se ordena por la fecha de la versión, con
 su prueba.
+
+### La matriz por capítulo (`PLAN-38` M4, 2026-09-25)
+
+El autor cambió la página de cada novela a la propuesta B, con la línea de tiempo como segunda
+pestaña (`SPEC-38`). La inspección en Edge sin cabeza **encontró que, con el panel al lado, la
+tabla no cabía a 1280 px** y las columnas de hallazgos y «cambió» quedaban tras la barra de
+desplazamiento; el panel del coste por agente y los abiertos pasó debajo.

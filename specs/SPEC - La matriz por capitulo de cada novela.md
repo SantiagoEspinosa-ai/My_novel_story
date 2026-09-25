@@ -1,11 +1,12 @@
 ---
 id: SPEC-38
 titulo: La página de cada novela como matriz por capítulo, con la línea de tiempo en una pestaña
-estado: aprobada
+estado: aplicada
 aprobada_por: "autor del proyecto, en sesión: «Quiero cambiar la página de cada novela a la matriz por capítulo, como la propuesta B» con su descripción"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
+fecha_aplicacion: 2026-09-25
 ---
 
 # SPEC-38 — La matriz por capítulo

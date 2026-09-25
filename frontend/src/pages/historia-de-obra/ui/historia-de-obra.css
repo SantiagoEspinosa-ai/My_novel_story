@@ -36,12 +36,17 @@
 @media (max-width: 860px) { .matriz__cifras { grid-template-columns: repeat(2, 1fr); } }
 .matriz__cifras .tarjeta { display: grid; gap: var(--espacio-xs); padding: var(--espacio-m) var(--espacio-l); }
 .matriz__cifras span, .matriz__cifras small { color: var(--color-textoSuave); font-size: 0.85rem; }
-.matriz__cifras strong { font-family: var(--fuente-titulos); font-size: 1.5rem; }
+.matriz__cifras strong { font-family: var(--fuente-titulos); font-size: 1.3rem; white-space: nowrap; }
 .matriz__versiones { display: flex; flex-wrap: wrap; gap: var(--espacio-s); align-items: center; margin-bottom: var(--espacio-m); color: var(--color-textoSuave); }
 .matriz__version { padding: var(--espacio-xs) var(--espacio-m); border: 1px solid var(--color-linea); border-radius: var(--radio-s); background: var(--color-superficie); text-decoration: none; font-size: 0.85rem; }
 .matriz__version--elegida { border-color: var(--color-acento); color: var(--color-acento); font-weight: 600; }
-.matriz__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: var(--espacio-l); align-items: start; }
-@media (max-width: 1000px) { .matriz__cuerpo { grid-template-columns: 1fr; } }
+.matriz__cuerpo { display: grid; gap: var(--espacio-l); }
+/* El panel va debajo: al lado, la tabla no cabe entera a 1280 px (lo vio la inspeccion). */
+.matriz__lado { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-m); align-items: start; }
+.matriz__lado h2 { margin: 0 0 var(--espacio-s); font-size: 1.05rem; }
+.matriz__lado dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: var(--espacio-xs) var(--espacio-m); font-size: 0.9rem; }
+.matriz__lado dd { margin: 0; text-align: right; }
+@media (max-width: 860px) { .matriz__lado { grid-template-columns: 1fr; } }
 .matriz__tabla-caja { overflow-x: auto; background: var(--color-superficie); border: 1px solid var(--color-linea); border-radius: var(--radio-m); }
 .matriz__tabla { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .matriz__tabla th, .matriz__tabla td { padding: var(--espacio-xs) var(--espacio-s); text-align: center; border-bottom: 1px solid var(--color-linea); white-space: nowrap; }
