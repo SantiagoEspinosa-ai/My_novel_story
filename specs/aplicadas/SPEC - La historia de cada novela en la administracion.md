@@ -7,6 +7,7 @@ fecha_aprobacion: 2026-09-25
 fecha: 2026-09-25
 version: 1
 fecha_aplicacion: 2026-09-25
+commit_de_aplicacion: 8879e9d
 ---
 
 # SPEC-37 — La historia de cada novela
