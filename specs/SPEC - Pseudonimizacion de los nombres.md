@@ -5,8 +5,15 @@ estado: aprobada
 aprobada_por: "autor del proyecto, en sesión"
 fecha_aprobacion: 2026-09-25
 fecha: 2026-09-24
-version: 2
+version: 3
 ---
+
+> **v3 (2026-09-24), la cuestión 4, resuelta; no cambia ningún `RF`.** La sesión del
+> frontend que pedía revisar la entrevista ya no existe: el autor retomó el proyecto con una
+> sola sesión y le delegó por escrito todas las decisiones. La revisión la hizo esa sesión, y
+> el resultado está en `PLAN-34` § «La entrevista»: la primera pregunta se contesta en un
+> campo de nombres, el historial dice qué turno fue fuera del modelo, y los avisos de
+> nombres se confirman en ese campo.
 
 > **Historial.** v1: redactada con las tres respuestas del autor del 2026-09-24 (los nombres
 > entran por campos propios, el modelo ve nombres inventados, y se pseudonimiza todo lo que
