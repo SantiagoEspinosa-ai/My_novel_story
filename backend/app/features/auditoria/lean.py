@@ -96,7 +96,7 @@ class VerificadorLean:
                  tiempo=config.TIEMPO_MAXIMO_LEAN_SEGUNDOS, origen=LEAN):
         self.lake, self.ejecutar, self.tiempo, self.origen = lake, ejecutar, tiempo, origen
 
-    def verificar(self, con, obra) -> ResultadoLean:
+    def verificar(self, con, obra, version=None) -> ResultadoLean:
         ruta = ruta_de(con)
         if ruta is None:
             return ResultadoLean(2, detalle="la base esta en memoria: no hay nada que "
@@ -109,8 +109,11 @@ class VerificadorLean:
         copia = os.path.join(tmp, "lean")
         try:
             shutil.copytree(self.origen, copia)
-            gen = self._correr([sys.executable, "generar_lean.py", ruta, obra,
-                                "--salida", os.path.join("Cronologia", "Generado.lean")], copia)
+            orden = [sys.executable, "generar_lean.py", ruta, obra,
+                     "--salida", os.path.join("Cronologia", "Generado.lean")]
+            if version is not None:
+                orden += ["--version", str(version)]
+            gen = self._correr(orden, copia)
             if gen.returncode != 0:
                 return interpretar(gen.returncode, None, "")
             build = self._correr([lake, "build", "verificar-real"], copia)

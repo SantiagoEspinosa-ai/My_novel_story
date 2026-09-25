@@ -90,7 +90,7 @@ def evaluar(con, obra, ficha, lean, juez_de_obra, vetadas=(), umbral_nombre=None
     if cierre["estado"] != "novela_incompleta":
         comprobadas.add("INV-27")
 
-    resultado = lean.verificar(con, obra)
+    resultado = lean.verificar(con, obra, version=version)
     if resultado.codigo == 1:
         escaleta.guardar_hallazgo(
             con, invariante="INV-28", verificador="lean", escena=escenas[-1]["id"],

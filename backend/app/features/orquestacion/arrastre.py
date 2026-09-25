@@ -30,6 +30,7 @@ from app.commons.db.procedencia import SIN_DETERMINAR
 from app.commons.dominio.enumeraciones import EstadoDeEscena as EE
 from app.commons.dominio.enumeraciones import SalidaDeRegeneracion as S
 from app.commons.dominio.enumeraciones import TipoDeUsoDeHecho as U
+from app.commons.obra import vigente as obra_vigente
 from app.features.escaleta import repository as escaleta
 
 # `SPEC-23` v2, cerrado por el autor antes de ver el numero.
@@ -86,8 +87,9 @@ def medir(con, obra, escenas=None):
     `escenas` son las de la obra que se mide; sin ellas, todas las de la obra."""
     # La version vigente (`PLAN-23` A6): con dos, la tabla `capitulo` tiene tambien los
     # sustituidos. Sin version -una obra de antes-, los de la obra.
-    vigente = _filas(con, "SELECT MAX(numero) FROM version_de_obra WHERE obra = ?", (obra,))
-    vigente = vigente[0][0] if vigente else None
+    # `F-150`: la de `commons/obra/vigente.py`, la ultima publicada. Con `MAX(numero)` una
+    # version a medio escribir por la cascada hacia la obra «incompleta».
+    vigente = obra_vigente.version_vigente(con, obra)
     if vigente is not None:
         capitulos = [f[0] for f in _filas(
             con, "SELECT capitulo FROM capitulo_de_version WHERE obra = ? AND numero = ? "

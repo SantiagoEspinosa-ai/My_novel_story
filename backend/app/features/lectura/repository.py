@@ -11,6 +11,8 @@ una de las dos salia bien por accidente (Regla 11, `SPEC-22` `RF-37`).
 
 import json
 
+from app.commons.obra import vigente as obra_vigente
+
 HALLAZGO_ABIERTO = ("abierto", "sin_veredicto")
 
 
@@ -44,11 +46,13 @@ def capitulos(con, id_obra, version=None):
 
 
 def _version_vigente(con, id_obra):
-    """La ultima version de la obra, o `None` si no tiene ninguna (o no hay tabla)."""
+    """La vigente, por la regla de `commons/obra/vigente.py`: la ultima **publicada**, no
+    la ultima creada (`F-121`). Aqui habia una copia con `MAX(numero)` que llego de otra
+    rama, y la web ensenaba como vigente la version que la cascada escribia (`F-150`).
+    `None` si la obra no tiene versiones (o no hay tabla)."""
     if "numero" not in _columnas(con, "version_de_obra"):
         return None
-    return con.execute("SELECT MAX(numero) FROM version_de_obra WHERE obra = ?",
-                       (id_obra,)).fetchone()[0]
+    return obra_vigente.version_vigente(con, id_obra)
 
 
 def capitulo(con, id_capitulo):

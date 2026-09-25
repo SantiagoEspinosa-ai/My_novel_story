@@ -25,9 +25,11 @@ class LeanFijo:
     def __init__(self, codigo=0, violaciones=()):
         self.resultado = ResultadoLean(codigo, list(violaciones))
         self.llamadas = 0
+        self.versiones = []
 
-    def verificar(self, con, obra):
+    def verificar(self, con, obra, version=None):
         self.llamadas += 1
+        self.versiones.append(version)
         return self.resultado
 
 
@@ -298,3 +300,15 @@ def test_la_migracion_da_la_version_1_a_los_veredictos_de_antes():
     assert veredictos.ultimo(c, "obra-x", 1)["publica"] is True
     c.execute("INSERT INTO veredicto_de_publicacion (obra, version, ronda, publica, "
               "condiciones, no_ejecutadas) VALUES ('obra-x', 2, 1, 0, '[]', '[]')")
+
+
+def test_la_puerta_le_dice_a_lean_que_version_publica(con):
+    """La demo de B4 escribio la version 3 entera y la puerta no la publico: Lean recibia
+    los eventos de las tres versiones a la vez, con tres capitulos 4 en el mismo instante,
+    y el orden de `cap-04-v3` no se deja deducir. Lean mira la version que se publica."""
+    _escrita(con)
+    _version_2(con)
+    lean = LeanFijo()
+    publicacion.evaluar(con, "obra-x", ficha(), lean, JuezDeObra(BIEN), version=2)
+    assert lean.versiones == [2]
+

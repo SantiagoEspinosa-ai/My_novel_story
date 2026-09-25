@@ -108,8 +108,20 @@ def test_una_escena_con_verde_heredado_no_sale_como_verificada(cliente):
 
 def test_el_indice_sin_version_es_el_de_la_vigente_y_no_tiene_dos_capitulos_2(cliente):
     """Con dos versiones, `capitulo` tiene el 2 viejo y el nuevo, los dos con `orden` 2.
-    El indice de siempre sacaba los cuatro: dos «Capitulo 2» (`VER-104`)."""
+    El indice de siempre sacaba los cuatro: dos «Capitulo 2» (`VER-104`).
+
+    Reescrita por `F-150`: la fixture no publica la 2, y esta prueba la daba por vigente,
+    que es la regla vieja (la ultima creada). Desde `F-121` la vigente es la ultima
+    **publicada**, asi que se comprueban las dos mitades: sin publicar se lee la 1, y
+    publicada, la 2 sin dos capitulos 2."""
+    from app.features.auditoria import repository as veredictos
+    from app.features.auditoria.publicacion import Decision
     c, ids, nuevo = cliente
+    indice = c.get("/obras/obra-a/indice").json()
+    assert [x["id"] for x in indice["capitulos"]] == ids, "sin publicar, la vigente es la 1"
+    con = sqlite3.connect(app.state.ruta_db)
+    veredictos.guardar(con, "obra-a", Decision(True, [], []), 0, version=2)
+    con.close()
     indice = c.get("/obras/obra-a/indice").json()
     assert [x["id"] for x in indice["capitulos"]] == [ids[0], nuevo, ids[2]]
     assert [x["orden"] for x in indice["capitulos"]] == [1, 2, 3]
