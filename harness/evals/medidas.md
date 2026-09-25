@@ -241,3 +241,18 @@ sabe dónde ocurre la escena siguiente (`F-149`). No se arregla relanzando. La v
 siendo la vigente. **2,3491 USD en 4 delegaciones**, medidas todas; 255 s. **La demo entera, hasta
 aquí: 10,0057 USD en 18 delegaciones.**
 
+## B4 (versión 3) · La demo, publicada (2026-09-25)
+
+Tras cerrar `F-149` se pidió otra vez el mismo renombrado: versión 3 desde el capítulo 4. Los
+siete capítulos se escribieron **sin paradas** y la reverificación dio 10 verificadas, ninguna
+fallida (9,4238 USD en 23 delegaciones, 1.276 s). La puerta no la publicó: Lean sin veredicto por
+`F-151` (recibía los eventos de todas las versiones). Cerrado `F-151` —Lean real sobre una copia:
+código 0 en la versión 1 y en la 3—, se relanzó el mismo trabajo: **publicada en la ronda 2**, y es
+la que ve el lector (0,1084 USD, 1 delegación, 28 s). La versión 2 queda como versión parada, y la
+1 se sigue leyendo entera.
+
+**La demo entera: 19,5379 USD en 42 delegaciones**, con coste medido en todas: 7,6566 (versión 2,
+parada en el 8 por `F-148`) + 2,3491 (relanzada, parada en el 9 por `F-149`) + 9,4238 (versión 3)
++ 0,1084 (la puerta). Destapó cuatro defectos nuestros —`F-148`, `F-149`, `F-150` y `F-151`— que
+una primera generación no había podido ejercer.
+
