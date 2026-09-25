@@ -112,8 +112,9 @@ def _condiciones(texto):
             for c in condiciones]
 
 
-def historia(con, obra, umbral):
-    """`None` si la obra no existe (ni montada ni con progreso ni con entrevista)."""
+def _datos(con, obra):
+    """Lo que leen la historia y la matriz: el progreso, los gastos, las versiones y la
+    atribucion de cada gasto (`RF-04` de `SPEC-37`). `None` si la obra no existe."""
     progreso = []
     if _tabla(con, "progreso_de_generacion"):
         progreso = [{"fase": f[0], "capitulo": f[1], "motivo": f[2], "desde": f[3]}
@@ -150,6 +151,17 @@ def historia(con, obra, umbral):
             g["clave"] = clave
         g.setdefault("clave", clave)
         cubos.setdefault(clave, []).append(g)
+    return {"progreso": progreso, "montada": montada, "entrevista": entrevista,
+            "gastos": gastos, "versiones": versiones, "cubos": cubos}
+
+
+def historia(con, obra, umbral):
+    """`None` si la obra no existe (ni montada ni con progreso ni con entrevista)."""
+    d = _datos(con, obra)
+    if d is None:
+        return None
+    progreso, montada, entrevista = d["progreso"], d["montada"], d["entrevista"]
+    gastos, versiones, cubos = d["gastos"], d["versiones"], d["cubos"]
 
     eventos = []
     if entrevista is not None or ("entrevista",) in cubos:
@@ -279,3 +291,105 @@ def _evento(tipo, **campos):
             "condiciones": [], "peticion": None, "capitulos_cambiados": []}
     base.update(campos)
     return base
+
+
+# --- `SPEC-38`: la matriz por capitulo -----------------------------------------------------
+
+class VersionQueNoExiste(LookupError):
+    pass
+
+
+def _hallazgos_de(con, escenas):
+    cuenta = {"bloqueante": 0, "mayor": 0, "menor": 0}
+    if not escenas or not _tabla(con, "hallazgo"):
+        return cuenta
+    marcas = ",".join("?" * len(escenas))
+    for severidad, n in con.execute(
+            "SELECT severidad, COUNT(*) FROM hallazgo WHERE escena IN ({0}) AND estado IN "
+            "('abierto', 'sin_veredicto') GROUP BY severidad".format(marcas),
+            [e[0] for e in escenas]):
+        if severidad in cuenta:
+            cuenta[severidad] = n
+    return cuenta
+
+
+def _suma_de_costes(costes):
+    costes = [c for c in costes if c is not None]
+    if not costes:
+        return None
+    medidos = [c["usd"] for c in costes if c["usd"] is not None]
+    sin = sum(c["sin_coste"] for c in costes)
+    return {"generacion": None, "usd": sum(medidos) if medidos else None,
+            "delegaciones": sum(c["delegaciones"] for c in costes), "sin_coste": sin,
+            "es_suelo": sin > 0}
+
+
+def matriz(con, obra, umbral, techo, gastado, version=None):
+    """`SPEC-38`: una fila por capitulo de la version (por defecto la vigente), con sus seis
+    notas, su coste, sus intentos, sus hallazgos, si cambio y si tuvo parada; las medias y los
+    totales; las paradas y la puerta de esa version; y las cifras de arriba. `None` si la obra
+    no existe; `VersionQueNoExiste` si la version no es suya."""
+    d = _datos(con, obra)
+    if d is None:
+        return None
+    versiones, cubos, progreso = d["versiones"], d["cubos"], d["progreso"]
+    numeros = [v["numero"] for v in versiones]
+    elegida = version if version is not None else (version_vigente(con, obra) or numeros[0])
+    if elegida not in numeros:
+        raise VersionQueNoExiste(elegida)
+    v = next(x for x in versiones if x["numero"] == elegida)
+    propios = _capitulos_de(con, obra, elegida)
+    anteriores = _capitulos_de(con, obra, v["anterior"]) if v["anterior"] is not None else None
+    ventanas = {x["numero"]: _ventana(x, versiones) for x in versiones}
+    filas = []
+    for n, id_c in enumerate(propios, 1):
+        # El coste es el de la version que escribio ese capitulo: la primera que lo tiene.
+        autora = next((x["numero"] for x in versiones
+                       if n <= len(_capitulos_de(con, obra, x["numero"]))
+                       and _capitulos_de(con, obra, x["numero"])[n - 1] == id_c), elegida)
+        escenas = _escenas(con, obra, id_c)
+        por_criterio = {nota["criterio"]: nota for nota in _notas(con, escenas, umbral)}
+        parada = any(p["fase"] == "parada" and p["capitulo"] == n
+                     and _dentro(p["desde"], ventanas[autora]) for p in progreso)
+        filas.append({
+            "capitulo": n,
+            "notas": [por_criterio.get(c) or {"criterio": c, "nota": None, "justificacion": None,
+                                               "instruccion": None, "bajo_el_umbral": False}
+                      for c in _CRITERIOS],
+            "coste": _coste(cubos.get(("capitulo", autora, n))),
+            "intentos": _intentos(con, escenas),
+            "hallazgos": _hallazgos_de(con, escenas),
+            "cambio": None if anteriores is None
+            else (n > len(anteriores) or anteriores[n - 1] != id_c),
+            "parada": parada,
+            "escenas": [{"id": e[0], "estado": e[1]} for e in escenas]})
+    medias = []
+    for i in range(len(_CRITERIOS)):
+        valores = [f["notas"][i]["nota"] for f in filas if f["notas"][i]["nota"] is not None]
+        medias.append(round(sum(valores) / len(valores), 2) if valores else None)
+    totales = {"medias": medias, "coste": _suma_de_costes([f["coste"] for f in filas]),
+               "intentos": sum(f["intentos"] for f in filas),
+               "hallazgos": {s: sum(f["hallazgos"][s] for f in filas)
+                             for s in ("bloqueante", "mayor", "menor")},
+               "cambiados": None if anteriores is None else sum(1 for f in filas if f["cambio"])}
+    h = historia(con, obra, umbral)
+    del_elegida = [e for e in h["eventos"] if e["version"] == elegida]
+    return {
+        "obra": obra, "titulo": h["titulo"], "version": elegida,
+        "versiones": [{"numero": x["numero"], "peticion": _texto_de_peticion(con, obra, x["peticion"])}
+                      for x in versiones],
+        "cifras": {"coste": h["totales"]["coste"], "gastado": gastado, "techo_usd": techo,
+                   "abiertos": len(h["abiertos"])},
+        "filas": filas, "totales": totales,
+        "paradas": [e for e in del_elegida if e["tipo"] == "parada"],
+        "puerta": [e for e in del_elegida if e["tipo"] == "ronda_de_la_puerta"],
+        "por_agente": h["por_agente"], "abiertos": h["abiertos"], "atribucion": ATRIBUCION,
+    }
+
+
+def _texto_de_peticion(con, obra, peticion):
+    if peticion is None or not _tabla(con, "peticion_de_cambio"):
+        return None
+    f = con.execute("SELECT texto FROM peticion_de_cambio WHERE id = ? AND obra = ?",
+                    (peticion, obra)).fetchone()
+    return f[0] if f else None

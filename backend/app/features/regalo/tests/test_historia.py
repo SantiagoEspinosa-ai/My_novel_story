@@ -154,3 +154,59 @@ def test_un_capitulo_sin_hora_va_antes_de_la_puerta_de_su_version(cliente, con, 
     eventos = [e for e in _leer(cliente)["eventos"] if e["version"] == 2]
     assert [e["tipo"] for e in eventos] == ["version", "capitulo", "ronda_de_la_puerta"]
     assert eventos[1]["cuando"] is None
+
+
+# --- `PLAN-38` M1: la matriz por capitulo (`SPEC-38`) ------------------------------------
+
+def _matriz(cliente, version=None):
+    url = "/admin/obras/{0}/matriz".format(OBRA) + ("?version={0}".format(version) if version else "")
+    r = cliente.get(url)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def test_la_matriz_trae_una_fila_por_capitulo_con_sus_seis_notas(cliente, historia):
+    m = _matriz(cliente)
+    assert m["version"] == 1 and [v["numero"] for v in m["versiones"]] == [1, 2]
+    assert len(m["filas"]) == 10
+    uno, tres, cuatro = m["filas"][0], m["filas"][2], m["filas"][3]
+    assert [n["criterio"] for n in uno["notas"]] == list(CRITERIOS)
+    assert [n["nota"] for n in uno["notas"]] == [4, 5, 3, 4, 2, 5]
+    assert uno["notas"][4]["bajo_el_umbral"] is True
+    assert (uno["intentos"], uno["coste"]["usd"], uno["cambio"]) == (2, pytest.approx(1.2), None)
+    assert uno["hallazgos"] == {"bloqueante": 0, "mayor": 1, "menor": 0}
+    assert tres["parada"] is True and tres["intentos"] == 3
+    assert [n["nota"] for n in cuatro["notas"]] == [None] * 6 and cuatro["coste"] is None
+    assert [p["capitulo"] for p in m["paradas"]] == [3]
+    assert [r["ronda"] for r in m["puerta"]] == [1, 2]
+    assert "atribucion" in m["atribucion"] and m["por_agente"] and m["abiertos"]
+
+
+def test_un_capitulo_compartido_cuesta_lo_de_la_version_que_lo_escribio(cliente, historia):
+    m = _matriz(cliente, 2)
+    uno, tres = m["filas"][0], m["filas"][2]
+    assert (uno["cambio"], tres["cambio"]) == (False, True)
+    assert uno["coste"]["usd"] == pytest.approx(1.2)
+    assert m["totales"]["cambiados"] == 1
+    assert m["puerta"] == []
+
+
+def test_la_fila_de_totales_trae_medias_y_sumas(cliente, historia):
+    t = _matriz(cliente)["totales"]
+    assert t["medias"] == [4.0, 5.0, 3.0, 4.0, 2.0, 5.0]
+    assert t["coste"]["usd"] == pytest.approx(2.4)
+    assert t["intentos"] == 5
+    assert t["hallazgos"] == {"bloqueante": 0, "mayor": 1, "menor": 0}
+    assert t["cambiados"] is None
+
+
+def test_las_cifras_de_arriba(cliente, historia):
+    c = _matriz(cliente)["cifras"]
+    assert c["coste"]["usd"] == pytest.approx(4.25) and c["coste"]["delegaciones"] == 8
+    assert c["gastado"]["usd"] == pytest.approx(4.25) and c["techo_usd"] > 0
+    assert c["abiertos"] == 1
+
+
+def test_la_version_que_no_existe_es_404(cliente, historia):
+    assert cliente.get("/admin/obras/{0}/matriz?version=99".format(OBRA)).status_code == 404
+    assert cliente.get("/admin/obras/no-existe/matriz").status_code == 404

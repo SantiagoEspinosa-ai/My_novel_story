@@ -9,7 +9,8 @@ from app.commons.configuracion import carga
 from app.features.regalo import service
 from app.features.regalo import historia as modulo_historia
 from app.features.regalo.schemas import (Administracion, ConfirmacionDeGasto, Estanteria,
-                                         GeneracionEnVivo, HistoriaDeObra, PeticionDeLaVersion)
+                                         GeneracionEnVivo, HistoriaDeObra, MatrizDeObra,
+                                         PeticionDeLaVersion)
 
 router = APIRouter(tags=["regalo"])
 
@@ -46,6 +47,22 @@ def administracion(con: sqlite3.Connection = Depends(conexion)):
 def historia(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
     """`SPEC-37`: la historia de una novela, en orden, con sus totales. Sin login (`SPEC-36`)."""
     r = modulo_historia.historia(con, id_obra, _sistema().edicion.umbral_del_editor)
+    if r is None:
+        raise HTTPException(404, "no existe la obra {0}".format(id_obra))
+    return r
+
+
+@router.get("/admin/obras/{id_obra}/matriz", response_model=MatrizDeObra)
+def matriz(id_obra: str, version: int | None = None,
+           con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-38`: la matriz por capitulo de una version (por defecto, la vigente)."""
+    sistema = _sistema()
+    techo = sistema.generacion_web.techo_de_gasto_usd
+    try:
+        r = modulo_historia.matriz(con, id_obra, sistema.edicion.umbral_del_editor, techo,
+                                   service.confirmacion(con, techo)["gastado"], version)
+    except modulo_historia.VersionQueNoExiste:
+        raise HTTPException(404, "la obra {0} no tiene la version {1}".format(id_obra, version))
     if r is None:
         raise HTTPException(404, "no existe la obra {0}".format(id_obra))
     return r

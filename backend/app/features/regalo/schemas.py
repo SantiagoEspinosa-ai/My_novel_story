@@ -206,3 +206,61 @@ class HistoriaDeObra(_DelDominio):
     abiertos: list[HallazgoAbiertoDeLaObra]
     eventos: list[EventoDeLaHistoria]
     atribucion: str
+
+
+class NotaDeLaMatriz(_DelDominio):
+    """Una nota del Editor en la matriz: `nota` nula si el capitulo no la tiene todavia."""
+
+    criterio: enums.CriterioDeEdicion
+    nota: int | None
+    justificacion: str | None
+    instruccion: str | None
+    bajo_el_umbral: bool
+
+
+class FilaDeLaMatriz(_DelDominio):
+    capitulo: int
+    notas: list[NotaDeLaMatriz]
+    coste: CosteDeUnaObra | None
+    intentos: int
+    hallazgos: HallazgosPorSeveridad
+    cambio: bool | None
+    parada: bool
+    escenas: list[EscenaEnGeneracion]
+
+
+class TotalesDeLaMatriz(_DelDominio):
+    medias: list[float | None]
+    coste: CosteDeUnaObra | None
+    intentos: int
+    hallazgos: HallazgosPorSeveridad
+    cambiados: int | None
+
+
+class VersionDeLaMatriz(_DelDominio):
+    numero: int
+    peticion: str | None
+
+
+class CifrasDeLaMatriz(_DelDominio):
+    coste: CosteDeUnaObra | None
+    gastado: Gastado
+    techo_usd: float
+    abiertos: int
+
+
+class MatrizDeObra(_DelDominio):
+    """`SPEC-38`: la matriz por capitulo de una version de la novela, resuelta en el backend."""
+
+    obra: str
+    titulo: str | None
+    version: int
+    versiones: list[VersionDeLaMatriz]
+    cifras: CifrasDeLaMatriz
+    filas: list[FilaDeLaMatriz]
+    totales: TotalesDeLaMatriz
+    paradas: list[EventoDeLaHistoria]
+    puerta: list[EventoDeLaHistoria]
+    por_agente: list[CosteDeUnAgente]
+    abiertos: list[HallazgoAbiertoDeLaObra]
+    atribucion: str

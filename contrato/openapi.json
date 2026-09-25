@@ -594,6 +594,40 @@
         "title": "CapitulosPorSalida",
         "type": "object"
       },
+      "CifrasDeLaMatriz": {
+        "additionalProperties": false,
+        "properties": {
+          "abiertos": {
+            "title": "Abiertos",
+            "type": "integer"
+          },
+          "coste": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeUnaObra"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gastado": {
+            "$ref": "#/components/schemas/Gastado"
+          },
+          "techo_usd": {
+            "title": "Techo Usd",
+            "type": "number"
+          }
+        },
+        "required": [
+          "coste",
+          "gastado",
+          "techo_usd",
+          "abiertos"
+        ],
+        "title": "CifrasDeLaMatriz",
+        "type": "object"
+      },
       "ClaseDePeticion": {
         "description": "`C-4`: lo que el lector puede pedir. Un hecho o un nombre.",
         "enum": [
@@ -1586,6 +1620,73 @@
         "title": "Fichas",
         "type": "object"
       },
+      "FilaDeLaMatriz": {
+        "additionalProperties": false,
+        "properties": {
+          "cambio": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cambio"
+          },
+          "capitulo": {
+            "title": "Capitulo",
+            "type": "integer"
+          },
+          "coste": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeUnaObra"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "escenas": {
+            "items": {
+              "$ref": "#/components/schemas/EscenaEnGeneracion"
+            },
+            "title": "Escenas",
+            "type": "array"
+          },
+          "hallazgos": {
+            "$ref": "#/components/schemas/HallazgosPorSeveridad"
+          },
+          "intentos": {
+            "title": "Intentos",
+            "type": "integer"
+          },
+          "notas": {
+            "items": {
+              "$ref": "#/components/schemas/NotaDeLaMatriz"
+            },
+            "title": "Notas",
+            "type": "array"
+          },
+          "parada": {
+            "title": "Parada",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "capitulo",
+          "notas",
+          "coste",
+          "intentos",
+          "hallazgos",
+          "cambio",
+          "parada",
+          "escenas"
+        ],
+        "title": "FilaDeLaMatriz",
+        "type": "object"
+      },
       "Gastado": {
         "additionalProperties": false,
         "description": "Lo gastado en toda la base. **Siempre es un suelo**: lo anterior a la migracion 18\nno tiene coste guardado, y `por_que_es_suelo` lo dice (decision del autor, `SPEC-33`).",
@@ -2088,6 +2189,99 @@
         "title": "IndiceDeVersion",
         "type": "object"
       },
+      "MatrizDeObra": {
+        "additionalProperties": false,
+        "description": "`SPEC-38`: la matriz por capitulo de una version de la novela, resuelta en el backend.",
+        "properties": {
+          "abiertos": {
+            "items": {
+              "$ref": "#/components/schemas/HallazgoAbiertoDeLaObra"
+            },
+            "title": "Abiertos",
+            "type": "array"
+          },
+          "atribucion": {
+            "title": "Atribucion",
+            "type": "string"
+          },
+          "cifras": {
+            "$ref": "#/components/schemas/CifrasDeLaMatriz"
+          },
+          "filas": {
+            "items": {
+              "$ref": "#/components/schemas/FilaDeLaMatriz"
+            },
+            "title": "Filas",
+            "type": "array"
+          },
+          "obra": {
+            "title": "Obra",
+            "type": "string"
+          },
+          "paradas": {
+            "items": {
+              "$ref": "#/components/schemas/EventoDeLaHistoria"
+            },
+            "title": "Paradas",
+            "type": "array"
+          },
+          "por_agente": {
+            "items": {
+              "$ref": "#/components/schemas/CosteDeUnAgente"
+            },
+            "title": "Por Agente",
+            "type": "array"
+          },
+          "puerta": {
+            "items": {
+              "$ref": "#/components/schemas/EventoDeLaHistoria"
+            },
+            "title": "Puerta",
+            "type": "array"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "totales": {
+            "$ref": "#/components/schemas/TotalesDeLaMatriz"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "versiones": {
+            "items": {
+              "$ref": "#/components/schemas/VersionDeLaMatriz"
+            },
+            "title": "Versiones",
+            "type": "array"
+          }
+        },
+        "required": [
+          "obra",
+          "titulo",
+          "version",
+          "versiones",
+          "cifras",
+          "filas",
+          "totales",
+          "paradas",
+          "puerta",
+          "por_agente",
+          "abiertos",
+          "atribucion"
+        ],
+        "title": "MatrizDeObra",
+        "type": "object"
+      },
       "NombresEntrada": {
         "additionalProperties": false,
         "description": "`SPEC-34` `RF-01`, `PLAN-34` E3: los nombres, escritos por el comprador en su campo y\nguardados sin pasar por ningun agente. Es **el estado completo** de lo declarado: una\npersona que ya no viene es una persona que se quita.",
@@ -2187,6 +2381,61 @@
           "avisos"
         ],
         "title": "NombresSalida",
+        "type": "object"
+      },
+      "NotaDeLaMatriz": {
+        "additionalProperties": false,
+        "description": "Una nota del Editor en la matriz: `nota` nula si el capitulo no la tiene todavia.",
+        "properties": {
+          "bajo_el_umbral": {
+            "title": "Bajo El Umbral",
+            "type": "boolean"
+          },
+          "criterio": {
+            "$ref": "#/components/schemas/CriterioDeEdicion"
+          },
+          "instruccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruccion"
+          },
+          "justificacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justificacion"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          }
+        },
+        "required": [
+          "criterio",
+          "nota",
+          "justificacion",
+          "instruccion",
+          "bajo_el_umbral"
+        ],
+        "title": "NotaDeLaMatriz",
         "type": "object"
       },
       "NotaDelEditor": {
@@ -2968,6 +3217,62 @@
         "title": "TotalesDeLaHistoria",
         "type": "object"
       },
+      "TotalesDeLaMatriz": {
+        "additionalProperties": false,
+        "properties": {
+          "cambiados": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cambiados"
+          },
+          "coste": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CosteDeUnaObra"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hallazgos": {
+            "$ref": "#/components/schemas/HallazgosPorSeveridad"
+          },
+          "intentos": {
+            "title": "Intentos",
+            "type": "integer"
+          },
+          "medias": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Medias",
+            "type": "array"
+          }
+        },
+        "required": [
+          "medias",
+          "coste",
+          "intentos",
+          "hallazgos",
+          "cambiados"
+        ],
+        "title": "TotalesDeLaMatriz",
+        "type": "object"
+      },
       "TrabajoSalida": {
         "additionalProperties": false,
         "description": "Lo que `GET /trabajos/{id}` devuelve. `estado_de_trabajo` no es dominio: su\nvocabulario lo declara `docs/architecture.md` § \"Los estados de un trabajo\".\n`abandonado` no es `fallido` (no se sabe si llego a pasar): viajan distintos.",
@@ -3165,6 +3470,32 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionDeLaMatriz": {
+        "additionalProperties": false,
+        "properties": {
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "peticion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peticion"
+          }
+        },
+        "required": [
+          "numero",
+          "peticion"
+        ],
+        "title": "VersionDeLaMatriz",
         "type": "object"
       },
       "VersionDetalleSalida": {
@@ -3372,6 +3703,65 @@
           }
         },
         "summary": "Historia",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
+    "/admin/obras/{id_obra}/matriz": {
+      "get": {
+        "description": "`SPEC-38`: la matriz por capitulo de una version (por defecto, la vigente).",
+        "operationId": "matriz_admin_obras__id_obra__matriz_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatrizDeObra"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Matriz",
         "tags": [
           "regalo"
         ]
