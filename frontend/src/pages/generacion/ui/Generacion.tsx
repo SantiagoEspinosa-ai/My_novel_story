@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Progreso } from "@/entities/progreso";
+import { AccionesDeObra } from "@/features/acciones-de-obra";
 import {
   useCliente, useLectura, type CapituloEnGeneracion, type GeneracionEnVivo,
 } from "@/shared/api";
@@ -57,6 +58,8 @@ export function PaginaGeneracion({ intervaloMs = INTERVALO_DE_REGALO_MS }: {
           </p>
         )}
         <AlTerminar g={g} />
+        {/* SPEC-39: publicar lo escrito o reanudar lo parado, si se puede. */}
+        <AccionesDeObra obra={g.obra} intervaloMs={intervaloMs} />
         <Progreso obra={g.obra} intervaloMs={intervaloMs} />
         {g.capitulos.length === 0 ? (
           !g.motivo_del_fallo && (

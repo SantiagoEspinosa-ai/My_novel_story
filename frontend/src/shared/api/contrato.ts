@@ -435,6 +435,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/acciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Acciones
+         * @description `SPEC-39` `RF-07`: si se puede publicar o reanudar, por que no, desde donde y cuanto.
+         */
+        get: operations["acciones_obras__id_obra__acciones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/obras/{id_obra}/cambios": {
         parameters: {
             query?: never;
@@ -643,6 +663,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/obras/{id_obra}/publicaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publicar
+         * @description `SPEC-39` `RF-01`..`RF-03`: una ronda de la puerta, Lean incluido, sin reescribir. `409`
+         *     con el motivo si no se puede, **sin Lean incluido**, antes de llamar a nadie.
+         */
+        post: operations["publicar_obras__id_obra__publicaciones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/obras/{id_obra}/versiones": {
         parameters: {
             query?: never;
@@ -773,6 +814,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AccionesDeObra
+         * @description `SPEC-39` `RF-07`: que se puede hacer con la novela, y por que no, lo decide el backend.
+         */
+        AccionesDeObra: {
+            publicar: components["schemas"]["Publicar"];
+            reanudar: components["schemas"]["Reanudar"];
+        };
         /**
          * Administracion
          * @description `SPEC-36` `RF-03`: la vista de administracion, resuelta en el backend.
@@ -1886,6 +1935,40 @@ export interface components {
             /** Version De Partida */
             version_de_partida: number;
         };
+        /** Publicar */
+        Publicar: {
+            /** Coste Medio Del Editor */
+            coste_medio_del_editor: number | null;
+            /** Delegaciones Medidas Del Editor */
+            delegaciones_medidas_del_editor: number;
+            /** Lean Disponible */
+            lean_disponible: boolean;
+            /** Lean Motivo */
+            lean_motivo: string | null;
+            /** Motivo */
+            motivo: string | null;
+            /** Posible */
+            posible: boolean;
+            /** Version */
+            version: number;
+        };
+        /** Reanudar */
+        Reanudar: {
+            /** Coste Por Capitulo */
+            coste_por_capitulo: number | null;
+            /** Desde Capitulo */
+            desde_capitulo: number | null;
+            /** Estimacion Usd */
+            estimacion_usd: number | null;
+            /** Faltan */
+            faltan: number;
+            /** Fuente */
+            fuente: string | null;
+            /** Motivo */
+            motivo: string | null;
+            /** Posible */
+            posible: boolean;
+        };
         /**
          * Referencia
          * @description Una medida de **otra** base, con su fuente: se ensena como referencia.
@@ -2808,6 +2891,37 @@ export interface operations {
             };
         };
     };
+    acciones_obras__id_obra__acciones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccionesDeObra"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     cambios_obras__id_obra__cambios_post: {
         parameters: {
             query?: never;
@@ -3113,6 +3227,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProgresoDeGeneracion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publicar_obras__id_obra__publicaciones_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

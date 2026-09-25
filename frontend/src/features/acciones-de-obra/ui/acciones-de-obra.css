@@ -1,0 +1,8 @@
+/* SPEC-39: publicar y reanudar. Solo variables del tema (SPEC-22 RF-59). */
+.acciones-de-obra { display: grid; gap: var(--espacio-m); margin: var(--espacio-m) 0; }
+.acciones-de-obra__bloque { display: grid; gap: var(--espacio-s); color: var(--color-texto); }
+.acciones-de-obra__bloque h2 { margin: 0; font-size: 1.15rem; }
+.acciones-de-obra__bloque p { margin: 0; }
+.acciones-de-obra__bloque .boton { justify-self: start; }
+.acciones-de-obra__nota { font-size: 0.85rem; color: var(--color-textoSuave); }
+.acciones-de-obra__resultado ul { margin: var(--espacio-xs) 0; padding-left: var(--espacio-l); }

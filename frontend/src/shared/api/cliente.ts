@@ -43,6 +43,8 @@ export type EventoDeLaHistoria = Esquemas["EventoDeLaHistoria"];
 // SPEC-38: la matriz por capitulo.
 export type MatrizDeObra = Esquemas["MatrizDeObra"];
 export type FilaDeLaMatriz = Esquemas["FilaDeLaMatriz"];
+// SPEC-39: publicar y reanudar.
+export type AccionesDeObra = Esquemas["AccionesDeObra"];
 
 export const PREFIJO = "/api";
 
@@ -143,6 +145,10 @@ export function crearCliente(fetchInyectado: Fetch) {
     matriz: (obra: string, version?: number) => leer<MatrizDeObra>(
       `/admin/obras/${e(obra)}/matriz${version === undefined ? "" : `?version=${version}`}`),
     // SPEC-33 RF-11: gasta dinero. Solo lo llama la confirmacion, despues de ensenar las cifras.
+    acciones: (obra: string) => leer<AccionesDeObra>(`/obras/${e(obra)}/acciones`),
+    // SPEC-39 RF-01: una ronda de la puerta. Gasta una delegacion del Editor.
+    publicar: (obra: string) =>
+      enviar<{ id_trabajo: string }>(`/obras/${e(obra)}/publicaciones`),
     lanzar: (obra: string) =>
       enviar<{ id_trabajo: string; generacion: string }>(`/obras/${e(obra)}/generaciones`),
   };

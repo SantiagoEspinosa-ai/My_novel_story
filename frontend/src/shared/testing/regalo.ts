@@ -2,7 +2,7 @@
 // congelado: el tipo sale de contrato.ts y tests/regalo.test.ts los valida contra el mismo
 // esquema. Viven aparte de fixtures.ts, que es de PLAN-22.
 import type {
-  Administracion, CapituloEnGeneracion, EventoDeLaHistoria, FilaDeLaMatriz, HistoriaDeObra,
+  AccionesDeObra, Administracion, CapituloEnGeneracion, EventoDeLaHistoria, FilaDeLaMatriz, HistoriaDeObra,
   MatrizDeObra, ConfirmacionDeGasto, Cuaderno, Estanteria, GeneracionEnVivo, Historial,
   Nombres, TurnoDeEntrevista,
 } from "@/shared/api";
@@ -329,6 +329,23 @@ export const matrizDeObra: MatrizDeObra = {
   atribucion: historiaDeObra.atribucion,
 };
 
+// SPEC-39: publicar y reanudar.
+const nadaQueReanudar = { posible: false, motivo: "todos los capítulos están escritos",
+  desde_capitulo: null, faltan: 0, coste_por_capitulo: null, fuente: null, estimacion_usd: null };
+const nadaQuePublicar = { posible: false, motivo: "faltan capítulos por escribir: desde el 4",
+  version: 1, lean_disponible: true, lean_motivo: null, coste_medio_del_editor: 0.31,
+  delegaciones_medidas_del_editor: 12 };
+export const accionesPublicar: AccionesDeObra = {
+  publicar: { ...nadaQuePublicar, posible: true, motivo: null }, reanudar: nadaQueReanudar };
+export const accionesSinLean: AccionesDeObra = {
+  publicar: { ...nadaQuePublicar, motivo: "Falta Lean (lake) en esta máquina. Se instala con elan.",
+    lean_disponible: false, lean_motivo: "Falta Lean (lake) en esta máquina. Se instala con elan." },
+  reanudar: nadaQueReanudar };
+export const accionesReanudar: AccionesDeObra = {
+  publicar: nadaQuePublicar,
+  reanudar: { posible: true, motivo: null, desde_capitulo: 4, faltan: 7, coste_por_capitulo: 1.5,
+    fuente: "la media de los 3 capítulos medidos de esta novela", estimacion_usd: 10.5 } };
+
 export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }> = {
   turnoConAviso: { esquema: "TurnoDeEntrevistaSalida", datos: turnoConAviso },
   turnoSinNada: { esquema: "TurnoDeEntrevistaSalida", datos: turnoSinNada },
@@ -354,6 +371,9 @@ export const FIXTURES_REGALO: Record<string, { esquema: string; datos: unknown }
   administracion: { esquema: "Administracion", datos: administracion },
   historiaDeObra: { esquema: "HistoriaDeObra", datos: historiaDeObra },
   matrizDeObra: { esquema: "MatrizDeObra", datos: matrizDeObra },
+  accionesPublicar: { esquema: "AccionesDeObra", datos: accionesPublicar },
+  accionesSinLean: { esquema: "AccionesDeObra", datos: accionesSinLean },
+  accionesReanudar: { esquema: "AccionesDeObra", datos: accionesReanudar },
 };
 
 type Respuesta = { estado?: number; cuerpo: unknown };

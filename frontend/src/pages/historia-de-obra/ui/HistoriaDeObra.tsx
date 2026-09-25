@@ -3,6 +3,7 @@ import {
   useLectura, type EventoDeLaHistoria, type HistoriaDeObra, type MatrizDeObra,
 } from "@/shared/api";
 import { ESTADO_DE_ESCENA, EtiquetaDeEstado, Esperando, SEVERIDAD, SinDato } from "@/shared/ui";
+import { AccionesDeObra } from "@/features/acciones-de-obra";
 import { usd } from "./formato";
 import { Matriz } from "./Matriz";
 import "./historia-de-obra.css";
@@ -26,6 +27,7 @@ export function PaginaHistoriaDeObra() {
           className={linea ? "historia__pestana historia__pestana--elegida" : "historia__pestana"}>
           Línea de tiempo</Link>
       </nav>
+      <AccionesDeObra obra={obra} />
       {linea ? <LineaDeTiempo obra={obra} />
         : <PorCapitulo obra={obra} version={version === null ? undefined : Number(version)} />}
     </main>
