@@ -274,7 +274,7 @@ hasta ejecutarla.**
   `RF-10`).
 - **T1 · El cambio de tuning (sin coste).** Un commit sobre `.claude/agents/escritor.md`,
   elegido por el criterio con peor nota del Editor en la pasada «antes».
-- **R6 · Brief base, pasada «después».**
+- **R6 · Brief base, pasada «después».** **Estado (2026-09-25): no ejecutada.** T1 se commiteó (`6deefe5`); la línea base repetida con el código de hoy (antes-2) paró tres veces en el capítulo 3 por `F-155`, y el autor cerró el tuning como no completado, sin gastar más. Números en `harness/evals/medidas.md`.
 - **R7 · El resto, pasada «después»**, en el orden de R2–R5, mientras quede techo.
 
 **Cómo se lee el tuning.** Media por criterio de las notas del Editor sobre los borradores

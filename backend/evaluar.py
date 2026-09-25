@@ -182,6 +182,7 @@ def regenerar_tabla(con_libro, ruta_tabla, umbral=None):
     from app.features.evaluacion import repository as libro
     from app.features.evaluacion import tabla
     from app.features.evaluacion.tabla import Celda, Resultado
+    from app.commons.db import migraciones
     from app.features.orquestacion import evaluacion
     ultimas = {}
     for e in libro.ejecuciones(con_libro):
@@ -195,6 +196,9 @@ def regenerar_tabla(con_libro, ruta_tabla, umbral=None):
         else:
             con = sqlite3.connect(e["base"])
             con.row_factory = sqlite3.Row
+            # `F-153`: una base se lee con el esquema de hoy. Las de `R1` a `R5` no tienen
+            # la columna `version` de los veredictos (migracion 16), y la tabla revento.
+            migraciones.migrar(con)
             celdas = evaluacion.resultados(con, e["obra"], umbral)
             con.close()
         filas.append(tabla.Fila(brief, pasada, celdas, ejecucion=e["ejecucion"], coste=coste,

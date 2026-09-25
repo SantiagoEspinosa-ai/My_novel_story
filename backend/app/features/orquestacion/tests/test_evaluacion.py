@@ -181,3 +181,45 @@ def test_la_columna_de_la_puerta_sale_del_veredicto_de_la_puerta(con):
     celdas = evaluacion.resultados(con, "obra-x")
     assert celdas["publicacion"].texto == "pasó (1 disparo)"
     assert celdas["INV-29"].resultado is R.PASO
+
+
+# --- La columna del Revisor del plan (decision del autor, 2026-09-25) ------------------
+
+def _plan_sin_novela(versiones):
+    """Una obra de la que solo hay rondas del plan: el Revisor no lo aprobo y no se
+    monto nada. Es `R3`, el brief temporal."""
+    from app.features.planificacion import repository as planes
+    from app.features.planificacion.tests.conftest import plan
+    c = sqlite3.connect(":memory:")
+    c.row_factory = sqlite3.Row
+    migraciones.migrar(c)
+    planes.asegurar_tablas(c)
+    for n, (aprobado, origen, objeciones) in enumerate(versiones, start=1):
+        planes.guardar(c, "obra-t", n, None if origen == "esquema" else plan(), aprobado,
+                       origen, objeciones)
+    return c
+
+
+def test_un_plan_que_el_revisor_rechazo_no_sale_sin_ejecutar():
+    """El brief temporal se ejecuto (4,95 USD) y el Revisor cazo las incoherencias en el
+    plan, pero la tabla ponia «sin ejecutar» en toda la fila: no habia escenas ni
+    entrevista y `existe` no miraba el plan. El autor: *«Una tabla sin columna para un
+    validador que acerto esta ocultando un acierto.»*"""
+    c = _plan_sin_novela([(False, "codigo", ["hueco"]), (False, "esquema", ["x"]),
+                          (False, "revisor", ["incoherencia 1"]), (False, "esquema", ["y"]),
+                          (False, "revisor", ["incoherencia 2"])])
+    celdas = evaluacion.resultados(c, "obra-t")
+    assert celdas["revisor.plan"].resultado is R.FALLO
+    assert celdas["revisor.plan"].disparos == 2, "las dos rondas que rechazo el Revisor"
+    assert celdas["schema.plan"].resultado is R.FALLO
+    assert not all(x.resultado is R.SIN_EJECUTAR for x in celdas.values())
+
+
+def test_un_plan_aprobado_tras_objeciones_del_revisor_pasa_con_sus_disparos():
+    c = _plan_sin_novela([(False, "revisor", ["objecion"]), (True, "revisor", [])])
+    celda = evaluacion.resultados(c, "obra-t")["revisor.plan"]
+    assert celda.resultado is R.PASO and celda.disparos == 1
+
+
+def test_sin_ronda_del_revisor_la_columna_no_se_da_por_pasada(con):
+    assert evaluacion.resultados(con, "obra-x")["revisor.plan"].resultado is not R.PASO

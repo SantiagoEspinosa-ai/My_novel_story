@@ -40,7 +40,7 @@ NO_EJECUTADAS = {"INV-06": "exige una comparacion semantica entre hechos canonic
 """Lo que el sistema no ejecuta nunca. Es la lista de la puerta de publicacion
 (`auditoria/publicacion.NO_EJECUTADAS`); una prueba compara las dos."""
 
-OTRAS_COLUMNAS = ("schema.plan", "entrevista.instrucciones", "entrevista.contradicciones",
+OTRAS_COLUMNAS = ("schema.plan", "revisor.plan", "entrevista.instrucciones", "entrevista.contradicciones",
                   "publicacion")
 
 

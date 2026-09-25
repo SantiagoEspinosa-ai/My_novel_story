@@ -256,3 +256,21 @@ parada en el 8 por `F-148`) + 2,3491 (relanzada, parada en el 9 por `F-149`) + 9
 + 0,1084 (la puerta). Destapó cuatro defectos nuestros —`F-148`, `F-149`, `F-150` y `F-151`— que
 una primera generación no había podido ejercer.
 
+## Tuning (PLAN-31 T1 y R6) · No completado (2026-09-25)
+
+El autor aprobó T1 —tres líneas en `escritor.md` sobre el ritmo, el criterio con peor nota del
+Editor en `R1` (4,00, un 4 en los diez capítulos)— con la hipótesis escrita antes de ejecutar:
+ritmo ≥ 4,5, ningún otro criterio baja más de 0,3. Como `F-149` había cambiado lo que recibe el
+Escritor desde `R1`, se repitió primero la «antes» con el código de hoy y sin T1 (antes-2, commit
+`89425c4`, versión del Escritor `8f9a1478e71a`), para no mezclar dos cambios.
+
+**La antes-2 no terminó**: capítulos 1 y 2 consolidados; el 3 paró **tres veces** por `INV-03`
+—Tere actúa sobre `imp-02` e `imp-03` sin constar que los conozca—, porque el plan no siembra el
+conocimiento de nadie (`F-155`). **8,7712 USD en 14 delegaciones**, medidas todas: 6,8424 (primer
+intento), 1,0935 (reanudación) y 0,8353 (reintento final). El autor cerró el tuning aquí: **la
+«después» no se ejecutó y T1 queda sin medir** (está en el repositorio, `6deefe5`). El libro de
+gasto pasa de 47,1354 a 55,9066 USD.
+
+**Lo que sí salió medible es `F-155`**: los tres planes de las generaciones por ficha tienen el
+conocimiento inicial vacío, y dos de esas tres generaciones se pararon por lo mismo.
+

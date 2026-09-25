@@ -77,7 +77,10 @@ class _Obra:
         self.entrevistas = [entrevistas.leer(con, i) for i in entrevistas.de_la_obra(con, obra)]
 
     def existe(self):
-        return bool(self.escenas or self.entrevistas
+        # El plan y el veredicto de la puerta tambien cuentan: una obra cuyo plan no aprobo
+        # el Revisor se ejecuto, y sin esto salia «sin ejecutar» entera (el brief temporal,
+        # `R3`); un veredicto de publicacion es constancia de que la puerta miro.
+        return bool(self.escenas or self.entrevistas or self.plan or self.puerta
                     or any(d["tipo"] in DE_LA_ENTREVISTA for d in self.decisiones))
 
     def decisiones_de(self, tipo):
@@ -189,6 +192,19 @@ def _plan(o):
     return Celda(R.FALLO, disparos)
 
 
+def _revisor(o):
+    """El Revisor del plan (decision del autor, 2026-09-25). Los disparos son las rondas
+    que rechazo; falla si nunca lo aprobo. En el brief temporal, fallar es acertar: son las
+    incoherencias que el brief provoca, y lo que esperaba lo dice el propio brief."""
+    rondas = [v for v in o.plan if v["origen"] == "revisor"]
+    if not rondas:
+        return _sin("ninguna ronda del plan llego al Revisor")
+    rechazos = len([v for v in rondas if not v["aprobado"]])
+    if any(v["aprobado"] for v in rondas):
+        return Celda(R.PASO, rechazos)
+    return Celda(R.FALLO, rechazos)
+
+
 def _entrevista(o):
     if not (o.entrevistas or any(d["tipo"] in DE_LA_ENTREVISTA for d in o.decisiones)):
         motivo = "el brief entra por ficha: no hubo entrevista"
@@ -230,6 +246,7 @@ def resultados(con, obra, umbral=None) -> dict:
     calculadas.update(_editor(o, umbral))
     calculadas.update(_puerta(o))
     calculadas["schema.plan"] = _plan(o)
+    calculadas["revisor.plan"] = _revisor(o)
     calculadas.update(_entrevista(o))
     salida = {}
     for c in tabla.columnas():

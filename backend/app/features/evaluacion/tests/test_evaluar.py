@@ -284,3 +284,26 @@ def test_sin_plan_aprobado_evaluar_informa_y_regenera_la_tabla_sin_reventar(tmp_
     assert codigo == 1
     assert "PlanNoAprobado" in salida and "sin novela" in salida
     assert (tmp_path / "resultados.md").exists()
+
+
+def test_regenerar_la_tabla_con_una_base_anterior_a_la_migracion_16_no_revienta(tmp_path):
+    """`F-153`: la pasada antes-2 anoto su gasto y revento al regenerar la tabla, porque
+    las bases de `R1` a `R5` no tienen la columna `version` de los veredictos y la tabla
+    las abria sin migrar. Una base se lee con el esquema de hoy."""
+    import sqlite3
+    from app.features.evaluacion import repository as libro
+    vieja = str(tmp_path / "vieja.db")
+    v = sqlite3.connect(vieja)
+    v.execute("CREATE TABLE veredicto_de_publicacion (obra TEXT, ronda INTEGER, publica "
+              "INTEGER, condiciones TEXT, codigo_lean INTEGER, no_ejecutadas TEXT, cuando TEXT)")
+    v.execute("INSERT INTO veredicto_de_publicacion VALUES ('obra-v', 1, 1, '[]', 0, '[]', "
+              "'2026-09-24')")
+    v.commit()
+    v.close()
+    con_libro = sqlite3.connect(str(tmp_path / "libro.db"))
+    libro.asegurar_tablas(con_libro)
+    libro.anotar(con_libro, ejecucion="brief-base-antes-1", brief="brief-base", pasada="antes",
+                 capitulo="plan", usd=0.1, delegaciones=1, sin_coste=0, obra="obra-v",
+                 base=vieja)
+    filas = evaluar.regenerar_tabla(con_libro, str(tmp_path / "tabla.md"))
+    assert filas and filas[0].celdas["publicacion"].resultado.value != "sin ejecutar"
