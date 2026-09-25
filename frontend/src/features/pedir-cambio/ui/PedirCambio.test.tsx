@@ -152,6 +152,26 @@ describe("PedirCambio", () => {
     expect(screen.queryByTestId("seguimiento")).toBeNull();
   });
 
+  it("el motivo de no poder confirmar sale junto al botón, no arriba fuera de la vista", async () => {
+    montar({ [`POST ${OBRA}/cambios`]: { estado: 409,
+      cuerpo: { detail: "Lo gastado ya alcanza el techo de 50 USD de esta web" } } });
+    await elegirHechoYEscribir();
+    fireEvent.click(screen.getByRole("button", { name: /Ver qué capítulos se tocarían/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confirmar el cambio/ }));
+    const acciones = (await screen.findByRole("button", { name: /Confirmar el cambio/ }))
+      .closest(".pedir-cambio__acciones") as HTMLElement;
+    expect(await within(acciones).findByRole("alert")).toHaveTextContent("techo de 50 USD");
+  });
+
+  it("con el cambio aceptado, dice que estamos trabajando en él", async () => {
+    montar();
+    await elegirHechoYEscribir();
+    fireEvent.click(screen.getByRole("button", { name: /Ver qué capítulos se tocarían/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confirmar el cambio/ }));
+    const seguimiento = await screen.findByTestId("seguimiento");
+    expect(seguimiento).toHaveTextContent("Estamos trabajando en tu cambio");
+  });
+
   it("sigue el trabajo y, si falla, el lector ve un mensaje que se entiende y no el motivo técnico (SPEC-45)", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {

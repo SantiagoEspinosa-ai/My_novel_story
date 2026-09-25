@@ -151,12 +151,14 @@ export function PedirCambio({ obra, escena, fragmento, onCerrar,
         </div>
       </>}
 
-      {negativa && <p role="alert" className="aviso">No se puede: {negativa}</p>}
+      {/* Sin propuesta, el motivo va aqui; con ella, junto al boton de confirmar, que es donde
+          se mira despues de pulsarlo (con diez capitulos en medio, arriba no se veia). */}
+      {negativa && !propuesta && <p role="alert" className="aviso">No se puede: {negativa}</p>}
 
       {propuesta && idTrabajo === null &&
         <VistaPropuesta propuesta={propuesta} capitulo={capitulo}
           indice={indice.estado === "listo" ? indice.datos : null}
-          enviando={enviando} onConfirmar={confirmar} />}
+          enviando={enviando} onConfirmar={confirmar} negativa={negativa} />}
 
       {idTrabajo !== null &&
         <Seguimiento obra={obra} idTrabajo={idTrabajo} intervaloMs={intervaloMs} />}
@@ -269,12 +271,13 @@ function ListaDeCapitulos({ ids, capitulo }: { ids: string[]; capitulo: (id: str
   );
 }
 
-function VistaPropuesta({ propuesta, capitulo, indice, enviando, onConfirmar }: {
+function VistaPropuesta({ propuesta, capitulo, indice, enviando, onConfirmar, negativa }: {
   propuesta: Propuesta;
   capitulo: (id: string) => string;
   indice: Indice | null;
   enviando: boolean;
   onConfirmar: () => void;
+  negativa: string | null;
 }) {
   const lista = propuesta.capitulos_propuestos;
   return (
@@ -303,9 +306,10 @@ function VistaPropuesta({ propuesta, capitulo, indice, enviando, onConfirmar }: 
       {lista && (
         <div className="pedir-cambio__acciones">
           <button type="button" className="boton boton--principal" disabled={enviando}
-            onClick={onConfirmar}>Confirmar el cambio</button>
+            onClick={onConfirmar}>{enviando ? "Enviando tu cambio…" : "Confirmar el cambio"}</button>
           <span className="pedir-cambio__nota">Se creará una versión nueva; la actual se
             podrá seguir leyendo entera.</span>
+          {negativa && <p role="alert" className="aviso">No se puede: {negativa}</p>}
         </div>
       )}
     </div>
@@ -332,7 +336,7 @@ function Seguimiento({ obra, idTrabajo, intervaloMs }: {
   const o = encodeURIComponent(obra);
   return (
     <div className="seguimiento" data-testid="seguimiento" aria-live="polite">
-      <h3>Tu petición está en marcha</h3>
+      <h3>Estamos trabajando en tu cambio</h3>
       {trabajo
         ? <p className="seguimiento__estado">
             <EtiquetaDeEstado distintivo={ESTADO_DE_TRABAJO[trabajo.estado]} />
