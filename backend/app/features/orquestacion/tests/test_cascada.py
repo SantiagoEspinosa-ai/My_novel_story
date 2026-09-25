@@ -399,3 +399,57 @@ def test_con_observacion_la_cascada_es_una_traza_con_sus_capitulos_por_numero():
     assert {s["nombre"] for s in spans if s["tipo"] == "rol"} >= {
         "escritor", "editor", "resumidor"}
     assert [s for s in spans if s["tipo"] == "grupo" and s["nombre"] == "regeneracion"]
+
+
+# --- PLAN-45 C1 (SPEC-45, F-126): el cambio desde la API, con agentes en el worker -------
+
+@pytest.fixture
+def api(tmp_path):
+    """La base de `_base` en un fichero, servida por la API con los agentes y Lean de doble
+    que la web usa en sus pruebas (`app.state.agentes_regalo`, `lean_regalo`)."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    ruta = str(tmp_path / "web.db")
+    mem = _base(tmp=str(tmp_path))
+    destino = sqlite3.connect(ruta)
+    mem.backup(destino)
+    destino.close()
+    escritor = _EscritorDeLaVersion()
+    app.state.ruta_db = ruta
+    app.state.agentes_regalo = lambda sistema, entorno, anotar: _agentes(escritor)
+    app.state.lean_regalo = _LeanFijo()
+    try:
+        yield TestClient(app), ruta
+    finally:
+        for n in ("agentes_regalo", "lean_regalo"):
+            if hasattr(app.state, n):
+                delattr(app.state, n)
+
+
+def _pedir_por_la_api(cliente, peticion):
+    p = cliente.post("/obras/{0}/cambios/propuesta".format(OBRA), json=peticion)
+    assert p.status_code == 200, p.text
+    return cliente.post("/obras/{0}/cambios".format(OBRA), json=dict(
+        peticion, capitulos_propuestos=p.json()["capitulos_propuestos"]))
+
+
+def test_el_cambio_desde_la_api_escribe_la_version_con_los_agentes_del_worker(api):
+    cliente, ruta = api
+    r = _pedir_por_la_api(cliente, _hecho())
+    assert r.status_code == 202, r.text
+    t = cliente.get("/trabajos/" + r.json()["id_trabajo"]).json()
+    assert t["estado"] == "terminado", t["motivo"]
+    con = sqlite3.connect(ruta)
+    assert [v["numero"] for v in brief.versiones_de(con, OBRA)] == [1, 2]
+    con.close()
+
+
+def test_con_el_techo_alcanzado_no_se_encola_el_cambio(api):
+    cliente, ruta = api
+    con = sqlite3.connect(ruta)
+    with con:
+        con.execute("INSERT INTO gasto_de_delegacion (obra, agente, coste_usd) VALUES (?, "
+                    "'escritor', 1000)", (OBRA,))
+    con.close()
+    r = _pedir_por_la_api(cliente, _hecho())
+    assert r.status_code == 409 and "techo" in r.json()["detail"]

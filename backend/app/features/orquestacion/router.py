@@ -187,10 +187,20 @@ def propuesta(id_obra: str, entrada: schemas.PeticionEntrada,
         raise HTTPException(409, str(e))
 
 
-def _atender(ruta, id_trabajo):
+def _atender(ruta, id_trabajo, obra, estado):
+    """`SPEC-45` `RF-01` (`F-126`): el worker con los agentes de `pedir_cambio.py`. Un fallo al
+    montarlos (sin modelos en `sistema.json`, por ejemplo) queda en el trabajo con su motivo."""
+    from app.commons.configuracion import carga
+    from app.features.orquestacion import regalo
     con = sqlite3.connect(ruta)
+    con.row_factory = sqlite3.Row
     try:
-        regeneracion.atender(con, id_trabajo)
+        try:
+            regalo.cambiar(con, ruta, obra, id_trabajo, carga.cargar_sistema(),
+                           fabrica=getattr(estado, "agentes_regalo", None),
+                           lean=getattr(estado, "lean_regalo", None))
+        except BaseException as e:  # tambien `FaltanModelos`, que es un `SystemExit`
+            cola.registrar_fallo(con, id_trabajo, "{0}: {1}".format(type(e).__name__, e))
     finally:
         con.close()
 
@@ -202,12 +212,20 @@ def cambios(id_obra: str, entrada: schemas.CambioEntrada, request: Request,
     siempre: falta la medida-, si la lista no es la propuesta o si `C-4` no la admite.
     Con `409` **no se guarda ni se encola nada**."""
     _existe_la_obra(con, id_obra)
+    # `SPEC-45` `RF-02`: con lo gastado en el techo, ni se guarda ni se encola.
+    from app.commons.configuracion import carga
+    from app.features.orquestacion import regalo
+    techo = carga.cargar_sistema().generacion_web.techo_de_gasto_usd
+    if regalo.techo_alcanzado(con, techo):
+        raise HTTPException(409, "Lo gastado ya alcanza el techo de {0:g} USD de esta web: "
+                                 "ahora no se puede aplicar ningún cambio.".format(techo))
     try:
         id_trabajo, _ = regeneracion.pedir(con, id_obra, entrada.model_dump())
     except (regeneracion.PeticionNoAdmitida, regeneracion.SalidaSinElegir,
             regeneracion.ListaCambiada) as e:
         raise HTTPException(409, str(e))
-    tareas.add_task(_atender, getattr(request.app.state, "ruta_db", ":memory:"), id_trabajo)
+    tareas.add_task(_atender, getattr(request.app.state, "ruta_db", ":memory:"), id_trabajo,
+                    id_obra, request.app.state)
     return {"id_trabajo": id_trabajo}
 
 

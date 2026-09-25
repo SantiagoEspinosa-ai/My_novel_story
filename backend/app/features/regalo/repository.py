@@ -245,3 +245,28 @@ def devolver(con, obra):
     with con:
         return con.execute("DELETE FROM retirada_de_la_estanteria WHERE obra = ?",
                            (obra,)).rowcount
+
+
+# --- `SPEC-45` `RF-04`: los cambios pedidos, con el detalle tecnico -------------------------
+
+def cambios_pedidos(con, obra):
+    """Cada peticion de cambio de la obra con el estado y el motivo de su trabajo, en el orden
+    en que se pidieron. Por SQL: la peticion es de `revision/` y el trabajo de `commons`."""
+    if not migraciones.tiene_tabla(con, "peticion_de_cambio"):
+        return []
+    trabajos = {}
+    if migraciones.tiene_tabla(con, "trabajo"):
+        for estado, motivo, carga in con.execute(
+                "SELECT estado, motivo_ultimo_fallo, carga FROM trabajo WHERE tipo = "
+                "'regenerar_obra' ORDER BY rowid"):
+            try:
+                c = json.loads(carga)
+            except ValueError:
+                continue
+            if c.get("obra") == obra:
+                trabajos[c.get("peticion")] = (estado, motivo)
+    return [{"texto": f[1], "creada_en": f[2],
+             "estado": trabajos.get(f[0], (None, None))[0],
+             "motivo": trabajos.get(f[0], (None, None))[1]}
+            for f in con.execute("SELECT id, texto, creada_en FROM peticion_de_cambio WHERE "
+                                 "obra = ? ORDER BY id", (obra,))]

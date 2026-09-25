@@ -152,7 +152,7 @@ describe("PedirCambio", () => {
     expect(screen.queryByTestId("seguimiento")).toBeNull();
   });
 
-  it("sigue el trabajo y, si falla, enseña su motivo", async () => {
+  it("sigue el trabajo y, si falla, el lector ve un mensaje que se entiende y no el motivo técnico (SPEC-45)", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       const llamadas = montar();
@@ -163,7 +163,9 @@ describe("PedirCambio", () => {
       expect(await within(seguimiento).findByText("en cola")).toBeInTheDocument();
       await act(async () => { await vi.advanceTimersByTimeAsync(1100); });
       expect(await within(seguimiento).findByText("fallido")).toBeInTheDocument();
-      expect(seguimiento).toHaveTextContent(trabajoFallido.motivo!);
+      expect(seguimiento).not.toHaveTextContent(trabajoFallido.motivo!);
+      expect(seguimiento).toHaveTextContent("No se pudo aplicar tu cambio");
+      expect(seguimiento).toHaveTextContent("La novela sigue como estaba");
       const antes = llamadas.filter((l) => l.url === "/api/trabajos/trab-1").length;
       await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
       // Un trabajo que termino, bien o mal, no se sigue pidiendo.

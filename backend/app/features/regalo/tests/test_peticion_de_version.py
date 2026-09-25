@@ -42,3 +42,27 @@ def test_version_que_no_existe_es_404(cliente, con):
     _version(con, OBRA, 1)
     r = cliente.get("/obras/{0}/versiones/7/peticion".format(OBRA))
     assert r.status_code == 404 and "no existe la version" in r.json()["detail"]
+
+
+# --- PLAN-45 C2 (SPEC-45 RF-04): el detalle tecnico de cada cambio, en la administracion --
+
+def test_los_cambios_pedidos_con_su_estado_y_su_motivo(cliente, con):
+    import json
+    from app.commons.trabajos import cola
+    cola.asegurar_tabla(con)
+    p1 = _peticion(con, OBRA, "que el tren sea de noche")
+    p2 = _peticion(con, OBRA, "que el perro se llame Nala")
+    _peticion(con, OTRA, "de otra obra")
+    with con:
+        for id_t, p, estado, motivo in (("t-1", p1, "fallido", "NoSePuedeRegenerar: sin agentes"),
+                                        ("t-2", p2, "terminado", None)):
+            con.execute("INSERT INTO trabajo (id, tipo, carga, estado, motivo_ultimo_fallo) "
+                        "VALUES (?, 'regenerar_obra', ?, ?, ?)",
+                        (id_t, json.dumps({"obra": OBRA, "peticion": p}), estado, motivo))
+    r = cliente.get("/admin/obras/{0}/cambios".format(OBRA))
+    assert r.status_code == 200, r.text
+    cambios = r.json()["cambios"]
+    assert [c["texto"] for c in cambios] == ["que el tren sea de noche", "que el perro se llame Nala"]
+    assert (cambios[0]["estado"], cambios[0]["motivo"]) == ("fallido", "NoSePuedeRegenerar: sin agentes")
+    assert (cambios[1]["estado"], cambios[1]["motivo"]) == ("terminado", None)
+    assert cambios[0]["creada_en"]

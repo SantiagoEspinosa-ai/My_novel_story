@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.commons.configuracion import carga
 from app.features.regalo import service
 from app.features.regalo import historia as modulo_historia
-from app.features.regalo.schemas import RetiradaEntrada
+from app.features.regalo.schemas import CambiosPedidos, RetiradaEntrada
 from app.features.regalo.schemas import (Administracion, ConfirmacionDeGasto, Estanteria,
                                          GeneracionEnVivo, HistoriaDeObra, MatrizDeObra,
                                          PeticionDeLaVersion)
@@ -59,6 +59,13 @@ def devolver(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
     """`SPEC-41` `RF-02`: devolverla a la estanteria."""
     from app.features.regalo import repository as repo
     return {"obra": id_obra, "devuelta": bool(repo.devolver(con, id_obra))}
+
+
+@router.get("/admin/obras/{id_obra}/cambios", response_model=CambiosPedidos)
+def cambios(id_obra: str, con: sqlite3.Connection = Depends(conexion)):
+    """`SPEC-45` `RF-04`: los cambios pedidos de la novela, con el motivo tecnico si fallaron."""
+    from app.features.regalo import repository as repo
+    return {"cambios": repo.cambios_pedidos(con, id_obra)}
 
 
 @router.get("/admin/obras/{id_obra}/historia", response_model=HistoriaDeObra)

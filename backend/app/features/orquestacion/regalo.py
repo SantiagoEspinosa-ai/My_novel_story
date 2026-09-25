@@ -146,6 +146,29 @@ def generar(con, ruta, obra, ficha, generacion, sistema, fabrica=None, lean=None
             "parada": r["generacion"].parada}
 
 
+def cambiar(con, ruta, obra, id_trabajo, sistema, fabrica=None, lean=None):
+    """`SPEC-45` `RF-01` (`F-126`): el cambio del lector desde la web, con los mismos agentes
+    que `pedir_cambio.py` -los de la novela regalo, anotando el gasto-, Lean para la puerta y
+    la ficha de la base, que la cascada lee sola. Sin agentes no escribia nada."""
+    from app.features.auditoria.lean import VerificadorLean
+    from app.features.orquestacion import regeneracion
+    registro_hooks = os.path.join(tempfile.gettempdir(), "hooks-{0}.jsonl".format(obra))
+    entorno = {"HARNESS_DB": os.path.abspath(ruta), "HARNESS_OBRA": obra,
+               "HARNESS_REGISTRO_HOOKS": registro_hooks}
+    ag = (fabrica or agentes)(sistema, entorno,
+                              anotar=gasto.anotador(con, obra, nueva_generacion()))
+    lean = lean or VerificadorLean(tiempo=sistema.lean.tiempo_maximo_segundos)
+    return regeneracion.atender(con, id_trabajo, agentes=ag, sistema=sistema, lean=lean,
+                                carpeta_de_reglas=tempfile.gettempdir())
+
+
+def techo_alcanzado(con, techo):
+    """`SPEC-45` `RF-02`, como al lanzar (`SPEC-33` `RF-13`): lo gastado en la base contra el
+    techo de la web."""
+    usd, _, _ = lecturas.gasto_de(con)
+    return usd is not None and usd >= techo
+
+
 def abandonar_huerfanas(con):
     """`SPEC-39` `RF-06`, `F-208`: las generaciones y publicaciones corren dentro del proceso de
     la API. Al arrancar, lo que estaba en cola o en curso es de un proceso que ya no existe:

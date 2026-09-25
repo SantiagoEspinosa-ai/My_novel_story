@@ -1,7 +1,8 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { EscenaConEstado, tituloDeCapitulo } from "@/entities/escena";
 import {
-  useLectura, type EventoDeLaHistoria, type HistoriaDeObra, type Indice, type MatrizDeObra,
+  useLectura, type CambiosPedidos, type EventoDeLaHistoria, type HistoriaDeObra, type Indice,
+  type MatrizDeObra,
 } from "@/shared/api";
 import { ESTADO_DE_ESCENA, EtiquetaDeEstado, Esperando, SEVERIDAD, SinDato } from "@/shared/ui";
 import { AccionesDeObra } from "@/features/acciones-de-obra";
@@ -36,6 +37,7 @@ export function PaginaHistoriaDeObra() {
           className={pestana(escenas)}>Escenas</Link>
       </nav>
       {linea && <AccionesDeObra obra={obra} />}
+      {linea && <Cambios obra={obra} />}
       {linea ? <LineaDeTiempo obra={obra} />
         : escenas ? <Escenas obra={obra} />
         : <PorCapitulo obra={obra} version={version === null ? undefined : Number(version)} />}
@@ -74,6 +76,27 @@ function Escenas({ obra }: { obra: string }) {
         </ol>
       )}
     </Esperando>
+  );
+}
+
+// SPEC-45 RF-04: cada cambio que pidio el lector, con el estado de su trabajo y el motivo
+// tecnico si fallo. El lector solo ve que no se pudo; el porque se lee aqui. Sin cambios, nada.
+function Cambios({ obra }: { obra: string }) {
+  const lectura = useLectura((c) => c.cambios(obra), `cambios:${obra}`);
+  if (lectura.estado !== "listo" || (lectura.datos as CambiosPedidos).cambios.length === 0) return null;
+  const { cambios } = lectura.datos as CambiosPedidos;
+  return (
+    <section className="tarjeta historia__cambios" data-testid="cambios-pedidos">
+      <h2>Cambios pedidos</h2>
+      <ol>
+        {cambios.map((c, i) => (
+          <li key={i} data-testid="cambio-pedido">
+            <p><strong>«{c.texto}»</strong> · {c.creada_en} · {c.estado ?? "sin trabajo"}</p>
+            {c.motivo && <p className="historia__motivo"><code>{c.motivo}</code></p>}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

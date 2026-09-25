@@ -8,6 +8,7 @@ from pydantic import Field
 
 from app.commons.dominio import enumeraciones as enums
 from app.commons.dominio.modelos import _DelDominio
+from app.commons.trabajos.estados import EstadoDeTrabajo
 
 
 class NotaDelEditor(_DelDominio):
@@ -279,3 +280,17 @@ class MatrizDeObra(_DelDominio):
     por_agente: list[CosteDeUnAgente]
     abiertos: list[HallazgoAbiertoDeLaObra]
     atribucion: str
+
+
+class CambioPedido(_DelDominio):
+    """`SPEC-45` `RF-04`: un cambio del lector, con el estado de su trabajo y el motivo tecnico
+    si fallo. Solo en la administracion: el lector ve un mensaje que se entiende."""
+
+    texto: str
+    creada_en: str
+    estado: EstadoDeTrabajo | None
+    motivo: str | None
+
+
+class CambiosPedidos(_DelDominio):
+    cambios: list[CambioPedido]

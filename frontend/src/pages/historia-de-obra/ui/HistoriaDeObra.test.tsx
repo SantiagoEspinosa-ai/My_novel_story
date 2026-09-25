@@ -98,3 +98,30 @@ describe("HistoriaDeObra › pestaña Escenas", () => {
     expect(screen.getByRole("link", { name: "Escenas" })).toHaveAttribute("aria-current", "page");
   });
 });
+
+// PLAN-45 C2 (SPEC-45 RF-04): el detalle tecnico de cada cambio del lector, solo aqui.
+describe("HistoriaDeObra › cambios pedidos", () => {
+  it("cambios pedidos con su motivo", async () => {
+    const doble = fetchConMetodo({
+      "GET /api/admin/obras/obra-publicada/historia": [{ cuerpo: historiaDeObra }],
+      "GET /api/admin/obras/obra-publicada/cambios": [{ cuerpo: { cambios: [
+        { texto: "que el tren sea de noche", creada_en: "2026-09-25 11:00:00", estado: "fallido",
+          motivo: "NoSePuedeRegenerar: sin agentes (inventado)" },
+        { texto: "que el perro se llame Nala", creada_en: "2026-09-25 11:30:00",
+          estado: "terminado", motivo: null }] } }],
+    });
+    render(
+      <ClienteProvider cliente={crearCliente(doble.fetch)}>
+        <MemoryRouter initialEntries={["/admin/obras/obra-publicada?vista=linea"]}>
+          <Routes><Route path="/admin/obras/:obra" element={<PaginaHistoriaDeObra />} /></Routes>
+        </MemoryRouter>
+      </ClienteProvider>,
+    );
+    const seccion = await screen.findByTestId("cambios-pedidos");
+    const filas = within(seccion).getAllByTestId("cambio-pedido");
+    expect(filas).toHaveLength(2);
+    expect(filas[0]).toHaveTextContent("que el tren sea de noche");
+    expect(filas[0]).toHaveTextContent("NoSePuedeRegenerar: sin agentes (inventado)");
+    expect(filas[1]).toHaveTextContent("terminado");
+  });
+});

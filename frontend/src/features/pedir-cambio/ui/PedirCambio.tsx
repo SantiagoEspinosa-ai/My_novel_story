@@ -338,7 +338,13 @@ function Seguimiento({ obra, idTrabajo, intervaloMs }: {
             <EtiquetaDeEstado distintivo={ESTADO_DE_TRABAJO[trabajo.estado]} />
           </p>
         : <p className="cargando">consultando el trabajo…</p>}
-      {trabajo?.motivo && <p className="aviso">Motivo: {trabajo.motivo}</p>}
+      {/* SPEC-45 RF-03: el lector no ve el motivo tecnico -esta en /admin, «Cambios pedidos»-. */}
+      {trabajo && ["fallido", "abandonado", "detenido_por_presupuesto"].includes(trabajo.estado) && (
+        <p className="aviso" role="status">
+          No se pudo aplicar tu cambio. La novela sigue como estaba: no se ha tocado nada de lo
+          que ya estaba escrito. Quien administra esta web puede ver qué pasó y volver a intentarlo.
+        </p>
+      )}
       {error && <p role="alert" className="aviso">No se pudo consultar el trabajo: {error}</p>}
       {trabajo?.estado === "terminado" && (
         <p><Link className="boton boton--principal" to={`/obras/${o}/indice`}>

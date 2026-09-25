@@ -25,6 +25,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/obras/{id_obra}/cambios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cambios
+         * @description `SPEC-45` `RF-04`: los cambios pedidos de la novela, con el motivo tecnico si fallaron.
+         */
+        get: operations["cambios_admin_obras__id_obra__cambios_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/obras/{id_obra}/historia": {
         parameters: {
             query?: never;
@@ -933,6 +953,25 @@ export interface components {
             texto: string;
             /** Version De Partida */
             version_de_partida?: number | null;
+        };
+        /**
+         * CambioPedido
+         * @description `SPEC-45` `RF-04`: un cambio del lector, con el estado de su trabajo y el motivo tecnico
+         *     si fallo. Solo en la administracion: el lector ve un mensaje que se entiende.
+         */
+        CambioPedido: {
+            /** Creada En */
+            creada_en: string;
+            estado: components["schemas"]["EstadoDeTrabajo"] | null;
+            /** Motivo */
+            motivo: string | null;
+            /** Texto */
+            texto: string;
+        };
+        /** CambiosPedidos */
+        CambiosPedidos: {
+            /** Cambios */
+            cambios: components["schemas"]["CambioPedido"][];
         };
         /**
          * CampoDelCuaderno
@@ -2254,6 +2293,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Administracion"];
+                };
+            };
+        };
+    };
+    cambios_admin_obras__id_obra__cambios_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id_obra: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CambiosPedidos"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

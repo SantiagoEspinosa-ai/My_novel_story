@@ -69,3 +69,7 @@
 .historia__escenas { list-style: none; padding: 0; display: grid; gap: var(--espacio-m); }
 .historia__escenas h2 { margin: 0 0 var(--espacio-s); font-size: 1.05rem; }
 .historia__escenas code { font-size: 0.8rem; color: var(--color-textoSuave); }
+/* SPEC-45 RF-04: los cambios del lector con su motivo tecnico. Solo variables del tema. */
+.historia__cambios ol { margin: 0; padding-left: var(--espacio-l); display: grid; gap: var(--espacio-s); }
+.historia__cambios p { margin: 0; }
+.historia__motivo code { font-size: 0.8rem; color: var(--color-textoSuave); white-space: pre-wrap; }

@@ -262,6 +262,66 @@
         "title": "CambioEntrada",
         "type": "object"
       },
+      "CambioPedido": {
+        "additionalProperties": false,
+        "description": "`SPEC-45` `RF-04`: un cambio del lector, con el estado de su trabajo y el motivo tecnico\nsi fallo. Solo en la administracion: el lector ve un mensaje que se entiende.",
+        "properties": {
+          "creada_en": {
+            "title": "Creada En",
+            "type": "string"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstadoDeTrabajo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "texto": {
+            "title": "Texto",
+            "type": "string"
+          }
+        },
+        "required": [
+          "texto",
+          "creada_en",
+          "estado",
+          "motivo"
+        ],
+        "title": "CambioPedido",
+        "type": "object"
+      },
+      "CambiosPedidos": {
+        "additionalProperties": false,
+        "properties": {
+          "cambios": {
+            "items": {
+              "$ref": "#/components/schemas/CambioPedido"
+            },
+            "title": "Cambios",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cambios"
+        ],
+        "title": "CambiosPedidos",
+        "type": "object"
+      },
       "CampoDelCuaderno": {
         "description": "Un campo de la ficha que ya se sabe, con su etiqueta y sus valores en palabras de\npersona (`SPEC-35` `RF-02`, `RF-05`).",
         "properties": {
@@ -3954,6 +4014,49 @@
           }
         },
         "summary": "Administracion",
+        "tags": [
+          "regalo"
+        ]
+      }
+    },
+    "/admin/obras/{id_obra}/cambios": {
+      "get": {
+        "description": "`SPEC-45` `RF-04`: los cambios pedidos de la novela, con el motivo tecnico si fallaron.",
+        "operationId": "cambios_admin_obras__id_obra__cambios_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id_obra",
+            "required": true,
+            "schema": {
+              "title": "Id Obra",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CambiosPedidos"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cambios",
         "tags": [
           "regalo"
         ]

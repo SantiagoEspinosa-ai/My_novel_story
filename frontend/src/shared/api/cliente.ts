@@ -42,6 +42,7 @@ export type HistoriaDeObra = Esquemas["HistoriaDeObra"];
 export type EventoDeLaHistoria = Esquemas["EventoDeLaHistoria"];
 // SPEC-38: la matriz por capitulo.
 export type MatrizDeObra = Esquemas["MatrizDeObra"];
+export type CambiosPedidos = Esquemas["CambiosPedidos"];
 export type FilaDeLaMatriz = Esquemas["FilaDeLaMatriz"];
 // SPEC-39: publicar y reanudar.
 export type AccionesDeObra = Esquemas["AccionesDeObra"];
@@ -142,6 +143,8 @@ export function crearCliente(fetchInyectado: Fetch) {
     gasto: () => leer<ConfirmacionDeGasto>("/generaciones/gasto"),
     administracion: () => leer<Administracion>("/admin/obras"),
     historia: (obra: string) => leer<HistoriaDeObra>(`/admin/obras/${e(obra)}/historia`),
+    // SPEC-45 RF-04: los cambios del lector con el motivo tecnico si fallaron. Solo /admin.
+    cambios: (obra: string) => leer<CambiosPedidos>(`/admin/obras/${e(obra)}/cambios`),
     matriz: (obra: string, version?: number) => leer<MatrizDeObra>(
       `/admin/obras/${e(obra)}/matriz${version === undefined ? "" : `?version=${version}`}`),
     // SPEC-33 RF-11: gasta dinero. Solo lo llama la confirmacion, despues de ensenar las cifras.
